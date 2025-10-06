@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { Page } from '@/components/shell/page'
 import { AllOrgsTable } from '@/components/all-orgs-table'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
@@ -129,22 +130,37 @@ export default async function OwnerOrgsPage() {
     }))
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Organizations</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Manage all organizations on your platform.
-          </p>
-        </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          New Organization
-        </Button>
-      </div>
+  // Demo org data
+  const org = {
+    id: 'demo-platform',
+    name: 'Madrasah OS Platform',
+    slug: 'madrasah-os-platform'
+  }
 
-      <AllOrgsTable orgs={orgsWithStats} />
-    </div>
+  return (
+    <Page 
+      user={session.user} 
+      org={org} 
+      userRole="OWNER"
+      title="Organizations"
+      breadcrumbs={[{ href: '/owner/orgs', label: 'Organizations' }]}
+    >
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-[var(--foreground)]">Organizations</h1>
+            <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+              Manage all organizations on your platform.
+            </p>
+          </div>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            New Organization
+          </Button>
+        </div>
+
+        <AllOrgsTable orgs={orgsWithStats} />
+      </div>
+    </Page>
   )
 }

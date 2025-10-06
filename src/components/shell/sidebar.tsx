@@ -153,12 +153,10 @@ export function Sidebar({ user, org, userRole }: SidebarProps) {
           <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
             {currentNavigation.map((item) => {
               const isActive = pathname === item.href
-              // Always include portal parameter for parent and owner navigation
-              const href = (isParent || isOwner) ? `${item.href}?portal=${isParent ? 'parent' : 'owner'}` : item.href
               return (
                 <Link
                   key={item.name}
-                  href={href}
+                  href={item.href}
                   className={cn(
                     "group flex items-center px-3 py-2 text-sm font-medium rounded-[var(--radius-md)] transition-colors h-10",
                     isActive

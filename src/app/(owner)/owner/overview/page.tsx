@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { Page } from '@/components/shell/page'
 import { OwnerOverviewStats } from '@/components/owner-overview-stats'
 import { OwnerRevenueChart } from '@/components/owner-revenue-chart'
 import { OwnerOrgsTable } from '@/components/owner-orgs-table'
@@ -154,28 +155,43 @@ export default async function OwnerOverviewPage() {
     }
   ]
 
+  // Demo org data
+  const org = {
+    id: 'demo-platform',
+    name: 'Madrasah OS Platform',
+    slug: 'madrasah-os-platform'
+  }
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Platform Overview</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Monitor your Madrasah OS platform performance and revenue.
-        </p>
+    <Page 
+      user={session.user} 
+      org={org} 
+      userRole="OWNER"
+      title="Platform Overview"
+      breadcrumbs={[{ href: '/owner/overview', label: 'Overview' }]}
+    >
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--foreground)]">Platform Overview</h1>
+          <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+            Monitor your Madrasah OS platform performance and revenue.
+          </p>
+        </div>
+
+        <OwnerOverviewStats
+          totalOrgs={totalOrgs}
+          totalStudents={totalStudents}
+          totalRevenue={totalRevenue}
+          overdueCount={overdueCount}
+        />
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <OwnerRevenueChart data={monthlyRevenue} />
+          <RecentPlatformActivity logs={recentActivity} />
+        </div>
+
+        <OwnerOrgsTable orgs={orgsWithUsage} />
       </div>
-
-      <OwnerOverviewStats
-        totalOrgs={totalOrgs}
-        totalStudents={totalStudents}
-        totalRevenue={totalRevenue}
-        overdueCount={overdueCount}
-      />
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <OwnerRevenueChart data={monthlyRevenue} />
-        <RecentPlatformActivity logs={recentActivity} />
-      </div>
-
-      <OwnerOrgsTable orgs={orgsWithUsage} />
-    </div>
+    </Page>
   )
 }

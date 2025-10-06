@@ -6,12 +6,18 @@ export function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl
   const host = request.headers.get('host') || ''
   
-  // Get portal from query param (dev mode) or host
+  // Get portal from query param (dev mode), pathname, or host
   const portalParam = searchParams.get('portal')
   let portal = 'app' // default
   
   if (portalParam && ['app', 'parent', 'auth'].includes(portalParam)) {
     portal = portalParam
+  } else if (pathname.startsWith('/parent/')) {
+    portal = 'parent'
+  } else if (pathname.startsWith('/owner/')) {
+    portal = 'owner'
+  } else if (pathname.startsWith('/auth/')) {
+    portal = 'auth'
   } else if (host.includes('parent.madrasah.io')) {
     portal = 'parent'
   } else if (host.includes('auth.madrasah.io')) {
@@ -45,7 +51,7 @@ export function middleware(request: NextRequest) {
         pathname.startsWith('/support') || pathname.startsWith('/settings') ||
         pathname.startsWith('/owner')) {
       console.log(`Redirecting parent portal user from ${pathname} to /parent/dashboard`)
-      return NextResponse.redirect(new URL('/parent/dashboard?portal=parent', request.url))
+      return NextResponse.redirect(new URL('/parent/dashboard', request.url))
     }
   }
   

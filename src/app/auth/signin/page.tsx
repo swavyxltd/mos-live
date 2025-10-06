@@ -20,7 +20,7 @@ export default function SignInPage() {
     getSession().then((session) => {
       if (session) {
         if (portal === 'parent') {
-          window.location.href = '/parent/dashboard?portal=parent'
+            window.location.href = '/parent/dashboard'
         } else {
           window.location.href = callbackUrl
         }
@@ -42,7 +42,7 @@ export default function SignInPage() {
         setError('Failed to sign in with Google')
       } else if (result?.ok) {
         if (portal === 'parent') {
-          window.location.href = '/parent/dashboard?portal=parent'
+            window.location.href = '/parent/dashboard'
         } else {
           window.location.href = callbackUrl
         }
@@ -80,7 +80,7 @@ export default function SignInPage() {
           if (session.user.isSuperAdmin) {
             window.location.href = '/owner/overview'
           } else if (portal === 'parent') {
-            window.location.href = '/parent/dashboard?portal=parent'
+            window.location.href = '/parent/dashboard'
           } else {
             window.location.href = callbackUrl
           }
