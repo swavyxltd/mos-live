@@ -1,0 +1,50 @@
+// Environment validation
+export function validateEnv() {
+  const required = [
+    'NEXTAUTH_URL',
+    'NEXTAUTH_SECRET',
+    'APP_BASE_URL',
+    'DATABASE_URL',
+    'GOOGLE_CLIENT_ID',
+    'GOOGLE_CLIENT_SECRET',
+    'STRIPE_SECRET_KEY',
+    'STRIPE_PRICE_ID',
+    'NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY',
+    'STRIPE_WEBHOOK_SECRET',
+    'SUPABASE_URL',
+    'SUPABASE_ANON_KEY',
+    'SUPABASE_SERVICE_ROLE_KEY',
+    'RESEND_API_KEY',
+    'RESEND_FROM',
+    'META_APP_ID',
+    'META_APP_SECRET',
+    'META_GRAPH_VERSION',
+    'META_GRAPH_BASE',
+    'WHATSAPP_EMBEDDED_REDIRECT_URL',
+    'WHATSAPP_VERIFY_TOKEN'
+  ]
+
+  const missing = required.filter(key => !process.env[key])
+  
+  if (missing.length > 0) {
+    console.warn('⚠️  Missing environment variables:')
+    missing.forEach(key => console.warn(`   - ${key}`))
+    console.warn('\nPlease add these to your .env.local file')
+  } else {
+    console.log('✅ All required environment variables are set')
+  }
+
+  // Optional WhatsApp dev config
+  const optionalWhatsapp = [
+    'WHATSAPP_DEV_ACCESS_TOKEN',
+    'WHATSAPP_DEV_PHONE_NUMBER_ID',
+    'WHATSAPP_DEV_WABA_ID'
+  ]
+
+  const missingOptional = optionalWhatsapp.filter(key => !process.env[key])
+  if (missingOptional.length > 0) {
+    console.log('ℹ️  Optional WhatsApp dev config missing (for testing)')
+  }
+
+  return missing.length === 0
+}

@@ -1,0 +1,421 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  phone         String?
+  isSuperAdmin  Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts             Account[]
+  sessions             Session[]
+  memberships          UserOrgMembership[]
+  classes              Class[]               @relation("ClassTeacher")
+  students             Student[]             @relation("StudentPrimaryParent")
+  progressLogs         ProgressLog[]
+  supportTickets       SupportTicket[]
+  auditLogs            AuditLog[]
+  parentBillingProfile ParentBillingProfile?
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Org {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  timezone  String   @default("Europe/London")
+  settings  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships           UserOrgMembership[]
+  classes               Class[]
+  students              Student[]
+  studentClasses        StudentClass[]
+  attendance            Attendance[]
+  feesPlans             FeesPlan[]
+  invoices              Invoice[]
+  payments              Payment[]
+  parentBillingProfiles ParentBillingProfile[]
+  messages              Message[]
+  progressLogs          ProgressLog[]
+  holidays              Holiday[]
+  terms                 Term[]
+  exams                 Exam[]
+  supportTickets        SupportTicket[]
+  invitations           Invitation[]
+  auditLogs             AuditLog[]
+  platformBilling       PlatformOrgBilling?
+}
+
+model UserOrgMembership {
+  id     String @id @default(cuid())
+  userId String
+  orgId  String
+  role   Role
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  org  Org  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, orgId])
+}
+
+model Class {
+  id          String   @id @default(cuid())
+  orgId       String
+  name        String
+  description String?
+  schedule    Json
+  teacherId   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  org            Org            @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  teacher        User?          @relation("ClassTeacher", fields: [teacherId], references: [id])
+  studentClasses StudentClass[]
+  attendance     Attendance[]
+  exams          Exam[]
+}
+
+model Student {
+  id              String    @id @default(cuid())
+  orgId           String
+  firstName       String
+  lastName        String
+  dob             DateTime?
+  allergies       String?
+  medicalNotes    String?
+  primaryParentId String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  org            Org            @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  primaryParent  User?          @relation("StudentPrimaryParent", fields: [primaryParentId], references: [id])
+  studentClasses StudentClass[]
+  attendance     Attendance[]
+  invoices       Invoice[]
+  progressLogs   ProgressLog[]
+}
+
+model StudentClass {
+  id        String @id @default(cuid())
+  orgId     String
+  studentId String
+  classId   String
+
+  org     Org     @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  class   Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, classId])
+}
+
+model Attendance {
+  id        String           @id @default(cuid())
+  orgId     String
+  classId   String
+  studentId String
+  date      DateTime
+  status    AttendanceStatus
+
+  org     Org     @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  class   Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([classId, studentId, date])
+}
+
+model FeesPlan {
+  id        String   @id @default(cuid())
+  orgId     String
+  name      String
+  amountP   Int
+  cadence   Cadence  @default(MONTHLY)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  org Org @relation(fields: [orgId], references: [id], onDelete: Cascade)
+}
+
+model Invoice {
+  id         String         @id @default(cuid())
+  orgId      String
+  studentId  String
+  amountP    Int
+  dueDate    DateTime
+  status     InvoiceStatus  @default(DRAFT)
+  paidAt     DateTime?
+  paidMethod PaymentMethod?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  org      Org       @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  student  Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  payments Payment[]
+}
+
+model Payment {
+  id         String        @id @default(cuid())
+  orgId      String
+  invoiceId  String
+  method     PaymentMethod
+  amountP    Int
+  status     PaymentStatus @default(PENDING)
+  providerId String?
+  meta       Json?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  org     Org     @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+}
+
+model ParentBillingProfile {
+  id                     String   @id @default(cuid())
+  orgId                  String
+  parentUserId           String
+  stripeCustomerId       String?
+  defaultPaymentMethodId String?
+  autoPayEnabled         Boolean  @default(false)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  org        Org  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  parentUser User @relation(fields: [parentUserId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, parentUserId])
+  @@unique([parentUserId])
+}
+
+model Message {
+  id        String          @id @default(cuid())
+  orgId     String
+  title     String
+  body      String
+  audience  MessageAudience
+  channel   MessageChannel
+  status    MessageStatus   @default(DRAFT)
+  targets   Json?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  org Org @relation(fields: [orgId], references: [id], onDelete: Cascade)
+}
+
+model ProgressLog {
+  id          String   @id @default(cuid())
+  orgId       String
+  studentId   String
+  body        String
+  createdById String
+  createdAt   DateTime @default(now())
+
+  org       Org     @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdBy User    @relation(fields: [createdById], references: [id])
+}
+
+model Holiday {
+  id        String   @id @default(cuid())
+  orgId     String
+  name      String
+  startDate DateTime
+  endDate   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  org Org @relation(fields: [orgId], references: [id], onDelete: Cascade)
+}
+
+model Term {
+  id        String   @id @default(cuid())
+  orgId     String
+  name      String
+  startDate DateTime
+  endDate   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  org Org @relation(fields: [orgId], references: [id], onDelete: Cascade)
+}
+
+model Exam {
+  id        String   @id @default(cuid())
+  orgId     String
+  title     String
+  date      DateTime
+  classId   String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  org   Org    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  class Class? @relation(fields: [classId], references: [id], onDelete: Cascade)
+}
+
+model SupportTicket {
+  id          String              @id @default(cuid())
+  orgId       String
+  createdById String?
+  role        String
+  subject     String
+  body        String
+  status      SupportTicketStatus @default(OPEN)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  org       Org   @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  createdBy User? @relation(fields: [createdById], references: [id])
+}
+
+model Invitation {
+  id         String    @id @default(cuid())
+  orgId      String
+  email      String?
+  phone      String?
+  role       Role
+  token      String    @unique
+  expiresAt  DateTime
+  acceptedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  org Org @relation(fields: [orgId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  orgId       String?
+  actorUserId String?
+  action      String
+  targetType  String
+  targetId    String?
+  data        Json?
+  createdAt   DateTime @default(now())
+
+  org  Org?  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [actorUserId], references: [id])
+}
+
+model PlatformOrgBilling {
+  id                       String    @id @default(cuid())
+  orgId                    String    @unique
+  stripeCustomerId         String
+  stripeSubscriptionItemId String
+  lastUsageReportedAt      DateTime?
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+
+  org Org @relation(fields: [orgId], references: [id], onDelete: Cascade)
+}
+
+enum Role {
+  SUPERADMIN
+  OWNER
+  ADMIN
+  TEACHER
+  PARENT
+}
+
+enum AttendanceStatus {
+  PRESENT
+  LATE
+  ABSENT
+}
+
+enum Cadence {
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+}
+
+enum PaymentStatus {
+  PENDING
+  REQUIRES_ACTION
+  SUCCEEDED
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum MessageAudience {
+  ALL
+  BY_CLASS
+}
+
+enum MessageChannel {
+  EMAIL
+  WHATSAPP
+}
+
+enum MessageStatus {
+  DRAFT
+  SENT
+  FAILED
+}
+
+enum SupportTicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}

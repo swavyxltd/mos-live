@@ -1,0 +1,223 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { headers } from 'next/headers'
+import { stripe } from '@/lib/stripe'
+import { prisma } from '@/lib/prisma'
+import { sendPaymentFailedPlatform } from '@/lib/mail'
+
+export async function POST(request: NextRequest) {
+  const body = await request.text()
+  const signature = headers().get('stripe-signature')
+
+  if (!signature) {
+    return NextResponse.json({ error: 'No signature' }, { status: 400 })
+  }
+
+  let event: any
+
+  try {
+    event = stripe.webhooks.constructEvent(
+      body,
+      signature,
+      process.env.STRIPE_WEBHOOK_SECRET!
+    )
+  } catch (err: any) {
+    console.error('Webhook signature verification failed:', err.message)
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
+  }
+
+  try {
+    switch (event.type) {
+      case 'payment_intent.succeeded':
+        await handlePaymentIntentSucceeded(event.data.object)
+        break
+      
+      case 'payment_intent.payment_failed':
+        await handlePaymentIntentFailed(event.data.object)
+        break
+      
+      case 'setup_intent.succeeded':
+        await handleSetupIntentSucceeded(event.data.object)
+        break
+      
+      case 'invoice.payment_succeeded':
+        await handleInvoicePaymentSucceeded(event.data.object)
+        break
+      
+      case 'invoice.payment_failed':
+        await handleInvoicePaymentFailed(event.data.object)
+        break
+      
+      default:
+        console.log(`Unhandled event type: ${event.type}`)
+    }
+
+    return NextResponse.json({ received: true })
+  } catch (error) {
+    console.error('Webhook handler error:', error)
+    return NextResponse.json({ error: 'Webhook handler failed' }, { status: 500 })
+  }
+}
+
+async function handlePaymentIntentSucceeded(paymentIntent: any) {
+  const { metadata } = paymentIntent
+  
+  if (metadata.orgId && metadata.parentUserId && metadata.invoiceId) {
+    // Update payment record
+    await prisma.payment.updateMany({
+      where: {
+        providerId: paymentIntent.id,
+        orgId: metadata.orgId
+      },
+      data: {
+        status: 'SUCCEEDED'
+      }
+    })
+    
+    // Update invoice
+    await prisma.invoice.updateMany({
+      where: {
+        id: metadata.invoiceId,
+        orgId: metadata.orgId
+      },
+      data: {
+        status: 'PAID',
+        paidAt: new Date(),
+        paidMethod: 'CARD'
+      }
+    })
+    
+    // Log the action
+    await prisma.auditLog.create({
+      data: {
+        orgId: metadata.orgId,
+        action: 'PAYMENT_SUCCEEDED',
+        targetType: 'Payment',
+        data: {
+          paymentIntentId: paymentIntent.id,
+          amount: paymentIntent.amount,
+          invoiceId: metadata.invoiceId
+        }
+      }
+    })
+  }
+}
+
+async function handlePaymentIntentFailed(paymentIntent: any) {
+  const { metadata } = paymentIntent
+  
+  if (metadata.orgId && metadata.parentUserId && metadata.invoiceId) {
+    // Update payment record
+    await prisma.payment.updateMany({
+      where: {
+        providerId: paymentIntent.id,
+        orgId: metadata.orgId
+      },
+      data: {
+        status: 'FAILED'
+      }
+    })
+    
+    // Log the action
+    await prisma.auditLog.create({
+      data: {
+        orgId: metadata.orgId,
+        action: 'PAYMENT_FAILED',
+        targetType: 'Payment',
+        data: {
+          paymentIntentId: paymentIntent.id,
+          amount: paymentIntent.amount,
+          invoiceId: metadata.invoiceId,
+          failureReason: paymentIntent.last_payment_error?.message
+        }
+      }
+    })
+  }
+}
+
+async function handleSetupIntentSucceeded(setupIntent: any) {
+  const { metadata } = setupIntent
+  
+  if (metadata.orgId && metadata.parentUserId) {
+    // Update parent billing profile with default payment method
+    await prisma.parentBillingProfile.updateMany({
+      where: {
+        orgId: metadata.orgId,
+        parentUserId: metadata.parentUserId
+      },
+      data: {
+        defaultPaymentMethodId: setupIntent.payment_method
+      }
+    })
+    
+    // Log the action
+    await prisma.auditLog.create({
+      data: {
+        orgId: metadata.orgId,
+        action: 'PAYMENT_METHOD_SAVED',
+        targetType: 'ParentBillingProfile',
+        data: {
+          setupIntentId: setupIntent.id,
+          paymentMethodId: setupIntent.payment_method
+        }
+      }
+    })
+  }
+}
+
+async function handleInvoicePaymentSucceeded(invoice: any) {
+  // Handle platform billing invoice payment
+  if (invoice.metadata?.orgId) {
+    await prisma.auditLog.create({
+      data: {
+        orgId: invoice.metadata.orgId,
+        action: 'PLATFORM_BILLING_PAID',
+        targetType: 'PlatformOrgBilling',
+        data: {
+          stripeInvoiceId: invoice.id,
+          amount: invoice.amount_paid
+        }
+      }
+    })
+  }
+}
+
+async function handleInvoicePaymentFailed(invoice: any) {
+  // Handle platform billing invoice payment failure
+  if (invoice.metadata?.orgId) {
+    const org = await prisma.org.findUnique({
+      where: { id: invoice.metadata.orgId },
+      include: {
+        memberships: {
+          where: { role: 'OWNER' },
+          include: {
+            user: {
+              select: { email: true, name: true }
+            }
+          }
+        }
+      }
+    })
+    
+    if (org?.memberships[0]?.user?.email) {
+      // Send notification email
+      await sendPaymentFailedPlatform({
+        to: org.memberships[0].user.email,
+        orgName: org.name,
+        updateUrl: `${process.env.APP_BASE_URL}/settings/billing`
+      })
+    }
+    
+    await prisma.auditLog.create({
+      data: {
+        orgId: invoice.metadata.orgId,
+        action: 'PLATFORM_BILLING_FAILED',
+        targetType: 'PlatformOrgBilling',
+        data: {
+          stripeInvoiceId: invoice.id,
+          amount: invoice.amount_due,
+          failureReason: invoice.last_payment_error?.message
+        }
+      }
+    })
+  }
+}
