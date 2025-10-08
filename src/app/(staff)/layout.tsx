@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { getActiveOrg, getUserRoleInOrg } from '@/lib/org'
+import { Page } from '@/components/shell/page'
 
 export default async function StaffLayout({
   children,
@@ -34,5 +35,15 @@ export default async function StaffLayout({
     }
   }
   
-  return <>{children}</>
+  return (
+    <Page
+      user={session.user}
+      org={org}
+      userRole={userRole}
+      title="Staff Portal"
+      breadcrumbs={[{ label: 'Dashboard' }]}
+    >
+      {children}
+    </Page>
+  )
 }

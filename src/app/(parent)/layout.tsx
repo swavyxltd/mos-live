@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { getActiveOrg, getUserRoleInOrg } from '@/lib/org'
+import { Page } from '@/components/shell/page'
 
 export default async function ParentLayout({
   children,
@@ -25,8 +26,14 @@ export default async function ParentLayout({
   }
   
   return (
-    <>
+    <Page
+      user={session.user}
+      org={org}
+      userRole="PARENT"
+      title="Parent Portal"
+      breadcrumbs={[{ label: 'Dashboard' }]}
+    >
       {children}
-    </>
+    </Page>
   )
 }

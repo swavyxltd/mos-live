@@ -23,22 +23,22 @@ const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
     }
 
     return (
-      <Card ref={ref} className={cn("relative", className)} {...props}>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <p className="text-sm text-[var(--muted-foreground)]">{title}</p>
-              <p className="text-4xl font-semibold text-[var(--foreground)]">{value}</p>
+      <Card ref={ref} className={cn("relative h-32 sm:h-36 min-h-32 sm:min-h-36 hover:shadow-md hover:scale-[1.02] transition-all duration-200 cursor-pointer", className)} {...props}>
+        <CardContent className="p-3 sm:p-4 h-full flex flex-col justify-between">
+          <div className="flex items-start justify-between">
+            <div className="space-y-1 flex-1 min-w-0">
+              <p className="text-xs sm:text-sm text-[var(--muted-foreground)] whitespace-nowrap overflow-hidden text-ellipsis">{title}</p>
+              <p className="text-2xl sm:text-3xl font-semibold text-[var(--foreground)] whitespace-nowrap overflow-hidden text-ellipsis">{value}</p>
               {description && (
-                <p className="text-sm text-[var(--muted-foreground)]">{description}</p>
+                <p className="text-xs text-[var(--muted-foreground)] whitespace-nowrap overflow-hidden text-ellipsis">{description}</p>
               )}
               {detail && (
-                <p className="text-xs text-[var(--muted-foreground)]">{detail}</p>
+                <p className="text-xs text-[var(--muted-foreground)] whitespace-nowrap overflow-hidden text-ellipsis">{detail}</p>
               )}
             </div>
             {change && (
               <div className={cn(
-                "px-2 py-1 rounded-md text-xs font-medium",
+                "px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-xs font-medium flex-shrink-0 ml-1 sm:ml-2",
                 changeColor[change.type]
               )}>
                 {change.value}

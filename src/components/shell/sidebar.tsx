@@ -23,7 +23,7 @@ import {
   AlertTriangle,
   BarChart3,
   ChevronUp,
-  Plus
+  UserCheck
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -46,6 +46,7 @@ const staffNavigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
   { name: 'Classes', href: '/classes', icon: GraduationCap },
   { name: 'Students', href: '/students', icon: Users },
+  { name: 'Teachers', href: '/teachers', icon: UserCheck },
   { name: 'Attendance', href: '/attendance', icon: ClipboardList },
   { name: 'Fees', href: '/fees', icon: CreditCard },
   { name: 'Invoices', href: '/invoices', icon: FileText },
@@ -141,13 +142,6 @@ export function Sidebar({ user, org, userRole }: SidebarProps) {
             </Button>
           </div>
 
-          {/* Quick Create Button */}
-          <div className="px-6 py-4">
-            <Button className="w-full bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/90">
-              <Plus className="h-4 w-4 mr-2" />
-              Quick Create
-            </Button>
-          </div>
 
           {/* Navigation */}
           <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">

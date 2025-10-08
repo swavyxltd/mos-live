@@ -1,8 +1,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { getActiveOrg } from '@/lib/org'
-import { Button } from '@/components/ui/button'
-import { Calendar, Download } from 'lucide-react'
+import { AttendanceMarking } from '@/components/attendance-marking'
 
 export default async function AttendancePage() {
   const session = await getServerSession(authOptions)
@@ -57,31 +56,22 @@ export default async function AttendancePage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Attendance</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Attendance</h1>
           <p className="mt-1 text-sm text-gray-500">
             Track and manage student attendance.
           </p>
         </div>
-        <div className="flex space-x-3">
-          <Button variant="outline">
-            <Calendar className="h-4 w-4 mr-2" />
-            Mark Attendance
-          </Button>
-          <Button variant="outline">
-            <Download className="h-4 w-4 mr-2" />
-            Export CSV
-          </Button>
-        </div>
+        <AttendanceMarking />
       </div>
 
-      <div className="grid grid-cols-1 gap-6">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6">
         {attendanceData.map((record) => (
           <div key={record.id} className="bg-white shadow rounded-lg">
             <div className="px-4 py-5 sm:p-6">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
                 <div>
                   <h3 className="text-lg font-medium text-gray-900">
                     {record.class.name}
@@ -90,30 +80,30 @@ export default async function AttendancePage() {
                     {record.date.toLocaleDateString()} • {record.class.teacher}
                   </p>
                 </div>
-                <div className="flex space-x-4 text-sm">
-                  <div className="text-green-600">
+                <div className="flex flex-wrap gap-3 text-sm">
+                  <div className="text-green-600 bg-green-50 px-2 py-1 rounded">
                     <span className="font-medium">{record.present}</span> Present
                   </div>
-                  <div className="text-red-600">
+                  <div className="text-red-600 bg-red-50 px-2 py-1 rounded">
                     <span className="font-medium">{record.absent}</span> Absent
                   </div>
-                  <div className="text-yellow-600">
+                  <div className="text-yellow-600 bg-yellow-50 px-2 py-1 rounded">
                     <span className="font-medium">{record.late}</span> Late
                   </div>
                 </div>
               </div>
               
-              <div className="overflow-hidden">
+              <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Student
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Time
                       </th>
                     </tr>
@@ -121,10 +111,10 @@ export default async function AttendancePage() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {record.students.map((student: any, index: number) => (
                       <tr key={index}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {student.name}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                             student.status === 'PRESENT' 
                               ? 'bg-green-100 text-green-800'
@@ -135,7 +125,7 @@ export default async function AttendancePage() {
                             {student.status}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {student.time || '-'}
                         </td>
                       </tr>

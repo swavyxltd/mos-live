@@ -36,6 +36,31 @@ export function WaveChart({
     onFilterChange?.(value)
   }
 
+  // Filter data based on selected filter
+  const getFilteredData = () => {
+    const now = new Date()
+    
+    const filteredData = data.filter(item => {
+      const itemDate = new Date(item.date)
+      const daysDiff = Math.floor((now.getTime() - itemDate.getTime()) / (1000 * 60 * 60 * 24))
+      
+      switch (activeFilter) {
+        case '7d':
+          return daysDiff <= 7
+        case '30d':
+          return daysDiff <= 30
+        case '90d':
+          return daysDiff <= 90
+        default:
+          return true
+      }
+    })
+    
+    return filteredData
+  }
+
+  const filteredData = getFilteredData()
+
   return (
     <Card className={cn("", className)}>
       <CardHeader>
@@ -54,10 +79,10 @@ export function WaveChart({
                 size="sm"
                 onClick={() => handleFilterChange(option.value)}
                 className={cn(
-                  "h-8 px-3 text-xs",
+                  "h-8 px-3 text-xs transition-all duration-200",
                   activeFilter === option.value
-                    ? "bg-[var(--primary)] text-[var(--primary-foreground)]"
-                    : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                    ? "bg-[var(--primary)] text-[var(--primary-foreground)] shadow-sm"
+                    : "text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]"
                 )}
               >
                 {option.label}
@@ -68,8 +93,13 @@ export function WaveChart({
       </CardHeader>
       <CardContent>
         <div className="h-80 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+          {filteredData.length === 0 ? (
+            <div className="flex items-center justify-center h-full text-muted-foreground">
+              <p>No data available for the selected period</p>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={filteredData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
               <defs>
                 <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="var(--chart-1)" stopOpacity={0.3}/>
@@ -110,6 +140,7 @@ export function WaveChart({
               />
             </AreaChart>
           </ResponsiveContainer>
+          )}
         </div>
       </CardContent>
     </Card>
