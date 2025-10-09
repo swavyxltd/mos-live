@@ -1,10 +1,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { getActiveOrg } from '@/lib/org'
-import { TeachersList } from '@/components/teachers-list'
-import { Button } from '@/components/ui/button'
-import { Plus } from 'lucide-react'
-import Link from 'next/link'
+import { TeachersPageWrapper } from '@/components/teachers-page-wrapper'
 
 export default async function TeachersPage() {
   const session = await getServerSession(authOptions)
@@ -32,11 +29,12 @@ export default async function TeachersPage() {
         createdAt: new Date('2024-09-01'),
         updatedAt: new Date('2024-12-06'),
         classes: [
-          { id: 'class-1', name: 'Quran Recitation - Level 1' },
-          { id: 'class-3', name: 'Arabic Language - Level 1' }
+          { id: 'class-1', name: 'Quran Recitation - Level 1', students: 12 },
+          { id: 'class-3', name: 'Arabic Language - Level 1', students: 8 }
         ],
         _count: {
-          classes: 2
+          classes: 2,
+          students: 20
         }
       },
       {
@@ -49,10 +47,11 @@ export default async function TeachersPage() {
         createdAt: new Date('2024-09-01'),
         updatedAt: new Date('2024-12-06'),
         classes: [
-          { id: 'class-2', name: 'Islamic Studies - Level 2' }
+          { id: 'class-2', name: 'Islamic Studies - Level 2', students: 15 }
         ],
         _count: {
-          classes: 1
+          classes: 1,
+          students: 15
         }
       },
       {
@@ -66,7 +65,8 @@ export default async function TeachersPage() {
         updatedAt: new Date('2024-12-01'),
         classes: [],
         _count: {
-          classes: 0
+          classes: 0,
+          students: 0
         }
       },
       {
@@ -80,30 +80,14 @@ export default async function TeachersPage() {
         updatedAt: new Date('2024-12-06'),
         classes: [],
         _count: {
-          classes: 0
+          classes: 0,
+          students: 0
         }
       }
     ]
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Teachers</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Manage teachers and their login credentials.
-          </p>
-        </div>
-        <Link href="/teachers/new">
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Teacher
-          </Button>
-        </Link>
-      </div>
-
-      <TeachersList teachers={teachers} />
-    </div>
+    <TeachersPageWrapper initialTeachers={teachers} />
   )
 }

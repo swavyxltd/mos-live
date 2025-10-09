@@ -40,9 +40,10 @@ interface Teacher {
 
 interface TeachersListProps {
   teachers: Teacher[]
+  onEditTeacher?: (teacherId: string) => void
 }
 
-export function TeachersList({ teachers }: TeachersListProps) {
+export function TeachersList({ teachers, onEditTeacher }: TeachersListProps) {
   const [deleteTeacherId, setDeleteTeacherId] = useState<string | null>(null)
 
   const handleDeleteTeacher = async (teacherId: string, teacherName: string) => {
@@ -73,71 +74,6 @@ export function TeachersList({ teachers }: TeachersListProps) {
 
   return (
     <div className="space-y-6">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-white rounded-lg shadow-sm border">
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <UserCheck className="h-8 w-8 text-blue-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Total Teachers</p>
-                <p className="text-2xl font-bold text-gray-900">{teachers.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-white rounded-lg shadow-sm border">
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <Shield className="h-8 w-8 text-green-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Active</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {teachers.filter(t => t.isActive).length}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-white rounded-lg shadow-sm border">
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <GraduationCap className="h-8 w-8 text-purple-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">With Classes</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {teachers.filter(t => t._count.classes > 0).length}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-white rounded-lg shadow-sm border">
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <User className="h-8 w-8 text-orange-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Inactive</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {teachers.filter(t => !t.isActive).length}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Teachers Table */}
       <Card>
         <CardHeader>
@@ -148,9 +84,8 @@ export function TeachersList({ teachers }: TeachersListProps) {
             <TableHeader>
               <TableRow>
                 <TableHead>Teacher</TableHead>
-                <TableHead>Contact</TableHead>
-                <TableHead>Username</TableHead>
                 <TableHead>Classes</TableHead>
+                <TableHead>Students</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -169,26 +104,7 @@ export function TeachersList({ teachers }: TeachersListProps) {
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900">{teacher.name}</div>
-                        <div className="text-sm text-gray-500">ID: {teacher.id}</div>
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="space-y-1">
-                      <div className="flex items-center text-sm text-gray-600">
-                        <Mail className="h-4 w-4 mr-2" />
-                        {teacher.email}
-                      </div>
-                      <div className="flex items-center text-sm text-gray-600">
-                        <Phone className="h-4 w-4 mr-2" />
-                        {teacher.phone}
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center">
-                      <Key className="h-4 w-4 mr-2 text-gray-400" />
-                      <span className="text-sm font-mono text-gray-900">{teacher.username}</span>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -206,9 +122,29 @@ export function TeachersList({ teachers }: TeachersListProps) {
                     )}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={teacher.isActive ? 'default' : 'secondary'}>
-                      {teacher.isActive ? 'Active' : 'Inactive'}
-                    </Badge>
+                    <div className="flex items-center">
+                      <User className="h-4 w-4 mr-2 text-gray-400" />
+                      <span className="text-sm font-semibold text-gray-900">
+                        {teacher._count.students || 0} students
+                      </span>
+                    </div>
+                    {teacher._count.students > 0 && (
+                      <div className="mt-1">
+                        <div className="text-xs text-gray-500">
+                          {teacher.classes.length > 0 
+                            ? `Across ${teacher.classes.length} class${teacher.classes.length > 1 ? 'es' : ''}`
+                            : 'No active classes'
+                          }
+                        </div>
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center">
+                      <Badge variant={teacher.isActive ? 'default' : 'secondary'}>
+                        {teacher.isActive ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2">
@@ -217,11 +153,21 @@ export function TeachersList({ teachers }: TeachersListProps) {
                           <Eye className="h-4 w-4" />
                         </Button>
                       </Link>
-                      <Link href={`/teachers/${teacher.id}/edit`}>
-                        <Button variant="ghost" size="sm">
+                      {onEditTeacher ? (
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => onEditTeacher(teacher.id)}
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
-                      </Link>
+                      ) : (
+                        <Link href={`/teachers/${teacher.id}/edit`}>
+                          <Button variant="ghost" size="sm">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                      )}
                       <Button 
                         variant="ghost" 
                         size="sm" 

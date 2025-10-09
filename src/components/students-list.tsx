@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { StudentDetailModal } from '@/components/student-detail-modal'
 import { 
   Users, 
@@ -14,7 +15,6 @@ import {
   Heart, 
   AlertTriangle, 
   CheckCircle, 
-  MoreHorizontal,
   Eye,
   Edit,
   Trash2
@@ -114,13 +114,65 @@ export function StudentsList({ students, filters, onAddStudent, classes = [] }: 
   }
 
   const handleViewStudent = (student: Student) => {
-    setSelectedStudent(student)
+    // Format date objects as strings for the modal
+    const formattedStudent = {
+      ...student,
+      dateOfBirth: student.dateOfBirth instanceof Date ? student.dateOfBirth.toLocaleDateString() : student.dateOfBirth,
+      enrollmentDate: student.enrollmentDate instanceof Date ? student.enrollmentDate.toLocaleDateString() : student.enrollmentDate,
+      createdAt: student.createdAt instanceof Date ? student.createdAt.toLocaleDateString() : student.createdAt,
+      updatedAt: student.updatedAt instanceof Date ? student.updatedAt.toLocaleDateString() : student.updatedAt,
+      lastAttendance: student.lastAttendance instanceof Date ? student.lastAttendance.toLocaleDateString() : student.lastAttendance,
+      // Add missing fields for the modal
+      name: `${student.firstName} ${student.lastName}`,
+      firstName: student.firstName,
+      lastName: student.lastName,
+      age: student.age,
+      grade: student.grade,
+      address: student.address,
+      parentName: student.parentName,
+      parentEmail: student.parentEmail,
+      parentPhone: student.parentPhone,
+      emergencyContact: student.emergencyContact,
+      allergies: student.allergies,
+      medicalNotes: student.medicalNotes,
+      status: student.status,
+      overallAttendance: student.attendanceRate || 0,
+      weeklyAttendance: student.weeklyAttendance || [],
+      recentTrend: 'stable' as 'up' | 'down' | 'stable'
+    }
+    setSelectedStudent(formattedStudent)
     setStartInEditMode(false)
     setIsDetailModalOpen(true)
   }
 
   const handleEditStudent = (student: Student) => {
-    setSelectedStudent(student)
+    // Format date objects as strings for the modal
+    const formattedStudent = {
+      ...student,
+      dateOfBirth: student.dateOfBirth instanceof Date ? student.dateOfBirth.toLocaleDateString() : student.dateOfBirth,
+      enrollmentDate: student.enrollmentDate instanceof Date ? student.enrollmentDate.toLocaleDateString() : student.enrollmentDate,
+      createdAt: student.createdAt instanceof Date ? student.createdAt.toLocaleDateString() : student.createdAt,
+      updatedAt: student.updatedAt instanceof Date ? student.updatedAt.toLocaleDateString() : student.updatedAt,
+      lastAttendance: student.lastAttendance instanceof Date ? student.lastAttendance.toLocaleDateString() : student.lastAttendance,
+      // Add missing fields for the modal
+      name: `${student.firstName} ${student.lastName}`,
+      firstName: student.firstName,
+      lastName: student.lastName,
+      age: student.age,
+      grade: student.grade,
+      address: student.address,
+      parentName: student.parentName,
+      parentEmail: student.parentEmail,
+      parentPhone: student.parentPhone,
+      emergencyContact: student.emergencyContact,
+      allergies: student.allergies,
+      medicalNotes: student.medicalNotes,
+      status: student.status,
+      overallAttendance: student.attendanceRate || 0,
+      weeklyAttendance: student.weeklyAttendance || [],
+      recentTrend: 'stable' as 'up' | 'down' | 'stable'
+    }
+    setSelectedStudent(formattedStudent)
     setStartInEditMode(true)
     setIsDetailModalOpen(true)
   }
@@ -280,16 +332,17 @@ export function StudentsList({ students, filters, onAddStudent, classes = [] }: 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-500">Sort by:</span>
-          <select 
-            value={sortBy} 
-            onChange={(e) => setSortBy(e.target.value as any)}
-            className="text-sm border rounded px-2 py-1"
-          >
-            <option value="name">Name</option>
-            <option value="age">Age</option>
-            <option value="enrollment">Enrollment Date</option>
-            <option value="attendance">Attendance</option>
-          </select>
+          <Select value={sortBy} onValueChange={(value) => setSortBy(value as any)}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">Name</SelectItem>
+              <SelectItem value="age">Age</SelectItem>
+              <SelectItem value="enrollment">Enrollment Date</SelectItem>
+              <SelectItem value="attendance">Attendance</SelectItem>
+            </SelectContent>
+          </Select>
           <Button
             variant="outline"
             size="sm"
@@ -381,17 +434,6 @@ export function StudentsList({ students, filters, onAddStudent, classes = [] }: 
                         title="Edit student"
                       >
                         <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => {
-                          // TODO: Implement dropdown menu for more actions
-                          console.log('More actions for:', student.firstName, student.lastName)
-                        }}
-                        title="More actions"
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </div>
                   </TableCell>

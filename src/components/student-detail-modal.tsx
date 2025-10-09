@@ -1,523 +1,573 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Modal } from '@/components/ui/modal'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Select } from '@/components/ui/select'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { 
-  X, 
-  Mail, 
-  Phone, 
-  Calendar, 
-  Heart, 
-  Users, 
+  CheckCircle, 
+  XCircle, 
+  Clock, 
+  X,
+  User,
+  Calendar,
+  TrendingUp,
+  TrendingDown,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
+  Mail,
+  Phone,
+  MapPin,
+  Heart,
   AlertTriangle,
-  CheckCircle,
-  Edit,
-  Trash2,
-  Save,
-  X as CloseIcon,
-  BookOpen
+  GraduationCap,
+  UserCheck,
+  Shield
 } from 'lucide-react'
 
-interface Student {
+interface StudentDetail {
   id: string
+  name: string
   firstName: string
   lastName: string
-  email: string
-  phone: string
-  dateOfBirth: Date
+  dateOfBirth: string
   age: number
   grade: string
+  address: string
+  class: string
+  teacher: string
   parentName: string
   parentEmail: string
   parentPhone: string
-  address: string
   emergencyContact: string
   allergies: string
   medicalNotes: string
-  enrollmentDate: Date
-  status: string
-  classes: Array<{
-    id: string
-    name: string
-  }>
-  attendanceRate: number
-  lastAttendance: Date
-}
-
-interface Class {
-  id: string
-  name: string
-  grade: string
+  enrollmentDate: string
+  status: 'ACTIVE' | 'INACTIVE'
+  overallAttendance: number
+  weeklyAttendance: {
+    day: string
+    date: string
+    status: 'PRESENT' | 'ABSENT' | 'LATE' | 'NOT_SCHEDULED'
+    time?: string
+  }[]
+  recentTrend: 'up' | 'down' | 'stable'
 }
 
 interface StudentDetailModalProps {
-  student: Student | null
+  student: StudentDetail | null
   isOpen: boolean
   onClose: () => void
-  onEdit: (student: Student) => void
-  onDelete: (studentId: string) => void
+  onEdit?: (student: StudentDetail) => void
+  onDelete?: (studentId: string) => void
   startInEditMode?: boolean
-  classes?: Class[]
+  classes?: Array<{
+    id: string
+    name: string
+  }>
 }
 
-export function StudentDetailModal({ student, isOpen, onClose, onEdit, onDelete, startInEditMode = false, classes = [] }: StudentDetailModalProps) {
-  const [isEditing, setIsEditing] = useState(false)
-  const [editedStudent, setEditedStudent] = useState<Student | null>(null)
+export function StudentDetailModal({ 
+  student, 
+  isOpen, 
+  onClose, 
+  onEdit, 
+  onDelete, 
+  startInEditMode = false, 
+  classes = [] 
+}: StudentDetailModalProps) {
+  const [selectedWeek, setSelectedWeek] = useState(new Date())
+  const [showDateRange, setShowDateRange] = useState(false)
+  const [customStartDate, setCustomStartDate] = useState('')
+  const [customEndDate, setCustomEndDate] = useState('')
+  const [filteredStudent, setFilteredStudent] = useState(student)
 
-  // Initialize edited student when modal opens
   useEffect(() => {
-    if (student && isOpen) {
-      setEditedStudent({ ...student })
-      setIsEditing(startInEditMode)
+    if (student) {
+      setFilteredStudent(student)
     }
-  }, [student, isOpen, startInEditMode])
+  }, [student])
 
-  if (!student) return null
+  if (!isOpen || !student) return null
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'PRESENT':
+        return <CheckCircle className="h-4 w-4 text-green-600" />
+      case 'ABSENT':
+        return <XCircle className="h-4 w-4 text-red-600" />
+      case 'LATE':
+        return <Clock className="h-4 w-4 text-yellow-600" />
+      default:
+        return <div className="h-4 w-4 rounded-full bg-gray-300" />
+    }
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'ACTIVE':
-        return 'bg-green-100 text-green-800'
-      case 'INACTIVE':
-        return 'bg-gray-100 text-gray-800'
-      case 'SUSPENDED':
-        return 'bg-red-100 text-red-800'
-      case 'GRADUATED':
-        return 'bg-blue-100 text-blue-800'
+      case 'PRESENT':
+        return 'bg-green-100 text-green-800 border-green-200'
+      case 'ABSENT':
+        return 'bg-red-100 text-red-800 border-red-200'
+      case 'LATE':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200'
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-gray-100 text-gray-800 border-gray-200'
     }
   }
 
-  const getAttendanceColor = (rate: number) => {
-    if (rate >= 95) return 'text-green-600'
-    if (rate >= 90) return 'text-yellow-600'
-    if (rate >= 80) return 'text-orange-600'
-    return 'text-red-600'
-  }
-
-  const handleEdit = () => {
-    setIsEditing(true)
-  }
-
-  const handleSave = () => {
-    if (editedStudent) {
-      onEdit(editedStudent)
-      setIsEditing(false)
+  const getTrendIcon = (trend: string) => {
+    switch (trend) {
+      case 'up':
+        return <TrendingUp className="h-4 w-4 text-green-600" />
+      case 'down':
+        return <TrendingDown className="h-4 w-4 text-red-600" />
+      default:
+        return <div className="h-4 w-4 rounded-full bg-gray-400" />
     }
   }
 
-  const handleCancel = () => {
-    setEditedStudent({ ...student })
-    setIsEditing(false)
-  }
-
-  const handleFieldChange = (field: keyof Student, value: string | number | Date) => {
-    if (editedStudent) {
-      setEditedStudent({
-        ...editedStudent,
-        [field]: value
-      })
+  const getTrendColor = (trend: string) => {
+    switch (trend) {
+      case 'up':
+        return 'text-green-600'
+      case 'down':
+        return 'text-red-600'
+      default:
+        return 'text-gray-600'
     }
   }
 
-  const handleClassToggle = (classId: string) => {
-    if (editedStudent) {
-      const isCurrentlyEnrolled = editedStudent.classes.some(cls => cls.id === classId)
-      const classInfo = classes.find(c => c.id === classId)
+  const getWeekStart = (date: Date) => {
+    const start = new Date(date)
+    const day = start.getDay()
+    const diff = start.getDate() - day + (day === 0 ? -6 : 1) // Monday
+    start.setDate(diff)
+    return start
+  }
+
+  const getWeekEnd = (date: Date) => {
+    const end = new Date(date)
+    const day = end.getDay()
+    const diff = end.getDate() - day + (day === 0 ? 0 : 7) - (day === 0 ? 6 : 1) // Sunday
+    end.setDate(diff)
+    return end
+  }
+
+  const formatWeekRange = (date: Date) => {
+    const start = getWeekStart(date)
+    const end = getWeekEnd(date)
+    return `${start.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })} - ${end.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}`
+  }
+
+  const handlePreviousWeek = () => {
+    const previousWeek = new Date(selectedWeek)
+    previousWeek.setDate(previousWeek.getDate() - 7)
+    setSelectedWeek(previousWeek)
+    // In a real app, you would fetch student data for the selected week
+    console.log('Previous week selected:', previousWeek)
+  }
+
+  const handleNextWeek = () => {
+    const nextWeek = new Date(selectedWeek)
+    nextWeek.setDate(nextWeek.getDate() + 7)
+    
+    // Don't allow future weeks
+    const today = new Date()
+    if (nextWeek <= today) {
+      setSelectedWeek(nextWeek)
+      // In a real app, you would fetch student data for the selected week
+      console.log('Next week selected:', nextWeek)
+    }
+  }
+
+  const handleCurrentWeek = () => {
+    setSelectedWeek(new Date())
+  }
+
+  const handleCustomDateRange = () => {
+    if (customStartDate && customEndDate) {
+      const startDate = new Date(customStartDate)
+      const endDate = new Date(customEndDate)
+      const today = new Date()
       
-      if (isCurrentlyEnrolled) {
-        // Remove class
-        setEditedStudent({
-          ...editedStudent,
-          classes: editedStudent.classes.filter(cls => cls.id !== classId)
-        })
-      } else {
-        // Add class
-        if (classInfo) {
-          setEditedStudent({
-            ...editedStudent,
-            classes: [...editedStudent.classes, { id: classInfo.id, name: classInfo.name }]
-          })
-        }
+      // Don't allow future dates
+      if (startDate <= today && endDate <= today) {
+        setSelectedWeek(startDate)
+        console.log('Custom date range selected:', startDate, 'to', endDate)
+        setShowDateRange(false)
       }
     }
   }
 
-  const currentStudent = editedStudent || student
+  const handleClearCustomRange = () => {
+    setCustomStartDate('')
+    setCustomEndDate('')
+    setShowDateRange(false)
+    setSelectedWeek(new Date())
+  }
 
   return (
-    <Modal 
-      isOpen={isOpen} 
-      onClose={onClose}
-      title={`${currentStudent.firstName} ${currentStudent.lastName}`}
-      className="max-w-4xl"
+    <div 
+      className="fixed inset-0 bg-white/20 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      onClick={onClose}
     >
-      <div className="space-y-6">
-        {/* Student Header */}
-        <div className="flex items-center space-x-4">
-          <div className="h-16 w-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
-            <span className="text-2xl font-bold text-white">
-              {currentStudent.firstName.charAt(0)}{currentStudent.lastName.charAt(0)}
-            </span>
+      <div 
+        className="bg-white rounded-lg shadow-xl border border-gray-200 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="p-6">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <User className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">{student.name}</h2>
+                <p className="text-sm text-gray-600">{student.class} • {student.teacher}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {onEdit && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => onEdit(student)}
+                >
+                  Edit
+                </Button>
+              )}
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={onClose}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-          <div>
-            <p className="text-gray-600">Age {currentStudent.age} • Grade {currentStudent.grade}</p>
-            <Badge className={getStatusColor(currentStudent.status)}>
-              {currentStudent.status}
-            </Badge>
-          </div>
-        </div>
 
-        {/* Basic Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Basic Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-900">First Name</label>
-                {isEditing ? (
-                  <Input
-                    value={currentStudent.firstName}
-                    onChange={(e) => handleFieldChange('firstName', e.target.value)}
-                    className="w-full"
-                  />
-                ) : (
-                  <p className="text-sm text-gray-600">{currentStudent.firstName}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-900">Last Name</label>
-                {isEditing ? (
-                  <Input
-                    value={currentStudent.lastName}
-                    onChange={(e) => handleFieldChange('lastName', e.target.value)}
-                    className="w-full"
-                  />
-                ) : (
-                  <p className="text-sm text-gray-600">{currentStudent.lastName}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-900">Date of Birth</label>
-                {isEditing ? (
-                  <Input
-                    value={currentStudent.dateOfBirth.toISOString().split('T')[0]}
-                    onChange={(e) => handleFieldChange('dateOfBirth', new Date(e.target.value))}
-                    className="w-full"
-                    type="date"
-                  />
-                ) : (
-                  <p className="text-sm text-gray-600">{currentStudent.dateOfBirth.toLocaleDateString('en-GB')}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-900">Age</label>
-                <p className="text-sm text-gray-600">{currentStudent.age} years old</p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-900">Address</label>
-              {isEditing ? (
-                <Textarea
-                  value={currentStudent.address}
-                  onChange={(e) => handleFieldChange('address', e.target.value)}
-                  className="w-full"
-                  rows={2}
-                />
-              ) : (
-                <p className="text-sm text-gray-600">{currentStudent.address}</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Parent Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Parent Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-900">Parent Name</label>
-                {isEditing ? (
-                  <Input
-                    value={currentStudent.parentName}
-                    onChange={(e) => handleFieldChange('parentName', e.target.value)}
-                    className="w-full"
-                  />
-                ) : (
-                  <p className="text-sm text-gray-600">{currentStudent.parentName}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-900">Parent Email</label>
-                {isEditing ? (
-                  <Input
-                    value={currentStudent.parentEmail}
-                    onChange={(e) => handleFieldChange('parentEmail', e.target.value)}
-                    className="w-full"
-                    type="email"
-                  />
-                ) : (
-                  <p className="text-sm text-gray-600">{currentStudent.parentEmail}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-900">Parent Phone</label>
-                {isEditing ? (
-                  <Input
-                    value={currentStudent.parentPhone}
-                    onChange={(e) => handleFieldChange('parentPhone', e.target.value)}
-                    className="w-full"
-                    type="tel"
-                  />
-                ) : (
-                  <p className="text-sm text-gray-600">{currentStudent.parentPhone}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-900">Emergency Contact</label>
-                {isEditing ? (
-                  <Input
-                    value={currentStudent.emergencyContact}
-                    onChange={(e) => handleFieldChange('emergencyContact', e.target.value)}
-                    className="w-full"
-                  />
-                ) : (
-                  <p className="text-sm text-gray-600">{currentStudent.emergencyContact}</p>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Medical Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Heart className="h-5 w-5" />
-              Medical Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-900">Allergies</label>
-              {isEditing ? (
-                <Input
-                  value={currentStudent.allergies}
-                  onChange={(e) => handleFieldChange('allergies', e.target.value)}
-                  className="w-full"
-                  placeholder="Enter allergies or 'None'"
-                />
-              ) : (
-                <p className="text-sm text-gray-600">{currentStudent.allergies}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-900">Medical Notes</label>
-              {isEditing ? (
-                <Textarea
-                  value={currentStudent.medicalNotes}
-                  onChange={(e) => handleFieldChange('medicalNotes', e.target.value)}
-                  className="w-full"
-                  rows={3}
-                  placeholder="Enter any medical notes or conditions"
-                />
-              ) : (
-                <p className="text-sm text-gray-600">{currentStudent.medicalNotes || 'No medical notes'}</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Academic Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Academic Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-900">Grade</label>
-              {isEditing ? (
-                <Input
-                  value={currentStudent.grade}
-                  onChange={(e) => handleFieldChange('grade', e.target.value)}
-                  className="w-full"
-                  placeholder="Enter grade level"
-                />
-              ) : (
-                <p className="text-sm text-gray-600">Grade {currentStudent.grade}</p>
-              )}
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-900 mb-2">Enrolled Classes ({currentStudent.classes.length})</p>
-              {isEditing ? (
-                <div className="space-y-3">
-                  <p className="text-sm text-gray-500">Select classes for this student:</p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {classes.map((cls) => {
-                      const isEnrolled = currentStudent.classes.some(enrolledClass => enrolledClass.id === cls.id)
-                      return (
-                        <div
-                          key={cls.id}
-                          className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                            isEnrolled
-                              ? 'border-blue-500 bg-blue-50'
-                              : 'border-gray-200 hover:border-gray-300'
-                          }`}
-                          onClick={() => handleClassToggle(cls.id)}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="font-medium text-sm">{cls.name}</div>
-                              <div className="text-xs text-gray-500">Grade {cls.grade}</div>
-                            </div>
-                            <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
-                              isEnrolled
-                                ? 'border-blue-500 bg-blue-500'
-                                : 'border-gray-300'
-                            }`}>
-                              {isEnrolled && (
-                                <div className="w-2 h-2 bg-white rounded-sm"></div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    })}
+          {/* Student Information */}
+          <Card className="mb-4">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Student Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Full Name</label>
+                    <p className="text-lg font-semibold text-gray-900">{student.name}</p>
                   </div>
-                  {currentStudent.classes.length === 0 && (
-                    <p className="text-sm text-amber-600">No classes selected. Student will be enrolled later.</p>
-                  )}
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Age & Grade</label>
+                    <p className="text-gray-900">Age {student.age}, Grade {student.grade}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Date of Birth</label>
+                    <p className="text-gray-900">{student.dateOfBirth}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Address</label>
+                    <p className="text-gray-900 flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-gray-400" />
+                      {student.address}
+                    </p>
+                  </div>
                 </div>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {currentStudent.classes.map((cls) => (
-                    <Badge key={cls.id} variant="outline">
-                      {cls.name}
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Class & Teacher</label>
+                    <p className="text-gray-900 flex items-center gap-2">
+                      <GraduationCap className="h-4 w-4 text-gray-400" />
+                      {student.class} - {student.teacher}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Enrollment Date</label>
+                    <p className="text-gray-900">{student.enrollmentDate}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Status</label>
+                    <Badge className={student.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                      {student.status}
                     </Badge>
-                  ))}
-                  {currentStudent.classes.length === 0 && (
-                    <p className="text-sm text-gray-500">No classes enrolled</p>
-                  )}
+                  </div>
                 </div>
-              )}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-900">Attendance Rate</label>
-                {isEditing ? (
-                  <Input
-                    value={currentStudent.attendanceRate}
-                    onChange={(e) => handleFieldChange('attendanceRate', parseInt(e.target.value) || 0)}
-                    className="w-full"
-                    type="number"
-                    min="0"
-                    max="100"
-                  />
-                ) : (
-                  <p className={`text-2xl font-bold ${getAttendanceColor(currentStudent.attendanceRate)}`}>
-                    {currentStudent.attendanceRate}%
-                  </p>
-                )}
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-900">Status</label>
-                {isEditing ? (
-                  <Select
-                    value={currentStudent.status}
-                    onValueChange={(value) => handleFieldChange('status', value)}
-                  >
-                    <option value="ACTIVE">Active</option>
-                    <option value="INACTIVE">Inactive</option>
-                    <option value="SUSPENDED">Suspended</option>
-                    <option value="GRADUATED">Graduated</option>
-                  </Select>
-                ) : (
-                  <Badge className={getStatusColor(currentStudent.status)}>
-                    {currentStudent.status}
-                  </Badge>
-                )}
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-900">Enrollment Date</label>
-                {isEditing ? (
-                  <Input
-                    value={currentStudent.enrollmentDate.toISOString().split('T')[0]}
-                    onChange={(e) => handleFieldChange('enrollmentDate', new Date(e.target.value))}
-                    className="w-full"
-                    type="date"
-                  />
-                ) : (
-                  <p className="text-sm text-gray-600">{currentStudent.enrollmentDate.toLocaleDateString()}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-900">Last Attendance</label>
-                {isEditing ? (
-                  <Input
-                    value={currentStudent.lastAttendance.toISOString().split('T')[0]}
-                    onChange={(e) => handleFieldChange('lastAttendance', new Date(e.target.value))}
-                    className="w-full"
-                    type="date"
-                  />
-                ) : (
-                  <p className="text-sm text-gray-600">{currentStudent.lastAttendance.toLocaleDateString()}</p>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* Actions */}
-        <div className="flex items-center justify-end space-x-3 pt-4 border-t">
-          <Button variant="outline" onClick={onClose}>
-            Close
-          </Button>
-          {isEditing ? (
-            <>
-              <Button variant="outline" onClick={handleCancel}>
-                <CloseIcon className="h-4 w-4 mr-2" />
-                Cancel
-              </Button>
-              <Button onClick={handleSave}>
-                <Save className="h-4 w-4 mr-2" />
-                Save Changes
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button variant="outline" onClick={handleEdit}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Student
-              </Button>
-              <Button variant="destructive" onClick={() => onDelete(currentStudent.id)}>
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete Student
-              </Button>
-            </>
-          )}
+          {/* Parent Information */}
+          <Card className="mb-4">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <UserCheck className="h-5 w-5" />
+                Parent Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Parent Name</label>
+                    <p className="text-gray-900">{student.parentName}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Email</label>
+                    <p className="text-gray-900 flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-gray-400" />
+                      {student.parentEmail}
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Phone</label>
+                    <p className="text-gray-900 flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-gray-400" />
+                      {student.parentPhone}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Emergency Contact</label>
+                    <p className="text-gray-900 flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-gray-400" />
+                      {student.emergencyContact}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Medical Information */}
+          <Card className="mb-4">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Heart className="h-5 w-5" />
+                Medical Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Allergies</label>
+                  <p className="text-gray-900 flex items-center gap-2">
+                    {student.allergies && student.allergies !== 'None' ? (
+                      <AlertTriangle className="h-4 w-4 text-red-400" />
+                    ) : (
+                      <CheckCircle className="h-4 w-4 text-green-400" />
+                    )}
+                    {student.allergies || 'No known allergies'}
+                  </p>
+                </div>
+                {student.medicalNotes && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Medical Notes</label>
+                    <p className="text-gray-900">{student.medicalNotes}</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Attendance Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Attendance Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {/* Week Navigation */}
+              <div className="mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  {/* Week Navigation */}
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handlePreviousWeek}
+                      className="flex items-center gap-1"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Previous
+                    </Button>
+                    
+                    <div className="text-center min-w-0 flex-1">
+                      <div className="text-sm font-medium text-gray-900">
+                        {formatWeekRange(selectedWeek)}
+                      </div>
+                      <div className="text-xs text-gray-500">Week View</div>
+                    </div>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleNextWeek}
+                      disabled={new Date(selectedWeek.getTime() + 7 * 24 * 60 * 60 * 1000) > new Date()}
+                      className="flex items-center gap-1"
+                    >
+                      Next
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCurrentWeek}
+                      className="flex items-center gap-1"
+                    >
+                      <Calendar className="h-4 w-4" />
+                      This Week
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowDateRange(!showDateRange)}
+                      className={`flex items-center gap-1 ${
+                        showDateRange 
+                          ? 'bg-gray-100 border-gray-300 text-gray-900' 
+                          : 'border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      <Filter className="h-4 w-4" />
+                      Custom Range
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Custom Date Range Picker */}
+                {showDateRange && (
+                  <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Start Date
+                        </label>
+                        <input
+                          type="date"
+                          value={customStartDate}
+                          onChange={(e) => setCustomStartDate(e.target.value)}
+                          max={new Date().toISOString().split('T')[0]}
+                          className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-300 bg-white"
+                        />
+                      </div>
+                      
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          End Date
+                        </label>
+                        <input
+                          type="date"
+                          value={customEndDate}
+                          onChange={(e) => setCustomEndDate(e.target.value)}
+                          max={new Date().toISOString().split('T')[0]}
+                          className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-300 bg-white"
+                        />
+                      </div>
+                      
+                      <div className="flex items-end gap-2">
+                        <Button
+                          onClick={handleCustomDateRange}
+                          disabled={!customStartDate || !customEndDate}
+                          size="sm"
+                          className="px-4"
+                        >
+                          Apply
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={handleClearCustomRange}
+                          size="sm"
+                        >
+                          Clear
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Attendance Overview */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-center">
+                      <div className="text-3xl font-bold text-blue-600 mb-2">
+                        {student.overallAttendance}%
+                      </div>
+                      <div className="text-sm text-gray-600">Overall Attendance</div>
+                      <div className={`flex items-center justify-center gap-1 mt-2 ${getTrendColor(student.recentTrend)}`}>
+                        {getTrendIcon(student.recentTrend)}
+                        <span className="text-xs">
+                          {student.recentTrend === 'up' ? 'Improving' : 
+                           student.recentTrend === 'down' ? 'Declining' : 'Stable'}
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-gray-700 mb-2">
+                        {student.weeklyAttendance?.filter(d => d.status === 'PRESENT' || d.status === 'LATE').length || 0}
+                      </div>
+                      <div className="text-sm text-gray-600">Present This Week</div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        out of {student.weeklyAttendance?.filter(d => d.status !== 'NOT_SCHEDULED').length || 0} scheduled days
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Weekly Attendance Details */}
+              <div className="space-y-3">
+                {student.weeklyAttendance?.map((day, index) => (
+                  <div 
+                    key={index}
+                    className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
+                  >
+                    <div className="flex items-center gap-3">
+                      {getStatusIcon(day.status)}
+                      <div>
+                        <div className="font-medium text-gray-900">{day.day}</div>
+                        <div className="text-sm text-gray-500">{day.date}</div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      {day.time && (
+                        <div className="text-sm text-gray-500 min-w-[60px] text-right">{day.time}</div>
+                      )}
+                      <div className="min-w-[80px] text-right">
+                        <Badge className={`${getStatusColor(day.status)} w-full justify-center`}>
+                          {day.status === 'NOT_SCHEDULED' ? 'Not Scheduled' : day.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
-    </Modal>
+    </div>
   )
 }

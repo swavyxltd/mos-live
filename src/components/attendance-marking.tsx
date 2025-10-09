@@ -151,8 +151,8 @@ export function AttendanceMarking() {
 
       {/* Attendance Marking Modal */}
       {isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[95vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-white/20 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-lg shadow-xl border border-gray-200 w-full max-w-4xl max-h-[95vh] overflow-y-auto">
             <div className="p-3 sm:p-6">
               <div className="flex justify-between items-center mb-4 sm:mb-6">
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Mark Attendance</h2>
@@ -209,7 +209,7 @@ export function AttendanceMarking() {
 
                   <div className="space-y-3">
                     {selectedClass.students.map((student) => (
-                      <div key={student.id} className="flex items-center justify-between p-4 border rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                      <div key={student.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors shadow-sm">
                         <div className="flex items-center space-x-3 flex-1 min-w-0">
                           {getStatusIcon(student.status)}
                           <div className="flex-1 min-w-0">
@@ -261,7 +261,7 @@ export function AttendanceMarking() {
                     ))}
                   </div>
 
-                  <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t">
+                  <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
                     <Button 
                       variant="outline" 
                       onClick={() => setIsOpen(false)}

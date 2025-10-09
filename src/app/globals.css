@@ -87,3 +87,13 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
 }
+
+/* Ensure clickable elements show pointer cursor */
+a, button, [role="button"], [data-clickable="true"] {
+  cursor: pointer;
+}
+
+/* Ensure links inside buttons also show pointer cursor */
+a button {
+  cursor: pointer;
+}
