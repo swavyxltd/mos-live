@@ -1,8 +1,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { getActiveOrg } from '@/lib/org'
-import { Button } from '@/components/ui/button'
-import { Plus } from 'lucide-react'
+import { StudentsPageWrapper } from '@/components/students-page-wrapper'
 
 export default async function StudentsPage() {
   const session = await getServerSession(authOptions)
@@ -16,9 +15,34 @@ export default async function StudentsPage() {
   const { isDemoMode } = await import('@/lib/demo-mode')
   
   let students: any[] = []
+  let classes: any[] = []
 
   if (isDemoMode()) {
-    // Demo data for students
+    // Demo data for classes
+    classes = [
+      {
+        id: 'demo-class-1',
+        name: 'Quran Recitation - Level 1',
+        grade: '1-3'
+      },
+      {
+        id: 'demo-class-2',
+        name: 'Islamic Studies - Level 2',
+        grade: '4-6'
+      },
+      {
+        id: 'demo-class-3',
+        name: 'Arabic Grammar',
+        grade: '2-4'
+      },
+      {
+        id: 'demo-class-4',
+        name: 'Memorization - Level 1',
+        grade: '1-2'
+      }
+    ]
+
+    // Enhanced demo data for students
     students = [
       {
         id: 'demo-student-1',
@@ -27,18 +51,26 @@ export default async function StudentsPage() {
         email: 'ahmed.hassan@example.com',
         phone: '+44 7700 900001',
         dateOfBirth: new Date('2015-03-15'),
+        age: 9,
         grade: '3',
         parentName: 'Mohammed Hassan',
         parentEmail: 'mohammed.hassan@example.com',
         parentPhone: '+44 7700 900002',
         address: '123 Main Street, Leicester',
         emergencyContact: 'Fatima Hassan (+44 7700 900003)',
-        medicalInfo: 'No known allergies',
+        allergies: 'None',
+        medicalNotes: 'No known allergies or medical conditions',
         enrollmentDate: new Date('2024-09-01'),
         status: 'ACTIVE',
         orgId: org.id,
         createdAt: new Date('2024-09-01'),
-        updatedAt: new Date('2024-12-06')
+        updatedAt: new Date('2024-12-06'),
+        classes: [
+          { id: 'demo-class-1', name: 'Quran Recitation - Level 1' },
+          { id: 'demo-class-3', name: 'Arabic Grammar' }
+        ],
+        attendanceRate: 95,
+        lastAttendance: new Date('2024-12-05')
       },
       {
         id: 'demo-student-2',
@@ -47,18 +79,26 @@ export default async function StudentsPage() {
         email: 'fatima.ali@example.com',
         phone: '+44 7700 900004',
         dateOfBirth: new Date('2014-07-22'),
+        age: 10,
         grade: '4',
         parentName: 'Aisha Ali',
         parentEmail: 'aisha.ali@example.com',
         parentPhone: '+44 7700 900005',
         address: '456 Oak Avenue, Leicester',
         emergencyContact: 'Hassan Ali (+44 7700 900006)',
-        medicalInfo: 'Asthma - inhaler required',
+        allergies: 'Peanuts, Tree nuts',
+        medicalNotes: 'Asthma - inhaler required. Severe nut allergies - epipen available',
         enrollmentDate: new Date('2024-09-01'),
         status: 'ACTIVE',
         orgId: org.id,
         createdAt: new Date('2024-09-01'),
-        updatedAt: new Date('2024-12-06')
+        updatedAt: new Date('2024-12-06'),
+        classes: [
+          { id: 'demo-class-2', name: 'Islamic Studies - Level 2' },
+          { id: 'demo-class-3', name: 'Arabic Grammar' }
+        ],
+        attendanceRate: 88,
+        lastAttendance: new Date('2024-12-04')
       },
       {
         id: 'demo-student-3',
@@ -67,104 +107,117 @@ export default async function StudentsPage() {
         email: 'yusuf.patel@example.com',
         phone: '+44 7700 900007',
         dateOfBirth: new Date('2016-11-08'),
+        age: 8,
         grade: '2',
         parentName: 'Priya Patel',
         parentEmail: 'priya.patel@example.com',
         parentPhone: '+44 7700 900008',
         address: '789 Elm Street, Leicester',
         emergencyContact: 'Raj Patel (+44 7700 900009)',
-        medicalInfo: 'No known allergies',
+        allergies: 'None',
+        medicalNotes: 'No known allergies or medical conditions',
         enrollmentDate: new Date('2024-09-15'),
         status: 'ACTIVE',
         orgId: org.id,
         createdAt: new Date('2024-09-15'),
-        updatedAt: new Date('2024-12-06')
+        updatedAt: new Date('2024-12-06'),
+        classes: [
+          { id: 'demo-class-1', name: 'Quran Recitation - Level 1' },
+          { id: 'demo-class-4', name: 'Memorization - Level 1' }
+        ],
+        attendanceRate: 92,
+        lastAttendance: new Date('2024-12-05')
+      },
+      {
+        id: 'demo-student-4',
+        firstName: 'Mariam',
+        lastName: 'Ahmed',
+        email: 'mariam.ahmed@example.com',
+        phone: '+44 7700 900010',
+        dateOfBirth: new Date('2013-05-12'),
+        age: 11,
+        grade: '5',
+        parentName: 'Ahmed Mohammed',
+        parentEmail: 'ahmed.mohammed@example.com',
+        parentPhone: '+44 7700 900011',
+        address: '321 Pine Street, Leicester',
+        emergencyContact: 'Fatima Mohammed (+44 7700 900012)',
+        allergies: 'Dairy',
+        medicalNotes: 'Lactose intolerant - dairy-free meals required',
+        enrollmentDate: new Date('2024-08-20'),
+        status: 'ACTIVE',
+        orgId: org.id,
+        createdAt: new Date('2024-08-20'),
+        updatedAt: new Date('2024-12-06'),
+        classes: [
+          { id: 'demo-class-2', name: 'Islamic Studies - Level 2' }
+        ],
+        attendanceRate: 100,
+        lastAttendance: new Date('2024-12-05')
+      },
+      {
+        id: 'demo-student-5',
+        firstName: 'Hassan',
+        lastName: 'Khan',
+        email: 'hassan.khan@example.com',
+        phone: '+44 7700 900013',
+        dateOfBirth: new Date('2017-09-03'),
+        age: 7,
+        grade: '1',
+        parentName: 'Omar Khan',
+        parentEmail: 'omar.khan@example.com',
+        parentPhone: '+44 7700 900014',
+        address: '654 Cedar Lane, Leicester',
+        emergencyContact: 'Aisha Khan (+44 7700 900015)',
+        allergies: 'None',
+        medicalNotes: 'No known allergies or medical conditions',
+        enrollmentDate: new Date('2024-10-01'),
+        status: 'ACTIVE',
+        orgId: org.id,
+        createdAt: new Date('2024-10-01'),
+        updatedAt: new Date('2024-12-06'),
+        classes: [
+          { id: 'demo-class-1', name: 'Quran Recitation - Level 1' },
+          { id: 'demo-class-4', name: 'Memorization - Level 1' }
+        ],
+        attendanceRate: 85,
+        lastAttendance: new Date('2024-12-03')
+      },
+      {
+        id: 'demo-student-6',
+        firstName: 'Aisha',
+        lastName: 'Rahman',
+        email: 'aisha.rahman@example.com',
+        phone: '+44 7700 900016',
+        dateOfBirth: new Date('2015-12-18'),
+        age: 9,
+        grade: '3',
+        parentName: 'Abdul Rahman',
+        parentEmail: 'abdul.rahman@example.com',
+        parentPhone: '+44 7700 900017',
+        address: '987 Maple Drive, Leicester',
+        emergencyContact: 'Fatima Rahman (+44 7700 900018)',
+        allergies: 'Shellfish',
+        medicalNotes: 'Shellfish allergy - avoid seafood',
+        enrollmentDate: new Date('2024-11-01'),
+        status: 'ACTIVE',
+        orgId: org.id,
+        createdAt: new Date('2024-11-01'),
+        updatedAt: new Date('2024-12-06'),
+        classes: [
+          { id: 'demo-class-1', name: 'Quran Recitation - Level 1' },
+          { id: 'demo-class-3', name: 'Arabic Grammar' }
+        ],
+        attendanceRate: 90,
+        lastAttendance: new Date('2024-12-05')
       }
     ]
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Students</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Manage student information and enrollments.
-          </p>
-        </div>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Student
-        </Button>
-      </div>
-
-      <div className="bg-white shadow rounded-lg">
-        <div className="px-4 py-5 sm:p-6">
-          <div className="overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Student
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Grade
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Parent
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Enrollment Date
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {students.map((student) => (
-                  <tr key={student.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10">
-                          <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                            <span className="text-sm font-medium text-gray-700">
-                              {student.firstName.charAt(0)}{student.lastName.charAt(0)}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {student.firstName} {student.lastName}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {student.email}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      Grade {student.grade}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{student.parentName}</div>
-                      <div className="text-sm text-gray-500">{student.parentEmail}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                        {student.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {student.enrollmentDate.toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
+    <StudentsPageWrapper 
+      initialStudents={students} 
+      classes={classes} 
+    />
   )
 }
