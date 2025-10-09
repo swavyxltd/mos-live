@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { isDemoMode } from '@/lib/demo-mode'
 import { format } from 'date-fns'
-import { FileText, Download, CreditCard, Calendar, DollarSign } from 'lucide-react'
+import { FileText, CreditCard, Calendar, DollarSign } from 'lucide-react'
 
 export default function ParentInvoicesPage() {
   const { data: session, status } = useSession()
@@ -124,14 +124,32 @@ export default function ParentInvoicesPage() {
   }
 
   const handlePayNow = async (invoiceId: string) => {
-    // This would integrate with Stripe for payment processing
-    console.log('Pay now for invoice:', invoiceId)
+    try {
+      const response = await fetch('/api/payments/stripe/pay-now', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ invoiceId }),
+      })
+      
+      const result = await response.json()
+      
+      if (result.clientSecret) {
+        // In a real implementation, you'd integrate with Stripe Elements
+        // For now, we'll just show a success message
+        alert('Payment initiated successfully!')
+        // Refresh the invoices list
+        window.location.reload()
+      } else {
+        alert('Failed to initiate payment: ' + result.error)
+      }
+    } catch (error) {
+      console.error('Error initiating payment:', error)
+      alert('Failed to initiate payment')
+    }
   }
 
-  const handleDownloadPDF = async (invoiceId: string) => {
-    // This would generate and download the invoice PDF
-    console.log('Download PDF for invoice:', invoiceId)
-  }
 
   return (
     <Page user={session.user} org={org} userRole="PARENT" title="Invoices" breadcrumbs={[{ href: '/parent/invoices', label: 'Invoices' }]}>
@@ -236,13 +254,6 @@ export default function ParentInvoicesPage() {
                             Pay Now
                           </Button>
                         )}
-                        <Button
-                          variant="outline"
-                          onClick={() => handleDownloadPDF(invoice.id)}
-                        >
-                          <Download className="h-4 w-4 mr-2" />
-                          PDF
-                        </Button>
                       </div>
                     </div>
                   </div>

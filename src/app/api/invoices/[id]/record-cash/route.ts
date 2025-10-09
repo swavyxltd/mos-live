@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 
 const recordCashSchema = z.object({
   amountP: z.number().positive(),
+  method: z.enum(['CASH', 'DIRECT_DEBIT']),
   notes: z.string().optional()
 })
 
@@ -20,7 +21,7 @@ export async function POST(
     if (orgId instanceof NextResponse) return orgId
     
     const body = await request.json()
-    const { amountP, notes } = recordCashSchema.parse(body)
+    const { amountP, method, notes } = recordCashSchema.parse(body)
     
     const invoiceId = params.id
     
@@ -43,10 +44,10 @@ export async function POST(
       data: {
         orgId,
         invoiceId,
-        method: 'CASH',
+        method,
         amountP,
         status: 'SUCCEEDED',
-        providerId: `cash_${Date.now()}`,
+        providerId: `${method.toLowerCase()}_${Date.now()}`,
         meta: { notes }
       }
     })
@@ -57,7 +58,7 @@ export async function POST(
       data: {
         status: 'PAID',
         paidAt: new Date(),
-        paidMethod: 'CASH'
+        paidMethod: method
       }
     })
     
