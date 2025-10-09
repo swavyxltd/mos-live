@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Download, Eye, CreditCard, Filter, X } from 'lucide-react'
+import { Download, Eye, CreditCard, Filter, X } from 'lucide-react'
 import { isDemoMode } from '@/lib/demo-mode'
 import { format } from 'date-fns'
 import { InvoiceDetailModal } from '@/components/invoice-detail-modal'
@@ -42,7 +42,6 @@ export function InvoicesPageClient({ initialInvoices = [] }: InvoicesPageClientP
   const [invoices, setInvoices] = useState<Invoice[]>(initialInvoices)
   const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>(initialInvoices)
   const [loading, setLoading] = useState(false)
-  const [generating, setGenerating] = useState(false)
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
@@ -176,7 +175,7 @@ export function InvoicesPageClient({ initialInvoices = [] }: InvoicesPageClientP
         ]
         setClasses(demoClasses)
       } else {
-        const response = await fetch('/api/invoices')
+        const response = await fetch('/api/payments')
         const data = await response.json()
         setInvoices(data)
         
@@ -192,28 +191,6 @@ export function InvoicesPageClient({ initialInvoices = [] }: InvoicesPageClientP
     }
   }
 
-  const handleGenerateInvoices = async () => {
-    setGenerating(true)
-    try {
-      const response = await fetch('/api/invoices/generate-monthly', {
-        method: 'POST'
-      })
-      const result = await response.json()
-      
-      if (result.success) {
-        // Refresh the invoices list
-        await fetchInvoices()
-        alert(`Generated ${result.created} new invoices`)
-      } else {
-        alert('Failed to generate invoices: ' + result.error)
-      }
-    } catch (error) {
-      console.error('Error generating invoices:', error)
-      alert('Failed to generate invoices')
-    } finally {
-      setGenerating(false)
-    }
-  }
 
   const handleViewInvoice = async (invoiceId: string) => {
     const invoice = filteredInvoices.find(inv => inv.id === invoiceId)
@@ -230,7 +207,7 @@ export function InvoicesPageClient({ initialInvoices = [] }: InvoicesPageClientP
 
   const handleRecordPaymentSubmit = async (data: { amount: number; method: string; notes?: string }) => {
     try {
-      const response = await fetch(`/api/invoices/${paymentInvoiceId}/record-cash`, {
+      const response = await fetch(`/api/payments/${paymentInvoiceId}/record-cash`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -264,6 +241,74 @@ export function InvoicesPageClient({ initialInvoices = [] }: InvoicesPageClientP
     setSelectedInvoice(null)
   }
 
+  const handleExportCSV = () => {
+    // Create CSV headers
+    const headers = [
+      'Invoice Number',
+      'Student Name',
+      'Parent Name',
+      'Parent Email',
+      'Amount',
+      'Status',
+      'Due Date',
+      'Paid Date',
+      'Created Date',
+      'Payment Type'
+    ]
+
+    // Create CSV rows from filtered invoices
+    const csvRows = filteredInvoices.map(invoice => [
+      invoice.invoiceNumber,
+      invoice.studentName,
+      invoice.parentName,
+      invoice.parentEmail,
+      `£${invoice.amount.toFixed(2)}`,
+      invoice.status,
+      format(new Date(invoice.dueDate), 'dd/MM/yyyy'),
+      invoice.paidDate ? format(new Date(invoice.paidDate), 'dd/MM/yyyy') : '',
+      format(new Date(invoice.createdAt), 'dd/MM/yyyy'),
+      invoice.student?.hasStripeAutoPayment ? 'Auto Payment' : 'Manual Payment'
+    ])
+
+    // Combine headers and rows
+    const csvContent = [headers, ...csvRows]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n')
+
+    // Create and download the file
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    
+    // Generate filename with current date and filter info
+    const now = new Date()
+    const dateStr = format(now, 'yyyy-MM-dd')
+    let filename = `payments-export-${dateStr}`
+    
+    // Add filter info to filename
+    if (statusFilter !== 'all') {
+      filename += `-${statusFilter.toLowerCase()}`
+    }
+    if (paymentTypeFilter !== 'all') {
+      filename += `-${paymentTypeFilter}`
+    }
+    if (monthFilter !== 'all') {
+      filename += `-${monthFilter}`
+    }
+    if (classFilter !== 'all') {
+      const className = classes.find(c => c.id === classFilter)?.name || 'class'
+      filename += `-${className.replace(/\s+/g, '-').toLowerCase()}`
+    }
+    
+    filename += '.csv'
+    link.setAttribute('download', filename)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
 
   const getStatusBadge = (status: string) => {
     const variants = {
@@ -284,22 +329,15 @@ export function InvoicesPageClient({ initialInvoices = [] }: InvoicesPageClientP
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Manage student invoices and payments.
+            Manage student payments and invoices.
           </p>
         </div>
         <div className="flex space-x-3">
-          <Button 
-            onClick={handleGenerateInvoices}
-            disabled={generating}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            {generating ? 'Generating...' : 'Generate Invoices'}
-          </Button>
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleExportCSV}>
             <Download className="h-4 w-4 mr-2" />
-            Export
+            Export CSV
           </Button>
         </div>
       </div>

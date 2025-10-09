@@ -47,7 +47,7 @@ const navigation = [
   { name: 'Students', href: '/students', icon: Users },
   { name: 'Attendance', href: '/attendance', icon: ClipboardList },
   { name: 'Fees', href: '/fees', icon: CreditCard },
-  { name: 'Invoices', href: '/invoices', icon: FileText },
+  { name: 'Payments', href: '/payments', icon: FileText },
   { name: 'Messages', href: '/messages', icon: MessageSquare },
   { name: 'Calendar', href: '/calendar', icon: Calendar },
   { name: 'Support', href: '/support', icon: HelpCircle },

@@ -49,7 +49,7 @@ const staffNavigation = [
   { name: 'Teachers', href: '/teachers', icon: UserCheck },
   { name: 'Attendance', href: '/attendance', icon: ClipboardList },
   { name: 'Fees', href: '/fees', icon: CreditCard },
-  { name: 'Invoices', href: '/invoices', icon: FileText },
+  { name: 'Payments', href: '/payments', icon: FileText },
   { name: 'Messages', href: '/messages', icon: MessageSquare },
   { name: 'Calendar', href: '/calendar', icon: Calendar },
   { name: 'Support', href: '/support', icon: HelpCircle },
@@ -66,7 +66,7 @@ const ownerNavigation = [
 
 const parentNavigation = [
   { name: 'Dashboard', href: '/parent/dashboard', icon: Home },
-  { name: 'Invoices', href: '/parent/invoices', icon: CreditCard },
+  { name: 'Payments', href: '/parent/payments', icon: CreditCard },
   { name: 'Calendar', href: '/parent/calendar', icon: Calendar },
   { name: 'Support', href: '/parent/support', icon: HelpCircle },
 ]

@@ -30,7 +30,7 @@ interface ParentSidebarProps {
 
 const navigation = [
   { name: 'Dashboard', href: '/parent/dashboard', icon: Home },
-  { name: 'Invoices', href: '/parent/invoices', icon: CreditCard },
+  { name: 'Payments', href: '/parent/payments', icon: CreditCard },
   { name: 'Calendar', href: '/parent/calendar', icon: Calendar },
   { name: 'Support', href: '/parent/support', icon: HelpCircle },
 ]

@@ -93,7 +93,7 @@ export default function ParentInvoicesPage() {
       setLoading(false)
     } else {
       // Fetch real invoices from API
-      fetch('/api/invoices')
+      fetch('/api/payments')
         .then(res => res.json())
         .then(data => {
           setInvoices(data)
@@ -152,10 +152,10 @@ export default function ParentInvoicesPage() {
 
 
   return (
-    <Page user={session.user} org={org} userRole="PARENT" title="Invoices" breadcrumbs={[{ href: '/parent/invoices', label: 'Invoices' }]}>
+    <Page user={session.user} org={org} userRole="PARENT" title="Payments" breadcrumbs={[{ href: '/parent/payments', label: 'Payments' }]}>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--foreground)]">Invoices</h1>
+          <h1 className="text-2xl font-bold text-[var(--foreground)]">Payments</h1>
           <p className="mt-1 text-sm text-[var(--muted-foreground)]">
             View and manage your children's school fees and payments.
           </p>
