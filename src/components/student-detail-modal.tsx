@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { ArchiveButton } from '@/components/archive-button'
 import { 
   CheckCircle, 
   XCircle, 
@@ -45,6 +46,8 @@ interface StudentDetail {
   medicalNotes: string
   enrollmentDate: string
   status: 'ACTIVE' | 'INACTIVE'
+  isArchived: boolean
+  archivedAt?: string
   overallAttendance: number
   weeklyAttendance: {
     day: string
@@ -61,6 +64,7 @@ interface StudentDetailModalProps {
   onClose: () => void
   onEdit?: (student: StudentDetail) => void
   onDelete?: (studentId: string) => void
+  onArchive?: (studentId: string, isArchived: boolean) => void
   startInEditMode?: boolean
   classes?: Array<{
     id: string
@@ -74,6 +78,7 @@ export function StudentDetailModal({
   onClose, 
   onEdit, 
   onDelete, 
+  onArchive,
   startInEditMode = false, 
   classes = [] 
 }: StudentDetailModalProps) {
@@ -238,6 +243,14 @@ export function StudentDetailModal({
                 >
                   Edit
                 </Button>
+              )}
+              {onArchive && (
+                <ArchiveButton
+                  id={student.id}
+                  type="student"
+                  isArchived={student.isArchived}
+                  onArchiveChange={onArchive}
+                />
               )}
               <Button 
                 variant="outline" 

@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { StudentDetailModal } from '@/components/student-detail-modal'
-import { ArchiveButton } from '@/components/archive-button'
 import { 
   Users, 
   Phone, 
@@ -439,14 +438,6 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      {onStudentArchiveChange && (
-                        <ArchiveButton
-                          id={student.id}
-                          type="student"
-                          isArchived={student.isArchived}
-                          onArchiveChange={onStudentArchiveChange}
-                        />
-                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -463,6 +454,7 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
         onClose={handleCloseModal}
         onEdit={handleEditStudent}
         onDelete={handleDeleteStudent}
+        onArchive={onStudentArchiveChange}
         startInEditMode={startInEditMode}
         classes={classes}
       />
