@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { canAccessOwnerFeatures } from '@/lib/roles'
 import { getActiveOrg } from '@/lib/org'
 import { Page } from '@/components/shell/page'
+import { OwnerLayoutWrapper } from '@/components/owner-layout-wrapper'
 
 export default async function OwnerLayout({
   children,
@@ -33,7 +34,9 @@ export default async function OwnerLayout({
       title="Owner Portal"
       breadcrumbs={[{ label: 'Overview' }]}
     >
-      {children}
+      <OwnerLayoutWrapper userRole="OWNER">
+        {children}
+      </OwnerLayoutWrapper>
     </Page>
   )
 }

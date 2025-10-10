@@ -3,6 +3,7 @@ import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { getActiveOrg, getUserRoleInOrg } from '@/lib/org'
 import { Page } from '@/components/shell/page'
+import { StaffLayoutWrapper } from '@/components/staff-layout-wrapper'
 
 export default async function StaffLayout({
   children,
@@ -37,7 +38,9 @@ export default async function StaffLayout({
         title="Staff Portal"
         breadcrumbs={[{ label: 'Dashboard' }]}
       >
-        {children}
+        <StaffLayoutWrapper userRole={userRole}>
+          {children}
+        </StaffLayoutWrapper>
       </Page>
     )
   }
@@ -58,7 +61,9 @@ export default async function StaffLayout({
           title="Staff Portal"
           breadcrumbs={[{ label: 'Dashboard' }]}
         >
-          {children}
+          <StaffLayoutWrapper userRole={userRole}>
+            {children}
+          </StaffLayoutWrapper>
         </Page>
       )
     }
@@ -88,7 +93,9 @@ export default async function StaffLayout({
       title="Staff Portal"
       breadcrumbs={[{ label: 'Dashboard' }]}
     >
-      {children}
+      <StaffLayoutWrapper userRole={userRole}>
+        {children}
+      </StaffLayoutWrapper>
     </Page>
   )
 }
