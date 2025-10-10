@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { StudentDetailModal } from '@/components/student-detail-modal'
+import { EditStudentModal } from '@/components/edit-student-modal'
 import { 
   Users, 
   Phone, 
@@ -17,7 +18,8 @@ import {
   CheckCircle, 
   Eye,
   Edit,
-  Trash2
+  Trash2,
+  Archive
 } from 'lucide-react'
 
 interface Student {
@@ -68,14 +70,17 @@ interface StudentsListProps {
   onAddStudent?: () => void
   onStudentArchiveChange?: (id: string, isArchived: boolean) => void
   classes?: Class[]
+  showArchived?: boolean
 }
 
-export function StudentsList({ students, filters, onAddStudent, onStudentArchiveChange, classes = [] }: StudentsListProps) {
+export function StudentsList({ students, filters, onAddStudent, onStudentArchiveChange, classes = [], showArchived = false }: StudentsListProps) {
   const [sortBy, setSortBy] = useState<'name' | 'age' | 'enrollment' | 'attendance'>('name')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [startInEditMode, setStartInEditMode] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [studentToEdit, setStudentToEdit] = useState<Student | null>(null)
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -149,10 +154,10 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
   }
 
   const handleEditStudent = (student: Student) => {
-    // Format date objects as strings for the modal
+    // Format date objects as strings for the edit modal
     const formattedStudent = {
       ...student,
-      dateOfBirth: student.dateOfBirth instanceof Date ? student.dateOfBirth.toLocaleDateString() : student.dateOfBirth,
+      dateOfBirth: student.dateOfBirth instanceof Date ? student.dateOfBirth.toISOString().split('T')[0] : student.dateOfBirth,
       enrollmentDate: student.enrollmentDate instanceof Date ? student.enrollmentDate.toLocaleDateString() : student.enrollmentDate,
       createdAt: student.createdAt instanceof Date ? student.createdAt.toLocaleDateString() : student.createdAt,
       updatedAt: student.updatedAt instanceof Date ? student.updatedAt.toLocaleDateString() : student.updatedAt,
@@ -175,9 +180,8 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
       weeklyAttendance: student.weeklyAttendance || [],
       recentTrend: 'stable' as 'up' | 'down' | 'stable'
     }
-    setSelectedStudent(formattedStudent)
-    setStartInEditMode(true)
-    setIsDetailModalOpen(true)
+    setStudentToEdit(formattedStudent)
+    setIsEditModalOpen(true)
   }
 
   const handleDeleteStudent = (studentId: string) => {
@@ -190,6 +194,19 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
   const handleCloseModal = () => {
     setIsDetailModalOpen(false)
     setSelectedStudent(null)
+  }
+
+  const handleEditModalClose = () => {
+    setIsEditModalOpen(false)
+    setStudentToEdit(null)
+  }
+
+  const handleEditSave = (updatedStudent: any) => {
+    // TODO: Update the student in the list
+    console.log('Student updated:', updatedStudent)
+    setIsEditModalOpen(false)
+    setStudentToEdit(null)
+    // You might want to refresh the student list or update the local state here
   }
 
   // Filter students based on current filters
@@ -372,7 +389,7 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
                     </TableHeader>
             <TableBody>
               {sortedStudents.map((student) => (
-                <TableRow key={student.id}>
+                <TableRow key={student.id} className={student.isArchived ? 'bg-gray-50 opacity-75' : ''}>
                   <TableCell>
                     <div className="flex items-center space-x-3">
                       <div className={`h-10 w-10 rounded-full flex items-center justify-center ${getAttendanceBgColor(student.attendanceRate)}`}>
@@ -380,11 +397,22 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
                           {student.firstName.charAt(0)}{student.lastName.charAt(0)}
                         </span>
                       </div>
-                              <div>
-                                <div className="font-medium">
-                                  {student.firstName} {student.lastName}
-                                </div>
-                              </div>
+                      <div>
+                        <div className="font-medium flex items-center gap-2">
+                          {student.firstName} {student.lastName}
+                          {student.isArchived && (
+                            <Badge variant="secondary" className="text-xs">
+                              <Archive className="h-3 w-3 mr-1" />
+                              Archived
+                            </Badge>
+                          )}
+                        </div>
+                        {student.isArchived && student.archivedAt && (
+                          <div className="text-xs text-gray-500">
+                            Archived on {new Date(student.archivedAt).toLocaleDateString()}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -416,8 +444,8 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge className={getStatusColor(student.status)}>
-                      {student.status}
+                    <Badge className={student.isArchived ? 'bg-gray-100 text-gray-800' : getStatusColor(student.status)}>
+                      {student.isArchived ? 'ARCHIVED' : student.status}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -456,6 +484,15 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
         onDelete={handleDeleteStudent}
         onArchive={onStudentArchiveChange}
         startInEditMode={startInEditMode}
+        classes={classes}
+      />
+
+      {/* Edit Student Modal */}
+      <EditStudentModal
+        isOpen={isEditModalOpen}
+        onClose={handleEditModalClose}
+        onSave={handleEditSave}
+        student={studentToEdit}
         classes={classes}
       />
     </div>

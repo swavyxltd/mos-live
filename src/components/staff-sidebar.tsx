@@ -18,7 +18,8 @@ import {
   Crown,
   Building2,
   AlertTriangle,
-  BarChart3
+  BarChart3,
+  FileCheck
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -45,6 +46,7 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
   { name: 'Classes', href: '/classes', icon: GraduationCap },
   { name: 'Students', href: '/students', icon: Users },
+  { name: 'Applications', href: '/applications', icon: FileCheck },
   { name: 'Attendance', href: '/attendance', icon: ClipboardList },
   { name: 'Fees', href: '/fees', icon: CreditCard },
   { name: 'Payments', href: '/payments', icon: FileText },

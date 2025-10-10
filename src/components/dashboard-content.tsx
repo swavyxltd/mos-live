@@ -34,6 +34,7 @@ export function DashboardContent() {
   const pendingInvoices = 12
   const overduePayments = 3
   const newEnrollments = 5
+  const pendingApplications = 8
   
   // Handle filter changes
   const handleFilterChange = (filter: string) => {
@@ -251,13 +252,13 @@ export function DashboardContent() {
             icon={<BookOpen className="h-4 w-4" />}
           />
         </Link>
-        <Link href="/invoices" className="block">
+        <Link href="/applications" className="block">
           <StatCard
-            title="Pending Invoices"
-            value={pendingInvoices}
-            description="Outstanding payments"
-            detail="Follow up needed"
-            icon={<AlertCircle className="h-4 w-4" />}
+            title="Pending Applications"
+            value={pendingApplications}
+            description="New student applications"
+            detail="Review needed"
+            icon={<FileText className="h-4 w-4" />}
           />
         </Link>
         <Link href="/invoices" className="block">

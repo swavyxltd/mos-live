@@ -216,6 +216,62 @@ export default async function StudentsPage() {
         ],
         attendanceRate: 90,
         lastAttendance: new Date('2024-12-05')
+      },
+      // Archived students for demo
+      {
+        id: 'demo-student-archived-1',
+        firstName: 'Sarah',
+        lastName: 'Ahmed',
+        dateOfBirth: new Date('2012-08-15'),
+        age: 12,
+        grade: '6',
+        parentName: 'Hassan Ahmed',
+        parentEmail: 'hassan.ahmed@example.com',
+        parentPhone: '+44 7700 900020',
+        address: '456 Oak Street, Leicester',
+        emergencyContact: 'Amina Ahmed (+44 7700 900021)',
+        allergies: 'None',
+        medicalNotes: 'No known allergies or medical conditions',
+        enrollmentDate: new Date('2023-09-01'),
+        status: 'ACTIVE',
+        isArchived: true,
+        archivedAt: new Date('2024-11-15'),
+        orgId: org.id,
+        createdAt: new Date('2023-09-01'),
+        updatedAt: new Date('2024-11-15'),
+        classes: [
+          { id: 'demo-class-2', name: 'Islamic Studies - Level 2' }
+        ],
+        attendanceRate: 85,
+        lastAttendance: new Date('2024-11-14')
+      },
+      {
+        id: 'demo-student-archived-2',
+        firstName: 'Omar',
+        lastName: 'Khan',
+        dateOfBirth: new Date('2011-03-22'),
+        age: 13,
+        grade: '7',
+        parentName: 'Fatima Khan',
+        parentEmail: 'fatima.khan@example.com',
+        parentPhone: '+44 7700 900022',
+        address: '789 Pine Avenue, Leicester',
+        emergencyContact: 'Ahmed Khan (+44 7700 900023)',
+        allergies: 'Peanuts',
+        medicalNotes: 'Severe peanut allergy - carry epipen',
+        enrollmentDate: new Date('2022-09-01'),
+        status: 'ACTIVE',
+        isArchived: true,
+        archivedAt: new Date('2024-10-30'),
+        orgId: org.id,
+        createdAt: new Date('2022-09-01'),
+        updatedAt: new Date('2024-10-30'),
+        classes: [
+          { id: 'demo-class-1', name: 'Quran Recitation - Level 1' },
+          { id: 'demo-class-4', name: 'Memorization - Level 1' }
+        ],
+        attendanceRate: 78,
+        lastAttendance: new Date('2024-10-29')
       }
     ]
   } else {

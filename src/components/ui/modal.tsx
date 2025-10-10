@@ -19,17 +19,17 @@ export function Modal({ isOpen, onClose, title, children, className }: ModalProp
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+        className="fixed inset-0 bg-white/20 backdrop-blur-md"
         onClick={onClose}
       />
       
       {/* Modal */}
       <div className={cn(
-        "relative bg-white border border-gray-200 rounded-lg shadow-lg w-full max-w-4xl max-h-[90vh] flex flex-col",
+        "relative bg-white border border-gray-100 rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col",
         className
       )}>
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
+        <div className="flex items-center justify-between p-6 border-b border-gray-100 flex-shrink-0">
           <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
           <button
             onClick={onClose}

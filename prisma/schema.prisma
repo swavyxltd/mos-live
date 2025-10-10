@@ -16,12 +16,12 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -59,6 +59,7 @@ model User {
   supportTickets       SupportTicket[]
   auditLogs            AuditLog[]
   parentBillingProfile ParentBillingProfile?
+  reviewedApplications Application[]         @relation("ApplicationReviewer")
 }
 
 model VerificationToken {
@@ -74,7 +75,7 @@ model Org {
   name      String
   slug      String   @unique
   timezone  String   @default("Europe/London")
-  settings  Json?
+  settings  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -96,13 +97,14 @@ model Org {
   invitations           Invitation[]
   auditLogs             AuditLog[]
   platformBilling       PlatformOrgBilling?
+  applications          Application[]
 }
 
 model UserOrgMembership {
   id     String @id @default(cuid())
   userId String
   orgId  String
-  role   Role
+  role   String
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   org  Org  @relation(fields: [orgId], references: [id], onDelete: Cascade)
@@ -115,7 +117,7 @@ model Class {
   orgId       String
   name        String
   description String?
-  schedule    Json
+  schedule    String
   teacherId   String?
   isArchived  Boolean  @default(false)
   archivedAt DateTime?
@@ -170,7 +172,7 @@ model Attendance {
   classId   String
   studentId String
   date      DateTime
-  status    AttendanceStatus
+  status    String
 
   org     Org     @relation(fields: [orgId], references: [id], onDelete: Cascade)
   class   Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
@@ -184,7 +186,7 @@ model FeesPlan {
   orgId     String
   name      String
   amountP   Int
-  cadence   Cadence  @default(MONTHLY)
+  cadence   String   @default("MONTHLY")
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -198,9 +200,9 @@ model Invoice {
   studentId  String
   amountP    Int
   dueDate    DateTime
-  status     InvoiceStatus  @default(DRAFT)
+  status     String         @default("DRAFT")
   paidAt     DateTime?
-  paidMethod PaymentMethod?
+  paidMethod String?
   createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt
 
@@ -213,11 +215,11 @@ model Payment {
   id         String        @id @default(cuid())
   orgId      String
   invoiceId  String
-  method     PaymentMethod
+  method     String
   amountP    Int
-  status     PaymentStatus @default(PENDING)
+  status     String        @default("PENDING")
   providerId String?
-  meta       Json?
+  meta       String?
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
 
@@ -247,10 +249,10 @@ model Message {
   orgId     String
   title     String
   body      String
-  audience  MessageAudience
-  channel   MessageChannel
-  status    MessageStatus   @default(DRAFT)
-  targets   Json?
+  audience  String
+  channel   String
+  status    String          @default("DRAFT")
+  targets   String?
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
 
@@ -315,7 +317,7 @@ model SupportTicket {
   role        String
   subject     String
   body        String
-  status      SupportTicketStatus @default(OPEN)
+  status      String              @default("OPEN")
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
 
@@ -328,7 +330,7 @@ model Invitation {
   orgId      String
   email      String?
   phone      String?
-  role       Role
+  role       String
   token      String    @unique
   expiresAt  DateTime
   acceptedAt DateTime?
@@ -344,7 +346,7 @@ model AuditLog {
   action      String
   targetType  String
   targetId    String?
-  data        Json?
+  data        String?
   createdAt   DateTime @default(now())
 
   org  Org?  @relation(fields: [orgId], references: [id], onDelete: Cascade)
@@ -363,65 +365,40 @@ model PlatformOrgBilling {
   org Org @relation(fields: [orgId], references: [id], onDelete: Cascade)
 }
 
-enum Role {
-  SUPERADMIN
-  OWNER
-  ADMIN
-  TEACHER
-  PARENT
+model Application {
+  id                String            @id @default(cuid())
+  orgId             String
+  status            String             @default("NEW")
+  guardianName      String
+  guardianPhone     String
+  guardianEmail     String
+  guardianAddress   String?
+  preferredClass    String?
+  preferredTerm     String?
+  preferredStartDate DateTime?
+  additionalNotes   String?
+  adminNotes        String?
+  submittedAt       DateTime          @default(now())
+  reviewedAt        DateTime?
+  reviewedById      String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  org         Org              @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  reviewedBy  User?            @relation("ApplicationReviewer", fields: [reviewedById], references: [id])
+  children    ApplicationChild[]
 }
 
-enum AttendanceStatus {
-  PRESENT
-  LATE
-  ABSENT
+model ApplicationChild {
+  id            String      @id @default(cuid())
+  applicationId String
+  firstName     String
+  lastName      String
+  dob           DateTime?
+  gender        String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 }
 
-enum Cadence {
-  MONTHLY
-  QUARTERLY
-  YEARLY
-}
-
-enum InvoiceStatus {
-  DRAFT
-  SENT
-  PAID
-  OVERDUE
-}
-
-enum PaymentMethod {
-  CASH
-  CARD
-}
-
-enum PaymentStatus {
-  PENDING
-  REQUIRES_ACTION
-  SUCCEEDED
-  FAILED
-  CANCELLED
-  REFUNDED
-}
-
-enum MessageAudience {
-  ALL
-  BY_CLASS
-}
-
-enum MessageChannel {
-  EMAIL
-  WHATSAPP
-}
-
-enum MessageStatus {
-  DRAFT
-  SENT
-  FAILED
-}
-
-enum SupportTicketStatus {
-  OPEN
-  IN_PROGRESS
-  RESOLVED
-}

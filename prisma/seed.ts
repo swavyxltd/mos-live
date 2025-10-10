@@ -14,11 +14,11 @@ async function main() {
       name: 'Leicester Islamic Centre',
       slug: 'leicester-islamic-centre',
       timezone: 'Europe/London',
-      settings: {
+      settings: JSON.stringify({
         lateThreshold: 15, // 15 minutes
         remindersEnabled: true,
         hijriCalendar: false
-      }
+      })
     }
   })
 
@@ -116,11 +116,11 @@ async function main() {
       name: 'Quran Class - Level 1',
       description: 'Basic Quran recitation and memorization for beginners',
       teacherId: users[2].id, // Omar Khan
-      schedule: {
+      schedule: JSON.stringify({
         days: ['monday', 'tuesday', 'wednesday', 'thursday'],
         startTime: '17:30',
         endTime: '19:00'
-      }
+      })
     }
   })
 
@@ -292,7 +292,7 @@ async function main() {
       audience: 'ALL',
       channel: 'EMAIL',
       status: 'SENT',
-      targets: { allParents: true }
+      targets: JSON.stringify({ allParents: true })
     }
   })
 
@@ -357,7 +357,7 @@ async function main() {
         action: 'CREATE_STUDENT',
         targetType: 'Student',
         targetId: students[0].id,
-        data: { studentName: 'Hassan Patel' }
+        data: JSON.stringify({ studentName: 'Hassan Patel' })
       }
     }),
     prisma.auditLog.create({
@@ -367,7 +367,7 @@ async function main() {
         action: 'CREATE_INVOICE',
         targetType: 'Invoice',
         targetId: invoices[0].id,
-        data: { amount: 5000, studentName: 'Hassan Patel' }
+        data: JSON.stringify({ amount: 5000, studentName: 'Hassan Patel' })
       }
     }),
     prisma.auditLog.create({
@@ -377,7 +377,7 @@ async function main() {
         action: 'SEND_MESSAGE',
         targetType: 'Message',
         targetId: 'msg_1',
-        data: { title: 'Welcome to the New Academic Year' }
+        data: JSON.stringify({ title: 'Welcome to the New Academic Year' })
       }
     })
   ])
@@ -402,11 +402,11 @@ async function main() {
       name: 'Manchester Islamic School',
       slug: 'manchester-islamic-school',
       timezone: 'Europe/London',
-      settings: {
+      settings: JSON.stringify({
         lateThreshold: 10,
         remindersEnabled: true,
         hijriCalendar: true
-      }
+      })
     }
   })
 
@@ -415,11 +415,11 @@ async function main() {
       name: 'Birmingham Quran Academy',
       slug: 'birmingham-quran-academy',
       timezone: 'Europe/London',
-      settings: {
+      settings: JSON.stringify({
         lateThreshold: 20,
         remindersEnabled: false,
         hijriCalendar: false
-      }
+      })
     }
   })
 
@@ -510,11 +510,11 @@ async function main() {
         name: 'Arabic Language Class',
         description: 'Basic Arabic reading and writing',
         teacherId: additionalUsers[1].id,
-        schedule: {
+        schedule: JSON.stringify({
           days: ['monday', 'wednesday', 'friday'],
           startTime: '16:00',
           endTime: '17:30'
-        }
+        })
       }
     }),
     prisma.class.create({
@@ -523,11 +523,11 @@ async function main() {
         name: 'Quran Memorization',
         description: 'Advanced Quran memorization techniques',
         teacherId: users[2].id, // Omar Khan
-        schedule: {
+        schedule: JSON.stringify({
           days: ['tuesday', 'thursday', 'saturday'],
           startTime: '18:00',
           endTime: '19:30'
-        }
+        })
       }
     })
   ])
@@ -561,7 +561,7 @@ async function main() {
         action: 'CREATE_ORG',
         targetType: 'Organization',
         targetId: org2.id,
-        data: { orgName: org2.name }
+        data: JSON.stringify({ orgName: org2.name })
       }
     }),
     prisma.auditLog.create({
@@ -571,7 +571,7 @@ async function main() {
         action: 'CREATE_ORG',
         targetType: 'Organization',
         targetId: org3.id,
-        data: { orgName: org3.name }
+        data: JSON.stringify({ orgName: org3.name })
       }
     })
   ])

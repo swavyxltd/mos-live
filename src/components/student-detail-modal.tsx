@@ -308,8 +308,8 @@ export function StudentDetailModal({
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-500">Status</label>
-                    <Badge className={student.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                      {student.status}
+                    <Badge className={student.isArchived ? 'bg-red-100 text-red-800' : (student.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800')}>
+                      {student.isArchived ? 'ARCHIVED' : student.status}
                     </Badge>
                   </div>
                 </div>

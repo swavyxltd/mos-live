@@ -14,13 +14,8 @@ export async function POST(
     if (orgId instanceof NextResponse) return orgId
     
     const { id } = params
-    const { action } = await request.json() // 'archive' or 'unarchive'
+    const { isArchived } = await request.json()
     
-    if (!['archive', 'unarchive'].includes(action)) {
-      return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
-    }
-    
-    const isArchived = action === 'archive'
     const archivedAt = isArchived ? new Date() : null
     
     // Update student
@@ -48,22 +43,18 @@ export async function POST(
       data: {
         orgId,
         actorUserId: session.user.id,
-        action: isArchived ? 'STUDENT_ARCHIVED' : 'STUDENT_UNARCHIVED',
-        targetType: 'Student',
+        action: isArchived ? 'ARCHIVE' : 'UNARCHIVE',
+        targetType: 'STUDENT',
         targetId: id,
         data: {
           studentName: `${student.firstName} ${student.lastName}`,
-          action,
+          isArchived,
           timestamp: new Date().toISOString()
         }
       }
     })
     
-    return NextResponse.json({ 
-      success: true, 
-      student,
-      message: `Student ${isArchived ? 'archived' : 'unarchived'} successfully`
-    })
+    return NextResponse.json(student)
   } catch (error) {
     console.error('Archive student error:', error)
     return NextResponse.json({ error: 'Failed to archive student' }, { status: 500 })

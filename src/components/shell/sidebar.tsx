@@ -24,7 +24,8 @@ import {
   AlertTriangle,
   BarChart3,
   ChevronUp,
-  UserCheck
+  UserCheck,
+  FileCheck
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -47,6 +48,7 @@ const staffNavigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
   { name: 'Classes', href: '/classes', icon: GraduationCap },
   { name: 'Students', href: '/students', icon: Users },
+  { name: 'Applications', href: '/applications', icon: FileCheck },
   { name: 'Teachers', href: '/teachers', icon: UserCheck },
   { name: 'Attendance', href: '/attendance', icon: ClipboardList },
   { name: 'Fees', href: '/fees', icon: CreditCard },

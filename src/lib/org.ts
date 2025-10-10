@@ -94,3 +94,9 @@ export async function getUserRoleInOrg(userId: string, orgId: string): Promise<R
   
   return membership?.role || null
 }
+
+export async function getOrgBySlug(slug: string) {
+  return prisma.org.findUnique({
+    where: { slug }
+  })
+}

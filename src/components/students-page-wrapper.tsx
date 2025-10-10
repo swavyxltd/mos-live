@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Plus, Users, Calendar, Heart, AlertTriangle } from 'lucide-react'
+import { Plus, Users, Calendar, Heart, AlertTriangle, Archive, ArchiveRestore } from 'lucide-react'
 import { StudentsPageClient } from '@/components/students-page-client'
 import { AddStudentModal } from '@/components/add-student-modal'
 import { AddStudentSuccessModal } from '@/components/add-student-success-modal'
@@ -51,6 +51,7 @@ export function StudentsPageWrapper({ initialStudents, classes }: StudentsPageWr
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false)
   const [newStudentData, setNewStudentData] = useState<any>(null)
+  const [showArchived, setShowArchived] = useState(false)
 
   const handleAddStudent = (studentData: any) => {
     // Add the new student to the list
@@ -96,12 +97,30 @@ export function StudentsPageWrapper({ initialStudents, classes }: StudentsPageWr
             Manage student information and enrollments.
           </p>
         </div>
-        <Button onClick={() => {
-          setIsAddModalOpen(true)
-        }}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Student
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant={showArchived ? "default" : "outline"}
+            onClick={() => setShowArchived(!showArchived)}
+          >
+            {showArchived ? (
+              <>
+                <ArchiveRestore className="h-4 w-4 mr-2" />
+                Show Active
+              </>
+            ) : (
+              <>
+                <Archive className="h-4 w-4 mr-2" />
+                Show Archived
+              </>
+            )}
+          </Button>
+          <Button onClick={() => {
+            setIsAddModalOpen(true)
+          }}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Student
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -112,8 +131,15 @@ export function StudentsPageWrapper({ initialStudents, classes }: StudentsPageWr
               <Users className="h-8 w-8 text-blue-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Total Students</p>
-              <p className="text-2xl font-semibold text-gray-900">{students.length}</p>
+              <p className="text-sm font-medium text-gray-500">
+                {showArchived ? 'Archived Students' : 'Total Students'}
+              </p>
+              <p className="text-2xl font-semibold text-gray-900">
+                {showArchived 
+                  ? students.filter(s => s.isArchived).length 
+                  : students.filter(s => !s.isArchived).length
+                }
+              </p>
             </div>
           </div>
         </div>
@@ -163,10 +189,11 @@ export function StudentsPageWrapper({ initialStudents, classes }: StudentsPageWr
 
       {/* Filters and Students List */}
       <StudentsPageClient 
-        students={students} 
+        students={showArchived ? students.filter(s => s.isArchived) : students.filter(s => !s.isArchived)} 
         classes={classes} 
         onAddStudent={handleAddStudent}
         onStudentArchiveChange={handleStudentArchiveChange}
+        showArchived={showArchived}
       />
       
       {/* Add Student Modal */}

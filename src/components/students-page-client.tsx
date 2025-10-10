@@ -44,9 +44,10 @@ interface StudentsPageClientProps {
   classes: Class[]
   onAddStudent?: (studentData: any) => void
   onStudentArchiveChange?: (id: string, isArchived: boolean) => void
+  showArchived?: boolean
 }
 
-export function StudentsPageClient({ students, classes, onAddStudent, onStudentArchiveChange }: StudentsPageClientProps) {
+export function StudentsPageClient({ students, classes, onAddStudent, onStudentArchiveChange, showArchived = false }: StudentsPageClientProps) {
   const [filters, setFilters] = useState({
     search: '',
     selectedClass: '',
@@ -81,6 +82,7 @@ export function StudentsPageClient({ students, classes, onAddStudent, onStudentA
         onAddStudent={() => setIsAddModalOpen(true)}
         onStudentArchiveChange={onStudentArchiveChange}
         classes={classes}
+        showArchived={showArchived}
       />
       <AddStudentModal
         isOpen={isAddModalOpen}

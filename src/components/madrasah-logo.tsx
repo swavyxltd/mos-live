@@ -4,13 +4,22 @@ interface MadrasahLogoProps {
   className?: string
   showText?: boolean
   textSize?: 'sm' | 'md' | 'lg'
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'lg-sm'
 }
 
-export function MadrasahLogo({ className = '', showText = true, textSize = 'md' }: MadrasahLogoProps) {
+export function MadrasahLogo({ className = '', showText = true, textSize = 'md', size = 'md' }: MadrasahLogoProps) {
   const textSizeClasses = {
     sm: 'text-xs',
     md: 'text-sm',
     lg: 'text-lg'
+  }
+
+  const logoSizeClasses = {
+    sm: 'w-32 h-6',
+    md: 'w-48 h-10',
+    lg: 'w-64 h-12',
+    'lg-sm': 'w-56 h-12',
+    xl: 'w-72 h-15'
   }
 
   return (
@@ -20,7 +29,7 @@ export function MadrasahLogo({ className = '', showText = true, textSize = 'md' 
         <img 
           src="/madrasah-logo.png" 
           alt="Madrasah OS Logo" 
-          className="w-48 h-10 object-contain"
+          className={`${logoSizeClasses[size]} object-contain`}
         />
       </div>
       
