@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { StudentDetailModal } from '@/components/student-detail-modal'
+import { ArchiveButton } from '@/components/archive-button'
 import { 
   Users, 
   Phone, 
@@ -38,6 +39,8 @@ interface Student {
   medicalNotes: string
   enrollmentDate: Date
   status: string
+  isArchived: boolean
+  archivedAt?: Date
   classes: Array<{
     id: string
     name: string
@@ -64,10 +67,11 @@ interface StudentsListProps {
     status: string
   }
   onAddStudent?: () => void
+  onStudentArchiveChange?: (id: string, isArchived: boolean) => void
   classes?: Class[]
 }
 
-export function StudentsList({ students, filters, onAddStudent, classes = [] }: StudentsListProps) {
+export function StudentsList({ students, filters, onAddStudent, onStudentArchiveChange, classes = [] }: StudentsListProps) {
   const [sortBy, setSortBy] = useState<'name' | 'age' | 'enrollment' | 'attendance'>('name')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
@@ -435,6 +439,14 @@ export function StudentsList({ students, filters, onAddStudent, classes = [] }: 
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
+                      {onStudentArchiveChange && (
+                        <ArchiveButton
+                          id={student.id}
+                          type="student"
+                          isArchived={student.isArchived}
+                          onArchiveChange={onStudentArchiveChange}
+                        />
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

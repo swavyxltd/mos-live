@@ -185,11 +185,12 @@ export default async function ParentDashboardPage() {
       }
     ]
   } else {
-    // Get parent's students from database
+    // Get parent's students from database (excluding archived)
     students = await prisma.student.findMany({
       where: { 
         orgId: org.id,
-        primaryParentId: session.user.id
+        primaryParentId: session.user.id,
+        isArchived: false
       },
       include: {
         studentClasses: {
@@ -215,10 +216,12 @@ export default async function ParentDashboardPage() {
     upcomingClasses = await prisma.class.findMany({
       where: { 
         orgId: org.id,
+        isArchived: false,
         studentClasses: {
           some: {
             student: {
-              primaryParentId: session.user.id
+              primaryParentId: session.user.id,
+              isArchived: false
             }
           }
         }
@@ -245,7 +248,8 @@ export default async function ParentDashboardPage() {
       where: {
         orgId: org.id,
         student: {
-          primaryParentId: session.user.id
+          primaryParentId: session.user.id,
+          isArchived: false
         },
         date: {
           gte: oneWeekAgo

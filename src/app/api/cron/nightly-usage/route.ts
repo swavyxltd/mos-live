@@ -34,7 +34,13 @@ export async function POST(request: NextRequest) {
 
     for (const org of orgsWithBilling) {
       try {
-        const activeStudentCount = org._count.students
+        // Count only non-archived students for billing
+        const activeStudentCount = await prisma.student.count({
+          where: {
+            orgId: org.id,
+            isArchived: false
+          }
+        })
         await reportUsage(org.id, activeStudentCount)
         
         console.log(`Reported usage for ${org.name}: ${activeStudentCount} students`)

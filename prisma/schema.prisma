@@ -6,8 +6,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model Account {
@@ -45,6 +45,8 @@ model User {
   image         String?
   phone         String?
   isSuperAdmin  Boolean   @default(false)
+  isArchived    Boolean   @default(false)
+  archivedAt   DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -115,6 +117,8 @@ model Class {
   description String?
   schedule    Json
   teacherId   String?
+  isArchived  Boolean  @default(false)
+  archivedAt DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -134,6 +138,8 @@ model Student {
   allergies       String?
   medicalNotes    String?
   primaryParentId String?
+  isArchived      Boolean   @default(false)
+  archivedAt     DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 

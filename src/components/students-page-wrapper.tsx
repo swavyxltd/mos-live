@@ -25,6 +25,8 @@ interface Student {
   medicalNotes: string
   enrollmentDate: Date
   status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'GRADUATED'
+  isArchived: boolean
+  archivedAt?: Date
   orgId: string
   createdAt: Date
   updatedAt: Date
@@ -72,6 +74,16 @@ export function StudentsPageWrapper({ initialStudents, classes }: StudentsPageWr
   const handleCloseSuccessModal = () => {
     setIsSuccessModalOpen(false)
     setNewStudentData(null)
+  }
+
+  const handleStudentArchiveChange = (id: string, isArchived: boolean) => {
+    setStudents(prevStudents => 
+      prevStudents.map(student => 
+        student.id === id 
+          ? { ...student, isArchived, archivedAt: isArchived ? new Date() : undefined }
+          : student
+      )
+    )
   }
 
   return (
@@ -154,6 +166,7 @@ export function StudentsPageWrapper({ initialStudents, classes }: StudentsPageWr
         students={students} 
         classes={classes} 
         onAddStudent={handleAddStudent}
+        onStudentArchiveChange={handleStudentArchiveChange}
       />
       
       {/* Add Student Modal */}

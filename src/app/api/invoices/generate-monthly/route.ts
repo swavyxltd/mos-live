@@ -19,9 +19,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No active fees plans found' }, { status: 400 })
     }
     
-    // Get all students
+    // Get all active (non-archived) students
     const students = await prisma.student.findMany({
-      where: { orgId }
+      where: { 
+        orgId,
+        isArchived: false
+      }
     })
     
     if (students.length === 0) {

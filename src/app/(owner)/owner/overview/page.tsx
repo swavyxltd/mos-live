@@ -33,8 +33,12 @@ export default async function OwnerOverviewPage() {
       // Total organizations
       prisma.org.count(),
       
-      // Total students across all orgs
-      prisma.student.count(),
+      // Total students across all orgs (excluding archived)
+      prisma.student.count({
+        where: {
+          isArchived: false
+        }
+      }),
       
       // Total revenue (last 30 days)
       (async () => {

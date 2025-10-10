@@ -62,6 +62,7 @@ export default async function StudentsPage() {
         medicalNotes: 'No known allergies or medical conditions',
         enrollmentDate: new Date('2024-09-01'),
         status: 'ACTIVE',
+        isArchived: false,
         orgId: org.id,
         createdAt: new Date('2024-09-01'),
         updatedAt: new Date('2024-12-06'),
@@ -90,6 +91,7 @@ export default async function StudentsPage() {
         medicalNotes: 'Asthma - inhaler required. Severe nut allergies - epipen available',
         enrollmentDate: new Date('2024-09-01'),
         status: 'ACTIVE',
+        isArchived: false,
         orgId: org.id,
         createdAt: new Date('2024-09-01'),
         updatedAt: new Date('2024-12-06'),
@@ -118,6 +120,7 @@ export default async function StudentsPage() {
         medicalNotes: 'No known allergies or medical conditions',
         enrollmentDate: new Date('2024-09-15'),
         status: 'ACTIVE',
+        isArchived: false,
         orgId: org.id,
         createdAt: new Date('2024-09-15'),
         updatedAt: new Date('2024-12-06'),
@@ -146,6 +149,7 @@ export default async function StudentsPage() {
         medicalNotes: 'Lactose intolerant - dairy-free meals required',
         enrollmentDate: new Date('2024-08-20'),
         status: 'ACTIVE',
+        isArchived: false,
         orgId: org.id,
         createdAt: new Date('2024-08-20'),
         updatedAt: new Date('2024-12-06'),
@@ -173,6 +177,7 @@ export default async function StudentsPage() {
         medicalNotes: 'No known allergies or medical conditions',
         enrollmentDate: new Date('2024-10-01'),
         status: 'ACTIVE',
+        isArchived: false,
         orgId: org.id,
         createdAt: new Date('2024-10-01'),
         updatedAt: new Date('2024-12-06'),
@@ -201,6 +206,7 @@ export default async function StudentsPage() {
         medicalNotes: 'Shellfish allergy - avoid seafood',
         enrollmentDate: new Date('2024-11-01'),
         status: 'ACTIVE',
+        isArchived: false,
         orgId: org.id,
         createdAt: new Date('2024-11-01'),
         updatedAt: new Date('2024-12-06'),
@@ -212,6 +218,31 @@ export default async function StudentsPage() {
         lastAttendance: new Date('2024-12-05')
       }
     ]
+  } else {
+    // Get students and classes from database (excluding archived)
+    const { prisma } = await import('@/lib/prisma')
+    
+    students = await prisma.student.findMany({
+      where: {
+        orgId: org.id,
+        isArchived: false
+      },
+      include: {
+        primaryParent: true,
+        studentClasses: {
+          include: {
+            class: true
+          }
+        }
+      }
+    })
+    
+    classes = await prisma.class.findMany({
+      where: {
+        orgId: org.id,
+        isArchived: false
+      }
+    })
   }
 
   return (

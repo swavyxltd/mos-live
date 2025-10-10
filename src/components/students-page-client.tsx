@@ -23,6 +23,8 @@ interface Student {
   medicalNotes: string
   enrollmentDate: Date
   status: string
+  isArchived: boolean
+  archivedAt?: Date
   classes: Array<{
     id: string
     name: string
@@ -41,9 +43,10 @@ interface StudentsPageClientProps {
   students: Student[]
   classes: Class[]
   onAddStudent?: (studentData: any) => void
+  onStudentArchiveChange?: (id: string, isArchived: boolean) => void
 }
 
-export function StudentsPageClient({ students, classes, onAddStudent }: StudentsPageClientProps) {
+export function StudentsPageClient({ students, classes, onAddStudent, onStudentArchiveChange }: StudentsPageClientProps) {
   const [filters, setFilters] = useState({
     search: '',
     selectedClass: '',
@@ -72,10 +75,11 @@ export function StudentsPageClient({ students, classes, onAddStudent }: Students
         classes={classes} 
         onFiltersChange={handleFiltersChange}
       />
-      <StudentsList 
-        students={students} 
+      <StudentsList
+        students={students}
         filters={filters}
         onAddStudent={() => setIsAddModalOpen(true)}
+        onStudentArchiveChange={onStudentArchiveChange}
         classes={classes}
       />
       <AddStudentModal
