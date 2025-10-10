@@ -1,0 +1,61 @@
+'use client'
+
+import * as React from 'react'
+import { cn } from '@/lib/utils'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Search, Sun, Moon } from 'lucide-react'
+import { GlobalSearch } from '@/components/global-search'
+
+interface TopbarProps {
+  title: string
+  user?: {
+    name?: string | null
+    email?: string | null
+    image?: string | null
+  }
+}
+
+export function Topbar({ title, user }: TopbarProps) {
+  const [isDarkMode, setIsDarkMode] = React.useState(false)
+  const firstName = user?.name?.split(' ')[0] || 'User'
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode)
+    // You can implement actual dark mode logic here
+    document.documentElement.classList.toggle('dark')
+  }
+
+  return (
+    <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border)] bg-[var(--background)]">
+      {/* Left side - Greeting */}
+      <div className="flex items-center space-x-4">
+        <div>
+          <h1 className="text-xl font-semibold text-[var(--foreground)]">
+            Assalamu'alaikum, {firstName}
+          </h1>
+        </div>
+      </div>
+
+      {/* Right side - Search and Dark Mode */}
+      <div className="flex items-center space-x-4">
+        {/* Global Search */}
+        <GlobalSearch />
+        
+        {/* Dark Mode Toggle */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-10 w-10 hover:bg-gray-100 hover:scale-105 transition-all duration-200"
+          onClick={toggleDarkMode}
+        >
+          {isDarkMode ? (
+            <Sun className="h-5 w-5" />
+          ) : (
+            <Moon className="h-5 w-5" />
+          )}
+        </Button>
+      </div>
+    </div>
+  )
+}

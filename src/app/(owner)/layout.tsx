@@ -1,0 +1,39 @@
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { redirect } from 'next/navigation'
+import { canAccessOwnerFeatures } from '@/lib/roles'
+import { getActiveOrg } from '@/lib/org'
+import { Page } from '@/components/shell/page'
+
+export default async function OwnerLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  const session = await getServerSession(authOptions)
+  
+  if (!session?.user?.id) {
+    redirect('/auth/signin')
+  }
+  
+  if (!canAccessOwnerFeatures('ADMIN', session.user.isSuperAdmin)) {
+    redirect('/dashboard')
+  }
+  
+  const org = await getActiveOrg()
+  if (!org) {
+    redirect('/auth/signin?error=NoOrganization')
+  }
+  
+  return (
+    <Page
+      user={session.user}
+      org={org}
+      userRole="OWNER"
+      title="Owner Portal"
+      breadcrumbs={[{ label: 'Overview' }]}
+    >
+      {children}
+    </Page>
+  )
+}
