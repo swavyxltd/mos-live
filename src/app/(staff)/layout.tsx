@@ -11,15 +11,41 @@ export default async function StaffLayout({
 }) {
   const session = await getServerSession(authOptions)
   
-  if (!session?.user?.id) {
+  // Check if we're in demo mode first
+  const { isDemoMode, DEMO_ORG } = await import('@/lib/demo-mode')
+  
+  if (!session?.user && !isDemoMode()) {
     redirect('/auth/signin')
   }
   
+  // Handle demo mode without session
+  if (isDemoMode() && !session?.user) {
+    const demoOrg = DEMO_ORG
+    const userRole = 'TEACHER' // Default role for demo users
+    const demoUser = {
+      id: 'demo-teacher-1',
+      email: 'teacher@demo.com',
+      name: 'Demo Teacher',
+      image: null
+    }
+    
+    return (
+      <Page
+        user={demoUser}
+        org={demoOrg}
+        userRole={userRole}
+        title="Staff Portal"
+        breadcrumbs={[{ label: 'Dashboard' }]}
+      >
+        {children}
+      </Page>
+    )
+  }
+
   const org = await getActiveOrg()
   if (!org) {
     // Check if this is a demo user and we're in development
-    const { isDemoMode, DEMO_ORG } = await import('@/lib/demo-mode')
-    if (isDemoMode() || (process.env.NODE_ENV !== 'production' && session.user.id.startsWith('demo-'))) {
+    if (isDemoMode() || (process.env.NODE_ENV !== 'production' && session?.user?.id?.startsWith('demo-'))) {
       // Use demo org for demo users
       const demoOrg = DEMO_ORG
       const userRole = 'TEACHER' // Default role for demo users
@@ -40,7 +66,7 @@ export default async function StaffLayout({
   }
   
   // Check if we're in demo mode
-  const { isDemoMode, DEMO_USERS } = await import('@/lib/demo-mode')
+  const { DEMO_USERS } = await import('@/lib/demo-mode')
   let userRole = null
   
   if (isDemoMode()) {
