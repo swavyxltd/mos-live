@@ -22,11 +22,11 @@ export default async function StaffLayout({
   // Handle demo mode without session
   if (isDemoMode() && !session?.user) {
     const demoOrg = DEMO_ORG
-    const userRole = 'TEACHER' // Default role for demo users
+    const userRole = 'STAFF' // Default role for demo users
     const demoUser = {
-      id: 'demo-teacher-1',
-      email: 'teacher@demo.com',
-      name: 'Demo Teacher',
+      id: 'demo-staff-1',
+      email: 'staff@demo.com',
+      name: 'Demo Staff',
       image: null
     }
     
@@ -51,7 +51,7 @@ export default async function StaffLayout({
     if (isDemoMode() || (process.env.NODE_ENV !== 'production' && session?.user?.id?.startsWith('demo-'))) {
       // Use demo org for demo users
       const demoOrg = DEMO_ORG
-      const userRole = 'TEACHER' // Default role for demo users
+      const userRole = 'STAFF' // Default role for demo users
       
       return (
         <Page
@@ -73,16 +73,22 @@ export default async function StaffLayout({
   // Check if we're in demo mode
   const { DEMO_USERS } = await import('@/lib/demo-mode')
   let userRole = null
+  let staffSubrole = null
   
   if (isDemoMode()) {
     // In demo mode, get role from demo users
     const demoUser = Object.values(DEMO_USERS).find(u => u.id === session.user.id)
-    userRole = demoUser?.role || 'TEACHER'
+    userRole = demoUser?.role || 'STAFF'
+    staffSubrole = (demoUser as any)?.staffSubrole || 'ADMIN' // Default to ADMIN for demo
+    // console.log('Demo user found:', demoUser, 'staffSubrole:', staffSubrole) // Debug log
   } else {
     userRole = await getUserRoleInOrg(session.user.id, org.id)
     if (!userRole) {
       redirect('/auth/signin?error=NotMember')
     }
+    // For now, default to ADMIN for database users
+    // TODO: Implement staff subrole storage in database
+    staffSubrole = 'ADMIN'
   }
   
   return (
@@ -90,10 +96,11 @@ export default async function StaffLayout({
       user={session.user}
       org={org}
       userRole={userRole}
-      title="Staff Portal"
-      breadcrumbs={[{ label: 'Dashboard' }]}
+      staffSubrole={staffSubrole}
+      title={staffSubrole === 'FINANCE_OFFICER' ? "Finance Dashboard" : "Staff Portal"}
+      breadcrumbs={[{ label: staffSubrole === 'FINANCE_OFFICER' ? 'Finance Dashboard' : 'Dashboard' }]}
     >
-      <StaffLayoutWrapper userRole={userRole}>
+      <StaffLayoutWrapper userRole={userRole} staffSubrole={staffSubrole}>
         {children}
       </StaffLayoutWrapper>
     </Page>

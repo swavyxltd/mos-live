@@ -24,7 +24,10 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import { Role } from '@prisma/client'
+// import { Role } from '@prisma/client'
+import { StaffSubrole } from '@/types/staff-roles'
+import { StaffSubroleBadge } from '@/components/staff-subrole-badge'
+import { useStaffPermissions } from '@/lib/staff-permissions'
 
 interface StaffSidebarProps {
   user: {
@@ -39,21 +42,22 @@ interface StaffSidebarProps {
     name: string
     slug: string
   }
-  userRole: Role
+  userRole: string
+  staffSubrole?: StaffSubrole
 }
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: Home },
-  { name: 'Classes', href: '/classes', icon: GraduationCap },
-  { name: 'Students', href: '/students', icon: Users },
-  { name: 'Applications', href: '/applications', icon: FileCheck },
-  { name: 'Attendance', href: '/attendance', icon: ClipboardList },
-  { name: 'Fees', href: '/fees', icon: CreditCard },
-  { name: 'Payments', href: '/payments', icon: FileText },
-  { name: 'Messages', href: '/messages', icon: MessageSquare },
-  { name: 'Calendar', href: '/calendar', icon: Calendar },
-  { name: 'Support', href: '/support', icon: HelpCircle },
-  { name: 'Settings', href: '/settings', icon: Settings },
+  { name: 'Dashboard', href: '/dashboard', icon: Home, permission: 'view_all_data' },
+  { name: 'Classes', href: '/classes', icon: GraduationCap, permission: 'view_all_classes' },
+  { name: 'Students', href: '/students', icon: Users, permission: 'view_all_data' },
+  { name: 'Applications', href: '/applications', icon: FileCheck, permission: 'view_applications' },
+  { name: 'Attendance', href: '/attendance', icon: ClipboardList, permission: 'mark_attendance' },
+  { name: 'Fees', href: '/fees', icon: CreditCard, permission: 'manage_invoices' },
+  { name: 'Payments', href: '/payments', icon: FileText, permission: 'view_invoices' },
+  { name: 'Messages', href: '/messages', icon: MessageSquare, permission: 'send_messages' },
+  { name: 'Calendar', href: '/calendar', icon: Calendar, permission: 'create_events' },
+  { name: 'Support', href: '/support', icon: HelpCircle, permission: 'view_all_data' },
+  { name: 'Settings', href: '/settings', icon: Settings, permission: 'access_settings' },
 ]
 
 const ownerNavigation = [
@@ -64,12 +68,26 @@ const ownerNavigation = [
   { name: 'Settings', href: '/owner/settings', icon: Settings },
 ]
 
-export function StaffSidebar({ user, org, userRole }: StaffSidebarProps) {
+export function StaffSidebar({ user, org, userRole, staffSubrole }: StaffSidebarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const pathname = usePathname()
   
   const isOwner = user.isSuperAdmin || userRole === 'OWNER'
-  const currentNavigation = isOwner ? ownerNavigation : navigation
+  
+  // Use permissions to filter navigation items
+  console.log('StaffSidebar - staffSubrole:', staffSubrole, 'userRole:', userRole) // Debug log
+  const permissions = useStaffPermissions({
+    id: user.id,
+    email: user.email || '',
+    name: user.name || '',
+    isSuperAdmin: user.isSuperAdmin
+  }, staffSubrole || 'ADMIN')
+  const filteredNavigation = navigation.filter(item => 
+    permissions.hasPermission(item.permission || 'view_all_data')
+  )
+  console.log('StaffSidebar - filteredNavigation:', filteredNavigation.map(item => item.name)) // Debug log
+  
+  const currentNavigation = isOwner ? ownerNavigation : filteredNavigation
 
   return (
     <>
@@ -138,6 +156,9 @@ export function StaffSidebar({ user, org, userRole }: StaffSidebarProps) {
                   <Badge variant="secondary" className="text-xs">
                     {userRole}
                   </Badge>
+                  {staffSubrole && userRole === 'STAFF' && (
+                    <StaffSubroleBadge subrole={staffSubrole} className="text-xs" />
+                  )}
                   {user.isSuperAdmin && (
                     <Crown className="h-3 w-3 text-yellow-500" />
                   )}

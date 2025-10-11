@@ -147,7 +147,7 @@ After seeding, you can use these demo accounts:
 
 - **Owner**: owner@demo.com (password: demo123)
 - **Admin**: admin@demo.com (password: demo123)  
-- **Teacher**: teacher@demo.com (password: demo123)
+- **Staff**: staff@demo.com (password: demo123)
 - **Parent**: parent@demo.com (password: demo123)
 
 ## Environment Variables

@@ -20,11 +20,11 @@ export function EditTeacherForm({ teacherId, initialData }: EditTeacherFormProps
     await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API call
     
     // Redirect back to teacher details page
-    router.push(`/teachers/${teacherId}`)
+    router.push(`/staff/${teacherId}`)
   }
 
   const handleCancel = () => {
-    router.push(`/teachers/${teacherId}`)
+    router.push(`/staff/${teacherId}`)
   }
 
   return (

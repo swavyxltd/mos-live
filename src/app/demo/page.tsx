@@ -57,8 +57,18 @@ export default async function DemoPage() {
               <p className="text-sm text-gray-600">Password: demo123</p>
             </div>
             <div className="border p-4 rounded">
+              <h3 className="font-medium">Staff Admin</h3>
+              <p className="text-sm text-gray-600">staff@demo.com</p>
+              <p className="text-sm text-gray-600">Password: demo123</p>
+            </div>
+            <div className="border p-4 rounded">
               <h3 className="font-medium">Teacher</h3>
               <p className="text-sm text-gray-600">teacher@demo.com</p>
+              <p className="text-sm text-gray-600">Password: demo123</p>
+            </div>
+            <div className="border p-4 rounded">
+              <h3 className="font-medium">Finance Officer</h3>
+              <p className="text-sm text-gray-600">finance@demo.com</p>
               <p className="text-sm text-gray-600">Password: demo123</p>
             </div>
             <div className="border p-4 rounded">

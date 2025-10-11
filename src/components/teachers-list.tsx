@@ -62,10 +62,10 @@ export function TeachersList({ teachers, onEditTeacher }: TeachersListProps) {
           <div className="mx-auto w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">
             <UserCheck className="h-6 w-6 text-gray-400" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No teachers yet</h3>
-          <p className="text-gray-500 mb-4">Get started by adding your first teacher.</p>
-          <Link href="/teachers/new">
-            <Button>Add Teacher</Button>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No staff yet</h3>
+          <p className="text-gray-500 mb-4">Get started by adding your first staff member.</p>
+          <Link href="/staff/new">
+            <Button>Add Staff Member</Button>
           </Link>
         </CardContent>
       </Card>
@@ -148,7 +148,7 @@ export function TeachersList({ teachers, onEditTeacher }: TeachersListProps) {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2">
-                      <Link href={`/teachers/${teacher.id}`}>
+                      <Link href={`/staff/${teacher.id}`}>
                         <Button variant="ghost" size="sm">
                           <Eye className="h-4 w-4" />
                         </Button>
@@ -162,7 +162,7 @@ export function TeachersList({ teachers, onEditTeacher }: TeachersListProps) {
                           <Edit className="h-4 w-4" />
                         </Button>
                       ) : (
-                        <Link href={`/teachers/${teacher.id}/edit`}>
+                        <Link href={`/staff/${teacher.id}/edit`}>
                           <Button variant="ghost" size="sm">
                             <Edit className="h-4 w-4" />
                           </Button>

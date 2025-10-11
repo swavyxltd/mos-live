@@ -28,7 +28,7 @@ export default async function OwnerDunningPage() {
         name: 'Birmingham Quran Academy',
         owner: {
           name: 'Omar Khan',
-          email: 'teacher@demo.com'
+          email: 'staff@demo.com'
         },
         studentCount: 10,
         stripeCustomerId: 'cus_demo_birmingham',

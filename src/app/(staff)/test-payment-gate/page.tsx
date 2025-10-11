@@ -56,7 +56,7 @@ export default function TestPaymentGatePage() {
             isOpen={testModalOpen}
             onClose={() => setTestModalOpen(false)}
             action="add-student"
-            userRole="TEACHER"
+            userRole="STAFF"
           />
         </div>
       </div>

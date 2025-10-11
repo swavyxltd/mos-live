@@ -51,7 +51,7 @@ export async function POST(
       data: {
         orgId,
         actorUserId: session.user.id,
-        action: isArchived ? 'TEACHER_ARCHIVED' : 'TEACHER_UNARCHIVED',
+        action: isArchived ? 'STAFF_ARCHIVED' : 'STAFF_UNARCHIVED',
         targetType: 'Teacher',
         targetId: id,
         data: {

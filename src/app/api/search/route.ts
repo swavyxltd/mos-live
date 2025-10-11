@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
         type: 'staff',
         id: '2',
         title: 'Omar Khan',
-        subtitle: 'Role: TEACHER',
+        subtitle: 'Role: STAFF',
         url: '/settings',
         icon: '👨‍🏫'
       },
@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
         type: 'staff',
         id: '3',
         title: 'Aisha Patel',
-        subtitle: 'Role: TEACHER',
+        subtitle: 'Role: STAFF',
         url: '/settings',
         icon: '👨‍🏫'
       },

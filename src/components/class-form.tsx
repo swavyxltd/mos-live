@@ -43,8 +43,8 @@ const TIME_SLOTS = [
   '8:00 PM', '8:30 PM'
 ]
 
-// Demo teachers data
-const DEMO_TEACHERS = [
+// Demo staff data
+const DEMO_STAFF = [
   { id: 'teacher-1', name: 'Omar Khan', email: 'omar@demo.com' },
   { id: 'teacher-2', name: 'Aisha Patel', email: 'aisha@demo.com' },
   { id: 'teacher-3', name: 'Ahmed Hassan', email: 'ahmed@demo.com' },
@@ -163,7 +163,7 @@ export function ClassForm({ initialData, isEditing = false, onSubmit, onCancel }
                 <SelectValue placeholder="Select a teacher" />
               </SelectTrigger>
               <SelectContent>
-                {DEMO_TEACHERS.map((teacher) => (
+                {DEMO_STAFF.map((teacher) => (
                   <SelectItem key={teacher.id} value={teacher.id}>
                     {teacher.name} ({teacher.email})
                   </SelectItem>

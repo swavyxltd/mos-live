@@ -5,28 +5,24 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { getPostLoginRedirect } from '@/lib/auth'
 
 export default function SignInPage() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
-  const portal = searchParams.get('portal') || 'app'
 
   useEffect(() => {
     // Check if already signed in
     getSession().then((session) => {
-      if (session) {
-        if (portal === 'parent') {
-            window.location.href = '/parent/dashboard'
-        } else {
-          window.location.href = callbackUrl
-        }
+      if ((session?.user as any)?.roleHints) {
+        const redirectUrl = getPostLoginRedirect((session.user as any).roleHints)
+        window.location.href = redirectUrl
       }
     })
-  }, [callbackUrl, portal])
+  }, [callbackUrl])
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true)
@@ -35,16 +31,19 @@ export default function SignInPage() {
     try {
       const result = await signIn('google', {
         redirect: false,
-        callbackUrl: portal === 'parent' ? '/parent/dashboard' : callbackUrl
+        callbackUrl: callbackUrl
       })
       
       if (result?.error) {
         setError('Failed to sign in with Google')
       } else if (result?.ok) {
-        if (portal === 'parent') {
-            window.location.href = '/parent/dashboard'
+        // Get session to check user role and redirect appropriately
+        const session = await getSession()
+        if ((session?.user as any)?.roleHints) {
+          const redirectUrl = getPostLoginRedirect((session.user as any).roleHints)
+          window.location.href = redirectUrl
         } else {
-          window.location.href = callbackUrl
+          window.location.href = '/auth/signin'
         }
       }
     } catch (error) {
@@ -68,24 +67,19 @@ export default function SignInPage() {
         email,
         password,
         redirect: false,
-        callbackUrl: portal === 'parent' ? '/parent/dashboard' : callbackUrl
+        callbackUrl: callbackUrl
       })
       
       if (result?.error) {
         setError('Invalid email or password')
       } else if (result?.ok) {
-        // Get session to check user role
+        // Get session to check user role and redirect appropriately
         const session = await getSession()
-        if (session?.user) {
-          if (session.user.isSuperAdmin) {
-            window.location.href = '/owner/overview'
-          } else if (portal === 'parent') {
-            window.location.href = '/parent/dashboard'
-          } else {
-            window.location.href = callbackUrl
-          }
+        if ((session?.user as any)?.roleHints) {
+          const redirectUrl = getPostLoginRedirect((session.user as any).roleHints)
+          window.location.href = redirectUrl
         } else {
-          window.location.href = callbackUrl
+          window.location.href = '/auth/signin'
         }
       }
     } catch (error) {
@@ -101,7 +95,7 @@ export default function SignInPage() {
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gray-900">Madrasah OS</h1>
           <p className="mt-2 text-sm text-gray-600">
-            {portal === 'parent' ? 'Parent Portal' : 'Staff Portal'}
+            Sign in to access your portal
           </p>
         </div>
         
@@ -197,7 +191,7 @@ export default function SignInPage() {
             
             <div className="text-center text-sm text-gray-600">
               <p>Demo credentials:</p>
-              <p>owner@demo.com / admin@demo.com / teacher@demo.com / parent@demo.com</p>
+              <p>owner@demo.com / admin@demo.com / staff@demo.com / teacher@demo.com / finance@demo.com / parent@demo.com</p>
               <p>Password: demo123</p>
             </div>
           </CardContent>

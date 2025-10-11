@@ -22,8 +22,8 @@ export async function POST(request: NextRequest) {
     const orgId = await requireOrg(request)
     if (orgId instanceof NextResponse) return orgId
     
-    const body = await request.json()
-    const { title, body, audience, channel, classIds, targets } = sendMessageSchema.parse(body)
+    const requestBody = await request.json()
+    const { title, body, audience, channel, classIds, targets } = sendMessageSchema.parse(requestBody)
     
     // Create message record
     const message = await prisma.message.create({

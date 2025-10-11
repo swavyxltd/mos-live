@@ -14,9 +14,9 @@ export const DEMO_USERS = {
     isSuperAdmin: false,
     password: 'demo123'
   },
-  'teacher@demo.com': {
-    id: 'demo-teacher-1',
-    email: 'teacher@demo.com',
+  'staff@demo.com': {
+    id: 'demo-staff-1',
+    email: 'staff@demo.com',
     name: 'Omar Khan',
     isSuperAdmin: false,
     password: 'demo123'

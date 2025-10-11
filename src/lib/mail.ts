@@ -139,3 +139,29 @@ export async function sendSupportNotification({
     text: `Support Update: ${subject}\n\n${message}`
   })
 }
+
+export async function sendPaymentFailedPlatform({
+  orgName,
+  errorMessage
+}: {
+  orgName: string
+  errorMessage: string
+}) {
+  return sendEmail({
+    to: process.env.PLATFORM_ADMIN_EMAIL || 'admin@madrasah.io',
+    subject: `Payment Failed - ${orgName}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Payment Processing Failed</h2>
+        <p><strong>Organization:</strong> ${orgName}</p>
+        <p><strong>Error:</strong></p>
+        <div style="background-color: #fee; padding: 15px; border-radius: 6px; margin: 15px 0; border-left: 4px solid #dc2626;">
+          ${errorMessage}
+        </div>
+        <p>Please investigate this payment failure.</p>
+        <p>Best regards,<br>Madrasah OS System</p>
+      </div>
+    `,
+    text: `Payment Failed - ${orgName}\n\nError: ${errorMessage}`
+  })
+}

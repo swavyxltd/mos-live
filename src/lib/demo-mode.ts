@@ -21,12 +21,29 @@ export const DEMO_USERS = {
     isSuperAdmin: false,
     role: 'ADMIN'
   },
+  'staff@demo.com': {
+    id: 'demo-staff-1',
+    email: 'staff@demo.com',
+    name: 'Omar Khan',
+    isSuperAdmin: false,
+    role: 'STAFF',
+    staffSubrole: 'ADMIN' // Staff Admin with full access
+  },
   'teacher@demo.com': {
     id: 'demo-teacher-1',
     email: 'teacher@demo.com',
-    name: 'Omar Khan',
+    name: 'Sarah Ahmed',
     isSuperAdmin: false,
-    role: 'TEACHER'
+    role: 'STAFF',
+    staffSubrole: 'TEACHER' // Teacher with teaching permissions
+  },
+  'finance@demo.com': {
+    id: 'demo-finance-1',
+    email: 'finance@demo.com',
+    name: 'Hassan Ali',
+    isSuperAdmin: false,
+    role: 'STAFF',
+    staffSubrole: 'FINANCE_OFFICER' // Finance Officer with financial permissions
   },
   'parent@demo.com': {
     id: 'demo-parent-1',
@@ -47,7 +64,8 @@ export function validateDemoCredentials(email: string, password: string) {
       email: user.email,
       name: user.name,
       isSuperAdmin: user.isSuperAdmin,
-      role: user.role
+      role: user.role,
+      staffSubrole: (user as any).staffSubrole
     }
   }
   return null

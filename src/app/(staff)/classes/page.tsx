@@ -36,7 +36,7 @@ export default async function ClassesPage() {
         updatedAt: new Date('2024-12-06'),
         teacher: {
           name: 'Omar Khan',
-          email: 'teacher@demo.com'
+          email: 'staff@demo.com'
         },
         studentClasses: [
           {

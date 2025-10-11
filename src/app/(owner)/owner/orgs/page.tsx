@@ -89,7 +89,7 @@ export default function OwnerOrgsPage() {
           },
           owner: {
             name: 'Omar Khan',
-            email: 'teacher@demo.com'
+            email: 'staff@demo.com'
           },
           totalRevenue: 2000,
           lastActivity: new Date('2024-12-04')

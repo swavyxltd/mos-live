@@ -46,10 +46,10 @@ async function main() {
       }
     }),
     prisma.user.upsert({
-      where: { email: 'teacher@demo.com' },
+      where: { email: 'staff@demo.com' },
       update: {},
       create: {
-        email: 'teacher@demo.com',
+        email: 'staff@demo.com',
         name: 'Omar Khan',
         phone: '+44 7700 900125'
       }
@@ -93,7 +93,7 @@ async function main() {
       create: {
         userId: users[2].id,
         orgId: org.id,
-        role: 'TEACHER'
+        role: 'STAFF'
       }
     }),
     prisma.userOrgMembership.upsert({
@@ -461,7 +461,7 @@ async function main() {
       data: {
         userId: additionalUsers[1].id,
         orgId: org2.id,
-        role: 'TEACHER'
+        role: 'STAFF'
       }
     }),
     prisma.userOrgMembership.create({
@@ -580,7 +580,7 @@ async function main() {
   console.log('\nDemo accounts:')
   console.log('👑 Owner: owner@demo.com (password: demo123)')
   console.log('👨‍💼 Admin: admin@demo.com (password: demo123)')
-  console.log('👨‍🏫 Teacher: teacher@demo.com (password: demo123)')
+  console.log('👨‍🏫 Staff: staff@demo.com (password: demo123)')
   console.log('👨‍👩‍👧‍👦 Parent: parent@demo.com (password: demo123)')
   console.log('\nAdditional demo accounts:')
   console.log('👨‍💼 Admin 2: admin2@demo.com (password: demo123)')

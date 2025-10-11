@@ -2,77 +2,112 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
 
-export function middleware(request: NextRequest) {
-  const { pathname, searchParams } = request.nextUrl
-  const host = request.headers.get('host') || ''
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
   
-  // Get portal from query param (dev mode), pathname, or host
-  const portalParam = searchParams.get('portal')
-  let portal = 'app' // default
-  
-  if (portalParam && ['app', 'parent', 'auth'].includes(portalParam)) {
-    portal = portalParam
-  } else if (pathname.startsWith('/parent/')) {
-    portal = 'parent'
-  } else if (pathname.startsWith('/owner/')) {
-    portal = 'owner'
-  } else if (pathname.startsWith('/auth/')) {
-    portal = 'auth'
-  } else if (host.includes('parent.madrasah.io')) {
-    portal = 'parent'
-  } else if (host.includes('auth.madrasah.io')) {
-    portal = 'auth'
-  } else if (host.includes('app.madrasah.io')) {
-    portal = 'app'
+  // Allow auth routes and API routes to pass through
+  if (pathname.startsWith('/auth') || pathname.startsWith('/api') || pathname.startsWith('/_next')) {
+    return NextResponse.next()
   }
   
-  // Add portal to headers for use in components
-  const response = NextResponse.next()
-  response.headers.set('x-portal', portal)
+  // Get the JWT token to check user authentication and roles
+  const token = await getToken({ req: request })
   
-  // Debug logging
-  console.log(`Middleware: pathname=${pathname}, portal=${portal}, portalParam=${portalParam}`)
-  
-  // Handle auth portal redirects
-  if (portal === 'auth' && pathname.startsWith('/auth')) {
-    return response
-  }
-  
-  // Handle parent portal
-  if (portal === 'parent') {
-    if (pathname.startsWith('/parent')) {
-      return response
+  // If user is not authenticated, redirect to sign in
+  if (!token) {
+    if (pathname === '/') {
+      return NextResponse.redirect(new URL('/auth/signin', request.url))
     }
-    // Always redirect parent portal users to parent dashboard
-    if (pathname === '/' || pathname.startsWith('/dashboard') || pathname.startsWith('/classes') || 
-        pathname.startsWith('/students') || pathname.startsWith('/attendance') || 
-        pathname.startsWith('/fees') || pathname.startsWith('/invoices') || 
-        pathname.startsWith('/messages') || pathname.startsWith('/calendar') || 
-        pathname.startsWith('/support') || pathname.startsWith('/settings') ||
-        pathname.startsWith('/owner')) {
-      console.log(`Redirecting parent portal user from ${pathname} to /parent/dashboard`)
+    return NextResponse.next()
+  }
+  
+  // Get role hints from token
+  const roleHints = token.roleHints as {
+    isOwner: boolean
+    orgAdminOf: string[]
+    orgStaffOf: string[]
+    isParent: boolean
+  } | undefined
+  
+      // If no role hints, redirect to sign in
+      if (!roleHints) {
+        return NextResponse.redirect(new URL('/auth/signin', request.url))
+      }
+  
+  // Determine the correct portal for this user
+  let correctPortal = ''
+  if (roleHints.isOwner) {
+    correctPortal = '/owner'
+  } else if (roleHints.orgAdminOf.length > 0 || roleHints.orgStaffOf.length > 0) {
+    correctPortal = '/staff'
+  } else if (roleHints.isParent) {
+    correctPortal = '/parent'
+      } else {
+        // No clear role, redirect to sign in
+        return NextResponse.redirect(new URL('/auth/signin', request.url))
+      }
+  
+  // Check if user is trying to access the wrong portal
+  if (pathname === '/') {
+    // Redirect to the correct portal root
+    if (correctPortal === '/owner') {
+      return NextResponse.redirect(new URL('/owner/overview', request.url))
+    } else if (correctPortal === '/staff') {
+      // Check if user is a Finance Officer and redirect to finance dashboard
+      const token = await getToken({ req: request })
+      if (token?.staffSubrole === 'FINANCE_OFFICER') {
+        return NextResponse.redirect(new URL('/finance-dashboard', request.url))
+      }
+      return NextResponse.redirect(new URL('/staff', request.url))
+    } else if (correctPortal === '/parent') {
       return NextResponse.redirect(new URL('/parent/dashboard', request.url))
     }
   }
   
-  // Handle app portal
-  if (portal === 'app') {
-    if (pathname.startsWith('/parent')) {
-      return NextResponse.redirect(new URL('/dashboard', request.url))
-    }
-    if (pathname.startsWith('/owner')) {
-      return response
-    }
-    if (pathname.startsWith('/dashboard') || pathname.startsWith('/classes') || 
-        pathname.startsWith('/students') || pathname.startsWith('/attendance') || 
-        pathname.startsWith('/fees') || pathname.startsWith('/invoices') || 
-        pathname.startsWith('/messages') || pathname.startsWith('/calendar') || 
-        pathname.startsWith('/support') || pathname.startsWith('/settings')) {
-      return response
+  // Redirect Finance Officers from regular dashboard to finance dashboard
+  if (pathname === '/dashboard' && roleHints.orgStaffOf.length > 0) {
+    // Check if user is a Finance Officer (we'll need to get this from the token)
+    const token = await getToken({ req: request })
+    if (token?.staffSubrole === 'FINANCE_OFFICER') {
+      return NextResponse.redirect(new URL('/finance-dashboard', request.url))
     }
   }
   
-  return response
+  // Check if user is accessing a portal they shouldn't have access to
+  if (pathname.startsWith('/owner') && !roleHints.isOwner) {
+    // Redirect to their correct portal
+    if (roleHints.orgAdminOf.length > 0 || roleHints.orgStaffOf.length > 0) {
+      return NextResponse.redirect(new URL('/staff', request.url))
+    } else if (roleHints.isParent) {
+      return NextResponse.redirect(new URL('/parent/dashboard', request.url))
+        } else {
+          return NextResponse.redirect(new URL('/auth/signin', request.url))
+        }
+  }
+  
+  if (pathname.startsWith('/staff') && roleHints.orgAdminOf.length === 0 && roleHints.orgStaffOf.length === 0) {
+    // Redirect to their correct portal
+    if (roleHints.isOwner) {
+      return NextResponse.redirect(new URL('/owner/overview', request.url))
+    } else if (roleHints.isParent) {
+      return NextResponse.redirect(new URL('/parent/dashboard', request.url))
+        } else {
+          return NextResponse.redirect(new URL('/auth/signin', request.url))
+        }
+  }
+  
+  if (pathname.startsWith('/parent') && !roleHints.isParent) {
+    // Redirect to their correct portal
+    if (roleHints.isOwner) {
+      return NextResponse.redirect(new URL('/owner/overview', request.url))
+    } else if (roleHints.orgAdminOf.length > 0 || roleHints.orgStaffOf.length > 0) {
+      return NextResponse.redirect(new URL('/staff', request.url))
+        } else {
+          return NextResponse.redirect(new URL('/auth/signin', request.url))
+        }
+  }
+  
+  return NextResponse.next()
 }
 
 export const config = {

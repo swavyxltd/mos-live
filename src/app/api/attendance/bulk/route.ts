@@ -14,7 +14,7 @@ const bulkAttendanceSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await requireRole(['ADMIN', 'TEACHER'])(request)
+    const session = await requireRole(['ADMIN', 'STAFF'])(request)
     if (session instanceof NextResponse) return session
     
     const orgId = await requireOrg(request)

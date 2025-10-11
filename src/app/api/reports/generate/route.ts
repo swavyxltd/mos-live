@@ -66,14 +66,14 @@ export async function POST(request: NextRequest) {
 
     const staff = [
       { user: { name: 'Ahmed Hassan', email: 'ahmed@madrasah.com' }, role: 'ADMIN' },
-      { user: { name: 'Omar Khan', email: 'omar@madrasah.com' }, role: 'TEACHER' },
-      { user: { name: 'Aisha Patel', email: 'aisha@madrasah.com' }, role: 'TEACHER' },
-      { user: { name: 'Hassan Ali', email: 'hassan@madrasah.com' }, role: 'TEACHER' },
-      { user: { name: 'Fatima Sheikh', email: 'fatima@madrasah.com' }, role: 'TEACHER' },
-      { user: { name: 'Yusuf Ahmed', email: 'yusuf@madrasah.com' }, role: 'TEACHER' },
-      { user: { name: 'Maryam Hassan', email: 'maryam@madrasah.com' }, role: 'TEACHER' },
-      { user: { name: 'Ibrahim Malik', email: 'ibrahim@madrasah.com' }, role: 'TEACHER' },
-      { user: { name: 'Amina Rashid', email: 'amina@madrasah.com' }, role: 'TEACHER' },
+      { user: { name: 'Omar Khan', email: 'omar@madrasah.com' }, role: 'STAFF' },
+      { user: { name: 'Aisha Patel', email: 'aisha@madrasah.com' }, role: 'STAFF' },
+      { user: { name: 'Hassan Ali', email: 'hassan@madrasah.com' }, role: 'STAFF' },
+      { user: { name: 'Fatima Sheikh', email: 'fatima@madrasah.com' }, role: 'STAFF' },
+      { user: { name: 'Yusuf Ahmed', email: 'yusuf@madrasah.com' }, role: 'STAFF' },
+      { user: { name: 'Maryam Hassan', email: 'maryam@madrasah.com' }, role: 'STAFF' },
+      { user: { name: 'Ibrahim Malik', email: 'ibrahim@madrasah.com' }, role: 'STAFF' },
+      { user: { name: 'Amina Rashid', email: 'amina@madrasah.com' }, role: 'STAFF' },
       { user: { name: 'Sarah Khan', email: 'sarah@madrasah.com' }, role: 'STAFF' },
       { user: { name: 'Tariq Ali', email: 'tariq@madrasah.com' }, role: 'STAFF' },
       { user: { name: 'Layla Ahmed', email: 'layla@madrasah.com' }, role: 'STAFF' }

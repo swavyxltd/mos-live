@@ -15,11 +15,11 @@ export function NewTeacherForm() {
     await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API call
     
     // Redirect back to teachers page
-    router.push('/teachers')
+    router.push('/staff')
   }
 
   const handleCancel = () => {
-    router.push('/teachers')
+    router.push('/staff')
   }
 
   return (

@@ -20,14 +20,15 @@ interface PageProps {
     slug: string
   }
   userRole: string
+  staffSubrole?: string
   title: string
   breadcrumbs?: Array<{ label: string; href?: string }>
 }
 
-export function Page({ children, user, org, userRole, title, breadcrumbs }: PageProps) {
+export function Page({ children, user, org, userRole, staffSubrole, title, breadcrumbs }: PageProps) {
   return (
     <div className="min-h-screen bg-[var(--background)]">
-      <Sidebar user={user} org={org} userRole={userRole} />
+      <Sidebar user={user} org={org} userRole={userRole} staffSubrole={staffSubrole} />
       <div className="sm:pl-64">
         <Topbar title={title} breadcrumbs={breadcrumbs} user={user} />
         <main className="py-6">

@@ -8,6 +8,9 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { MadrasahLogo } from '@/components/madrasah-logo'
+import { StaffSubrole } from '@/types/staff-roles'
+import { StaffSubroleBadge } from '@/components/staff-subrole-badge'
+import { useStaffPermissions } from '@/lib/staff-permissions'
 import { 
   Home, 
   Users, 
@@ -42,21 +45,23 @@ interface SidebarProps {
     slug: string
   }
   userRole: string
+  staffSubrole?: string
 }
 
 const staffNavigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: Home },
-  { name: 'Classes', href: '/classes', icon: GraduationCap },
-  { name: 'Students', href: '/students', icon: Users },
-  { name: 'Applications', href: '/applications', icon: FileCheck },
-  { name: 'Teachers', href: '/teachers', icon: UserCheck },
-  { name: 'Attendance', href: '/attendance', icon: ClipboardList },
-  { name: 'Fees', href: '/fees', icon: CreditCard },
-  { name: 'Payments', href: '/payments', icon: FileText },
-  { name: 'Messages', href: '/messages', icon: MessageSquare },
-  { name: 'Calendar', href: '/calendar', icon: Calendar },
-  { name: 'Support', href: '/support', icon: HelpCircle },
-  { name: 'Settings', href: '/settings', icon: Settings },
+  { name: 'Dashboard', href: '/dashboard', icon: Home, permission: 'view_all_data' },
+  { name: 'Finance Dashboard', href: '/finance-dashboard', icon: Home, permission: 'view_invoices' },
+  { name: 'Classes', href: '/classes', icon: GraduationCap, permission: 'view_all_classes' },
+  { name: 'Students', href: '/students', icon: Users, permission: 'view_all_data' },
+  { name: 'Applications', href: '/applications', icon: FileCheck, permission: 'view_applications' },
+  { name: 'Staff', href: '/staff', icon: UserCheck, permission: 'manage_staff' },
+  { name: 'Attendance', href: '/attendance', icon: ClipboardList, permission: 'mark_attendance' },
+  { name: 'Fees', href: '/fees', icon: CreditCard, permission: 'manage_invoices' },
+  { name: 'Payments', href: '/payments', icon: FileText, permission: 'view_invoices' },
+  { name: 'Messages', href: '/messages', icon: MessageSquare, permission: 'send_messages' },
+  { name: 'Calendar', href: '/calendar', icon: Calendar, permission: 'view_calendar' },
+  { name: 'Support', href: '/support', icon: HelpCircle, permission: 'view_all_data' },
+  { name: 'Settings', href: '/settings', icon: Settings, permission: 'access_settings' },
 ]
 
 const ownerNavigation = [
@@ -74,7 +79,7 @@ const parentNavigation = [
   { name: 'Support', href: '/parent/support', icon: HelpCircle },
 ]
 
-export function Sidebar({ user, org, userRole }: SidebarProps) {
+export function Sidebar({ user, org, userRole, staffSubrole }: SidebarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
   const pathname = usePathname()
   
@@ -93,7 +98,42 @@ export function Sidebar({ user, org, userRole }: SidebarProps) {
   
   const portalParam = getPortalParam()
   
-  const currentNavigation = isOwner ? ownerNavigation : isParent ? parentNavigation : staffNavigation
+  // Use permissions to filter staff navigation items
+  let currentNavigation
+  if (isOwner) {
+    currentNavigation = ownerNavigation
+  } else if (isParent) {
+    currentNavigation = parentNavigation
+  } else {
+    // For staff users, filter navigation based on permissions
+    // console.log('Shell Sidebar - staffSubrole:', staffSubrole, 'userRole:', userRole) // Debug log
+    if (staffSubrole && userRole === 'STAFF') {
+      const permissions = useStaffPermissions({
+        id: user.id,
+        email: user.email || '',
+        name: user.name || '',
+        isSuperAdmin: user.isSuperAdmin
+      }, staffSubrole as StaffSubrole)
+      currentNavigation = staffNavigation.filter(item => {
+        // Handle special cases where multiple permissions can grant access
+        if (item.name === 'Calendar') {
+          return permissions.hasPermission('create_events') || permissions.hasPermission('view_calendar')
+        }
+        // Show appropriate dashboard based on subrole
+        if (item.name === 'Dashboard' && staffSubrole === 'FINANCE_OFFICER') {
+          return false // Hide regular dashboard for Finance Officers
+        }
+        if (item.name === 'Finance Dashboard' && staffSubrole !== 'FINANCE_OFFICER') {
+          return false // Hide finance dashboard for non-Finance Officers
+        }
+        return permissions.hasPermission(item.permission || 'view_all_data')
+      })
+      // console.log('Shell Sidebar - filtered navigation:', currentNavigation.map(item => item.name)) // Debug log
+    } else {
+      currentNavigation = staffNavigation
+      // console.log('Shell Sidebar - using full navigation (no subrole)') // Debug log
+    }
+  }
 
   return (
     <>
@@ -190,6 +230,9 @@ export function Sidebar({ user, org, userRole }: SidebarProps) {
                   <Badge variant="secondary" className="text-xs">
                     {userRole}
                   </Badge>
+                  {staffSubrole && userRole === 'STAFF' && (
+                    <StaffSubroleBadge subrole={staffSubrole as StaffSubrole} className="text-xs" />
+                  )}
                   {user.isSuperAdmin && (
                     <Crown className="h-3 w-3 text-yellow-500" />
                   )}

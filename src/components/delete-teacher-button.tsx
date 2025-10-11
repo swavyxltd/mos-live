@@ -18,7 +18,7 @@ export function DeleteTeacherButton({ teacherId, teacherName }: DeleteTeacherBut
       // TODO: Implement actual delete API call
       // For now, just log the action and redirect
       alert(`Teacher ${teacherName} would be deleted (demo mode)`)
-      router.push('/teachers')
+      router.push('/staff')
     }
   }
 

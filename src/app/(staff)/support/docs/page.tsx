@@ -2713,7 +2713,7 @@ WhatsApp integration provides powerful communication capabilities for your madra
 - **Attendance Reports**: Regular attendance reports
 - **Pattern Alerts**: Attendance pattern alerts
 - **Parent Notifications**: Parent attendance updates
-- **Teacher Alerts**: Teacher attendance alerts
+- **Staff Alerts**: Staff attendance alerts
 
 ### Event Communications
 - **Event Invitations**: Event invitation messages
@@ -2834,7 +2834,7 @@ Professional email templates are essential for effective parent communication. T
 - **Parent Name**: Personalized parent names
 - **Student Name**: Individual student names
 - **Class Information**: Class-specific details
-- **Teacher Names**: Teacher information
+- **Staff Names**: Staff information
 - **School Details**: School-specific information
 
 ### Conditional Content
