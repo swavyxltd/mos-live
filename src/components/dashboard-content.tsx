@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { QuickAddMenu } from '@/components/quick-add-menu'
+import GenerateReportModal from '@/components/generate-report-modal'
+import { useState } from 'react'
 import { 
   Users, 
   BookOpen, 
@@ -25,6 +27,8 @@ import {
 } from 'lucide-react'
 
 export function DashboardContent() {
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false)
+  
   // Demo data for now - will be replaced with real data fetching
   const totalStudents = 47
   const activeClasses = 8
@@ -40,6 +44,42 @@ export function DashboardContent() {
   const handleFilterChange = (filter: string) => {
     console.log('Filter changed to:', filter)
     // You can add additional logic here if needed
+  }
+
+  // Handle report generation
+  const handleGenerateReport = async (month: number, year: number) => {
+    try {
+      const response = await fetch('/api/reports/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ month, year })
+      })
+      
+      if (response.ok) {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        
+        // Create download link for PDF
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `madrasah-report-${year}-${String(month + 1).padStart(2, '0')}.pdf`
+        document.body.appendChild(a)
+        a.click()
+        
+        // Clean up
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+      } else {
+        const errorData = await response.json()
+        console.error('Failed to generate report:', errorData)
+        alert(`Failed to generate report: ${errorData.details || errorData.error}`)
+      }
+    } catch (error) {
+      console.error('Error generating report:', error)
+      alert(`Error generating report: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
   }
   
   // Demo data for charts and additional info
@@ -177,32 +217,7 @@ export function DashboardContent() {
             variant="outline" 
             size="sm"
             className="px-3 sm:px-4 py-2 text-sm hover:bg-gray-50 hover:scale-105 transition-all duration-200"
-            onClick={async () => {
-              try {
-                const response = await fetch('/api/reports/generate', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                })
-                
-                if (response.ok) {
-                  const blob = await response.blob()
-                  const url = window.URL.createObjectURL(blob)
-                  const a = document.createElement('a')
-                  a.href = url
-                  a.download = `madrasah-report-${new Date().toISOString().split('T')[0]}.pdf`
-                  document.body.appendChild(a)
-                  a.click()
-                  window.URL.revokeObjectURL(url)
-                  document.body.removeChild(a)
-                } else {
-                  console.error('Failed to generate report')
-                }
-              } catch (error) {
-                console.error('Error generating report:', error)
-              }
-            }}
+            onClick={() => setIsReportModalOpen(true)}
           >
             <FileText className="h-4 w-4 mr-2" />
             Generate Report
@@ -428,6 +443,13 @@ export function DashboardContent() {
             </CardContent>
         </Card>
       </Link>
+
+      {/* Generate Report Modal */}
+      <GenerateReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        onGenerateReport={handleGenerateReport}
+      />
     </div>
   )
 }
