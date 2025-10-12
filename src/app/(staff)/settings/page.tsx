@@ -9,9 +9,15 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { Save, Globe, User, CreditCard, Calendar, Loader2 } from 'lucide-react'
+import { Save, Globe, User, CreditCard, Calendar, Loader2, Download, DollarSign, Users, CheckCircle, Eye, FileText, Banknote } from 'lucide-react'
 import { toast } from 'sonner'
 import { StripePaymentMethodModal } from '@/components/stripe-payment-method'
+import { StatCard } from '@/components/ui/stat-card'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
+import GenerateReportModal from '@/components/generate-report-modal'
+import { useStaffPermissions } from '@/lib/staff-permissions'
+import { StaffSubrole } from '@/types/staff-roles'
 
 interface OrganizationSettings {
   name: string
@@ -35,6 +41,15 @@ interface PaymentSettings {
   autoPayEnabled: boolean
   paymentMethodId?: string
   lastUpdated?: string
+}
+
+interface BillingRecord {
+  id: string
+  date: string
+  amount: number
+  status: 'paid' | 'pending' | 'failed'
+  description: string
+  invoiceId: string
 }
 
 export default function SettingsPage() {
@@ -62,6 +77,54 @@ export default function SettingsPage() {
     lastUpdated: '2024-01-15T10:30:00Z'
   })
   const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false)
+
+  // Demo billing data - payments TO the madrasah
+  const billingRecords: BillingRecord[] = [
+    {
+      id: '1',
+      date: '2024-01-01',
+      amount: 47.00,
+      status: 'paid',
+      description: 'Monthly subscription - January 2024 (47 students)',
+      invoiceId: 'MAD-INV-001'
+    },
+    {
+      id: '2',
+      date: '2023-12-01',
+      amount: 45.00,
+      status: 'paid',
+      description: 'Monthly subscription - December 2023 (45 students)',
+      invoiceId: 'MAD-INV-002'
+    },
+    {
+      id: '3',
+      date: '2023-11-01',
+      amount: 43.00,
+      status: 'paid',
+      description: 'Monthly subscription - November 2023 (43 students)',
+      invoiceId: 'MAD-INV-003'
+    },
+    {
+      id: '4',
+      date: '2023-10-01',
+      amount: 41.00,
+      status: 'paid',
+      description: 'Monthly subscription - October 2023 (41 students)',
+      invoiceId: 'MAD-INV-004'
+    },
+    {
+      id: '5',
+      date: '2023-09-01',
+      amount: 39.00,
+      status: 'paid',
+      description: 'Monthly subscription - September 2023 (39 students)',
+      invoiceId: 'MAD-INV-005'
+    }
+  ]
+
+  // Calculate summary statistics
+  // const totalPaid = billingRecords.filter(p => p.status === 'paid').reduce((sum, p) => sum + p.amount, 0)
 
   useEffect(() => {
     if (session?.user) {
@@ -211,9 +274,76 @@ export default function SettingsPage() {
     setShowPaymentModal(false)
   }
 
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'paid':
+        return <Badge variant="secondary" className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" />Paid</Badge>
+      case 'pending':
+        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800"><Calendar className="h-3 w-3 mr-1" />Pending</Badge>
+      case 'failed':
+        return <Badge variant="secondary" className="bg-red-100 text-red-800"><CreditCard className="h-3 w-3 mr-1" />Failed</Badge>
+      default:
+        return <Badge variant="secondary">{status}</Badge>
+    }
+  }
+
+  // Handle CSV export generation with month/year filters for subscription payments
+  const handleGenerateReport = async (month: number, year: number) => {
+    try {
+      // Calculate start and end dates for the selected month
+      const startDate = new Date(year, month, 1).toISOString().split('T')[0]
+      const endDate = new Date(year, month + 1, 0).toISOString().split('T')[0]
+      
+      const response = await fetch('/api/reports/subscription-payments-csv', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          startDate,
+          endDate,
+          month,
+          year
+        })
+      })
+      
+      if (response.ok) {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        
+        // Get filename from response headers
+        const contentDisposition = response.headers.get('content-disposition')
+        const filename = contentDisposition 
+          ? contentDisposition.split('filename=')[1]?.replace(/"/g, '')
+          : `subscription-payments-${year}-${String(month + 1).padStart(2, '0')}.csv`
+        
+        // Create download link for CSV
+        const a = document.createElement('a')
+        a.href = url
+        a.download = filename
+        document.body.appendChild(a)
+        a.click()
+        
+        // Clean up
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+      } else {
+        const errorData = await response.json()
+        console.error('Failed to generate subscription payments CSV:', errorData)
+        toast.error(`Failed to generate subscription payments CSV: ${errorData.error || 'Unknown error'}`)
+      }
+    } catch (error) {
+      console.error('Error generating subscription payments CSV:', error)
+      toast.error(`Error generating subscription payments CSV: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
+
   if (!session?.user?.id) {
     return <div>Loading...</div>
   }
+
+  // Check if user is a Finance Officer
+  const isFinanceOfficer = session.user.staffSubrole === 'FINANCE_OFFICER'
 
   return (
     <div className="space-y-6">
@@ -221,10 +351,13 @@ export default function SettingsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Manage your organization settings and preferences.
+            {isFinanceOfficer 
+              ? "View organization settings and manage your subscription payments."
+              : "Manage your organization settings and preferences."
+            }
           </p>
         </div>
-        <Button onClick={handleSaveOrgSettings} disabled={loading}>
+        <Button onClick={handleSaveOrgSettings} disabled={loading || isFinanceOfficer}>
           {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
           Save Changes
         </Button>
@@ -232,14 +365,22 @@ export default function SettingsPage() {
 
       <div className="space-y-6">
         {/* Organization Settings */}
-        <Card>
+        <Card className={isFinanceOfficer ? "opacity-50 pointer-events-none" : ""}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Globe className="h-5 w-5" />
               Organization Settings
+              {isFinanceOfficer && (
+                <Badge variant="secondary" className="ml-2 text-xs">
+                  Read Only
+                </Badge>
+              )}
             </CardTitle>
             <CardDescription>
-              Configure your madrasah's basic information and preferences.
+              {isFinanceOfficer 
+                ? "Organization settings are read-only for Finance Officers. Contact an Admin to make changes."
+                : "Configure your madrasah's basic information and preferences."
+              }
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -574,6 +715,102 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
+        {/* App Subscription Management */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Banknote className="h-5 w-5" />
+              App Subscription Management
+            </CardTitle>
+            <CardDescription>
+              View and manage your Madrasah OS subscription payments and billing history.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Subscription Summary Cards */}
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
+              <StatCard
+                title="Current Students"
+                value={47}
+                description="Active enrollments"
+                detail="+5 new this month"
+                icon={<Users className="h-4 w-4" />}
+              />
+              
+              <StatCard
+                title="Monthly Cost"
+                value="£47.00"
+                description="£1 per student"
+                detail="Automatic billing"
+                icon={<div className="text-lg font-bold">£</div>}
+              />
+              
+              <StatCard
+                title="Next Payment"
+                value="Feb 1"
+                description="Automatic billing"
+                detail="Monthly subscription"
+                icon={<Calendar className="h-4 w-4" />}
+              />
+            </div>
+
+            {/* Subscription History Table */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Subscription History</h3>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex items-center gap-2"
+                  onClick={() => setIsReportModalOpen(true)}
+                >
+                  <FileText className="h-4 w-4" />
+                  Export Subscription CSV
+                </Button>
+              </div>
+              
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Invoice</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {billingRecords.map((record) => (
+                      <TableRow key={record.id}>
+                        <TableCell className="font-medium">{new Date(record.date).toLocaleDateString()}</TableCell>
+                        <TableCell>{record.description}</TableCell>
+                        <TableCell className="font-medium">£{record.amount.toFixed(2)}</TableCell>
+                        <TableCell>{getStatusBadge(record.status)}</TableCell>
+                        <TableCell className="font-mono text-sm">{record.invoiceId}</TableCell>
+                        <TableCell>
+                          <Button variant="ghost" size="sm">
+                            <Eye className="h-4 w-4 mr-1" />
+                            View
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {billingRecords.length === 0 && (
+                <div className="text-center py-8">
+                  <DollarSign className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No subscription payments found</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
       </div>
 
       {showPaymentModal && (
@@ -582,6 +819,13 @@ export default function SettingsPage() {
           onCancel={handlePaymentCancel}
         />
       )}
+
+      {/* Generate Report Modal */}
+      <GenerateReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        onGenerateReport={handleGenerateReport}
+      />
     </div>
   )
 }

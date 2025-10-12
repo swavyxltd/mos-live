@@ -50,12 +50,12 @@ interface SidebarProps {
 
 const staffNavigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home, permission: 'view_all_data' },
-  { name: 'Finance Dashboard', href: '/finance-dashboard', icon: Home, permission: 'view_invoices' },
   { name: 'Classes', href: '/classes', icon: GraduationCap, permission: 'view_all_classes' },
   { name: 'Students', href: '/students', icon: Users, permission: 'view_all_data' },
   { name: 'Applications', href: '/applications', icon: FileCheck, permission: 'view_applications' },
   { name: 'Staff', href: '/staff', icon: UserCheck, permission: 'manage_staff' },
   { name: 'Attendance', href: '/attendance', icon: ClipboardList, permission: 'mark_attendance' },
+  { name: 'Finances', href: '/finances', icon: Home, permission: 'view_invoices' },
   { name: 'Fees', href: '/fees', icon: CreditCard, permission: 'manage_invoices' },
   { name: 'Payments', href: '/payments', icon: FileText, permission: 'view_invoices' },
   { name: 'Messages', href: '/messages', icon: MessageSquare, permission: 'send_messages' },
@@ -123,8 +123,8 @@ export function Sidebar({ user, org, userRole, staffSubrole }: SidebarProps) {
         if (item.name === 'Dashboard' && staffSubrole === 'FINANCE_OFFICER') {
           return false // Hide regular dashboard for Finance Officers
         }
-        if (item.name === 'Finance Dashboard' && staffSubrole !== 'FINANCE_OFFICER') {
-          return false // Hide finance dashboard for non-Finance Officers
+        if (item.name === 'Finances' && staffSubrole !== 'FINANCE_OFFICER' && staffSubrole !== 'ADMIN') {
+          return false // Hide finances for non-Finance Officers and non-Admins
         }
         return permissions.hasPermission(item.permission || 'view_all_data')
       })

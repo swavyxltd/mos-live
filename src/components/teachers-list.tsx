@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { StaffDetailModal } from '@/components/staff-detail-modal'
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import { 
   UserCheck, 
   Mail, 
@@ -32,6 +34,7 @@ interface Teacher {
   classes: Array<{
     id: string
     name: string
+    students: number
   }>
   _count: {
     classes: number
@@ -44,15 +47,58 @@ interface TeachersListProps {
 }
 
 export function TeachersList({ teachers, onEditTeacher }: TeachersListProps) {
-  const [deleteTeacherId, setDeleteTeacherId] = useState<string | null>(null)
+  const [archiveTeacherId, setArchiveTeacherId] = useState<string | null>(null)
+  const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null)
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
+  const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false)
+  const [teacherToArchive, setTeacherToArchive] = useState<{ id: string; name: string } | null>(null)
+  const [isArchiving, setIsArchiving] = useState(false)
 
-  const handleDeleteTeacher = async (teacherId: string, teacherName: string) => {
-    if (confirm(`Are you sure you want to delete ${teacherName}? This action cannot be undone.`)) {
-      console.log(`Deleting teacher: ${teacherId}`)
-      // TODO: Implement actual delete API call
+  const handleArchiveTeacher = async (teacherId: string, teacherName: string) => {
+    setTeacherToArchive({ id: teacherId, name: teacherName })
+    setIsArchiveDialogOpen(true)
+  }
+
+  const handleConfirmArchive = async () => {
+    if (!teacherToArchive) return
+    
+    setIsArchiving(true)
+    try {
+      console.log(`Archiving teacher: ${teacherToArchive.id}`)
+      // TODO: Implement actual archive API call
       // For now, just log the action
-      alert(`Teacher ${teacherName} would be deleted (demo mode)`)
+      console.log(`Teacher ${teacherToArchive.name} would be archived (demo mode)`)
+      
+      // Close dialogs and reset state
+      setIsArchiveDialogOpen(false)
+      setTeacherToArchive(null)
+    } catch (error) {
+      console.error('Error archiving teacher:', error)
+    } finally {
+      setIsArchiving(false)
     }
+  }
+
+  const handleViewTeacher = (teacher: Teacher) => {
+    setSelectedTeacher(teacher)
+    setIsDetailModalOpen(true)
+  }
+
+  const handleCloseModal = () => {
+    setIsDetailModalOpen(false)
+    setSelectedTeacher(null)
+  }
+
+  const handleEditFromModal = (teacherId: string) => {
+    if (onEditTeacher) {
+      onEditTeacher(teacherId)
+    }
+    handleCloseModal()
+  }
+
+  const handleArchiveFromModal = async (teacherId: string, teacherName: string) => {
+    await handleArchiveTeacher(teacherId, teacherName)
+    handleCloseModal()
   }
 
   if (teachers.length === 0) {
@@ -148,11 +194,13 @@ export function TeachersList({ teachers, onEditTeacher }: TeachersListProps) {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2">
-                      <Link href={`/staff/${teacher.id}`}>
-                        <Button variant="ghost" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </Link>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleViewTeacher(teacher)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
                       {onEditTeacher ? (
                         <Button 
                           variant="ghost" 
@@ -172,7 +220,7 @@ export function TeachersList({ teachers, onEditTeacher }: TeachersListProps) {
                         variant="ghost" 
                         size="sm" 
                         className="text-red-600 hover:text-red-700"
-                        onClick={() => handleDeleteTeacher(teacher.id, teacher.name)}
+                        onClick={() => handleArchiveTeacher(teacher.id, teacher.name)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -184,6 +232,31 @@ export function TeachersList({ teachers, onEditTeacher }: TeachersListProps) {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Staff Detail Modal */}
+      <StaffDetailModal
+        staff={selectedTeacher}
+        isOpen={isDetailModalOpen}
+        onClose={handleCloseModal}
+        onEdit={handleEditFromModal}
+        onArchive={handleArchiveFromModal}
+      />
+
+      {/* Archive Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={isArchiveDialogOpen}
+        onClose={() => {
+          setIsArchiveDialogOpen(false)
+          setTeacherToArchive(null)
+        }}
+        onConfirm={handleConfirmArchive}
+        title="Archive Staff Member"
+        message={`Are you sure you want to archive ${teacherToArchive?.name}? This will disable their account and remove them from active staff.`}
+        confirmText="Archive Staff"
+        cancelText="Cancel"
+        variant="destructive"
+        isLoading={isArchiving}
+      />
     </div>
   )
 }

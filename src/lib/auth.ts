@@ -186,9 +186,9 @@ export function getPostLoginRedirect(roleHints: {
     return '/owner/overview'
   }
   
-  // 2) Admin (org admin) → /admin (for now, redirect to staff portal)
+  // 2) Admin (org admin) → /dashboard
   if (roleHints.orgAdminOf.length > 0) {
-    return '/staff'
+    return '/dashboard'
   }
   
   // 3) Staff (any staff role) → /staff

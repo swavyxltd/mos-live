@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Search, BookOpen, Video, HelpCircle, MessageSquare, Phone, Mail, Filter, MoreHorizontal } from 'lucide-react'
+import { Plus, Search, BookOpen, Video, HelpCircle, MessageSquare, Mail, Filter, MoreHorizontal } from 'lucide-react'
 import Link from 'next/link'
 import { format } from 'date-fns'
 
@@ -20,6 +20,19 @@ interface SupportTicket {
   createdAt: string
   updatedAt: string
   createdBy?: {
+    id: string
+    name: string
+    email: string
+  }
+  responses?: SupportTicketResponse[]
+}
+
+interface SupportTicketResponse {
+  id: string
+  ticketId: string
+  body: string
+  createdAt: string
+  createdBy: {
     id: string
     name: string
     email: string
@@ -58,20 +71,33 @@ export default function SupportPage() {
           email: 'ahmad@madrasah.com'
         }
       },
-      {
-        id: 'ticket-2',
-        subject: 'Payment processing issue',
-        body: 'Parents are reporting that they cannot complete online payments. The payment page shows an error.',
-        status: 'IN_PROGRESS',
-        role: 'ADMIN',
-        createdAt: new Date('2024-12-04').toISOString(),
-        updatedAt: new Date('2024-12-05').toISOString(),
-        createdBy: {
-          id: 'user-2',
-          name: 'Fatima Ali',
-          email: 'fatima@madrasah.com'
-        }
-      },
+        {
+          id: 'ticket-2',
+          subject: 'Payment processing issue',
+          body: 'Parents are reporting that they cannot complete online payments. The payment page shows an error.',
+          status: 'IN_PROGRESS',
+          role: 'ADMIN',
+          createdAt: new Date('2024-12-04').toISOString(),
+          updatedAt: new Date('2024-12-05').toISOString(),
+          createdBy: {
+            id: 'user-2',
+            name: 'Fatima Ali',
+            email: 'fatima@madrasah.com'
+          },
+          responses: [
+            {
+              id: 'response-1',
+              ticketId: 'ticket-2',
+              body: 'Thank you for reporting this issue. I\'ve identified the problem and it should be resolved within 24 hours.',
+              createdAt: new Date('2024-12-05').toISOString(),
+              createdBy: {
+                id: 'owner-1',
+                name: 'Support Team',
+                email: 'support@madrasah.io'
+              }
+            }
+          ]
+        },
       {
         id: 'ticket-3',
         subject: 'WhatsApp integration setup',
@@ -142,17 +168,17 @@ export default function SupportPage() {
   return (
     <div className="space-y-8">
       {/* Header Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg p-8 text-white">
+      <div className="bg-black rounded-lg p-8 text-white">
         <div className="flex justify-between items-start">
           <div>
             <h1 className="text-3xl font-bold mb-2">Support Center</h1>
-            <p className="text-blue-100 text-lg">
+            <p className="text-gray-300 text-lg">
               Get help and support for your organization. We're here to assist you.
             </p>
           </div>
           <Button 
             onClick={() => setShowCreateTicket(true)}
-            className="bg-white text-blue-600 hover:bg-blue-50"
+            className="bg-white text-black hover:bg-gray-100"
           >
             <Plus className="h-4 w-4 mr-2" />
             New Ticket
@@ -270,7 +296,35 @@ export default function SupportPage() {
                           </span>
                           <span>•</span>
                           <span>{format(new Date(ticket.createdAt), 'MMM d, yyyy')}</span>
+                          {ticket.responses && ticket.responses.length > 0 && (
+                            <>
+                              <span>•</span>
+                              <span className="flex items-center">
+                                <MessageSquare className="h-3 w-3 mr-1" />
+                                {ticket.responses.length} response(s)
+                              </span>
+                            </>
+                          )}
                         </div>
+                        
+                        {/* Display responses */}
+                        {ticket.responses && ticket.responses.length > 0 && (
+                          <div className="mt-3 space-y-2">
+                            {ticket.responses.map((response) => (
+                              <div key={response.id} className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded-r-md">
+                                <div className="flex items-center space-x-2 mb-1">
+                                  <span className="text-xs font-medium text-blue-800">
+                                    {response.createdBy.name}
+                                  </span>
+                                  <span className="text-xs text-blue-600">
+                                    {format(new Date(response.createdAt), 'MMM d, yyyy')}
+                                  </span>
+                                </div>
+                                <p className="text-sm text-blue-700">{response.body}</p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
                         <MoreHorizontal className="h-4 w-4" />
@@ -295,14 +349,6 @@ export default function SupportPage() {
                   <h4 className="font-medium text-gray-900">Email Support</h4>
                   <p className="text-sm text-gray-600">support@madrasah.io</p>
                   <p className="text-xs text-gray-500 mt-1">Response time: 24 hours</p>
-                </div>
-              </div>
-              <div className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                <Phone className="h-5 w-5 text-purple-600 mt-1" />
-                <div>
-                  <h4 className="font-medium text-gray-900">Phone Support</h4>
-                  <p className="text-sm text-gray-600">+44 20 7946 0958</p>
-                  <p className="text-xs text-gray-500 mt-1">Mon-Fri 9 AM - 5 PM GMT</p>
                 </div>
               </div>
             </div>

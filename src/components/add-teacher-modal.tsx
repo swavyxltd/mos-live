@@ -18,14 +18,14 @@ export function AddTeacherModal({ isOpen, onClose, onSave }: AddTeacherModalProp
     
     try {
       // In a real application, you would save to the database here
-      console.log('Creating new teacher:', data)
+      console.log('Creating new staff member:', data)
       
       // For demo purposes, we'll just simulate a successful creation
       await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API call
       
       onSave(data)
     } catch (error) {
-      console.error('Error creating teacher:', error)
+      console.error('Error creating staff member:', error)
     } finally {
       setIsSubmitting(false)
     }
@@ -36,7 +36,7 @@ export function AddTeacherModal({ isOpen, onClose, onSave }: AddTeacherModalProp
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Add New Teacher">
+    <Modal isOpen={isOpen} onClose={onClose} title="Add New Staff">
       <div className="max-h-[80vh] overflow-y-auto">
         <TeacherForm
           onSubmit={handleSubmit}

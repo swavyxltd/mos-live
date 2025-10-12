@@ -17,8 +17,10 @@ import {
   Eye, 
   EyeOff,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  UserCheck
 } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 interface TeacherFormData {
   name: string
@@ -27,6 +29,7 @@ interface TeacherFormData {
   username: string
   password: string
   isActive: boolean
+  staffSubrole: 'ADMIN' | 'TEACHER' | 'FINANCE_OFFICER'
 }
 
 interface TeacherFormProps {
@@ -52,7 +55,8 @@ export function TeacherForm({ initialData, isEditing = false, onSubmit, onCancel
     phone: initialData?.phone || '',
     username: initialData?.username || '',
     password: initialData?.password || '',
-    isActive: initialData?.isActive ?? true
+    isActive: initialData?.isActive ?? true,
+    staffSubrole: initialData?.staffSubrole || 'TEACHER'
   })
 
   const handleInputChange = (field: keyof TeacherFormData, value: any) => {
@@ -167,7 +171,7 @@ export function TeacherForm({ initialData, isEditing = false, onSubmit, onCancel
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
-            {isEditing ? 'Edit Teacher' : 'Add New Teacher'}
+            {isEditing ? 'Edit Staff' : 'Add New Staff'}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -205,6 +209,41 @@ export function TeacherForm({ initialData, isEditing = false, onSubmit, onCancel
               placeholder="e.g., +44 7700 900123"
               required
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="staffSubrole">Account Type *</Label>
+            <Select
+              value={formData.staffSubrole}
+              onValueChange={(value: 'ADMIN' | 'TEACHER' | 'FINANCE_OFFICER') => handleInputChange('staffSubrole', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select account type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ADMIN">
+                  <div className="flex items-center gap-2">
+                    <UserCheck className="h-4 w-4" />
+                    Admin - Full access to all features
+                  </div>
+                </SelectItem>
+                <SelectItem value="TEACHER">
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Teacher - Teaching and student management
+                  </div>
+                </SelectItem>
+                <SelectItem value="FINANCE_OFFICER">
+                  <div className="flex items-center gap-2">
+                    <Shield className="h-4 w-4" />
+                    Finance Officer - Financial data and payments
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-gray-600">
+              Choose the appropriate access level for this staff member
+            </p>
           </div>
 
           {/* Login Credentials */}
@@ -355,13 +394,15 @@ export function TeacherForm({ initialData, isEditing = false, onSubmit, onCancel
                 Account Status
               </Label>
               <p className="text-sm text-gray-600">
-                {formData.isActive ? 'Teacher can sign in and access their portal' : 'Teacher account is disabled'}
+                {formData.isActive ? 'Staff member can sign in and access their portal' : 'Staff account is disabled - cannot login'}
               </p>
             </div>
             <Switch
               id="isActive"
               checked={formData.isActive}
               onCheckedChange={(checked) => handleInputChange('isActive', checked)}
+              className={formData.isActive ? 'bg-green-100' : 'bg-red-100'}
+              circleClassName={formData.isActive ? 'bg-green-500' : 'bg-red-500'}
             />
           </div>
         </CardContent>
@@ -382,12 +423,13 @@ export function TeacherForm({ initialData, isEditing = false, onSubmit, onCancel
             !formData.phone || 
             !formData.username || 
             !formData.password ||
+            !formData.staffSubrole ||
             !!usernameError ||
             !!passwordError
           }
         >
           <Save className="h-4 w-4 mr-2" />
-          {isSubmitting ? 'Saving...' : (isEditing ? 'Update Teacher' : 'Create Teacher')}
+          {isSubmitting ? 'Saving...' : (isEditing ? 'Update Staff' : 'Create Staff')}
         </Button>
       </div>
     </form>

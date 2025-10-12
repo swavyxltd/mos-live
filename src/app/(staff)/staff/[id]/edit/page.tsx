@@ -4,6 +4,11 @@ import { getActiveOrg } from '@/lib/org'
 import { EditTeacherForm } from '@/components/edit-teacher-form'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Edit Staff - Madrasah OS',
+}
 
 interface EditStaffPageProps {
   params: Promise<{
@@ -26,15 +31,16 @@ export default async function EditStaffPage({ params }: EditStaffPageProps) {
   let teacherData: any = null
 
   if (isDemoMode()) {
-    // Demo data for teacher editing
-    const demoTeachers = [
+    // Demo data for staff editing
+    const demoStaff = [
       {
         id: 'teacher-1',
         name: 'Omar Khan',
         email: 'omar@demo.com',
         phone: '+44 7700 900123',
         username: 'omar.khan',
-        isActive: true
+        isActive: true,
+        staffSubrole: 'ADMIN'
       },
       {
         id: 'teacher-2',
@@ -42,7 +48,8 @@ export default async function EditStaffPage({ params }: EditStaffPageProps) {
         email: 'aisha@demo.com',
         phone: '+44 7700 900124',
         username: 'aisha.patel',
-        isActive: true
+        isActive: true,
+        staffSubrole: 'TEACHER'
       },
       {
         id: 'teacher-3',
@@ -50,7 +57,8 @@ export default async function EditStaffPage({ params }: EditStaffPageProps) {
         email: 'ahmed@demo.com',
         phone: '+44 7700 900125',
         username: 'ahmed.hassan',
-        isActive: false
+        isActive: false,
+        staffSubrole: 'TEACHER'
       },
       {
         id: 'teacher-4',
@@ -58,11 +66,12 @@ export default async function EditStaffPage({ params }: EditStaffPageProps) {
         email: 'fatima@demo.com',
         phone: '+44 7700 900126',
         username: 'fatima.ali',
-        isActive: true
+        isActive: true,
+        staffSubrole: 'FINANCE_OFFICER'
       }
     ]
 
-    teacherData = demoTeachers.find(teacher => teacher.id === id)
+    teacherData = demoStaff.find(staff => staff.id === id)
   }
 
   if (!teacherData) {
@@ -78,8 +87,8 @@ export default async function EditStaffPage({ params }: EditStaffPageProps) {
         </div>
         <div className="max-w-4xl">
           <div className="text-center py-12">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Teacher not found</h3>
-            <p className="text-gray-500">The teacher you're trying to edit doesn't exist.</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Staff member not found</h3>
+            <p className="text-gray-500">The staff member you're trying to edit doesn't exist.</p>
           </div>
         </div>
       </div>
@@ -95,6 +104,11 @@ export default async function EditStaffPage({ params }: EditStaffPageProps) {
             Back to Staff Details
           </button>
         </Link>
+      </div>
+
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Edit Staff</h1>
+        <p className="mt-1 text-sm text-gray-500">Update staff member information and permissions</p>
       </div>
 
       <div className="max-w-4xl">

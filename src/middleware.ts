@@ -56,9 +56,9 @@ export async function middleware(request: NextRequest) {
       // Check if user is a Finance Officer and redirect to finance dashboard
       const token = await getToken({ req: request })
       if (token?.staffSubrole === 'FINANCE_OFFICER') {
-        return NextResponse.redirect(new URL('/finance-dashboard', request.url))
+        return NextResponse.redirect(new URL('/finances', request.url))
       }
-      return NextResponse.redirect(new URL('/staff', request.url))
+      return NextResponse.redirect(new URL('/dashboard', request.url))
     } else if (correctPortal === '/parent') {
       return NextResponse.redirect(new URL('/parent/dashboard', request.url))
     }
@@ -69,7 +69,7 @@ export async function middleware(request: NextRequest) {
     // Check if user is a Finance Officer (we'll need to get this from the token)
     const token = await getToken({ req: request })
     if (token?.staffSubrole === 'FINANCE_OFFICER') {
-      return NextResponse.redirect(new URL('/finance-dashboard', request.url))
+      return NextResponse.redirect(new URL('/finances', request.url))
     }
   }
   

@@ -1,13 +1,13 @@
 'use client'
 
 import { StatCard } from '@/components/ui/stat-card'
-import { WaveChart } from '@/components/ui/wave-chart'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import GenerateReportModal from '@/components/generate-report-modal'
+import { RecentActivityModal } from '@/components/recent-activity-modal'
 import { useState } from 'react'
 import { 
   Users, 
@@ -23,12 +23,12 @@ import {
   FileText,
   Receipt,
   Banknote,
-  PieChart,
-  Calendar
+  PieChart
 } from 'lucide-react'
 
 export function FinanceDashboardContent() {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
+  const [isActivityModalOpen, setIsActivityModalOpen] = useState(false)
   
   // Finance-focused demo data
   const totalStudents = 47
@@ -40,10 +40,6 @@ export function FinanceDashboardContent() {
   const averagePaymentTime = 8.5
   const collectionRate = 94.2
   
-  // Handle filter changes
-  const handleFilterChange = (filter: string) => {
-    console.log('Filter changed to:', filter)
-  }
 
   // Handle CSV export generation with month/year filters
   const handleGenerateReport = async (month: number, year: number) => {
@@ -96,49 +92,6 @@ export function FinanceDashboardContent() {
     }
   }
   
-  // Finance-focused chart data (revenue over time)
-  const revenueData = [
-    // Last 7 days
-    { date: '2025-10-01', value: 120 },
-    { date: '2025-10-02', value: 180 },
-    { date: '2025-10-03', value: 95 },
-    { date: '2025-10-04', value: 220 },
-    { date: '2025-10-05', value: 150 },
-    { date: '2025-10-06', value: 200 },
-    { date: '2025-10-07', value: 175 },
-    
-    // Last 30 days
-    { date: '2025-09-01', value: 160 },
-    { date: '2025-09-02', value: 140 },
-    { date: '2025-09-03', value: 190 },
-    { date: '2025-09-04', value: 130 },
-    { date: '2025-09-05', value: 210 },
-    { date: '2025-09-06', value: 170 },
-    { date: '2025-09-07', value: 185 },
-    { date: '2025-09-08', value: 155 },
-    { date: '2025-09-09', value: 200 },
-    { date: '2025-09-10', value: 145 },
-    { date: '2025-09-11', value: 180 },
-    { date: '2025-09-12', value: 165 },
-    { date: '2025-09-13', value: 195 },
-    { date: '2025-09-14', value: 125 },
-    { date: '2025-09-15', value: 175 },
-    { date: '2025-09-16', value: 205 },
-    { date: '2025-09-17', value: 135 },
-    { date: '2025-09-18', value: 185 },
-    { date: '2025-09-19', value: 150 },
-    { date: '2025-09-20', value: 195 },
-    { date: '2025-09-21', value: 140 },
-    { date: '2025-09-22', value: 180 },
-    { date: '2025-09-23', value: 160 },
-    { date: '2025-09-24', value: 190 },
-    { date: '2025-09-25', value: 145 },
-    { date: '2025-09-26', value: 175 },
-    { date: '2025-09-27', value: 200 },
-    { date: '2025-09-28', value: 130 },
-    { date: '2025-09-29', value: 185 },
-    { date: '2025-09-30', value: 155 }
-  ]
   
   const recentFinancialActivity = [
     {
@@ -146,56 +99,159 @@ export function FinanceDashboardContent() {
       timestamp: '2 hours ago',
       user: { name: 'System', email: 'system@madrasah.com' },
       type: 'payment',
-      amount: '£50.00'
+      amount: '£50.00',
+      studentName: 'Ahmed Hassan',
+      class: 'Quran Recitation - Level 1',
+      paymentMethod: 'Bank Transfer'
     },
     {
       action: 'Invoice generated - Aisha Khan (Quran Level 1)',
       timestamp: '4 hours ago',
       user: { name: 'Finance System', email: 'finance@madrasah.com' },
       type: 'invoice',
-      amount: '£75.00'
+      amount: '£75.00',
+      studentName: 'Aisha Khan',
+      class: 'Quran Recitation - Level 1'
     },
     {
       action: 'Overdue payment reminder sent - Fatima Ali',
       timestamp: '6 hours ago',
       user: { name: 'Finance System', email: 'finance@madrasah.com' },
       type: 'reminder',
-      amount: '£100.00'
+      amount: '£100.00',
+      studentName: 'Fatima Ali',
+      class: 'Islamic Studies - Level 2'
     },
     {
       action: 'Cash payment recorded - Yusuf Patel',
       timestamp: '1 day ago',
       user: { name: 'Hassan Ali', email: 'hassan@madrasah.com' },
       type: 'cash_payment',
-      amount: '£25.00'
+      amount: '£25.00',
+      studentName: 'Yusuf Patel',
+      class: 'Arabic Grammar',
+      paymentMethod: 'Cash'
+    },
+    {
+      action: 'Payment received - £60 from Sarah Khan',
+      timestamp: '1 day ago',
+      user: { name: 'System', email: 'system@madrasah.com' },
+      type: 'payment',
+      amount: '£60.00',
+      studentName: 'Aisha Khan',
+      class: 'Quran Recitation - Level 1',
+      paymentMethod: 'Card Payment'
+    },
+    {
+      action: 'Invoice generated - Omar Ahmed (Islamic Studies)',
+      timestamp: '2 days ago',
+      user: { name: 'Finance System', email: 'finance@madrasah.com' },
+      type: 'invoice',
+      amount: '£40.00',
+      studentName: 'Omar Ahmed',
+      class: 'Islamic Studies - Level 2'
+    },
+    {
+      action: 'Payment received - £55 from Fatima Ali',
+      timestamp: '2 days ago',
+      user: { name: 'System', email: 'system@madrasah.com' },
+      type: 'payment',
+      amount: '£55.00',
+      studentName: 'Maryam Ali',
+      class: 'Arabic Grammar',
+      paymentMethod: 'Bank Transfer'
+    },
+    {
+      action: 'Cash payment recorded - Ahmed Patel',
+      timestamp: '3 days ago',
+      user: { name: 'Hassan Ali', email: 'hassan@madrasah.com' },
+      type: 'cash_payment',
+      amount: '£35.00',
+      studentName: 'Zainab Patel',
+      class: 'Islamic Studies - Level 2',
+      paymentMethod: 'Cash'
+    },
+    {
+      action: 'Overdue payment reminder sent - Mohammed Khan',
+      timestamp: '3 days ago',
+      user: { name: 'Finance System', email: 'finance@madrasah.com' },
+      type: 'reminder',
+      amount: '£45.00',
+      studentName: 'Ibrahim Khan',
+      class: 'Quran Recitation - Level 1'
+    },
+    {
+      action: 'Payment received - £65 from Hassan Ali',
+      timestamp: '4 days ago',
+      user: { name: 'System', email: 'system@madrasah.com' },
+      type: 'payment',
+      amount: '£65.00',
+      studentName: 'Hassan Ali',
+      class: 'Quran Recitation - Level 1',
+      paymentMethod: 'Bank Transfer'
+    },
+    {
+      action: 'Invoice generated - Amina Khan (Islamic Studies)',
+      timestamp: '4 days ago',
+      user: { name: 'Finance System', email: 'finance@madrasah.com' },
+      type: 'invoice',
+      amount: '£30.00',
+      studentName: 'Amina Khan',
+      class: 'Islamic Studies - Level 2'
+    },
+    {
+      action: 'Payment received - £50 from Omar Ahmed',
+      timestamp: '5 days ago',
+      user: { name: 'System', email: 'system@madrasah.com' },
+      type: 'payment',
+      amount: '£50.00',
+      studentName: 'Khalid Ahmed',
+      class: 'Arabic Grammar',
+      paymentMethod: 'Card Payment'
+    },
+    {
+      action: 'Cash payment recorded - Priya Patel',
+      timestamp: '5 days ago',
+      user: { name: 'Hassan Ali', email: 'hassan@madrasah.com' },
+      type: 'cash_payment',
+      amount: '£45.00',
+      studentName: 'Layla Patel',
+      class: 'Quran Recitation - Level 1',
+      paymentMethod: 'Cash'
+    },
+    {
+      action: 'Overdue payment reminder sent - Mohammed Ali',
+      timestamp: '6 days ago',
+      user: { name: 'Finance System', email: 'finance@madrasah.com' },
+      type: 'reminder',
+      amount: '£75.00',
+      studentName: 'Ahmed Hassan',
+      class: 'Quran Recitation - Level 1'
+    },
+    {
+      action: 'Payment received - £40 from Sarah Khan',
+      timestamp: '1 week ago',
+      user: { name: 'System', email: 'system@madrasah.com' },
+      type: 'payment',
+      amount: '£40.00',
+      studentName: 'Aisha Khan',
+      class: 'Quran Recitation - Level 1',
+      paymentMethod: 'Bank Transfer'
     }
   ]
   
-  const upcomingFinancialEvents = [
-    {
-      title: 'Monthly Fee Collection',
-      date: 'Dec 15, 2024',
-      type: 'collection',
-      description: 'Due date for December fees'
-    },
-    {
-      title: 'Quarterly Financial Review',
-      date: 'Dec 20, 2024',
-      type: 'review',
-      description: 'Q4 financial assessment'
-    },
-    {
-      title: 'Year-end Financial Report',
-      date: 'Dec 31, 2024',
-      type: 'report',
-      description: 'Annual financial summary'
-    }
-  ]
   
-  const topRevenueClasses = [
+  const allRevenueClasses = [
     { name: 'Quran Recitation - Level 1', revenue: 450, students: 12, avgFee: 37.50 },
     { name: 'Islamic Studies - Level 2', revenue: 320, students: 8, avgFee: 40.00 },
-    { name: 'Arabic Grammar', revenue: 375, students: 15, avgFee: 25.00 }
+    { name: 'Arabic Grammar', revenue: 375, students: 15, avgFee: 25.00 },
+    { name: 'Quran Recitation - Level 2', revenue: 280, students: 7, avgFee: 40.00 },
+    { name: 'Islamic Studies - Level 1', revenue: 240, students: 6, avgFee: 40.00 },
+    { name: 'Arabic Conversation', revenue: 200, students: 10, avgFee: 20.00 },
+    { name: 'Tajweed - Level 1', revenue: 180, students: 9, avgFee: 20.00 },
+    { name: 'Islamic History', revenue: 160, students: 8, avgFee: 20.00 },
+    { name: 'Fiqh - Level 1', revenue: 140, students: 7, avgFee: 20.00 },
+    { name: 'Hadith Studies', revenue: 120, students: 6, avgFee: 20.00 }
   ]
 
   return (
@@ -219,7 +275,7 @@ export function FinanceDashboardContent() {
         </div>
       </div>
 
-      {/* Financial Metrics Grid */}
+      {/* Financial Metrics Grid - Moved to top */}
       <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr">
         <Link href="/students" className="block">
           <StatCard
@@ -300,101 +356,59 @@ export function FinanceDashboardContent() {
         </Link>
       </div>
 
-      {/* Revenue Trend Chart */}
-      <div className="hover:shadow-md transition-shadow cursor-pointer">
-        <WaveChart 
-          title="Daily Revenue Trend"
-          subtitle="Daily payment collections over the last 2 weeks"
-          data={revenueData}
-          filterOptions={[
-            { label: '7D', value: '7d' },
-            { label: '30D', value: '30d', active: true },
-            { label: '90D', value: '90d' }
-          ]}
-          onFilterChange={handleFilterChange}
-        />
-      </div>
-
-      {/* Bottom Row */}
-      <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-3">
-        {/* Recent Financial Activity */}
-        <Link href="/payments" className="block lg:col-span-2">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="h-5 w-5" />
-                Recent Financial Activity
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentFinancialActivity.map((activity, index) => (
-                  <div key={index} className="flex items-start gap-3">
-                    <div className={`w-2 h-2 rounded-full mt-2 ${
-                      activity.type === 'payment' ? 'bg-green-500' :
-                      activity.type === 'invoice' ? 'bg-blue-500' :
-                      activity.type === 'reminder' ? 'bg-orange-500' :
-                      'bg-purple-500'
-                    }`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">{activity.action}</p>
-                      <p className="text-xs text-muted-foreground">{activity.timestamp}</p>
-                    </div>
-                    <div className="text-sm font-medium text-green-600">
-                      {activity.amount}
-                    </div>
-                  </div>
-                ))}
+      {/* Recent Financial Activity */}
+      <Card className="hover:shadow-md transition-shadow">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="h-5 w-5" />
+            Recent Financial Activity
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {recentFinancialActivity.slice(0, 4).map((activity, index) => (
+              <div key={index} className="flex items-start gap-3">
+                <div className={`w-2 h-2 rounded-full mt-2 ${
+                  activity.type === 'payment' ? 'bg-green-500' :
+                  activity.type === 'invoice' ? 'bg-blue-500' :
+                  activity.type === 'reminder' ? 'bg-orange-500' :
+                  'bg-purple-500'
+                }`} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">{activity.action}</p>
+                  <p className="text-xs text-muted-foreground">{activity.timestamp}</p>
+                </div>
+                <div className="text-sm font-medium text-green-600">
+                  {activity.amount}
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        </Link>
+            ))}
+          </div>
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                console.log('Show More button clicked')
+                setIsActivityModalOpen(true)
+              }}
+              className="w-full hover:bg-gray-50"
+            >
+              Show More ({recentFinancialActivity.length} total)
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
-        {/* Upcoming Financial Events */}
-        <Link href="/calendar" className="block">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Upcoming Financial Events
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {upcomingFinancialEvents.map((event, index) => (
-                  <div key={index} className="flex items-start gap-3">
-                    <div className={`w-2 h-2 rounded-full mt-2 ${
-                      event.type === 'collection' ? 'bg-green-500' :
-                      event.type === 'review' ? 'bg-blue-500' :
-                      'bg-purple-500'
-                    }`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">{event.title}</p>
-                      <p className="text-xs text-muted-foreground">{event.date}</p>
-                      <p className="text-xs text-muted-foreground">{event.description}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
-      </div>
 
-      {/* Top Revenue Classes */}
+      {/* All Revenue Classes */}
       <Link href="/fees" className="block">
         <Card className="hover:shadow-md transition-shadow cursor-pointer">
           <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                <Target className="h-4 w-4 sm:h-5 sm:w-5" />
-                Top Revenue Classes
-              </CardTitle>
-              <Button variant="outline" size="sm" className="px-2 sm:px-3 py-1 text-xs hover:bg-gray-50 hover:scale-105 transition-all duration-200">
-                <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                View All
-              </Button>
-            </div>
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+              <Target className="h-4 w-4 sm:h-5 sm:w-5" />
+              All Revenue Classes
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
@@ -405,31 +419,24 @@ export function FinanceDashboardContent() {
                     <TableHead>Students</TableHead>
                     <TableHead>Avg Fee</TableHead>
                     <TableHead>Monthly Revenue</TableHead>
-                    <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {topRevenueClasses.map((classItem, index) => (
+                  {allRevenueClasses.map((classItem, index) => (
                     <TableRow key={index}>
                       <TableCell className="font-medium">{classItem.name}</TableCell>
                       <TableCell>{classItem.students}</TableCell>
                       <TableCell>£{classItem.avgFee}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <div className="w-16 bg-gray-200 rounded-full h-2">
-                            <div 
-                              className="bg-green-500 h-2 rounded-full" 
-                              style={{ width: `${(classItem.revenue / 500) * 100}%` }}
-                            />
-                          </div>
+                        <div className="w-16 bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-green-500 h-2 rounded-full" 
+                            style={{ width: `${(classItem.revenue / Math.max(...allRevenueClasses.map(c => c.revenue))) * 100}%` }}
+                          />
+                        </div>
                           <span className="text-sm font-medium">£{classItem.revenue}</span>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="bg-green-100 text-green-800">
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          High Revenue
-                        </Badge>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -445,6 +452,13 @@ export function FinanceDashboardContent() {
         isOpen={isReportModalOpen}
         onClose={() => setIsReportModalOpen(false)}
         onGenerateReport={handleGenerateReport}
+      />
+
+      {/* Recent Activity Modal */}
+      <RecentActivityModal
+        isOpen={isActivityModalOpen}
+        onClose={() => setIsActivityModalOpen(false)}
+        activities={recentFinancialActivity}
       />
     </div>
   )

@@ -77,6 +77,7 @@ export const STAFF_ROLE_PERMISSIONS: Record<StaffSubrole, StaffPermission[]> = {
     'reconcile_payments',
     'mark_cash_payments',
     'generate_financial_reports',
+    'access_settings',
     'view_all_data'
   ],
 }
@@ -131,5 +132,5 @@ export const STAFF_ROLE_DISPLAY_NAMES: Record<StaffSubrole, string> = {
 export const STAFF_ROLE_DESCRIPTIONS: Record<StaffSubrole, string> = {
   ADMIN: 'Full access to everything. Can manage staff, classes, students, payments, and settings.',
   TEACHER: 'Can view all classes, mark attendance, update student information, and send class messages.',
-  FINANCE_OFFICER: 'Focused on financial data. Can manage invoices, payments, and generate financial reports.'
+  FINANCE_OFFICER: 'Focused on financial data. Can manage invoices, payments, generate financial reports, and access settings.'
 }

@@ -11,11 +11,12 @@ interface StatCardProps {
   }
   description?: string
   detail?: string
+  icon?: React.ReactNode
   className?: string
 }
 
 const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
-  ({ title, value, change, description, detail, className, ...props }, ref) => {
+  ({ title, value, change, description, detail, icon, className, ...props }, ref) => {
     const changeColor = {
       positive: 'text-green-600 bg-green-50',
       negative: 'text-red-600 bg-red-50',
@@ -36,14 +37,21 @@ const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
                 <p className="text-xs text-[var(--muted-foreground)] whitespace-nowrap overflow-hidden text-ellipsis">{detail}</p>
               )}
             </div>
-            {change && (
-              <div className={cn(
-                "px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-xs font-medium flex-shrink-0 ml-1 sm:ml-2",
-                changeColor[change.type]
-              )}>
-                {change.value}
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              {change && (
+                <div className={cn(
+                  "px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-xs font-medium flex-shrink-0",
+                  changeColor[change.type]
+                )}>
+                  {change.value}
+                </div>
+              )}
+              {icon && (
+                <div className="text-[var(--muted-foreground)] flex-shrink-0">
+                  {icon}
+                </div>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>

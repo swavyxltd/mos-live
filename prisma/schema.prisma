@@ -57,6 +57,7 @@ model User {
   students             Student[]             @relation("StudentPrimaryParent")
   progressLogs         ProgressLog[]
   supportTickets       SupportTicket[]
+  supportTicketResponses SupportTicketResponse[]
   auditLogs            AuditLog[]
   parentBillingProfile ParentBillingProfile?
   reviewedApplications Application[]         @relation("ApplicationReviewer")
@@ -323,6 +324,18 @@ model SupportTicket {
 
   org       Org   @relation(fields: [orgId], references: [id], onDelete: Cascade)
   createdBy User? @relation(fields: [createdById], references: [id])
+  responses SupportTicketResponse[]
+}
+
+model SupportTicketResponse {
+  id          String   @id @default(cuid())
+  ticketId    String
+  body        String
+  createdById String
+  createdAt   DateTime @default(now())
+
+  ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  createdBy User          @relation(fields: [createdById], references: [id])
 }
 
 model Invitation {

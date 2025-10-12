@@ -13,5 +13,9 @@ export default async function InvoicesPage() {
     return <div>Loading...</div>
   }
 
-  return <InvoicesPageClient />
+  return (
+    <div>
+      <InvoicesPageClient />
+    </div>
+  )
 }

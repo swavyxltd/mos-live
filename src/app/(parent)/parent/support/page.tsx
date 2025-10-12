@@ -9,7 +9,19 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { isDemoMode } from '@/lib/demo-mode'
 import { format } from 'date-fns'
-import { MessageSquare, Phone, Mail, MapPin, Clock, Send, AlertCircle, CheckCircle } from 'lucide-react'
+import { MessageSquare, Mail, MapPin, Clock, Send, AlertCircle, CheckCircle } from 'lucide-react'
+
+interface SupportTicketResponse {
+  id: string
+  ticketId: string
+  body: string
+  createdAt: string
+  createdBy: {
+    id: string
+    name: string
+    email: string
+  }
+}
 
 export default function ParentSupportPage() {
   const { data: session, status } = useSession()
@@ -40,7 +52,20 @@ export default function ParentSupportPage() {
           priority: 'HIGH',
           createdAt: new Date('2024-11-28'),
           updatedAt: new Date('2024-11-30'),
-          category: 'BILLING'
+          category: 'BILLING',
+          responses: [
+            {
+              id: 'response-1',
+              ticketId: 'demo-ticket-2',
+              body: 'Thank you for reporting this issue. The payment system has been updated and should now work correctly. Please try again and let us know if you encounter any further issues.',
+              createdAt: new Date('2024-11-30').toISOString(),
+              createdBy: {
+                id: 'owner-1',
+                name: 'Support Team',
+                email: 'support@madrasah.io'
+              }
+            }
+          ]
         }
       ])
       setLoading(false)
@@ -147,16 +172,6 @@ export default function ParentSupportPage() {
                   </div>
                 </div>
 
-                <div className="flex items-start space-x-3">
-                  <Phone className="h-5 w-5 text-[var(--muted-foreground)] flex-shrink-0 mt-1" />
-                  <div>
-                    <p className="font-medium text-[var(--foreground)]">Phone</p>
-                    <p className="text-sm text-[var(--muted-foreground)]">
-                      +44 116 123 4567<br />
-                      <span className="text-xs">Mon-Fri: 9:00 AM - 5:00 PM</span>
-                    </p>
-                  </div>
-                </div>
 
                 <div className="flex items-start space-x-3">
                   <Mail className="h-5 w-5 text-[var(--muted-foreground)] flex-shrink-0 mt-1" />
@@ -308,7 +323,32 @@ export default function ParentSupportPage() {
                             <span>Created: {format(new Date(ticket.createdAt), 'PPP')}</span>
                             <span>Updated: {format(new Date(ticket.updatedAt), 'PPP')}</span>
                             <span>Category: {ticket.category}</span>
+                            {ticket.responses && ticket.responses.length > 0 && (
+                              <span className="flex items-center">
+                                <MessageSquare className="h-3 w-3 mr-1" />
+                                {ticket.responses.length} response(s)
+                              </span>
+                            )}
                           </div>
+                          
+                          {/* Display responses */}
+                          {ticket.responses && ticket.responses.length > 0 && (
+                            <div className="mt-3 space-y-2">
+                              {ticket.responses.map((response) => (
+                                <div key={response.id} className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded-r-md">
+                                  <div className="flex items-center space-x-2 mb-1">
+                                    <span className="text-xs font-medium text-blue-800">
+                                      {response.createdBy.name}
+                                    </span>
+                                    <span className="text-xs text-blue-600">
+                                      {format(new Date(response.createdAt), 'MMM d, yyyy')}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm text-blue-700">{response.body}</p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                         <div className="flex items-center">
                           {ticket.status === 'OPEN' ? (
