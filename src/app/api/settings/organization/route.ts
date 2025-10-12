@@ -18,7 +18,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, timezone, lateThreshold, address, phone, email } = body
+    const { name, timezone, lateThreshold, address, phone, email, officeHours } = body
 
     // Update organization settings
     const updatedOrg = await prisma.org.update({
@@ -26,11 +26,12 @@ export async function PUT(request: NextRequest) {
       data: {
         name,
         timezone,
+        address,
+        phone,
+        email,
+        officeHours,
         settings: JSON.stringify({
-          lateThreshold,
-          address,
-          phone,
-          email
+          lateThreshold
         })
       }
     })
@@ -67,9 +68,10 @@ export async function GET() {
       name: org.name,
       timezone: org.timezone,
       lateThreshold: settings.lateThreshold || 15,
-      address: settings.address || '',
-      phone: settings.phone || '',
-      email: settings.email || ''
+      address: org.address || '',
+      phone: org.phone || '',
+      email: org.email || '',
+      officeHours: org.officeHours || ''
     })
   } catch (error) {
     console.error('Error fetching organization settings:', error)

@@ -4,6 +4,7 @@ import * as React from 'react'
 import { cn } from '@/lib/utils'
 import { Sidebar } from './sidebar'
 import { Topbar } from './topbar'
+import { OverduePaymentBanner } from '@/components/overdue-payment-banner'
 
 interface PageProps {
   children: React.ReactNode
@@ -30,9 +31,10 @@ export function Page({ children, user, org, userRole, staffSubrole, title, bread
     <div className="min-h-screen bg-[var(--background)]">
       <Sidebar user={user} org={org} userRole={userRole} staffSubrole={staffSubrole} />
       <div className="sm:pl-64">
-        <Topbar title={title} breadcrumbs={breadcrumbs} user={user} />
+        <Topbar title={title} breadcrumbs={breadcrumbs} user={user} userRole={userRole} />
         <main className="py-6">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            {userRole === 'PARENT' && <OverduePaymentBanner />}
             {children}
           </div>
         </main>

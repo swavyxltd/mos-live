@@ -13,10 +13,11 @@ interface StatCardProps {
   detail?: string
   icon?: React.ReactNode
   className?: string
+  onClick?: () => void
 }
 
 const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
-  ({ title, value, change, description, detail, icon, className, ...props }, ref) => {
+  ({ title, value, change, description, detail, icon, className, onClick, ...props }, ref) => {
     const changeColor = {
       positive: 'text-green-600 bg-green-50',
       negative: 'text-red-600 bg-red-50',
@@ -24,7 +25,16 @@ const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
     }
 
     return (
-      <Card ref={ref} className={cn("relative h-32 sm:h-36 min-h-32 sm:min-h-36 hover:shadow-md hover:scale-[1.02] transition-all duration-200 cursor-pointer", className)} {...props}>
+      <Card 
+        ref={ref} 
+        className={cn(
+          "relative h-32 sm:h-36 min-h-32 sm:min-h-36 transition-all duration-200",
+          onClick ? "hover:shadow-md hover:scale-[1.02] cursor-pointer" : "",
+          className
+        )} 
+        onClick={onClick}
+        {...props}
+      >
         <CardContent className="p-3 sm:p-4 h-full flex flex-col justify-between">
           <div className="flex items-start justify-between">
             <div className="space-y-1 flex-1 min-w-0">

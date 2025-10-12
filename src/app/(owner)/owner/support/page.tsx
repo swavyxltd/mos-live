@@ -175,7 +175,7 @@ export default function OwnerSupportPage() {
           orgId: 'org-2',
           createdBy: {
             id: 'user-4',
-            name: 'Omar Khan',
+            name: 'Moulana Omar',
             email: 'omar@birmingham-madrasah.com'
           },
           org: {

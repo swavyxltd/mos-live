@@ -27,7 +27,7 @@ export default async function OwnerDunningPage() {
         id: 'demo-org-3',
         name: 'Birmingham Quran Academy',
         owner: {
-          name: 'Omar Khan',
+          name: 'Moulana Omar',
           email: 'staff@demo.com'
         },
         studentCount: 10,

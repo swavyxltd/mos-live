@@ -54,8 +54,8 @@ export function SendMessageModal({ isOpen, onClose, messageType, onSend }: SendM
 
   // Demo data for classes and parents
   const demoClasses = [
-    { id: 'class-1', name: 'Quran Recitation - Level 1', teacher: 'Omar Khan' },
-    { id: 'class-2', name: 'Islamic Studies - Level 2', teacher: 'Aisha Patel' },
+    { id: 'class-1', name: 'Quran Recitation - Level 1', teacher: 'Moulana Omar' },
+    { id: 'class-2', name: 'Islamic Studies - Level 2', teacher: 'Apa Aisha' },
     { id: 'class-3', name: 'Arabic Grammar', teacher: 'Hassan Ali' },
     { id: 'class-4', name: 'Hadith Studies', teacher: 'Fatima Ahmed' }
   ]

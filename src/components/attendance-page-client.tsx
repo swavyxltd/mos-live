@@ -78,8 +78,8 @@ export function AttendancePageClient({ attendanceData }: AttendancePageClientPro
         status: day.status,
         time: day.status === 'PRESENT' || day.status === 'LATE' ? '4:00 PM' : undefined
       })),
-      recentTrend: student.attendancePercentage >= 90 ? 'up' : 
-                  student.attendancePercentage < 70 ? 'down' : 'stable'
+      recentTrend: student.attendancePercentage >= 95 ? 'up' : 
+                  student.attendancePercentage < 86 ? 'down' : 'stable'
     }
 
     setSelectedStudent(studentDetail)

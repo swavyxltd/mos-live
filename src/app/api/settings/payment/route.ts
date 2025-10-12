@@ -18,7 +18,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { autoPayEnabled, paymentMethodId } = body
+    const { autoPayEnabled, paymentMethodId, preferredPaymentMethod } = body
 
     // Update or create parent billing profile
     const billingProfile = await prisma.parentBillingProfile.upsert({
@@ -31,13 +31,15 @@ export async function PUT(request: NextRequest) {
       update: {
         autoPayEnabled,
         defaultPaymentMethodId: paymentMethodId,
+        preferredPaymentMethod,
         updatedAt: new Date()
       },
       create: {
         orgId: org.id,
         parentUserId: session.user.id,
         autoPayEnabled,
-        defaultPaymentMethodId: paymentMethodId
+        defaultPaymentMethodId: paymentMethodId,
+        preferredPaymentMethod
       }
     })
 
@@ -77,9 +79,31 @@ export async function GET() {
     })
 
     return NextResponse.json({
-      autoPayEnabled: billingProfile?.autoPayEnabled || false,
-      paymentMethodId: billingProfile?.defaultPaymentMethodId || null,
-      lastUpdated: billingProfile?.updatedAt?.toISOString() || null
+      autoPayEnabled: true, // Demo: Show auto-pay as enabled
+      paymentMethodId: 'pm_demo_visa', // Demo: Set default payment method
+      preferredPaymentMethod: billingProfile?.preferredPaymentMethod || null,
+      lastUpdated: billingProfile?.updatedAt?.toISOString() || null,
+      // Demo payment methods for demonstration
+      paymentMethods: [
+        {
+          id: 'pm_demo_visa',
+          type: 'card',
+          last4: '4242',
+          brand: 'visa',
+          expiryMonth: 12,
+          expiryYear: 2025,
+          isDefault: true
+        },
+        {
+          id: 'pm_demo_mastercard',
+          type: 'card',
+          last4: '5555',
+          brand: 'mastercard',
+          expiryMonth: 8,
+          expiryYear: 2026,
+          isDefault: false
+        }
+      ]
     })
   } catch (error) {
     console.error('Error fetching payment settings:', error)

@@ -109,7 +109,7 @@ Properly configuring your organization settings is crucial for the smooth operat
 2. **Registration Fees**: One-time enrollment charges
 3. **Exam Fees**: Assessment and examination charges
 4. **Transportation Fees**: Optional transport charges
-5. **Late Payment Fees**: Penalties for overdue payments
+5. **Payment Processing**: Secure payment handling
 
 ### Payment Methods
 - **Online Payments**: Stripe integration for card payments
@@ -1432,7 +1432,7 @@ Setting up comprehensive fee plans is essential for managing your madrasah's fin
 - **Family Discounts**: Reduced rates for multiple children
 - **Sibling Discounts**: Automatic discounts for families
 - **Early Payment**: Discounts for early payment
-- **Late Fees**: Penalties for overdue payments
+- **Payment Tracking**: Monitor payment status
 
 ### One-Time Fees
 - **Registration Fees**: New student enrollment charges
@@ -1465,7 +1465,7 @@ Setting up comprehensive fee plans is essential for managing your madrasah's fin
 - **Billing Cycle**: Monthly, weekly, termly, or one-time
 - **Due Date**: When payments are due
 - **Grace Period**: Late payment grace period
-- **Late Fees**: Penalty charges for overdue payments
+- **Payment Management**: Handle payment processing
 - **Discounts**: Early payment or family discounts
 
 ## Fee Plan Management
@@ -1607,7 +1607,7 @@ Creating and managing invoices is crucial for maintaining your madrasah's financ
 ### Monthly Invoices
 - **Tuition Fees**: Regular monthly tuition charges
 - **Additional Fees**: Extra charges for special services
-- **Late Fees**: Penalties for overdue payments
+- **Payment Tracking**: Monitor payment status
 - **Family Invoices**: Combined family billing
 - **Class-Specific**: Subject or level-based charges
 
@@ -1948,7 +1948,7 @@ Efficient payment processing is essential for maintaining your madrasah's financ
 ### Overdue Payments
 - **Payment Reminders**: Overdue payment notifications
 - **Collection Procedures**: Payment collection steps
-- **Late Fees**: Overdue payment penalties
+- **Payment Monitoring**: Track payment status
 - **Payment Plans**: Extended payment options
 - **Collection Actions**: Payment collection actions
 

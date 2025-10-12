@@ -80,6 +80,22 @@ model Org {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Contact Information
+  address     String?
+  phone       String?
+  email       String?
+  officeHours String?
+
+  // Payment Settings
+  stripeEnabled           Boolean @default(false)
+  stripePublishableKey    String?
+  stripeSecretKey         String?
+  stripeWebhookSecret     String?
+  autoPaymentEnabled      Boolean @default(true)
+  cashPaymentEnabled      Boolean @default(true)
+  bankTransferEnabled     Boolean @default(true)
+  paymentInstructions     String?
+
   memberships           UserOrgMembership[]
   classes               Class[]
   students              Student[]
@@ -235,6 +251,7 @@ model ParentBillingProfile {
   stripeCustomerId       String?
   defaultPaymentMethodId String?
   autoPayEnabled         Boolean  @default(false)
+  preferredPaymentMethod String?  // CARD, CASH, BANK_TRANSFER
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
 

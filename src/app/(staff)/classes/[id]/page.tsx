@@ -54,7 +54,7 @@ export default async function ClassDetailsPage({ params }: ClassDetailsPageProps
           endTime: '5:00 PM'
         },
         teacher: {
-          name: 'Omar Khan',
+          name: 'Moulana Omar',
           email: 'omar@demo.com'
         },
         studentClasses: [
@@ -88,7 +88,7 @@ export default async function ClassDetailsPage({ params }: ClassDetailsPageProps
           endTime: '6:00 PM'
         },
         teacher: {
-          name: 'Aisha Patel',
+          name: 'Apa Aisha',
           email: 'aisha@demo.com'
         },
         studentClasses: [

@@ -21,7 +21,7 @@ export default async function StaffPage() {
     teachers = [
       {
         id: 'teacher-1',
-        name: 'Omar Khan',
+        name: 'Moulana Omar',
         email: 'omar@demo.com',
         phone: '+44 7700 900123',
         username: 'omar.khan',
@@ -39,7 +39,7 @@ export default async function StaffPage() {
       },
       {
         id: 'teacher-2',
-        name: 'Aisha Patel',
+        name: 'Apa Aisha',
         email: 'aisha@demo.com',
         phone: '+44 7700 900124',
         username: 'aisha.patel',

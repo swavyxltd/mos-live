@@ -12,8 +12,6 @@ import {
   X,
   User,
   Calendar,
-  TrendingUp,
-  TrendingDown,
   ChevronLeft,
   ChevronRight,
   Filter,
@@ -26,6 +24,7 @@ import {
   UserCheck,
   Shield
 } from 'lucide-react'
+import { getAttendanceTrend } from '@/lib/attendance-ratings'
 
 interface StudentDetail {
   id: string

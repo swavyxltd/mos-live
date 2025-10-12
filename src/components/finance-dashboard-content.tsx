@@ -109,7 +109,7 @@ export function FinanceDashboardContent() {
       timestamp: '4 hours ago',
       user: { name: 'Finance System', email: 'finance@madrasah.com' },
       type: 'invoice',
-      amount: '£75.00',
+      amount: '£50.00',
       studentName: 'Aisha Khan',
       class: 'Quran Recitation - Level 1'
     },
@@ -118,7 +118,7 @@ export function FinanceDashboardContent() {
       timestamp: '6 hours ago',
       user: { name: 'Finance System', email: 'finance@madrasah.com' },
       type: 'reminder',
-      amount: '£100.00',
+      amount: '£100.00', // Combined for 2 children
       studentName: 'Fatima Ali',
       class: 'Islamic Studies - Level 2'
     },
@@ -133,11 +133,11 @@ export function FinanceDashboardContent() {
       paymentMethod: 'Cash'
     },
     {
-      action: 'Payment received - £60 from Sarah Khan',
+      action: 'Payment received - £50 from Sarah Khan',
       timestamp: '1 day ago',
       user: { name: 'System', email: 'system@madrasah.com' },
       type: 'payment',
-      amount: '£60.00',
+      amount: '£50.00',
       studentName: 'Aisha Khan',
       class: 'Quran Recitation - Level 1',
       paymentMethod: 'Card Payment'
@@ -147,16 +147,16 @@ export function FinanceDashboardContent() {
       timestamp: '2 days ago',
       user: { name: 'Finance System', email: 'finance@madrasah.com' },
       type: 'invoice',
-      amount: '£40.00',
+      amount: '£50.00',
       studentName: 'Omar Ahmed',
       class: 'Islamic Studies - Level 2'
     },
     {
-      action: 'Payment received - £55 from Fatima Ali',
+      action: 'Payment received - £50 from Fatima Ali',
       timestamp: '2 days ago',
       user: { name: 'System', email: 'system@madrasah.com' },
       type: 'payment',
-      amount: '£55.00',
+      amount: '£50.00',
       studentName: 'Maryam Ali',
       class: 'Arabic Grammar',
       paymentMethod: 'Bank Transfer'
@@ -166,7 +166,7 @@ export function FinanceDashboardContent() {
       timestamp: '3 days ago',
       user: { name: 'Hassan Ali', email: 'hassan@madrasah.com' },
       type: 'cash_payment',
-      amount: '£35.00',
+      amount: '£50.00',
       studentName: 'Zainab Patel',
       class: 'Islamic Studies - Level 2',
       paymentMethod: 'Cash'
@@ -176,16 +176,16 @@ export function FinanceDashboardContent() {
       timestamp: '3 days ago',
       user: { name: 'Finance System', email: 'finance@madrasah.com' },
       type: 'reminder',
-      amount: '£45.00',
+      amount: '£50.00',
       studentName: 'Ibrahim Khan',
       class: 'Quran Recitation - Level 1'
     },
     {
-      action: 'Payment received - £65 from Hassan Ali',
+      action: 'Payment received - £50 from Hassan Ali',
       timestamp: '4 days ago',
       user: { name: 'System', email: 'system@madrasah.com' },
       type: 'payment',
-      amount: '£65.00',
+      amount: '£50.00',
       studentName: 'Hassan Ali',
       class: 'Quran Recitation - Level 1',
       paymentMethod: 'Bank Transfer'
@@ -195,7 +195,7 @@ export function FinanceDashboardContent() {
       timestamp: '4 days ago',
       user: { name: 'Finance System', email: 'finance@madrasah.com' },
       type: 'invoice',
-      amount: '£30.00',
+      amount: '£50.00',
       studentName: 'Amina Khan',
       class: 'Islamic Studies - Level 2'
     },
@@ -214,7 +214,7 @@ export function FinanceDashboardContent() {
       timestamp: '5 days ago',
       user: { name: 'Hassan Ali', email: 'hassan@madrasah.com' },
       type: 'cash_payment',
-      amount: '£45.00',
+      amount: '£50.00',
       studentName: 'Layla Patel',
       class: 'Quran Recitation - Level 1',
       paymentMethod: 'Cash'
@@ -224,7 +224,7 @@ export function FinanceDashboardContent() {
       timestamp: '6 days ago',
       user: { name: 'Finance System', email: 'finance@madrasah.com' },
       type: 'reminder',
-      amount: '£75.00',
+      amount: '£50.00',
       studentName: 'Ahmed Hassan',
       class: 'Quran Recitation - Level 1'
     },
@@ -233,7 +233,7 @@ export function FinanceDashboardContent() {
       timestamp: '1 week ago',
       user: { name: 'System', email: 'system@madrasah.com' },
       type: 'payment',
-      amount: '£40.00',
+      amount: '£50.00',
       studentName: 'Aisha Khan',
       class: 'Quran Recitation - Level 1',
       paymentMethod: 'Bank Transfer'

@@ -180,7 +180,7 @@ export function StudentsPageWrapper({ initialStudents, classes }: StudentsPageWr
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Low Attendance</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {students.filter(s => s.attendanceRate < 90).length}
+                {students.filter(s => s.attendanceRate < 86).length}
               </p>
             </div>
           </div>

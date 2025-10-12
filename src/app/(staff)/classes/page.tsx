@@ -35,7 +35,7 @@ export default async function ClassesPage() {
         createdAt: new Date('2024-09-01'),
         updatedAt: new Date('2024-12-06'),
         teacher: {
-          name: 'Omar Khan',
+          name: 'Moulana Omar',
           email: 'staff@demo.com'
         },
         studentClasses: [
@@ -68,7 +68,7 @@ export default async function ClassesPage() {
         createdAt: new Date('2024-09-01'),
         updatedAt: new Date('2024-12-06'),
         teacher: {
-          name: 'Aisha Patel',
+          name: 'Apa Aisha',
           email: 'parent@demo.com'
         },
         studentClasses: [

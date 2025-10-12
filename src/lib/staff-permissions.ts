@@ -22,7 +22,7 @@ export class StaffPermissionChecker {
   // Check if user has a specific permission
   hasPermission(permission: string): boolean {
     // SuperAdmin always has all permissions
-    if (this.user.isSuperAdmin) {
+    if (this.user?.isSuperAdmin) {
       return true
     }
 
@@ -113,7 +113,20 @@ export function createStaffPermissionChecker(user: StaffUser, subrole: StaffSubr
 }
 
 // Helper function to check permissions in components
-export function useStaffPermissions(user: StaffUser, subrole: StaffSubrole) {
+export function useStaffPermissions(user?: StaffUser, subrole?: StaffSubrole) {
+  if (!user || !subrole) {
+    return {
+      hasPermission: () => false,
+      canPerform: () => false,
+      canAccessRoute: () => false,
+      canViewSection: () => false,
+      isAdmin: () => false,
+      isTeacher: () => false,
+      isFinanceOfficer: () => false,
+      getSubrole: () => undefined
+    }
+  }
+  
   const checker = createStaffPermissionChecker(user, subrole)
   
   return {

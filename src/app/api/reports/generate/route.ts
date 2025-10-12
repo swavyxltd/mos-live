@@ -54,8 +54,8 @@ export async function POST(request: NextRequest) {
     ]
 
     const classes = [
-      { name: 'Quran Recitation - Level 1', teacher: { name: 'Omar Khan' }, description: 'Basic Quran recitation with proper tajweed', attendance: 95, students: 12 },
-      { name: 'Quran Recitation - Level 2', teacher: { name: 'Aisha Patel' }, description: 'Intermediate Quran recitation and memorization', attendance: 92, students: 8 },
+      { name: 'Quran Recitation - Level 1', teacher: { name: 'Moulana Omar' }, description: 'Basic Quran recitation with proper tajweed', attendance: 95, students: 12 },
+      { name: 'Quran Recitation - Level 2', teacher: { name: 'Apa Aisha' }, description: 'Intermediate Quran recitation and memorization', attendance: 92, students: 8 },
       { name: 'Islamic Studies - Level 1', teacher: { name: 'Hassan Ali' }, description: 'Basic Islamic knowledge and beliefs', attendance: 88, students: 15 },
       { name: 'Islamic Studies - Level 2', teacher: { name: 'Fatima Sheikh' }, description: 'Advanced Islamic studies and jurisprudence', attendance: 90, students: 10 },
       { name: 'Arabic Grammar', teacher: { name: 'Yusuf Ahmed' }, description: 'Arabic language fundamentals and grammar', attendance: 85, students: 18 },
@@ -66,8 +66,8 @@ export async function POST(request: NextRequest) {
 
     const staff = [
       { user: { name: 'Ahmed Hassan', email: 'ahmed@madrasah.com' }, role: 'ADMIN' },
-      { user: { name: 'Omar Khan', email: 'omar@madrasah.com' }, role: 'STAFF' },
-      { user: { name: 'Aisha Patel', email: 'aisha@madrasah.com' }, role: 'STAFF' },
+      { user: { name: 'Moulana Omar', email: 'omar@madrasah.com' }, role: 'STAFF' },
+      { user: { name: 'Apa Aisha', email: 'aisha@madrasah.com' }, role: 'STAFF' },
       { user: { name: 'Hassan Ali', email: 'hassan@madrasah.com' }, role: 'STAFF' },
       { user: { name: 'Fatima Sheikh', email: 'fatima@madrasah.com' }, role: 'STAFF' },
       { user: { name: 'Yusuf Ahmed', email: 'yusuf@madrasah.com' }, role: 'STAFF' },

@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
         type: 'class',
         id: '1',
         title: 'Quran Recitation - Level 1',
-        subtitle: 'Teacher: Omar Khan',
+        subtitle: 'Teacher: Moulana Omar',
         url: '/classes',
         icon: '📚'
       },
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
         type: 'class',
         id: '2',
         title: 'Islamic Studies - Level 2',
-        subtitle: 'Teacher: Aisha Patel',
+        subtitle: 'Teacher: Apa Aisha',
         url: '/classes',
         icon: '📚'
       },
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
       {
         type: 'staff',
         id: '2',
-        title: 'Omar Khan',
+        title: 'Moulana Omar',
         subtitle: 'Role: STAFF',
         url: '/settings',
         icon: '👨‍🏫'
@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
       {
         type: 'staff',
         id: '3',
-        title: 'Aisha Patel',
+        title: 'Apa Aisha',
         subtitle: 'Role: STAFF',
         url: '/settings',
         icon: '👨‍🏫'

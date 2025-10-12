@@ -88,7 +88,7 @@ export default function OwnerOrgsPage() {
             currentPeriodEnd: new Date('2024-11-30')
           },
           owner: {
-            name: 'Omar Khan',
+            name: 'Moulana Omar',
             email: 'staff@demo.com'
           },
           totalRevenue: 2000,

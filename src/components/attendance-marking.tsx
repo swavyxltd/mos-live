@@ -25,7 +25,7 @@ const demoClasses: Class[] = [
   {
     id: 'class-1',
     name: 'Quran Recitation - Level 1',
-    teacher: 'Omar Khan',
+    teacher: 'Moulana Omar',
     students: [
       { id: 's1', name: 'Ahmed Hassan', status: 'UNMARKED' },
       { id: 's2', name: 'Fatima Ali', status: 'UNMARKED' },
@@ -35,7 +35,7 @@ const demoClasses: Class[] = [
   {
     id: 'class-2',
     name: 'Islamic Studies - Level 2',
-    teacher: 'Aisha Patel',
+    teacher: 'Apa Aisha',
     students: [
       { id: 's4', name: 'Mariam Ahmed', status: 'UNMARKED' },
       { id: 's5', name: 'Hassan Khan', status: 'UNMARKED' }

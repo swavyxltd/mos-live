@@ -16,7 +16,7 @@ export function getAttendanceDataForWeek(weekDate: Date) {
         {
           id: 'demo-attendance-1',
           name: 'Quran Recitation - Level 1',
-          teacher: 'Omar Khan',
+          teacher: 'Moulana Omar',
           date: new Date('2024-12-06'),
           totalStudents: 3,
           present: 2,
@@ -70,7 +70,7 @@ export function getAttendanceDataForWeek(weekDate: Date) {
         {
           id: 'demo-attendance-2',
           name: 'Islamic Studies - Level 2',
-          teacher: 'Aisha Patel',
+          teacher: 'Apa Aisha',
           date: new Date('2024-12-05'),
           totalStudents: 2,
           present: 1,
@@ -114,7 +114,7 @@ export function getAttendanceDataForWeek(weekDate: Date) {
         {
           id: 'demo-attendance-1',
           name: 'Quran Recitation - Level 1',
-          teacher: 'Omar Khan',
+          teacher: 'Moulana Omar',
           date: new Date('2024-11-29'),
           totalStudents: 3,
           present: 3,
@@ -172,7 +172,7 @@ export function getAttendanceDataForWeek(weekDate: Date) {
         {
           id: 'demo-attendance-1',
           name: 'Quran Recitation - Level 1',
-          teacher: 'Omar Khan',
+          teacher: 'Moulana Omar',
           date: new Date('2024-11-22'),
           totalStudents: 3,
           present: 1,
@@ -230,7 +230,7 @@ export function getAttendanceDataForWeek(weekDate: Date) {
         {
           id: 'demo-attendance-1',
           name: 'Quran Recitation - Level 1',
-          teacher: 'Omar Khan',
+          teacher: 'Moulana Omar',
           date: new Date('2024-11-15'),
           totalStudents: 3,
           present: 2,
@@ -284,7 +284,7 @@ export function getAttendanceDataForWeek(weekDate: Date) {
         {
           id: 'demo-attendance-2',
           name: 'Islamic Studies - Level 2',
-          teacher: 'Aisha Patel',
+          teacher: 'Apa Aisha',
           date: new Date('2024-11-14'),
           totalStudents: 2,
           present: 1,
@@ -328,7 +328,7 @@ export function getAttendanceDataForWeek(weekDate: Date) {
         {
           id: 'demo-attendance-1',
           name: 'Quran Recitation - Level 1',
-          teacher: 'Omar Khan',
+          teacher: 'Moulana Omar',
           date: new Date('2024-11-08'),
           totalStudents: 3,
           present: 1,
@@ -386,7 +386,7 @@ export function getAttendanceDataForWeek(weekDate: Date) {
         {
           id: 'demo-attendance-1',
           name: 'Quran Recitation - Level 1',
-          teacher: 'Omar Khan',
+          teacher: 'Moulana Omar',
           date: new Date('2024-11-01'),
           totalStudents: 3,
           present: 3,
@@ -440,7 +440,7 @@ export function getAttendanceDataForWeek(weekDate: Date) {
         {
           id: 'demo-attendance-2',
           name: 'Islamic Studies - Level 2',
-          teacher: 'Aisha Patel',
+          teacher: 'Apa Aisha',
           date: new Date('2024-10-31'),
           totalStudents: 2,
           present: 2,

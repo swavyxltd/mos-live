@@ -26,7 +26,7 @@ export default function CalendarPage() {
       startTime: '4:00 PM',
       endTime: '5:00 PM',
       location: 'Room A',
-      teacher: 'Omar Khan',
+      teacher: 'Moulana Omar',
       description: 'Regular class session'
     },
     {
@@ -37,7 +37,7 @@ export default function CalendarPage() {
       startTime: '5:00 PM',
       endTime: '6:00 PM',
       location: 'Room B',
-      teacher: 'Aisha Patel',
+      teacher: 'Apa Aisha',
       description: 'Regular class session'
     },
     {
@@ -94,7 +94,7 @@ export default function CalendarPage() {
       startTime: '4:00 PM',
       endTime: '5:00 PM',
       location: 'Room A',
-      teacher: 'Omar Khan',
+      teacher: 'Moulana Omar',
       description: 'Regular class session'
     },
     {
@@ -105,7 +105,7 @@ export default function CalendarPage() {
       startTime: '5:00 PM',
       endTime: '6:00 PM',
       location: 'Room B',
-      teacher: 'Aisha Patel',
+      teacher: 'Apa Aisha',
       description: 'Regular class session'
     },
     {
@@ -140,7 +140,7 @@ export default function CalendarPage() {
       startTime: '4:00 PM',
       endTime: '5:00 PM',
       location: 'Room A',
-      teacher: 'Omar Khan',
+      teacher: 'Moulana Omar',
       description: 'Regular class session'
     },
     {
@@ -151,7 +151,7 @@ export default function CalendarPage() {
       startTime: '5:00 PM',
       endTime: '6:00 PM',
       location: 'Room B',
-      teacher: 'Aisha Patel',
+      teacher: 'Apa Aisha',
       description: 'Regular class session'
     },
     {
@@ -219,7 +219,7 @@ export default function CalendarPage() {
       startTime: '4:00 PM',
       endTime: '5:00 PM',
       location: 'Room A',
-      teacher: 'Omar Khan',
+      teacher: 'Moulana Omar',
       description: 'Regular class session'
     },
     {
@@ -230,7 +230,7 @@ export default function CalendarPage() {
       startTime: '5:00 PM',
       endTime: '6:00 PM',
       location: 'Room B',
-      teacher: 'Aisha Patel',
+      teacher: 'Apa Aisha',
       description: 'Regular class session'
     },
     {

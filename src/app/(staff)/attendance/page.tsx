@@ -22,7 +22,7 @@ export default async function AttendancePage() {
       {
         id: 'demo-attendance-1',
         name: 'Quran Recitation - Level 1',
-        teacher: 'Omar Khan',
+        teacher: 'Moulana Omar',
         date: new Date('2024-12-06'),
         totalStudents: 3,
         present: 2,
@@ -76,7 +76,7 @@ export default async function AttendancePage() {
       {
         id: 'demo-attendance-2',
         name: 'Islamic Studies - Level 2',
-        teacher: 'Aisha Patel',
+        teacher: 'Apa Aisha',
         date: new Date('2024-12-05'),
         totalStudents: 2,
         present: 1,

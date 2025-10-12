@@ -26,6 +26,7 @@ interface OrganizationSettings {
   address: string
   phone: string
   email: string
+  officeHours: string
 }
 
 interface UserSettings {
@@ -61,7 +62,8 @@ export default function SettingsPage() {
     lateThreshold: 15,
     address: '123 Education Street, London, SW1A 1AA',
     phone: '+44 20 7123 4567',
-    email: 'admin@alnoor-school.co.uk'
+    email: 'admin@alnoor-school.co.uk',
+    officeHours: 'Monday - Friday: 9:00 AM - 5:00 PM\nSaturday: 10:00 AM - 2:00 PM\nSunday: Closed'
   })
   const [userSettings, setUserSettings] = useState<UserSettings>({
     name: '',
@@ -453,6 +455,20 @@ export default function SettingsPage() {
                 onChange={(e) => handleOrgSettingsChange('email', e.target.value)}
                 placeholder="Enter contact email"
               />
+            </div>
+
+            <div>
+              <Label htmlFor="officeHours">Office Hours</Label>
+              <Textarea
+                id="officeHours"
+                value={orgSettings.officeHours}
+                onChange={(e) => handleOrgSettingsChange('officeHours', e.target.value)}
+                placeholder="Enter office hours (e.g., Monday - Friday: 9:00 AM - 5:00 PM)"
+                rows={3}
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                Use line breaks to separate different days/times
+              </p>
             </div>
           </CardContent>
         </Card>

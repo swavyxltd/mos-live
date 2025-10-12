@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
-import { Page } from '@/components/shell/page'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -68,63 +67,25 @@ export default function ParentCalendarPage() {
       const demoClassSchedules = [
         {
           id: 'demo-schedule-1',
-          title: 'Quran Recitation - Level 1',
+          title: "Ahmed's classes: Monday to Friday 5-7pm",
           dayOfWeek: 'Monday',
           startTime: '17:00',
           endTime: '19:00',
           room: 'Room A',
-          teacher: 'Omar Khan',
-          students: ['Ahmed Hassan']
+          teacher: 'Moulana Omar',
+          students: ['Ahmed Hassan'],
+          isSummary: true
         },
         {
           id: 'demo-schedule-2',
-          title: 'Islamic Studies - Level 2',
+          title: "Fatima's classes: Monday to Friday 5-7pm",
           dayOfWeek: 'Monday',
           startTime: '17:00',
           endTime: '19:00',
           room: 'Room B',
-          teacher: 'Aisha Patel',
-          students: ['Fatima Hassan']
-        },
-        {
-          id: 'demo-schedule-3',
-          title: 'Quran Recitation - Level 1',
-          dayOfWeek: 'Wednesday',
-          startTime: '17:00',
-          endTime: '19:00',
-          room: 'Room A',
-          teacher: 'Omar Khan',
-          students: ['Ahmed Hassan']
-        },
-        {
-          id: 'demo-schedule-4',
-          title: 'Islamic Studies - Level 2',
-          dayOfWeek: 'Wednesday',
-          startTime: '17:00',
-          endTime: '19:00',
-          room: 'Room B',
-          teacher: 'Aisha Patel',
-          students: ['Fatima Hassan']
-        },
-        {
-          id: 'demo-schedule-5',
-          title: 'Quran Recitation - Level 1',
-          dayOfWeek: 'Friday',
-          startTime: '17:00',
-          endTime: '19:00',
-          room: 'Room A',
-          teacher: 'Omar Khan',
-          students: ['Ahmed Hassan']
-        },
-        {
-          id: 'demo-schedule-6',
-          title: 'Islamic Studies - Level 2',
-          dayOfWeek: 'Friday',
-          startTime: '17:00',
-          endTime: '19:00',
-          room: 'Room B',
-          teacher: 'Aisha Patel',
-          students: ['Fatima Hassan']
+          teacher: 'Apa Aisha',
+          students: ['Fatima Hassan'],
+          isSummary: true
         }
       ]
 
@@ -155,8 +116,13 @@ export default function ParentCalendarPage() {
           const eventDate = new Date(d)
           eventDate.setHours(parseInt(schedule.startTime.split(':')[0]), parseInt(schedule.startTime.split(':')[1]))
           
+          // For summary entries, only show once per week (on Monday)
+          if (schedule.isSummary && dayOfWeek !== 'Monday') {
+            return
+          }
+          
           demoEvents.push({
-            id: `${schedule.id}-${d.toISOString().split('T')[0]}`,
+            id: schedule.isSummary ? schedule.id : `${schedule.id}-${d.toISOString().split('T')[0]}`,
             title: schedule.title,
             date: eventDate,
             startTime: schedule.startTime,
@@ -165,35 +131,145 @@ export default function ParentCalendarPage() {
             teacher: schedule.teacher,
             students: schedule.students,
             type: 'CLASS',
-            isHoliday: false
+            isHoliday: false,
+            isSummary: schedule.isSummary
           })
         })
       }
 
       // Add some special events
       demoEvents.push(
+        // October 2025 Events
         {
           id: 'demo-event-1',
-          title: 'End of Term Exams',
-          date: new Date('2024-12-20'),
+          title: 'Quran Recitation Exam',
+          date: new Date('2025-10-20'),
           type: 'EXAM',
-          description: 'Final examinations for all classes',
+          description: 'Quran recitation assessment for all levels',
           isHoliday: false
         },
         {
           id: 'demo-event-2',
+          title: 'Islamic Studies Exam',
+          date: new Date('2025-10-25'),
+          type: 'EXAM',
+          description: 'Islamic Studies written examination',
+          isHoliday: false
+        },
+        {
+          id: 'demo-event-3',
+          title: 'Arabic Grammar Exam',
+          date: new Date('2025-10-28'),
+          type: 'EXAM',
+          description: 'Arabic language and grammar assessment',
+          isHoliday: false
+        },
+        {
+          id: 'demo-event-4',
+          title: 'Quran Competition',
+          date: new Date('2025-10-30'),
+          type: 'EVENT',
+          description: 'Annual Quran recitation competition',
+          isHoliday: false
+        },
+        // November 2025 Events
+        {
+          id: 'demo-event-5',
           title: 'Parent-Teacher Meeting',
-          date: new Date('2024-12-18'),
+          date: new Date('2025-11-05'),
           type: 'MEETING',
           description: 'Scheduled meetings with teachers',
           isHoliday: false
         },
         {
-          id: 'demo-event-3',
-          title: 'Quran Competition',
-          date: new Date('2024-12-15'),
+          id: 'demo-event-6',
+          title: 'Mid-Term Assessment',
+          date: new Date('2025-11-15'),
+          type: 'EXAM',
+          description: 'Mid-term progress assessment',
+          isHoliday: false
+        },
+        {
+          id: 'demo-event-7',
+          title: 'Islamic History Exam',
+          date: new Date('2025-11-20'),
+          type: 'EXAM',
+          description: 'Islamic History and Seerah examination',
+          isHoliday: false
+        },
+        {
+          id: 'demo-event-8',
+          title: 'Hadith Studies Exam',
+          date: new Date('2025-11-25'),
+          type: 'EXAM',
+          description: 'Hadith and Sunnah studies assessment',
+          isHoliday: false
+        },
+        // December 2025 Events
+        {
+          id: 'demo-event-9',
+          title: 'Arabic Speaking Exam',
+          date: new Date('2025-12-05'),
+          type: 'EXAM',
+          description: 'Arabic conversation and speaking assessment',
+          isHoliday: false
+        },
+        {
+          id: 'demo-event-10',
+          title: 'End of Term Exams',
+          date: new Date('2025-12-15'),
+          type: 'EXAM',
+          description: 'Final examinations for all classes',
+          isHoliday: false
+        },
+        {
+          id: 'demo-event-11',
+          title: 'Parent-Teacher Conference',
+          date: new Date('2025-12-18'),
+          type: 'MEETING',
+          description: 'Progress review meetings with parents',
+          isHoliday: false
+        },
+        // Christmas Holiday Period (2 weeks)
+        {
+          id: 'demo-holiday-christmas-start',
+          title: 'Christmas Holiday Begins',
+          date: new Date('2025-12-23'),
+          type: 'HOLIDAY',
+          description: 'School closed for Christmas holiday period',
+          isHoliday: true
+        },
+        {
+          id: 'demo-holiday-christmas-end',
+          title: 'Christmas Holiday Ends',
+          date: new Date('2026-01-06'),
+          type: 'HOLIDAY',
+          description: 'School reopens after Christmas holiday',
+          isHoliday: true
+        },
+        // January 2026 Events
+        {
+          id: 'demo-event-12',
+          title: 'New Term Begins',
+          date: new Date('2026-01-07'),
           type: 'EVENT',
-          description: 'Annual Quran recitation competition',
+          description: 'Start of new academic term',
+          isHoliday: false
+        },
+        {
+          id: 'demo-event-13',
+          title: 'Quran Memorization Exam',
+          date: new Date('2026-01-15'),
+          type: 'EXAM',
+          description: 'Quran memorization assessment',
+          isHoliday: false
+        },
+        {
+          id: 'demo-event-14',
+          title: 'Islamic Ethics Exam',
+          date: new Date('2026-01-20'),
+          type: 'EXAM',
+          description: 'Islamic Ethics and Character assessment',
           isHoliday: false
         }
       )
@@ -301,29 +377,26 @@ export default function ParentCalendarPage() {
     return acc
   }, {} as Record<string, any[]>)
 
-  // Get upcoming events (next 7 days)
+  // Get upcoming events (next 3 months) - only holidays and exams, not regular classes
   const upcomingEvents = events.filter(event => {
     const eventDate = new Date(event.date)
     const today = new Date()
-    const nextWeek = new Date()
-    nextWeek.setDate(today.getDate() + 7)
-    return eventDate >= today && eventDate <= nextWeek
+    const next3Months = new Date()
+    next3Months.setMonth(today.getMonth() + 3)
+    
+    // Only show holidays, exams, and meetings, exclude regular classes
+    const isRelevantEvent = event.isHoliday || event.type === 'HOLIDAY' || event.type === 'EXAM' || event.type === 'MEETING'
+    
+    return eventDate >= today && eventDate <= next3Months && isRelevantEvent
   })
 
   return (
-    <Page 
-      user={session.user} 
-      org={org} 
-      userRole={userRole}
-      title="Calendar"
-      breadcrumbs={[{ label: 'Calendar' }]}
-    >
-      <div className="space-y-6">
+    <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-[var(--foreground)]">Calendar</h1>
             <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-              View your children's class schedules, holidays, and upcoming events.
+              View your children's class schedules, holidays, exams, and special events.
             </p>
           </div>
           <Button variant="outline" className="flex items-center gap-2">
@@ -335,7 +408,7 @@ export default function ParentCalendarPage() {
         {/* Upcoming Events */}
         <Card>
           <CardHeader>
-            <CardTitle>Upcoming Events (Next 7 Days)</CardTitle>
+            <CardTitle>Upcoming Events (Next 3 Months)</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -427,6 +500,5 @@ export default function ParentCalendarPage() {
           </CardContent>
         </Card>
       </div>
-    </Page>
   )
 }

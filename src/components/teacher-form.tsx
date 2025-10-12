@@ -183,7 +183,7 @@ export function TeacherForm({ initialData, isEditing = false, onSubmit, onCancel
                 id="name"
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
-                placeholder="e.g., Omar Khan"
+                placeholder="e.g., Moulana Omar"
                 required
               />
             </div>

@@ -28,7 +28,8 @@ import {
   BarChart3,
   ChevronUp,
   UserCheck,
-  FileCheck
+  FileCheck,
+  DollarSign
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -58,10 +59,12 @@ const staffNavigation = [
   { name: 'Finances', href: '/finances', icon: Home, permission: 'view_invoices' },
   { name: 'Fees', href: '/fees', icon: CreditCard, permission: 'manage_invoices' },
   { name: 'Payments', href: '/payments', icon: FileText, permission: 'view_invoices' },
+  { name: 'Manual Payments', href: '/payments/manual', icon: DollarSign, permission: 'manage_payments' },
   { name: 'Messages', href: '/messages', icon: MessageSquare, permission: 'send_messages' },
   { name: 'Calendar', href: '/calendar', icon: Calendar, permission: 'view_calendar' },
   { name: 'Support', href: '/support', icon: HelpCircle, permission: 'view_all_data' },
   { name: 'Settings', href: '/settings', icon: Settings, permission: 'access_settings' },
+  { name: 'Payment Methods', href: '/settings/payment-methods', icon: CreditCard, permission: 'manage_payments' },
 ]
 
 const ownerNavigation = [
@@ -74,8 +77,10 @@ const ownerNavigation = [
 
 const parentNavigation = [
   { name: 'Dashboard', href: '/parent/dashboard', icon: Home },
-  { name: 'Payments', href: '/parent/payments', icon: CreditCard },
+  { name: 'Attendance', href: '/parent/attendance', icon: ClipboardList },
   { name: 'Calendar', href: '/parent/calendar', icon: Calendar },
+  { name: 'Payments', href: '/parent/payments', icon: CreditCard },
+  { name: 'Payment Methods', href: '/parent/payment-methods', icon: Settings },
   { name: 'Support', href: '/parent/support', icon: HelpCircle },
 ]
 

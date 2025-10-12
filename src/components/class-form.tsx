@@ -45,8 +45,8 @@ const TIME_SLOTS = [
 
 // Demo staff data
 const DEMO_STAFF = [
-  { id: 'teacher-1', name: 'Omar Khan', email: 'omar@demo.com' },
-  { id: 'teacher-2', name: 'Aisha Patel', email: 'aisha@demo.com' },
+  { id: 'teacher-1', name: 'Moulana Omar', email: 'omar@demo.com' },
+  { id: 'teacher-2', name: 'Apa Aisha', email: 'aisha@demo.com' },
   { id: 'teacher-3', name: 'Ahmed Hassan', email: 'ahmed@demo.com' },
   { id: 'teacher-4', name: 'Fatima Ali', email: 'fatima@demo.com' }
 ]

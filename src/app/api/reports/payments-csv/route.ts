@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
         parentPhone: '+44 7700 900124',
         paymentMethod: 'Cash',
         paymentDate: '2025-10-02',
-        amount: 75.00,
+        amount: 50.00,
         class: 'Islamic Studies - Level 2'
       },
       {
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
         parentPhone: '+44 7700 900126',
         paymentMethod: 'Bank Transfer',
         paymentDate: '2025-10-04',
-        amount: 60.00,
+        amount: 50.00,
         class: 'Quran Recitation - Level 1'
       },
       {
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
         parentPhone: '+44 7700 900127',
         paymentMethod: 'Cash',
         paymentDate: '2025-10-05',
-        amount: 40.00,
+        amount: 50.00,
         class: 'Islamic Studies - Level 2'
       },
       {
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
         parentPhone: '+44 7700 900128',
         paymentMethod: 'Card Payment',
         paymentDate: '2025-10-06',
-        amount: 55.00,
+        amount: 50.00,
         class: 'Arabic Grammar'
       },
       {
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
         parentPhone: '+44 7700 900129',
         paymentMethod: 'Bank Transfer',
         paymentDate: '2025-10-07',
-        amount: 45.00,
+        amount: 50.00,
         class: 'Quran Recitation - Level 1'
       },
       {
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
         parentPhone: '+44 7700 900130',
         paymentMethod: 'Cash',
         paymentDate: '2025-10-08',
-        amount: 35.00,
+        amount: 50.00,
         class: 'Islamic Studies - Level 2'
       },
       // September 2025 payments
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
         parentPhone: '+44 7700 900131',
         paymentMethod: 'Bank Transfer',
         paymentDate: '2025-09-15',
-        amount: 65.00,
+        amount: 50.00,
         class: 'Quran Recitation - Level 1'
       },
       {
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
         parentPhone: '+44 7700 900132',
         paymentMethod: 'Card Payment',
         paymentDate: '2025-09-20',
-        amount: 30.00,
+        amount: 50.00,
         class: 'Islamic Studies - Level 2'
       },
       // August 2025 payments
@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
         parentPhone: '+44 7700 900134',
         paymentMethod: 'Bank Transfer',
         paymentDate: '2025-08-25',
-        amount: 45.00,
+        amount: 50.00,
         class: 'Quran Recitation - Level 1'
       }
     ]

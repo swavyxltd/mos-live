@@ -17,14 +17,14 @@ export const DEMO_USERS = {
   'staff@demo.com': {
     id: 'demo-staff-1',
     email: 'staff@demo.com',
-    name: 'Omar Khan',
+    name: 'Moulana Omar',
     isSuperAdmin: false,
     password: 'demo123'
   },
   'parent@demo.com': {
     id: 'demo-parent-1',
     email: 'parent@demo.com',
-    name: 'Aisha Patel',
+    name: 'Apa Aisha',
     isSuperAdmin: false,
     password: 'demo123'
   }

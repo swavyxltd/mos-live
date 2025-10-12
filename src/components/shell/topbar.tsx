@@ -14,9 +14,10 @@ interface TopbarProps {
     email?: string | null
     image?: string | null
   }
+  userRole?: string
 }
 
-export function Topbar({ title, user }: TopbarProps) {
+export function Topbar({ title, user, userRole }: TopbarProps) {
   const [isDarkMode, setIsDarkMode] = React.useState(false)
   const firstName = user?.name?.split(' ')[0] || 'User'
 
@@ -39,8 +40,8 @@ export function Topbar({ title, user }: TopbarProps) {
 
       {/* Right side - Search and Dark Mode */}
       <div className="flex items-center space-x-4">
-        {/* Global Search */}
-        <GlobalSearch />
+        {/* Global Search - Hidden for parent users */}
+        {userRole !== 'PARENT' && <GlobalSearch />}
         
         {/* Dark Mode Toggle */}
         <Button

@@ -165,7 +165,7 @@ export function DashboardContent() {
     {
       action: 'Class attendance marked - Quran Level 1',
       timestamp: '6 hours ago',
-      user: { name: 'Omar Khan', email: 'omar@madrasah.com' },
+      user: { name: 'Moulana Omar', email: 'omar@madrasah.com' },
       type: 'attendance'
     },
     {
@@ -198,8 +198,8 @@ export function DashboardContent() {
   ]
   
   const topPerformingClasses = [
-    { name: 'Quran Recitation - Level 1', attendance: 95, students: 12, teacher: 'Omar Khan' },
-    { name: 'Islamic Studies - Level 2', attendance: 92, students: 8, teacher: 'Aisha Patel' },
+    { name: 'Quran Recitation - Level 1', attendance: 95, students: 12, teacher: 'Moulana Omar' },
+    { name: 'Islamic Studies - Level 2', attendance: 92, students: 8, teacher: 'Apa Aisha' },
     { name: 'Arabic Grammar', attendance: 88, students: 15, teacher: 'Hassan Ali' }
   ]
 

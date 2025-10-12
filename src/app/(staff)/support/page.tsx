@@ -108,7 +108,7 @@ export default function SupportPage() {
         updatedAt: new Date('2024-12-03').toISOString(),
         createdBy: {
           id: 'user-3',
-          name: 'Omar Khan',
+          name: 'Moulana Omar',
           email: 'omar@madrasah.com'
         }
       }

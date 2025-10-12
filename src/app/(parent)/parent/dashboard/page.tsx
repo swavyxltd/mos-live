@@ -2,11 +2,10 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { getActiveOrg, getUserRoleInOrg } from '@/lib/org'
 import { prisma } from '@/lib/prisma'
-import { Page } from '@/components/shell/page'
 import { StatCard } from '@/components/ui/stat-card'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { ParentWeeklyAttendanceCards } from '@/components/parent-weekly-attendance-cards'
 import { isDemoMode } from '@/lib/demo-mode'
 
 export default async function ParentDashboardPage() {
@@ -26,8 +25,8 @@ export default async function ParentDashboardPage() {
   let announcements: any[] = []
   let upcomingClasses: any[] = []
   let weeklyAttendance: any[] = []
-  let recentProgress: any[] = []
   let upcomingEvents: any[] = []
+  let paymentStatus: any = null
 
   if (isDemoMode()) {
     // Demo data for parent dashboard - only show data for their children
@@ -89,7 +88,7 @@ export default async function ParentDashboardPage() {
         name: 'Quran Recitation - Level 1',
         schedule: 'Monday, Wednesday, Friday 5:00 PM - 7:00 PM',
         room: 'Room A',
-        teacher: 'Omar Khan',
+        teacher: 'Moulana Omar',
         studentClasses: [
           {
             student: {
@@ -105,7 +104,7 @@ export default async function ParentDashboardPage() {
         name: 'Islamic Studies - Level 2',
         schedule: 'Monday, Wednesday, Friday 5:00 PM - 7:00 PM',
         room: 'Room B',
-        teacher: 'Aisha Patel',
+        teacher: 'Apa Aisha',
         studentClasses: [
           {
             student: {
@@ -118,48 +117,38 @@ export default async function ParentDashboardPage() {
       }
     ]
 
+    // Demo attendance data for parent's children (weekly structure)
     weeklyAttendance = [
       {
-        id: 'demo-attendance-1',
-        student: { firstName: 'Ahmed', lastName: 'Hassan' },
-        class: { name: 'Quran Recitation - Level 1' },
-        status: 'PRESENT',
-        date: new Date('2024-12-06')
+        id: 'child-1',
+        name: 'Ahmed Hassan',
+        class: 'Quran Recitation - Level 1',
+        teacher: 'Moulana Omar',
+        overallAttendance: 85,
+        weeklyAttendance: [
+          { day: 'Mon', date: '2025-10-13', status: 'PRESENT', time: '4:00 PM' },
+          { day: 'Tue', date: '2025-10-14', status: 'LATE', time: '4:15 PM' },
+          { day: 'Wed', date: '2025-10-15', status: 'PRESENT', time: '4:00 PM' },
+          { day: 'Thu', date: '2025-10-16', status: 'ABSENT', time: undefined },
+          { day: 'Fri', date: '2025-10-17', status: 'PRESENT', time: '4:00 PM' },
+        ],
       },
       {
-        id: 'demo-attendance-2',
-        student: { firstName: 'Fatima', lastName: 'Hassan' },
-        class: { name: 'Islamic Studies - Level 2' },
-        status: 'PRESENT',
-        date: new Date('2024-12-05')
+        id: 'child-2',
+        name: 'Fatima Hassan',
+        class: 'Islamic Studies - Level 2',
+        teacher: 'Apa Aisha',
+        overallAttendance: 90,
+        weeklyAttendance: [
+          { day: 'Mon', date: '2025-10-13', status: 'PRESENT', time: '5:00 PM' },
+          { day: 'Tue', date: '2025-10-14', status: 'PRESENT', time: '5:00 PM' },
+          { day: 'Wed', date: '2025-10-15', status: 'PRESENT', time: '5:00 PM' },
+          { day: 'Thu', date: '2025-10-16', status: 'PRESENT', time: '5:00 PM' },
+          { day: 'Fri', date: '2025-10-17', status: 'LATE', time: '5:10 PM' },
+        ],
       },
-      {
-        id: 'demo-attendance-3',
-        student: { firstName: 'Ahmed', lastName: 'Hassan' },
-        class: { name: 'Quran Recitation - Level 1' },
-        status: 'LATE',
-        date: new Date('2024-12-04')
-      }
     ]
 
-    recentProgress = [
-      {
-        id: 'demo-progress-1',
-        student: { firstName: 'Ahmed', lastName: 'Hassan' },
-        subject: 'Quran Recitation',
-        achievement: 'Completed Surah Al-Fatiha',
-        date: new Date('2024-12-05'),
-        teacher: 'Omar Khan'
-      },
-      {
-        id: 'demo-progress-2',
-        student: { firstName: 'Fatima', lastName: 'Hassan' },
-        subject: 'Islamic Studies',
-        achievement: 'Excellent performance in Prophet Stories',
-        date: new Date('2024-12-04'),
-        teacher: 'Aisha Patel'
-      }
-    ]
 
     upcomingEvents = [
       {
@@ -184,6 +173,19 @@ export default async function ParentDashboardPage() {
         description: 'Final examinations for all classes'
       }
     ]
+
+    // Demo payment status data
+    const today = new Date()
+    const nextPaymentDate = new Date('2025-10-15') // October 15th (3 days from today)
+    const daysUntilPayment = Math.ceil((nextPaymentDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+    
+    paymentStatus = {
+      status: daysUntilPayment <= 0 ? 'overdue' : daysUntilPayment <= 5 ? 'due' : 'up_to_date',
+      amount: 100.00, // £100 for both children (£50 each)
+      dueDate: nextPaymentDate,
+      daysUntilDue: daysUntilPayment,
+      isOverdue: daysUntilPayment <= 0
+    }
   } else {
     // Get parent's students from database (excluding archived)
     students = await prisma.student.findMany({
@@ -260,25 +262,64 @@ export default async function ParentDashboardPage() {
         class: true
       }
     })
+
+    // Get payment status for parent's students
+    const today = new Date()
+    const upcomingInvoices = await prisma.invoice.findMany({
+      where: {
+        orgId: org.id,
+        student: {
+          primaryParentId: session.user.id,
+          isArchived: false
+        },
+        status: {
+          in: ['PENDING', 'OVERDUE']
+        }
+      },
+      orderBy: { dueDate: 'asc' },
+      take: 1
+    })
+
+    if (upcomingInvoices.length > 0) {
+      const nextInvoice = upcomingInvoices[0]
+      const daysUntilDue = Math.ceil((nextInvoice.dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+      
+      paymentStatus = {
+        status: daysUntilDue <= 0 ? 'overdue' : daysUntilDue <= 5 ? 'due' : 'up_to_date',
+        amount: nextInvoice.amount,
+        dueDate: nextInvoice.dueDate,
+        daysUntilDue: daysUntilDue,
+        isOverdue: daysUntilDue <= 0
+      }
+    } else {
+      paymentStatus = {
+        status: 'up_to_date',
+        amount: 0,
+        dueDate: null,
+        daysUntilDue: null,
+        isOverdue: false
+      }
+    }
   }
 
   // Calculate stats for parent's children
   const totalChildren = students.length
   const totalClasses = students.reduce((acc, student) => acc + student.studentClasses.length, 0)
+  
+  // Calculate overall attendance rate from weekly attendance data
   const attendanceRate = weeklyAttendance.length > 0 
-    ? Math.round((weeklyAttendance.filter(a => a.status === 'PRESENT').length / weeklyAttendance.length) * 100)
+    ? Math.round(weeklyAttendance.reduce((acc, child) => {
+        const totalDays = child.weeklyAttendance.length
+        if (totalDays === 0) return acc
+        const presentDays = child.weeklyAttendance.filter(day => day.status === 'PRESENT' || day.status === 'LATE').length
+        return acc + (presentDays / totalDays) * 100
+      }, 0) / weeklyAttendance.length)
     : 0
+    
   const upcomingEventsCount = upcomingEvents.filter(e => e.date >= new Date()).length
 
   return (
-    <Page 
-      user={session.user} 
-      org={org} 
-      userRole={userRole}
-      title="Parent Dashboard"
-      breadcrumbs={[{ label: 'Overview' }]}
-    >
-      <div className="space-y-6">
+    <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-[var(--foreground)]">Welcome back, {session.user.name?.split(' ')[0]}!</h1>
           <p className="mt-1 text-sm text-[var(--muted-foreground)]">
@@ -305,16 +346,26 @@ export default async function ParentDashboardPage() {
           <StatCard
             title="Attendance Rate"
             value={`${attendanceRate}%`}
-            change={{ value: attendanceRate >= 90 ? "+5%" : "0%", type: attendanceRate >= 90 ? "positive" : "neutral" }}
-            description={attendanceRate >= 90 ? "Excellent attendance" : "Good attendance"}
+            change={{ value: attendanceRate >= 95 ? "+5%" : "0%", type: attendanceRate >= 95 ? "positive" : "neutral" }}
+            description={attendanceRate >= 95 ? "Excellent attendance" : attendanceRate >= 86 ? "Good attendance" : "Needs improvement"}
             detail="Last 7 days"
           />
           <StatCard
-            title="Upcoming Events"
-            value={upcomingEventsCount}
-            change={{ value: "This month", type: "neutral" }}
-            description="Holidays & exams"
-            detail="Check calendar for details"
+            title="Payment Status"
+            value={paymentStatus?.status === 'up_to_date' ? '£0' : 
+                   paymentStatus?.status === 'due' ? `£${paymentStatus.amount}` :
+                   paymentStatus?.status === 'overdue' ? `£${paymentStatus.amount}` : '£0'}
+            change={{ 
+              value: paymentStatus?.status === 'up_to_date' ? "All paid" : 
+                     paymentStatus?.status === 'due' ? `${paymentStatus.daysUntilDue} days` :
+                     paymentStatus?.status === 'overdue' ? `${Math.abs(paymentStatus.daysUntilDue)} days late` : "All paid", 
+              type: paymentStatus?.status === 'up_to_date' ? "positive" : 
+                    paymentStatus?.status === 'due' ? "neutral" : "negative"
+            }}
+            description={paymentStatus?.status === 'up_to_date' ? "No payments due" : 
+                        paymentStatus?.status === 'due' ? "Payment due soon" :
+                        paymentStatus?.status === 'overdue' ? "Payment overdue" : "No payments due"}
+            detail={paymentStatus?.dueDate ? `Due: ${paymentStatus.dueDate.toLocaleDateString()}` : "No upcoming payments"}
           />
         </div>
 
@@ -352,30 +403,27 @@ export default async function ParentDashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Recent Progress */}
+          {/* Upcoming Events */}
           <Card>
             <CardHeader>
-              <CardTitle>Recent Progress</CardTitle>
+              <CardTitle>Upcoming Events</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {recentProgress.map((progress) => (
-                  <div key={progress.id} className="p-4 border border-[var(--border)] rounded-[var(--radius-md)]">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h4 className="font-medium text-[var(--foreground)]">
-                          {progress.student.firstName} {progress.student.lastName}
-                        </h4>
-                        <p className="text-sm text-[var(--muted-foreground)]">{progress.subject}</p>
-                        <p className="text-sm text-[var(--foreground)] mt-1">{progress.achievement}</p>
-                      </div>
-                      <Badge variant="secondary" className="text-xs">
-                        {progress.teacher}
-                      </Badge>
+              <div className="space-y-3">
+                {upcomingEvents.map((event) => (
+                  <div key={event.id} className="flex items-center justify-between p-3 border border-[var(--border)] rounded-[var(--radius-md)]">
+                    <div>
+                      <h4 className="font-medium text-[var(--foreground)]">{event.title}</h4>
+                      <p className="text-sm text-[var(--muted-foreground)]">{event.description}</p>
                     </div>
-                    <p className="text-xs text-[var(--muted-foreground)] mt-2">
-                      {new Date(progress.date).toLocaleDateString()}
-                    </p>
+                    <div className="text-right">
+                      <Badge variant={event.type === 'HOLIDAY' ? 'secondary' : 'default'}>
+                        {event.type}
+                      </Badge>
+                      <p className="text-sm text-[var(--muted-foreground)] mt-1">
+                        {new Date(event.date).toLocaleDateString()}
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -389,64 +437,10 @@ export default async function ParentDashboardPage() {
             <CardTitle>Weekly Attendance</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Child</TableHead>
-                  <TableHead>Class</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {weeklyAttendance.map((attendance) => (
-                  <TableRow key={attendance.id}>
-                    <TableCell>
-                      {attendance.student.firstName} {attendance.student.lastName}
-                    </TableCell>
-                    <TableCell>{attendance.class.name}</TableCell>
-                    <TableCell>{new Date(attendance.date).toLocaleDateString()}</TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant={attendance.status === 'PRESENT' ? 'default' : attendance.status === 'LATE' ? 'secondary' : 'destructive'}
-                      >
-                        {attendance.status}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <ParentWeeklyAttendanceCards attendanceData={weeklyAttendance} />
           </CardContent>
         </Card>
 
-        {/* Upcoming Events */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Upcoming Events</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {upcomingEvents.map((event) => (
-                <div key={event.id} className="flex items-center justify-between p-3 border border-[var(--border)] rounded-[var(--radius-md)]">
-                  <div>
-                    <h4 className="font-medium text-[var(--foreground)]">{event.title}</h4>
-                    <p className="text-sm text-[var(--muted-foreground)]">{event.description}</p>
-                  </div>
-                  <div className="text-right">
-                    <Badge variant={event.type === 'HOLIDAY' ? 'secondary' : 'default'}>
-                      {event.type}
-                    </Badge>
-                    <p className="text-sm text-[var(--muted-foreground)] mt-1">
-                      {new Date(event.date).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
       </div>
-    </Page>
   )
 }
