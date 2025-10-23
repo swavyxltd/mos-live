@@ -1,7 +1,6 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { Page } from '@/components/shell/page'
 import { DunningTable } from '@/components/dunning-table'
 import { DunningStats } from '@/components/dunning-stats'
 
@@ -111,29 +110,21 @@ export default async function OwnerDunningPage() {
   }
 
   return (
-    <Page 
-      user={session.user} 
-      org={org} 
-      userRole="OWNER"
-      title="Dunning Management"
-      breadcrumbs={[{ href: '/owner/dunning', label: 'Dunning' }]}
-    >
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--foreground)]">Dunning Management</h1>
-          <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-            Monitor and manage billing failures across your platform.
-          </p>
-        </div>
-
-        <DunningStats
-          totalFailures={totalFailures}
-          totalAmount={totalAmount}
-          avgRetryCount={avgRetryCount}
-        />
-
-        <DunningTable failures={billingFailures} />
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-[var(--foreground)]">Dunning Management</h1>
+        <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+          Monitor and manage billing failures across your platform.
+        </p>
       </div>
-    </Page>
+
+      <DunningStats
+        totalFailures={totalFailures}
+        totalAmount={totalAmount}
+        avgRetryCount={avgRetryCount}
+      />
+
+      <DunningTable failures={billingFailures} />
+    </div>
   )
 }

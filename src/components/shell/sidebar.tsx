@@ -29,7 +29,11 @@ import {
   ChevronUp,
   UserCheck,
   FileCheck,
-  DollarSign
+  DollarSign,
+  TrendingUp,
+  Activity,
+  Shield,
+  HeadphonesIcon
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -68,10 +72,14 @@ const staffNavigation = [
 ]
 
 const ownerNavigation = [
-  { name: 'Overview', href: '/owner/overview', icon: BarChart3 },
+  { name: 'Dashboard', href: '/owner/overview', icon: BarChart3 },
+  { name: 'Analytics', href: '/owner/analytics', icon: TrendingUp },
   { name: 'Organisations', href: '/owner/orgs', icon: Building2 },
+  { name: 'Revenue', href: '/owner/revenue', icon: DollarSign },
+  { name: 'Users', href: '/owner/users', icon: Users },
+  { name: 'System Health', href: '/owner/system-health', icon: Activity },
   { name: 'Dunning', href: '/owner/dunning', icon: AlertTriangle },
-  { name: 'Support', href: '/owner/support', icon: HelpCircle },
+  { name: 'Support', href: '/owner/support', icon: HeadphonesIcon },
   { name: 'Settings', href: '/owner/settings', icon: Settings },
 ]
 

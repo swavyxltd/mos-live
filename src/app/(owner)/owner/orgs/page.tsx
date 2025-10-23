@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
-import { Page } from '@/components/shell/page'
 import { AllOrgsTable } from '@/components/all-orgs-table'
 import { Button } from '@/components/ui/button'
 import { Modal } from '@/components/ui/modal'
@@ -152,30 +151,22 @@ export default function OwnerOrgsPage() {
 
   return (
     <>
-      <Page 
-        user={session.user} 
-        org={org} 
-        userRole="OWNER"
-        title="Organisations"
-        breadcrumbs={[{ href: '/owner/orgs', label: 'Organisations' }]}
-      >
-        <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-[var(--foreground)]">Organisations</h1>
-              <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-                Manage all organisations on your platform.
-              </p>
-            </div>
-            <Button onClick={handleAddOrganisation}>
-              <Plus className="h-4 w-4 mr-2" />
-              New Organisation
-            </Button>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold text-[var(--foreground)]">Organisations</h1>
+            <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+              Manage all organisations on your platform.
+            </p>
           </div>
-
-          <AllOrgsTable orgs={orgsWithStats} />
+          <Button onClick={handleAddOrganisation}>
+            <Plus className="h-4 w-4 mr-2" />
+            New Organisation
+          </Button>
         </div>
-      </Page>
+
+        <AllOrgsTable orgs={orgsWithStats} />
+      </div>
 
       <Modal
         isOpen={isModalOpen}
