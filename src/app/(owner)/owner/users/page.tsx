@@ -265,7 +265,7 @@ export default async function OwnerUsersPage() {
           <CardContent>
             <div className="space-y-4">
               {userData.recentUsers.map((user) => (
-                <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg">
+                <div key={user.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
                       <span className="text-sm font-medium text-gray-600">
@@ -366,7 +366,7 @@ export default async function OwnerUsersPage() {
           <CardContent>
             <div className="space-y-4">
               {userData.topOrgsByUsers.map((org, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                <div key={index} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                       <span className="text-sm font-medium text-blue-600">#{index + 1}</span>

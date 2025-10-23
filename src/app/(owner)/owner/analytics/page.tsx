@@ -3,6 +3,7 @@ import { authOptions } from '@/lib/auth'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { AnalyticsRevenueChart } from '@/components/analytics-revenue-chart'
 import { 
   TrendingUp, 
   TrendingDown,
@@ -85,7 +86,23 @@ export default async function OwnerAnalyticsPage() {
       failedPayments: 3,
       refunds: 1,
       chargebacks: 0
-    }
+    },
+    
+    // Revenue Trend Data
+    revenueTrend: [
+      { month: 'Jan 2024', revenue: 850, growth: 5.2 },
+      { month: 'Feb 2024', revenue: 920, growth: 8.2 },
+      { month: 'Mar 2024', revenue: 980, growth: 6.5 },
+      { month: 'Apr 2024', revenue: 1050, growth: 7.1 },
+      { month: 'May 2024', revenue: 1120, growth: 6.7 },
+      { month: 'Jun 2024', revenue: 1180, growth: 5.4 },
+      { month: 'Jul 2024', revenue: 1250, growth: 5.9 },
+      { month: 'Aug 2024', revenue: 1320, growth: 5.6 },
+      { month: 'Sep 2024', revenue: 1380, growth: 4.5 },
+      { month: 'Oct 2024', revenue: 1420, growth: 2.9 },
+      { month: 'Nov 2024', revenue: 1470, growth: 3.5 },
+      { month: 'Dec 2024', revenue: 1247, growth: -15.2 }
+    ]
   }
 
   return (
@@ -168,21 +185,7 @@ export default async function OwnerAnalyticsPage() {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Revenue Trend */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Revenue Trend Analysis</CardTitle>
-            <CardDescription>Monthly recurring revenue and growth patterns</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px] flex items-center justify-center border-2 border-dashed border-gray-200 rounded-lg">
-              <div className="text-center">
-                <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-sm text-gray-500">Revenue trend chart</p>
-                <p className="text-xs text-gray-400">Current MRR: £{analyticsData.revenue.currentMRR.toLocaleString()}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <AnalyticsRevenueChart data={analyticsData.revenueTrend} />
 
         {/* Organization Size Distribution */}
         <Card>
@@ -220,7 +223,7 @@ export default async function OwnerAnalyticsPage() {
           <CardContent>
             <div className="space-y-4">
               {analyticsData.geography.topRegions.map((region, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                <div key={index} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors">
                   <div>
                     <p className="font-medium">{region.region}</p>
                     <p className="text-sm text-gray-500">{region.orgs} organizations</p>

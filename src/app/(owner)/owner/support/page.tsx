@@ -348,7 +348,7 @@ export default async function OwnerSupportPage() {
         <CardContent>
           <div className="space-y-4">
             {supportData.recentTickets.map((ticket) => (
-              <div key={ticket.id} className="flex items-center justify-between p-4 border rounded-lg">
+              <div key={ticket.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                 <div className="flex items-start space-x-4 flex-1">
                   {getStatusIcon(ticket.status)}
                   <div className="flex-1">
@@ -410,7 +410,7 @@ export default async function OwnerSupportPage() {
           <CardContent>
             <div className="space-y-4">
               {supportData.teamPerformance.map((team, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                <div key={index} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                   <div>
                     <p className="font-medium">{team.name}</p>
                     <p className="text-sm text-gray-500">{team.activeTickets} active tickets</p>

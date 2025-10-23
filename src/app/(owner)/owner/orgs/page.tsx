@@ -4,16 +4,18 @@ import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { AllOrgsTable } from '@/components/all-orgs-table'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Modal } from '@/components/ui/modal'
 import { AddOrganisationForm } from '@/components/add-organisation-form'
 import { isDemoMode } from '@/lib/demo-mode'
-import { Plus } from 'lucide-react'
+import { Plus, Search } from 'lucide-react'
 
 export default function OwnerOrgsPage() {
   const { data: session, status } = useSession()
   const [orgsWithStats, setOrgsWithStats] = useState<any[]>([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
     if (status === 'loading') return
@@ -25,6 +27,7 @@ export default function OwnerOrgsPage() {
           id: 'demo-org-1',
           name: 'Leicester Islamic Centre',
           slug: 'leicester-islamic-centre',
+          city: 'Leicester',
           timezone: 'Europe/London',
           createdAt: new Date('2024-01-15'),
           updatedAt: new Date('2024-12-06'),
@@ -32,7 +35,8 @@ export default function OwnerOrgsPage() {
             students: 25,
             classes: 3,
             memberships: 4,
-            invoices: 1
+            invoices: 1,
+            teachers: 4
           },
           platformBilling: {
             status: 'ACTIVE',
@@ -49,6 +53,7 @@ export default function OwnerOrgsPage() {
           id: 'demo-org-2',
           name: 'Manchester Islamic School',
           slug: 'manchester-islamic-school',
+          city: 'Manchester',
           timezone: 'Europe/London',
           createdAt: new Date('2024-02-20'),
           updatedAt: new Date('2024-12-05'),
@@ -56,7 +61,8 @@ export default function OwnerOrgsPage() {
             students: 15,
             classes: 2,
             memberships: 3,
-            invoices: 0
+            invoices: 0,
+            teachers: 2
           },
           platformBilling: {
             status: 'ACTIVE',
@@ -73,6 +79,7 @@ export default function OwnerOrgsPage() {
           id: 'demo-org-3',
           name: 'Birmingham Quran Academy',
           slug: 'birmingham-quran-academy',
+          city: 'Birmingham',
           timezone: 'Europe/London',
           createdAt: new Date('2024-03-10'),
           updatedAt: new Date('2024-12-04'),
@@ -80,7 +87,8 @@ export default function OwnerOrgsPage() {
             students: 10,
             classes: 1,
             memberships: 2,
-            invoices: 1
+            invoices: 1,
+            teachers: 1
           },
           platformBilling: {
             status: 'PAST_DUE',
@@ -149,6 +157,17 @@ export default function OwnerOrgsPage() {
     }
   }
 
+  // Filter organizations based on search term
+  const filteredOrgs = orgsWithStats.filter(org => {
+    if (!searchTerm) return true
+    const searchLower = searchTerm.toLowerCase()
+    return (
+      org.name.toLowerCase().includes(searchLower) ||
+      org.city?.toLowerCase().includes(searchLower) ||
+      org.slug.toLowerCase().includes(searchLower)
+    )
+  })
+
   return (
     <>
       <div className="space-y-6">
@@ -165,7 +184,25 @@ export default function OwnerOrgsPage() {
           </Button>
         </div>
 
-        <AllOrgsTable orgs={orgsWithStats} />
+        {/* Search Bar */}
+        <div className="flex items-center space-x-4">
+          <div className="relative flex-1 max-w-md">
+            <Search className="h-4 w-4 absolute left-3 top-3 text-gray-400" />
+            <Input
+              placeholder="Search organizations by name or city..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          {searchTerm && (
+            <div className="text-sm text-gray-500">
+              {filteredOrgs.length} of {orgsWithStats.length} organizations
+            </div>
+          )}
+        </div>
+
+        <AllOrgsTable orgs={filteredOrgs} />
       </div>
 
       <Modal

@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -33,6 +36,50 @@ export async function middleware(request: NextRequest) {
       if (!roleHints) {
         return NextResponse.redirect(new URL('/auth/signin', request.url))
       }
+
+  // Check organization status for staff/admin users
+  if (roleHints.orgAdminOf.length > 0 || roleHints.orgStaffOf.length > 0) {
+    try {
+      const userOrgs = await prisma.userOrgMembership.findMany({
+        where: {
+          userId: token.sub,
+          role: { in: ['ADMIN', 'STAFF'] }
+        },
+        include: {
+          org: {
+            select: {
+              id: true,
+              name: true,
+              status: true,
+              suspendedAt: true,
+              suspendedReason: true,
+              pausedAt: true,
+              pausedReason: true
+            }
+          }
+        }
+      })
+
+      // Check if any of the user's organizations are suspended or paused
+      const suspendedOrgs = userOrgs.filter(membership => 
+        membership.org.status === 'SUSPENDED' || membership.org.status === 'PAUSED'
+      )
+
+      if (suspendedOrgs.length > 0) {
+        // Redirect to account suspended page
+        const suspendedOrg = suspendedOrgs[0]
+        const reason = suspendedOrg.org.status === 'SUSPENDED' 
+          ? suspendedOrg.org.suspendedReason 
+          : suspendedOrg.org.pausedReason
+        const action = suspendedOrg.org.status === 'SUSPENDED' ? 'suspended' : 'paused'
+        
+        return NextResponse.redirect(new URL(`/auth/account-${action}?org=${suspendedOrg.org.name}&reason=${encodeURIComponent(reason || 'No reason provided')}`, request.url))
+      }
+    } catch (error) {
+      console.error('Error checking organization status:', error)
+      // Continue with normal flow if there's an error
+    }
+  }
   
   // Determine the correct portal for this user
   let correctPortal = ''

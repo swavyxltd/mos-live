@@ -80,6 +80,16 @@ model Org {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Account Status Management
+  status            String   @default("ACTIVE") // ACTIVE, SUSPENDED, PAUSED
+  suspendedAt       DateTime?
+  suspendedReason   String?
+  pausedAt          DateTime?
+  pausedReason      String?
+  lastPaymentDate   DateTime?
+  paymentFailureCount Int    @default(0)
+  autoSuspendEnabled Boolean @default(true)
+
   // Contact Information
   address     String?
   phone       String?

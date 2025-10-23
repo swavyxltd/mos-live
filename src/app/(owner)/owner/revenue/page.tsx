@@ -1,14 +1,16 @@
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+'use client'
+
+import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Modal } from '@/components/ui/modal'
+import { ToastContainer } from '@/components/ui/toast'
 import { 
   DollarSign, 
   TrendingUp,
-  TrendingDown,
-  Calendar,
-  CreditCard,
   AlertTriangle,
   CheckCircle,
   XCircle,
@@ -17,19 +19,39 @@ import {
   RefreshCw,
   Eye,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  Search,
+  RotateCcw,
+  CheckCircle2
 } from 'lucide-react'
 
-export default async function OwnerRevenuePage() {
-  const session = await getServerSession(authOptions)
-  
-  if (!session?.user?.id) {
-    return <div>Loading...</div>
+export default function OwnerRevenuePage() {
+  const [refreshing, setRefreshing] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedPayment, setSelectedPayment] = useState<any>(null)
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false)
+  const [filterStatus, setFilterStatus] = useState('all')
+  const [toasts, setToasts] = useState<Array<{
+    id: string
+    type: 'success' | 'error' | 'warning' | 'info'
+    title: string
+    message: string
+    duration?: number
+  }>>([])
+
+  // Toast functions
+  const addToast = (toast: Omit<typeof toasts[0], 'id'>) => {
+    const id = Math.random().toString(36).substr(2, 9)
+    setToasts(prev => [...prev, { ...toast, id }])
   }
 
-  // Revenue management data
-  const revenueData = {
-    // Current metrics
+  const removeToast = (id: string) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id))
+  }
+  
+  // Revenue data state
+  const [revenueData, setRevenueData] = useState({
     current: {
       mrr: 1247,
       arr: 14964,
@@ -38,8 +60,6 @@ export default async function OwnerRevenuePage() {
       pendingRevenue: 91,
       failedPayments: 3
     },
-    
-    // Revenue breakdown
     breakdown: {
       subscriptionRevenue: 1247,
       oneTimePayments: 0,
@@ -47,8 +67,6 @@ export default async function OwnerRevenuePage() {
       chargebacks: 0,
       netRevenue: 1224
     },
-    
-    // Payment status
     paymentStatus: {
       successful: 47,
       pending: 3,
@@ -56,24 +74,6 @@ export default async function OwnerRevenuePage() {
       refunded: 1,
       successRate: 96.8
     },
-    
-    // Monthly revenue history
-    monthlyRevenue: [
-      { month: 'Jan 2024', revenue: 980, collected: 945, pending: 35, failed: 12 },
-      { month: 'Feb 2024', revenue: 1050, collected: 1020, pending: 20, failed: 10 },
-      { month: 'Mar 2024', revenue: 1120, collected: 1085, pending: 25, failed: 10 },
-      { month: 'Apr 2024', revenue: 1080, collected: 1050, pending: 20, failed: 10 },
-      { month: 'May 2024', revenue: 1150, collected: 1120, pending: 20, failed: 10 },
-      { month: 'Jun 2024', revenue: 1200, collected: 1170, pending: 20, failed: 10 },
-      { month: 'Jul 2024', revenue: 1180, collected: 1150, pending: 20, failed: 10 },
-      { month: 'Aug 2024', revenue: 1220, collected: 1190, pending: 20, failed: 10 },
-      { month: 'Sep 2024', revenue: 1190, collected: 1160, pending: 20, failed: 10 },
-      { month: 'Oct 2024', revenue: 1230, collected: 1200, pending: 20, failed: 10 },
-      { month: 'Nov 2024', revenue: 1150, collected: 1120, pending: 20, failed: 10 },
-      { month: 'Dec 2024', revenue: 1247, collected: 1156, pending: 91, failed: 3 }
-    ],
-    
-    // Failed payments requiring attention
     failedPayments: [
       {
         id: 'fp-001',
@@ -83,7 +83,9 @@ export default async function OwnerRevenuePage() {
         reason: 'Insufficient funds',
         retryCount: 2,
         nextRetry: '2024-12-08',
-        status: 'pending_retry'
+        status: 'pending_retry',
+        stripePaymentIntentId: 'pi_demo_001', // Demo Stripe Payment Intent ID
+        organizationId: 'org_001'
       },
       {
         id: 'fp-002',
@@ -93,7 +95,9 @@ export default async function OwnerRevenuePage() {
         reason: 'Card declined',
         retryCount: 1,
         nextRetry: '2024-12-07',
-        status: 'pending_retry'
+        status: 'pending_retry',
+        stripePaymentIntentId: 'pi_demo_002', // Demo Stripe Payment Intent ID
+        organizationId: 'org_002'
       },
       {
         id: 'fp-003',
@@ -103,11 +107,11 @@ export default async function OwnerRevenuePage() {
         reason: 'Expired card',
         retryCount: 3,
         nextRetry: 'Manual contact required',
-        status: 'manual_review'
+        status: 'manual_review',
+        stripePaymentIntentId: 'pi_demo_003', // Demo Stripe Payment Intent ID
+        organizationId: 'org_003'
       }
     ],
-    
-    // Top revenue generators
     topRevenueGenerators: [
       { orgName: 'Leicester Islamic Centre', students: 156, monthlyRevenue: 156, growth: 12.5 },
       { orgName: 'Manchester Islamic School', students: 134, monthlyRevenue: 134, growth: 8.2 },
@@ -115,10 +119,115 @@ export default async function OwnerRevenuePage() {
       { orgName: 'London Islamic Centre', students: 87, monthlyRevenue: 87, growth: -2.1 },
       { orgName: 'Bradford Islamic School', students: 76, monthlyRevenue: 76, growth: 5.7 }
     ]
+  })
+
+  // Handler functions
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1500))
+    } finally {
+      setRefreshing(false)
+    }
   }
 
+  const handleExport = () => {
+    setIsExportModalOpen(true)
+  }
+
+  const handlePaymentReview = (payment: any) => {
+    setSelectedPayment(payment)
+    setIsPaymentModalOpen(true)
+  }
+
+  const handleRetryPayment = async (paymentId: string) => {
+    try {
+      // Find the payment details
+      const payment = revenueData.failedPayments.find(p => p.id === paymentId)
+      if (!payment) return
+
+      // Call the real Stripe API
+      const response = await fetch('/api/revenue/retry-payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          paymentIntentId: payment.stripePaymentIntentId, // You'll need to store this
+          organizationId: payment.organizationId,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        // Payment succeeded - remove from failed payments
+        setRevenueData(prev => ({
+          ...prev,
+          failedPayments: prev.failedPayments.filter(p => p.id !== paymentId),
+          current: {
+            ...prev.current,
+            failedPayments: prev.current.failedPayments - 1,
+            thisMonthCollected: prev.current.thisMonthCollected + payment.amount
+          }
+        }))
+        
+        // Show success toast
+        setSelectedPayment(null)
+        setIsPaymentModalOpen(false)
+        addToast({
+          type: 'success',
+          title: 'Payment Retry Successful!',
+          message: `£${payment.amount} collected from ${payment.orgName}. Payment has been processed and will appear in your next revenue report.`,
+          duration: 6000
+        })
+      } else {
+        // Payment still failed - update retry count
+        setRevenueData(prev => ({
+          ...prev,
+          failedPayments: prev.failedPayments.map(p => 
+            p.id === paymentId 
+              ? { 
+                  ...p, 
+                  retryCount: p.retryCount + 1, 
+                  status: 'pending_retry',
+                  lastError: result.paymentIntent?.last_payment_error?.message || 'Payment failed'
+                }
+              : p
+          )
+        }))
+        
+        // Show error toast
+        addToast({
+          type: 'error',
+          title: 'Payment Retry Failed',
+          message: `${payment.orgName} - £${payment.amount}. Error: ${result.error}. Retry count: ${payment.retryCount + 1}. Please contact the organization or try again later.`,
+          duration: 8000
+        })
+      }
+    } catch (error) {
+      console.error('Error retrying payment:', error)
+      addToast({
+        type: 'error',
+        title: 'System Error',
+        message: `Unable to retry payment for ${payment?.orgName || 'this organization'}. Please try again or contact support if the issue persists.`,
+        duration: 8000
+      })
+    }
+  }
+
+  // Filter failed payments
+  const filteredFailedPayments = revenueData.failedPayments.filter(payment => {
+    const matchesSearch = payment.orgName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         payment.reason.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesStatus = filterStatus === 'all' || payment.status === filterStatus
+    return matchesSearch && matchesStatus
+  })
+
   return (
-    <div className="space-y-6">
+    <>
+      <ToastContainer toasts={toasts} onClose={removeToast} />
+      <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -128,11 +237,11 @@ export default async function OwnerRevenuePage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
+          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+            {refreshing ? 'Refreshing...' : 'Refresh'}
           </Button>
-          <Button size="sm">
+          <Button size="sm" onClick={handleExport}>
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
@@ -286,16 +395,38 @@ export default async function OwnerRevenuePage() {
       {/* Failed Payments Requiring Attention */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <AlertTriangle className="h-5 w-5 text-red-600" />
-            <span>Failed Payments Requiring Attention</span>
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="h-5 w-5 text-red-600" />
+              <span className="text-lg font-semibold">Failed Payments Requiring Attention</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="relative">
+                <Search className="h-4 w-4 absolute left-3 top-3 text-gray-400" />
+                <Input
+                  placeholder="Search payments..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 w-64"
+                />
+              </div>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+              >
+                <option value="all">All Status</option>
+                <option value="pending_retry">Pending Retry</option>
+                <option value="manual_review">Manual Review</option>
+              </select>
+            </div>
+          </div>
           <CardDescription>Payments that failed and need manual intervention</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {revenueData.failedPayments.map((payment) => (
-              <div key={payment.id} className="flex items-center justify-between p-4 border rounded-lg">
+            {filteredFailedPayments.map((payment) => (
+              <div key={payment.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                 <div className="flex-1">
                   <div className="flex items-center space-x-3">
                     <div>
@@ -315,10 +446,22 @@ export default async function OwnerRevenuePage() {
                     <p className="font-medium">£{payment.amount}</p>
                     <p className="text-sm text-gray-500">Next retry: {payment.nextRetry}</p>
                   </div>
-                  <Button variant="outline" size="sm">
-                    <Eye className="h-4 w-4 mr-2" />
-                    Review
-                  </Button>
+                  <div className="flex space-x-2">
+                    <Button variant="outline" size="sm" onClick={() => handlePaymentReview(payment)}>
+                      <Eye className="h-4 w-4 mr-2" />
+                      Review
+                    </Button>
+                    {payment.status === 'pending_retry' && (
+                      <Button variant="outline" size="sm" onClick={() => handleRetryPayment(payment.id)}>
+                        <RotateCcw className="h-4 w-4 mr-2" />
+                        Retry
+                      </Button>
+                    )}
+                    <Button variant="outline" size="sm">
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                      Resolve
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -335,7 +478,7 @@ export default async function OwnerRevenuePage() {
         <CardContent>
           <div className="space-y-4">
             {revenueData.topRevenueGenerators.map((org, index) => (
-              <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+              <div key={index} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                     <span className="text-sm font-medium text-blue-600">#{index + 1}</span>
@@ -363,7 +506,121 @@ export default async function OwnerRevenuePage() {
           </div>
         </CardContent>
       </Card>
-    </div>
+
+      {/* Payment Review Modal */}
+      <Modal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        title="Payment Review"
+        size="lg"
+      >
+        {selectedPayment && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Organization</Label>
+                <p className="text-sm font-medium">{selectedPayment.orgName}</p>
+              </div>
+              <div>
+                <Label>Amount</Label>
+                <p className="text-sm font-medium">£{selectedPayment.amount}</p>
+              </div>
+              <div>
+                <Label>Failure Date</Label>
+                <p className="text-sm font-medium">{selectedPayment.failureDate}</p>
+              </div>
+              <div>
+                <Label>Status</Label>
+                <Badge variant={selectedPayment.status === 'manual_review' ? 'destructive' : 'secondary'}>
+                  {selectedPayment.status === 'manual_review' ? 'Manual Review' : 'Pending Retry'}
+                </Badge>
+              </div>
+              <div>
+                <Label>Reason</Label>
+                <p className="text-sm font-medium">{selectedPayment.reason}</p>
+              </div>
+              <div>
+                <Label>Retry Count</Label>
+                <p className="text-sm font-medium">{selectedPayment.retryCount}</p>
+              </div>
+            </div>
+            
+            <div className="border-t pt-4">
+              <h4 className="font-medium mb-2">Actions</h4>
+              <div className="flex space-x-2">
+                <Button onClick={() => handleRetryPayment(selectedPayment.id)}>
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  Retry Payment
+                </Button>
+                <Button variant="outline">
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  Mark as Resolved
+                </Button>
+                <Button variant="outline">
+                  Contact Organization
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Export Modal */}
+      <Modal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        title="Export Revenue Data"
+        size="md"
+      >
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="dateRange">Date Range</Label>
+            <select
+              id="dateRange"
+              className="w-full p-2 border border-gray-300 rounded-md"
+            >
+              <option value="7days">Last 7 days</option>
+              <option value="30days">Last 30 days</option>
+              <option value="3months">Last 3 months</option>
+              <option value="6months">Last 6 months</option>
+              <option value="12months">Last 12 months</option>
+              <option value="all">All time</option>
+            </select>
+          </div>
+          
+          <div>
+            <Label>Export Format</Label>
+            <div className="space-y-2 mt-2">
+              <label className="flex items-center space-x-2">
+                <input type="radio" name="format" value="csv" defaultChecked />
+                <span>CSV (Excel compatible)</span>
+              </label>
+              <label className="flex items-center space-x-2">
+                <input type="radio" name="format" value="pdf" />
+                <span>PDF Report</span>
+              </label>
+              <label className="flex items-center space-x-2">
+                <input type="radio" name="format" value="json" />
+                <span>JSON (API data)</span>
+              </label>
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button variant="outline" onClick={() => setIsExportModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => {
+              console.log('Exporting data...')
+              setIsExportModalOpen(false)
+            }}>
+              <Download className="h-4 w-4 mr-2" />
+              Export Data
+            </Button>
+          </div>
+        </div>
+      </Modal>
+      </div>
+    </>
   )
 }
-

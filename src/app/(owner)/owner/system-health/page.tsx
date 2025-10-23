@@ -284,7 +284,7 @@ export default async function OwnerSystemHealthPage() {
         <CardContent>
           <div className="space-y-4">
             {systemHealth.services.map((service, index) => (
-              <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+              <div key={index} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                 <div className="flex items-center space-x-3">
                   {getStatusIcon(service.status)}
                   <div>
@@ -433,7 +433,7 @@ export default async function OwnerSystemHealthPage() {
         <CardContent>
           <div className="space-y-4">
             {systemHealth.recentIncidents.map((incident) => (
-              <div key={incident.id} className="flex items-center justify-between p-4 border rounded-lg">
+              <div key={incident.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                 <div className="flex-1">
                   <div className="flex items-center space-x-3">
                     <div>

@@ -28,6 +28,7 @@ import {
   Bell,
   ExternalLink
 } from 'lucide-react'
+import { OwnerRevenueChart } from '@/components/owner-revenue-chart'
 
 interface DashboardData {
   totalOrgs: number
@@ -391,30 +392,9 @@ export default function OwnerOverviewPage() {
       {/* Charts and Tables Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Revenue Trend Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Revenue Trend (12 Months)</CardTitle>
-            <CardDescription>Monthly recurring revenue growth over time</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px] flex items-center justify-center border-2 border-dashed border-gray-200 rounded-lg">
-              <div className="text-center">
-                <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-sm text-gray-500">Revenue chart will be implemented</p>
-                <p className="text-xs text-gray-400">Current MRR: £{dashboardData.mrr.toLocaleString()}</p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="mt-2"
-                  onClick={handleViewAnalytics}
-                >
-                  <ExternalLink className="h-3 w-3 mr-1" />
-                  View Full Analytics
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {dashboardData && (
+          <OwnerRevenueChart data={dashboardData.monthlyRevenue} />
+        )}
 
         {/* Top Organizations */}
         <Card>
@@ -425,7 +405,7 @@ export default function OwnerOverviewPage() {
           <CardContent>
             <div className="space-y-4">
               {dashboardData.topOrgs.map((org, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer" onClick={handleViewOrganizations}>
+                <div key={index} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer" onClick={handleViewOrganizations}>
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                       <span className="text-sm font-medium text-blue-600">#{index + 1}</span>
