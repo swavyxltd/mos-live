@@ -1,9 +1,14 @@
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Modal } from '@/components/ui/modal'
 import { 
   Users, 
   UserPlus,
@@ -20,18 +25,49 @@ import {
   Phone,
   MapPin,
   Calendar,
-  Activity
+  Activity,
+  X,
+  RefreshCw
 } from 'lucide-react'
 
-export default async function OwnerUsersPage() {
-  const session = await getServerSession(authOptions)
+export default function OwnerUsersPage() {
+  const { data: session, status } = useSession()
+  const [searchTerm, setSearchTerm] = useState('')
+  const [roleFilter, setRoleFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [orgFilter, setOrgFilter] = useState('all')
+  const [dateFilter, setDateFilter] = useState('all')
+  const [loading, setLoading] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false)
+  const [exportFormat, setExportFormat] = useState('csv')
+  const [exportFields, setExportFields] = useState({
+    name: true,
+    email: true,
+    role: true,
+    organization: true,
+    status: true,
+    joinDate: true,
+    lastActive: true,
+    phone: true,
+    location: true,
+    studentName: false,
+    studentDOB: false,
+    parentName: false,
+    parentEmail: false,
+    parentPhone: false
+  })
+  
+  if (status === 'loading') {
+    return <div>Loading...</div>
+  }
   
   if (!session?.user?.id) {
-    return <div>Loading...</div>
+    return <div>Please sign in to access this page.</div>
   }
 
   // User management data
-  const userData = {
+  const [userData, setUserData] = useState({
     // User statistics
     stats: {
       totalUsers: 89,
@@ -43,8 +79,8 @@ export default async function OwnerUsersPage() {
       inactiveUsers: 13
     },
     
-    // Recent users
-    recentUsers: [
+    // All users (expanded dataset for filtering)
+    allUsers: [
       {
         id: 'user-001',
         name: 'Ahmed Hassan',
@@ -53,7 +89,23 @@ export default async function OwnerUsersPage() {
         orgName: 'Leicester Islamic Centre',
         lastActive: '2024-12-06T10:30:00Z',
         status: 'active',
-        joinDate: '2024-01-15'
+        joinDate: '2024-01-15',
+        phone: '+44 7700 900001',
+        location: 'Leicester, UK',
+        students: [
+          {
+            name: 'Ahmad Hassan',
+            dob: '2010-05-15',
+            grade: 'Year 6',
+            class: '6A'
+          },
+          {
+            name: 'Aisha Hassan',
+            dob: '2012-08-22',
+            grade: 'Year 4',
+            class: '4B'
+          }
+        ]
       },
       {
         id: 'user-002',
@@ -63,7 +115,10 @@ export default async function OwnerUsersPage() {
         orgName: 'Manchester Islamic School',
         lastActive: '2024-12-06T09:15:00Z',
         status: 'active',
-        joinDate: '2024-02-20'
+        joinDate: '2024-02-20',
+        phone: '+44 7700 900002',
+        location: 'Manchester, UK',
+        students: []
       },
       {
         id: 'user-003',
@@ -73,7 +128,9 @@ export default async function OwnerUsersPage() {
         orgName: 'Birmingham Quran Academy',
         lastActive: '2024-12-05T16:45:00Z',
         status: 'active',
-        joinDate: '2024-03-10'
+        joinDate: '2024-03-10',
+        phone: '+44 7700 900003',
+        location: 'Birmingham, UK'
       },
       {
         id: 'user-004',
@@ -83,7 +140,17 @@ export default async function OwnerUsersPage() {
         orgName: 'Leeds Islamic School',
         lastActive: '2024-12-05T14:20:00Z',
         status: 'active',
-        joinDate: '2024-04-05'
+        joinDate: '2024-04-05',
+        phone: '+44 7700 900004',
+        location: 'Leeds, UK',
+        students: [
+          {
+            name: 'Yusuf Ahmed',
+            dob: '2009-12-03',
+            grade: 'Year 7',
+            class: '7A'
+          }
+        ]
       },
       {
         id: 'user-005',
@@ -93,7 +160,60 @@ export default async function OwnerUsersPage() {
         orgName: 'London Islamic Centre',
         lastActive: '2024-12-04T11:30:00Z',
         status: 'inactive',
-        joinDate: '2024-05-12'
+        joinDate: '2024-05-12',
+        phone: '+44 7700 900005',
+        location: 'London, UK',
+        students: []
+      },
+      {
+        id: 'user-006',
+        name: 'Aisha Patel',
+        email: 'aisha@bradford-islamic.edu',
+        role: 'STAFF',
+        orgName: 'Bradford Islamic School',
+        lastActive: '2024-12-05T08:30:00Z',
+        status: 'active',
+        joinDate: '2024-06-01',
+        phone: '+44 7700 900006',
+        location: 'Bradford, UK'
+      },
+      {
+        id: 'user-007',
+        name: 'Mohammed Ali',
+        email: 'mohammed@sheffield-islamic.org',
+        role: 'ADMIN',
+        orgName: 'Sheffield Islamic Centre',
+        lastActive: '2024-12-03T15:20:00Z',
+        status: 'inactive',
+        joinDate: '2024-07-15',
+        phone: '+44 7700 900007',
+        location: 'Sheffield, UK'
+      },
+      {
+        id: 'user-008',
+        name: 'Zainab Khan',
+        email: 'zainab@liverpool-islamic.edu',
+        role: 'PARENT',
+        orgName: 'Liverpool Islamic School',
+        lastActive: '2024-12-06T12:45:00Z',
+        status: 'active',
+        joinDate: '2024-08-20',
+        phone: '+44 7700 900008',
+        location: 'Liverpool, UK',
+        students: [
+          {
+            name: 'Hassan Khan',
+            dob: '2011-03-18',
+            grade: 'Year 5',
+            class: '5C'
+          },
+          {
+            name: 'Fatima Khan',
+            dob: '2013-07-09',
+            grade: 'Year 3',
+            class: '3A'
+          }
+        ]
       }
     ],
     
@@ -122,6 +242,133 @@ export default async function OwnerUsersPage() {
       { orgName: 'London Islamic Centre', userCount: 4, activeUsers: 3 },
       { orgName: 'Bradford Islamic School', userCount: 3, activeUsers: 3 }
     ]
+  })
+
+  // Filter users based on search and filters
+  const filteredUsers = userData.allUsers.filter(user => {
+    const matchesSearch = !searchTerm || 
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.orgName.toLowerCase().includes(searchTerm.toLowerCase())
+    
+    const matchesRole = roleFilter === 'all' || user.role === roleFilter
+    const matchesStatus = statusFilter === 'all' || user.status === statusFilter
+    const matchesOrg = orgFilter === 'all' || user.orgName === orgFilter
+    
+    // Date filter logic
+    let matchesDate = true
+    if (dateFilter !== 'all') {
+      const userJoinDate = new Date(user.joinDate)
+      const now = new Date()
+      const daysDiff = Math.floor((now.getTime() - userJoinDate.getTime()) / (1000 * 60 * 60 * 24))
+      
+      switch (dateFilter) {
+        case 'today':
+          matchesDate = daysDiff === 0
+          break
+        case 'week':
+          matchesDate = daysDiff <= 7
+          break
+        case 'month':
+          matchesDate = daysDiff <= 30
+          break
+        case 'quarter':
+          matchesDate = daysDiff <= 90
+          break
+        case 'year':
+          matchesDate = daysDiff <= 365
+          break
+      }
+    }
+    
+    return matchesSearch && matchesRole && matchesStatus && matchesOrg && matchesDate
+  })
+
+  // Get unique organizations for filter
+  const uniqueOrgs = [...new Set(userData.allUsers.map(user => user.orgName))]
+
+  // Handler functions
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      // In real app, fetch fresh data here
+    } catch (error) {
+      console.error('Error refreshing data:', error)
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
+  const handleExport = () => {
+    setIsExportModalOpen(true)
+  }
+
+  const executeExport = () => {
+    // Build export data based on selected fields
+    const exportData = filteredUsers.map(user => {
+      const row: any = {}
+      
+      if (exportFields.name) row.Name = user.name
+      if (exportFields.email) row.Email = user.email
+      if (exportFields.role) row.Role = user.role
+      if (exportFields.organization) row.Organization = user.orgName
+      if (exportFields.status) row.Status = user.status
+      if (exportFields.joinDate) row['Join Date'] = user.joinDate
+      if (exportFields.lastActive) row['Last Active'] = user.lastActive
+      if (exportFields.phone) row.Phone = user.phone
+      if (exportFields.location) row.Location = user.location
+      
+      // Add student data if user has students and fields are selected
+      if (user.students && user.students.length > 0) {
+        if (exportFields.studentName) {
+          row['Student Names'] = user.students.map(s => s.name).join('; ')
+        }
+        if (exportFields.studentDOB) {
+          row['Student DOBs'] = user.students.map(s => s.dob).join('; ')
+        }
+        if (exportFields.parentName) {
+          row['Parent Name'] = user.name
+        }
+        if (exportFields.parentEmail) {
+          row['Parent Email'] = user.email
+        }
+        if (exportFields.parentPhone) {
+          row['Parent Phone'] = user.phone
+        }
+      }
+      
+      return row
+    })
+    
+    if (exportData.length === 0) {
+      alert('No data to export')
+      return
+    }
+    
+    const csv = [
+      Object.keys(exportData[0]).join(','),
+      ...exportData.map(row => Object.values(row).join(','))
+    ].join('\n')
+    
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `users-export-${new Date().toISOString().split('T')[0]}.${exportFormat}`
+    a.click()
+    window.URL.revokeObjectURL(url)
+    
+    setIsExportModalOpen(false)
+  }
+
+  const clearFilters = () => {
+    setSearchTerm('')
+    setRoleFilter('all')
+    setStatusFilter('all')
+    setOrgFilter('all')
+    setDateFilter('all')
   }
 
   const getRoleBadgeVariant = (role: string) => {
@@ -163,9 +410,13 @@ export default async function OwnerUsersPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            <Filter className="h-4 w-4 mr-2" />
-            Filter
+          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+            {refreshing ? 'Refreshing...' : 'Refresh'}
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleExport}>
+            <Download className="h-4 w-4 mr-2" />
+            Export
           </Button>
           <Button size="sm">
             <UserPlus className="h-4 w-4 mr-2" />
@@ -232,60 +483,165 @@ export default async function OwnerUsersPage() {
       {/* Search and Filters */}
       <Card>
         <CardHeader>
-          <CardTitle>User Search</CardTitle>
+          <CardTitle>User Search & Filters</CardTitle>
           <CardDescription>Find and filter users across the platform</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search users by name, email, or organization..."
-                  className="pl-10"
-                />
+          <div className="space-y-4">
+            {/* Search Bar */}
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search users by name, email, or organization..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              <Button variant="outline" onClick={clearFilters}>
+                <X className="h-4 w-4 mr-2" />
+                Clear Filters
+              </Button>
+            </div>
+
+            {/* Filter Controls */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <Label htmlFor="role-filter">Role</Label>
+                <Select value={roleFilter} onValueChange={setRoleFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Roles" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Roles</SelectItem>
+                    <SelectItem value="OWNER">Owner</SelectItem>
+                    <SelectItem value="ADMIN">Admin</SelectItem>
+                    <SelectItem value="STAFF">Staff</SelectItem>
+                    <SelectItem value="PARENT">Parent</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="status-filter">Status</Label>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="org-filter">Organization</Label>
+                <Select value={orgFilter} onValueChange={setOrgFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Organizations" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Organizations</SelectItem>
+                    {uniqueOrgs.map(org => (
+                      <SelectItem key={org} value={org}>{org}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="date-filter">Join Date</Label>
+                <Select value={dateFilter} onValueChange={setDateFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Time" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Time</SelectItem>
+                    <SelectItem value="today">Today</SelectItem>
+                    <SelectItem value="week">This Week</SelectItem>
+                    <SelectItem value="month">This Month</SelectItem>
+                    <SelectItem value="quarter">This Quarter</SelectItem>
+                    <SelectItem value="year">This Year</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-            <Button variant="outline">
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
+
+            {/* Results Summary */}
+            <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+              <div className="text-sm text-gray-600">
+                Showing {filteredUsers.length} of {userData.allUsers.length} users
+                {(searchTerm || roleFilter !== 'all' || statusFilter !== 'all' || orgFilter !== 'all' || dateFilter !== 'all') && (
+                  <span className="ml-2 text-blue-600">(filtered)</span>
+                )}
+              </div>
+              <div className="text-sm text-gray-500">
+                Last updated: {new Date().toLocaleString()}
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Recent Users and Role Distribution */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Users */}
+        {/* Filtered Users */}
         <Card>
           <CardHeader>
-            <CardTitle>Recent Users</CardTitle>
-            <CardDescription>Latest users added to the platform</CardDescription>
+            <CardTitle>Users</CardTitle>
+            <CardDescription>
+              {filteredUsers.length === userData.allUsers.length 
+                ? 'All users in the platform' 
+                : `Filtered results (${filteredUsers.length} of ${userData.allUsers.length})`
+              }
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {userData.recentUsers.map((user) => (
-                <div key={user.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                      <span className="text-sm font-medium text-gray-600">
-                        {user.name.split(' ').map(n => n[0]).join('')}
-                      </span>
+              {filteredUsers.length > 0 ? (
+                filteredUsers.map((user) => (
+                  <div key={user.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                        <span className="text-sm font-medium text-gray-600">
+                          {user.name.split(' ').map(n => n[0]).join('')}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="font-medium">{user.name}</p>
+                        <p className="text-sm text-gray-500">{user.email}</p>
+                        <p className="text-xs text-gray-400">{user.orgName}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium">{user.name}</p>
-                      <p className="text-sm text-gray-500">{user.email}</p>
+                    <div className="flex items-center space-x-2">
+                      <Badge variant={getRoleBadgeVariant(user.role)} className="flex items-center space-x-1">
+                        {getRoleIcon(user.role)}
+                        <span>{user.role}</span>
+                      </Badge>
+                      {getStatusBadge(user.status)}
+                      <div className="flex space-x-1">
+                        <Button variant="ghost" size="sm">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Badge variant={getRoleBadgeVariant(user.role)} className="flex items-center space-x-1">
-                      {getRoleIcon(user.role)}
-                      <span>{user.role}</span>
-                    </Badge>
-                    {getStatusBadge(user.status)}
-                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <p className="text-lg font-medium">No users found</p>
+                  <p className="text-sm">Try adjusting your search or filter criteria</p>
                 </div>
-              ))}
+              )}
             </div>
           </CardContent>
         </Card>
@@ -388,6 +744,182 @@ export default async function OwnerUsersPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Export Modal */}
+      <Modal isOpen={isExportModalOpen} onClose={() => setIsExportModalOpen(false)}>
+        <div className="p-6">
+          <h2 className="text-xl font-semibold mb-4">Export Users Data</h2>
+          <p className="text-sm text-gray-600 mb-6">
+            Export {filteredUsers.length} filtered users with selected fields
+          </p>
+          
+          <div className="space-y-6">
+            {/* Export Format */}
+            <div>
+              <Label htmlFor="export-format">Export Format</Label>
+              <Select value={exportFormat} onValueChange={setExportFormat}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="csv">CSV (Excel Compatible)</SelectItem>
+                  <SelectItem value="json">JSON</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Field Selection */}
+            <div>
+              <Label className="text-base font-medium">Select Fields to Export</Label>
+              <div className="grid grid-cols-2 gap-4 mt-3">
+                <div className="space-y-3">
+                  <h4 className="font-medium text-sm text-gray-700">User Information</h4>
+                  <div className="space-y-2">
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={exportFields.name}
+                        onChange={(e) => setExportFields(prev => ({ ...prev, name: e.target.checked }))}
+                        className="rounded"
+                      />
+                      <span className="text-sm">Name</span>
+                    </label>
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={exportFields.email}
+                        onChange={(e) => setExportFields(prev => ({ ...prev, email: e.target.checked }))}
+                        className="rounded"
+                      />
+                      <span className="text-sm">Email</span>
+                    </label>
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={exportFields.role}
+                        onChange={(e) => setExportFields(prev => ({ ...prev, role: e.target.checked }))}
+                        className="rounded"
+                      />
+                      <span className="text-sm">Role</span>
+                    </label>
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={exportFields.organization}
+                        onChange={(e) => setExportFields(prev => ({ ...prev, organization: e.target.checked }))}
+                        className="rounded"
+                      />
+                      <span className="text-sm">Organization</span>
+                    </label>
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={exportFields.status}
+                        onChange={(e) => setExportFields(prev => ({ ...prev, status: e.target.checked }))}
+                        className="rounded"
+                      />
+                      <span className="text-sm">Status</span>
+                    </label>
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={exportFields.phone}
+                        onChange={(e) => setExportFields(prev => ({ ...prev, phone: e.target.checked }))}
+                        className="rounded"
+                      />
+                      <span className="text-sm">Phone</span>
+                    </label>
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={exportFields.location}
+                        onChange={(e) => setExportFields(prev => ({ ...prev, location: e.target.checked }))}
+                        className="rounded"
+                      />
+                      <span className="text-sm">Location</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <h4 className="font-medium text-sm text-gray-700">Student & Parent Data</h4>
+                  <div className="space-y-2">
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={exportFields.studentName}
+                        onChange={(e) => setExportFields(prev => ({ ...prev, studentName: e.target.checked }))}
+                        className="rounded"
+                      />
+                      <span className="text-sm">Student Names</span>
+                    </label>
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={exportFields.studentDOB}
+                        onChange={(e) => setExportFields(prev => ({ ...prev, studentDOB: e.target.checked }))}
+                        className="rounded"
+                      />
+                      <span className="text-sm">Student DOBs</span>
+                    </label>
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={exportFields.parentName}
+                        onChange={(e) => setExportFields(prev => ({ ...prev, parentName: e.target.checked }))}
+                        className="rounded"
+                      />
+                      <span className="text-sm">Parent Name</span>
+                    </label>
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={exportFields.parentEmail}
+                        onChange={(e) => setExportFields(prev => ({ ...prev, parentEmail: e.target.checked }))}
+                        className="rounded"
+                      />
+                      <span className="text-sm">Parent Email</span>
+                    </label>
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={exportFields.parentPhone}
+                        onChange={(e) => setExportFields(prev => ({ ...prev, parentPhone: e.target.checked }))}
+                        className="rounded"
+                      />
+                      <span className="text-sm">Parent Phone</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Export Summary */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h4 className="font-medium text-blue-900 mb-2">Export Summary</h4>
+              <div className="text-sm text-blue-800 space-y-1">
+                <p>• {filteredUsers.length} users will be exported</p>
+                <p>• Format: {exportFormat.toUpperCase()}</p>
+                <p>• Fields selected: {Object.values(exportFields).filter(Boolean).length}</p>
+                {filteredUsers.some(u => u.students && u.students.length > 0) && (
+                  <p>• Includes student data for parents with children</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Modal Actions */}
+          <div className="flex justify-end space-x-3 mt-6 pt-4 border-t">
+            <Button variant="outline" onClick={() => setIsExportModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={executeExport}>
+              <Download className="h-4 w-4 mr-2" />
+              Export Data
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }
