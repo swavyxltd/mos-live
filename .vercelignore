@@ -1,0 +1,13 @@
+.git/
+.github/
+tests/
+**/__tests__/
+**/*.spec.*
+**/*.test.*
+.vscode/
+.idea/
+docs/
+screenshots/
+.DS_Store
+.env.local*
+
