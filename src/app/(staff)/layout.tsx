@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { getActiveOrg, getUserRoleInOrg, getUserOrgs, setActiveOrgId } from '@/lib/org'
 import { Page } from '@/components/shell/page'
 import { StaffLayoutWrapper } from '@/components/staff-layout-wrapper'
+import { Role } from '@prisma/client'
 
 export default async function StaffLayout({
   children,
@@ -73,12 +74,13 @@ export default async function StaffLayout({
       const userOrgs = await getUserOrgs(session.user.id)
       if (userOrgs.length > 0) {
         // Use the first organization (or prioritize admin orgs)
-        const adminOrg = userOrgs.find(uo => uo.role === 'ADMIN')
+        // userOrgs is an array of UserOrgMembership objects with included org
+        const adminOrg = userOrgs.find((uo: any) => uo.role === 'ADMIN' || uo.role === Role.ADMIN)
         const selectedOrg = adminOrg || userOrgs[0]
         
-        if (selectedOrg?.org) {
-          await setActiveOrgId(selectedOrg.org.id)
-          org = selectedOrg.org
+        if (selectedOrg && (selectedOrg as any).org) {
+          await setActiveOrgId((selectedOrg as any).org.id)
+          org = (selectedOrg as any).org as any
         }
       }
     }
