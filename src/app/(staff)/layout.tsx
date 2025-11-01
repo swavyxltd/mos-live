@@ -80,6 +80,7 @@ export default async function StaffLayout({
           
           // Type guard to ensure org exists
           if (selectedOrg && typeof selectedOrg === 'object' && 'org' in selectedOrg && selectedOrg.org) {
+            // Set the cookie for future requests, but use the org directly now
             await setActiveOrgId(selectedOrg.org.id)
             org = selectedOrg.org
           }
