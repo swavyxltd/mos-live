@@ -75,7 +75,7 @@ export default async function StaffLayout({
       if (userOrgs.length > 0) {
         // Use the first organization (or prioritize admin orgs)
         // userOrgs is an array of UserOrgMembership objects with included org
-        const adminOrg = userOrgs.find((uo: any) => uo.role === 'ADMIN' || uo.role === Role.ADMIN)
+        const adminOrg = userOrgs.find((uo: any) => uo.role === 'ADMIN')
         const selectedOrg = adminOrg || userOrgs[0]
         
         if (selectedOrg && (selectedOrg as any).org) {
