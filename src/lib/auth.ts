@@ -122,21 +122,30 @@ export const authOptions: NextAuthOptions = {
             return null
           }
 
-          // For now, accept 'demo123' as the password for all database users
-          // TODO: Add password field to User model and use bcrypt for production
-          if (credentials.password === 'demo123') {
-            return {
-              id: user.id,
-              email: user.email,
-              name: user.name,
-              image: user.image,
-              isSuperAdmin: user.isSuperAdmin,
-              staffSubrole: user.staffSubrole,
+          // Check password if stored, otherwise accept demo123 for backward compatibility
+          if (user.password) {
+            // User has a password stored, verify it
+            const isValidPassword = await bcrypt.compare(credentials.password, user.password)
+            if (!isValidPassword) {
+              console.log(`Invalid password for user: ${credentials.email}`)
+              return null
+            }
+          } else {
+            // No password stored, accept demo123 for backward compatibility
+            if (credentials.password !== 'demo123') {
+              console.log(`Invalid password for user: ${credentials.email}`)
+              return null
             }
           }
-
-          console.log(`Invalid password for user: ${credentials.email}`)
-          return null
+          
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            image: user.image,
+            isSuperAdmin: user.isSuperAdmin,
+            staffSubrole: user.staffSubrole,
+          }
         } catch (error) {
           console.error('Database error during authentication:', error)
           // If database connection fails, fall back to demo mode
