@@ -4,7 +4,6 @@ import { redirect } from 'next/navigation'
 import { getActiveOrg, getUserRoleInOrg, getUserOrgs, setActiveOrgId } from '@/lib/org'
 import { Page } from '@/components/shell/page'
 import { StaffLayoutWrapper } from '@/components/staff-layout-wrapper'
-import { Role } from '@prisma/client'
 
 export default async function StaffLayout({
   children,
