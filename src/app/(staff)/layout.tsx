@@ -1,7 +1,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { getActiveOrg, getUserRoleInOrg } from '@/lib/org'
+import { getActiveOrg, getUserRoleInOrg, getUserOrgs, setActiveOrgId } from '@/lib/org'
 import { Page } from '@/components/shell/page'
 import { StaffLayoutWrapper } from '@/components/staff-layout-wrapper'
 
@@ -45,7 +45,7 @@ export default async function StaffLayout({
     )
   }
 
-  const org = await getActiveOrg()
+  let org = await getActiveOrg()
   if (!org) {
     // Check if this is a demo user and we're in development
     if (isDemoMode() || (process.env.NODE_ENV !== 'production' && session?.user?.id?.startsWith('demo-'))) {
@@ -67,7 +67,26 @@ export default async function StaffLayout({
         </Page>
       )
     }
-    redirect('/auth/signin?error=NoOrganization')
+    
+    // Try to automatically set the active org from user's organizations
+    if (session?.user?.id) {
+      const userOrgs = await getUserOrgs(session.user.id)
+      if (userOrgs.length > 0) {
+        // Use the first organization (or prioritize admin orgs)
+        const adminOrg = userOrgs.find(uo => uo.role === 'ADMIN')
+        const selectedOrg = adminOrg || userOrgs[0]
+        
+        if (selectedOrg?.org) {
+          await setActiveOrgId(selectedOrg.org.id)
+          org = selectedOrg.org
+        }
+      }
+    }
+    
+    // If still no org, redirect
+    if (!org) {
+      redirect('/auth/signin?error=NoOrganization')
+    }
   }
   
   // Check if we're in demo mode
