@@ -72,21 +72,21 @@ export default async function StaffLayout({
     if (session?.user?.id) {
       try {
         const userOrgs = await getUserOrgs(session.user.id)
-        if (userOrgs && userOrgs.length > 0) {
+        if (userOrgs && Array.isArray(userOrgs) && userOrgs.length > 0) {
           // Use the first organization (or prioritize admin orgs)
           // userOrgs is an array of UserOrgMembership objects with included org
-          const adminOrg = userOrgs.find((uo: any) => uo.role === 'ADMIN')
+          const adminOrg = userOrgs.find((uo: any) => uo && uo.role === 'ADMIN')
           const selectedOrg = adminOrg || userOrgs[0]
           
-          // Type guard to ensure org exists
-          if (selectedOrg && typeof selectedOrg === 'object' && 'org' in selectedOrg && selectedOrg.org) {
+          // Check if selectedOrg has the org property
+          if (selectedOrg && selectedOrg.org && selectedOrg.org.id) {
             // Set the cookie for future requests, but use the org directly now
             await setActiveOrgId(selectedOrg.org.id)
             org = selectedOrg.org
           }
         }
-      } catch (error) {
-        console.error('Error setting active org:', error)
+      } catch (error: any) {
+        console.error('Error setting active org:', error?.message || error)
         // Fall through to redirect if org setting fails
       }
     }
