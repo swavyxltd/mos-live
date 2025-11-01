@@ -1,0 +1,9 @@
+{
+  "installCommand": "npm install --legacy-peer-deps",
+  "buildCommand": "prisma migrate deploy && next build",
+  "functions": {
+    "api/**": { "runtime": "nodejs20.x" }
+  }
+}
+
+

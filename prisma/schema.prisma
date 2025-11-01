@@ -6,8 +6,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Account {
@@ -46,21 +46,21 @@ model User {
   phone         String?
   isSuperAdmin  Boolean   @default(false)
   isArchived    Boolean   @default(false)
-  archivedAt   DateTime?
+  archivedAt    DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts             Account[]
-  sessions             Session[]
-  memberships          UserOrgMembership[]
-  classes              Class[]               @relation("ClassTeacher")
-  students             Student[]             @relation("StudentPrimaryParent")
-  progressLogs         ProgressLog[]
-  supportTickets       SupportTicket[]
+  accounts               Account[]
+  sessions               Session[]
+  memberships            UserOrgMembership[]
+  classes                Class[]                 @relation("ClassTeacher")
+  students               Student[]               @relation("StudentPrimaryParent")
+  progressLogs           ProgressLog[]
+  supportTickets         SupportTicket[]
   supportTicketResponses SupportTicketResponse[]
-  auditLogs            AuditLog[]
-  parentBillingProfile ParentBillingProfile?
-  reviewedApplications Application[]         @relation("ApplicationReviewer")
+  auditLogs              AuditLog[]
+  parentBillingProfile   ParentBillingProfile?
+  reviewedApplications   Application[]           @relation("ApplicationReviewer")
 }
 
 model VerificationToken {
@@ -81,14 +81,14 @@ model Org {
   updatedAt DateTime @updatedAt
 
   // Account Status Management
-  status            String   @default("ACTIVE") // ACTIVE, SUSPENDED, PAUSED
-  suspendedAt       DateTime?
-  suspendedReason   String?
-  pausedAt          DateTime?
-  pausedReason      String?
-  lastPaymentDate   DateTime?
-  paymentFailureCount Int    @default(0)
-  autoSuspendEnabled Boolean @default(true)
+  status              String    @default("ACTIVE") // ACTIVE, SUSPENDED, PAUSED
+  suspendedAt         DateTime?
+  suspendedReason     String?
+  pausedAt            DateTime?
+  pausedReason        String?
+  lastPaymentDate     DateTime?
+  paymentFailureCount Int       @default(0)
+  autoSuspendEnabled  Boolean   @default(true)
 
   // Contact Information
   address     String?
@@ -97,14 +97,14 @@ model Org {
   officeHours String?
 
   // Payment Settings
-  stripeEnabled           Boolean @default(false)
-  stripePublishableKey    String?
-  stripeSecretKey         String?
-  stripeWebhookSecret     String?
-  autoPaymentEnabled      Boolean @default(true)
-  cashPaymentEnabled      Boolean @default(true)
-  bankTransferEnabled     Boolean @default(true)
-  paymentInstructions     String?
+  stripeEnabled        Boolean @default(false)
+  stripePublishableKey String?
+  stripeSecretKey      String?
+  stripeWebhookSecret  String?
+  autoPaymentEnabled   Boolean @default(true)
+  cashPaymentEnabled   Boolean @default(true)
+  bankTransferEnabled  Boolean @default(true)
+  paymentInstructions  String?
 
   memberships           UserOrgMembership[]
   classes               Class[]
@@ -140,16 +140,16 @@ model UserOrgMembership {
 }
 
 model Class {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   orgId       String
   name        String
   description String?
   schedule    String
   teacherId   String?
-  isArchived  Boolean  @default(false)
-  archivedAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isArchived  Boolean   @default(false)
+  archivedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   org            Org            @relation(fields: [orgId], references: [id], onDelete: Cascade)
   teacher        User?          @relation("ClassTeacher", fields: [teacherId], references: [id])
@@ -168,7 +168,7 @@ model Student {
   medicalNotes    String?
   primaryParentId String?
   isArchived      Boolean   @default(false)
-  archivedAt     DateTime?
+  archivedAt      DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -194,7 +194,7 @@ model StudentClass {
 }
 
 model Attendance {
-  id        String           @id @default(cuid())
+  id        String   @id @default(cuid())
   orgId     String
   classId   String
   studentId String
@@ -222,16 +222,16 @@ model FeesPlan {
 }
 
 model Invoice {
-  id         String         @id @default(cuid())
+  id         String    @id @default(cuid())
   orgId      String
   studentId  String
   amountP    Int
   dueDate    DateTime
-  status     String         @default("DRAFT")
+  status     String    @default("DRAFT")
   paidAt     DateTime?
   paidMethod String?
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @updatedAt
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   org      Org       @relation(fields: [orgId], references: [id], onDelete: Cascade)
   student  Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
@@ -239,16 +239,16 @@ model Invoice {
 }
 
 model Payment {
-  id         String        @id @default(cuid())
+  id         String   @id @default(cuid())
   orgId      String
   invoiceId  String
   method     String
   amountP    Int
-  status     String        @default("PENDING")
+  status     String   @default("PENDING")
   providerId String?
   meta       String?
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   org     Org     @relation(fields: [orgId], references: [id], onDelete: Cascade)
   invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
@@ -261,7 +261,7 @@ model ParentBillingProfile {
   stripeCustomerId       String?
   defaultPaymentMethodId String?
   autoPayEnabled         Boolean  @default(false)
-  preferredPaymentMethod String?  // CARD, CASH, BANK_TRANSFER
+  preferredPaymentMethod String? // CARD, CASH, BANK_TRANSFER
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
 
@@ -273,16 +273,16 @@ model ParentBillingProfile {
 }
 
 model Message {
-  id        String          @id @default(cuid())
+  id        String   @id @default(cuid())
   orgId     String
   title     String
   body      String
   audience  String
   channel   String
-  status    String          @default("DRAFT")
+  status    String   @default("DRAFT")
   targets   String?
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   org Org @relation(fields: [orgId], references: [id], onDelete: Cascade)
 }
@@ -339,18 +339,18 @@ model Exam {
 }
 
 model SupportTicket {
-  id          String              @id @default(cuid())
+  id          String   @id @default(cuid())
   orgId       String
   createdById String?
   role        String
   subject     String
   body        String
-  status      String              @default("OPEN")
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
+  status      String   @default("OPEN")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  org       Org   @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  createdBy User? @relation(fields: [createdById], references: [id])
+  org       Org                     @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  createdBy User?                   @relation(fields: [createdById], references: [id])
   responses SupportTicketResponse[]
 }
 
@@ -406,39 +406,38 @@ model PlatformOrgBilling {
 }
 
 model Application {
-  id                String            @id @default(cuid())
-  orgId             String
-  status            String             @default("NEW")
-  guardianName      String
-  guardianPhone     String
-  guardianEmail     String
-  guardianAddress   String?
-  preferredClass    String?
-  preferredTerm     String?
+  id                 String    @id @default(cuid())
+  orgId              String
+  status             String    @default("NEW")
+  guardianName       String
+  guardianPhone      String
+  guardianEmail      String
+  guardianAddress    String?
+  preferredClass     String?
+  preferredTerm      String?
   preferredStartDate DateTime?
-  additionalNotes   String?
-  adminNotes        String?
-  submittedAt       DateTime          @default(now())
-  reviewedAt        DateTime?
-  reviewedById      String?
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
+  additionalNotes    String?
+  adminNotes         String?
+  submittedAt        DateTime  @default(now())
+  reviewedAt         DateTime?
+  reviewedById       String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
-  org         Org              @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  reviewedBy  User?            @relation("ApplicationReviewer", fields: [reviewedById], references: [id])
-  children    ApplicationChild[]
+  org        Org                @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  reviewedBy User?              @relation("ApplicationReviewer", fields: [reviewedById], references: [id])
+  children   ApplicationChild[]
 }
 
 model ApplicationChild {
-  id            String      @id @default(cuid())
+  id            String    @id @default(cuid())
   applicationId String
   firstName     String
   lastName      String
   dob           DateTime?
   gender        String?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 }
-

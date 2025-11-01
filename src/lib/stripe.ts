@@ -1,13 +1,11 @@
 import Stripe from 'stripe'
 import { prisma } from './prisma'
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('STRIPE_SECRET_KEY is not set')
-}
-
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2024-12-18.acacia',
-})
+export const stripe: Stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2024-06-20',
+    })
+  : (null as unknown as Stripe)
 
 // Platform billing (metered)
 export async function ensurePlatformCustomer(orgId: string) {

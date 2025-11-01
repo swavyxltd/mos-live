@@ -1,3 +1,4 @@
+export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRole } from '@/lib/roles'
 import { getActiveOrg } from '@/lib/org'

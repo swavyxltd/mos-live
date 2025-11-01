@@ -5,6 +5,7 @@ const isDemoMode = () => {
   return process.env.NODE_ENV === 'development' || 
          !process.env.DATABASE_URL || 
          process.env.DATABASE_URL.includes('demo') ||
+         !process.env.RESEND_API_KEY ||
          process.env.RESEND_API_KEY === 're_demo_key'
 }
 

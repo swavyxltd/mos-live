@@ -1,3 +1,4 @@
+export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth, requireOrg } from '@/lib/roles'
 import { createSignedUrl } from '@/lib/storage'
