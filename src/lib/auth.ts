@@ -65,11 +65,17 @@ async function getUserRoleHints(userId: string) {
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as any,
+  // Use NEXTAUTH_URL if set, otherwise construct from request
+  secret: process.env.NEXTAUTH_SECRET,
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ? [
+          GoogleProvider({
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          }),
+        ]
+      : []),
     CredentialsProvider({
       name: 'credentials',
       credentials: {
@@ -84,6 +90,7 @@ export const authOptions: NextAuthOptions = {
         // Check if we're in demo mode
         const { isDemoMode, validateDemoCredentials } = await import('./demo-mode')
         
+        // Always check demo credentials first if in demo mode
         if (isDemoMode()) {
           // Use demo mode authentication
           const demoUser = validateDemoCredentials(credentials.email, credentials.password)
@@ -98,27 +105,52 @@ export const authOptions: NextAuthOptions = {
               staffSubrole: demoUser.staffSubrole,
             }
           }
-        } else {
-          // Use database authentication
-          try {
-            const user = await prisma.user.findUnique({
-              where: {
-                email: credentials.email
-              }
-            })
-
-            if (user && credentials.password === 'demo123') {
-              return {
-                id: user.id,
-                email: user.email,
-                name: user.name,
-                image: user.image,
-                isSuperAdmin: user.isSuperAdmin,
-                staffSubrole: user.staffSubrole,
-              }
+          // If demo mode is enabled but credentials don't match, return null
+          return null
+        }
+        
+        // Use database authentication
+        try {
+          const user = await prisma.user.findUnique({
+            where: {
+              email: credentials.email
             }
-          } catch (error) {
-            console.error('Database error:', error)
+          })
+
+          if (!user) {
+            console.log(`User not found: ${credentials.email}`)
+            return null
+          }
+
+          // For now, accept 'demo123' as the password for all database users
+          // TODO: Add password field to User model and use bcrypt for production
+          if (credentials.password === 'demo123') {
+            return {
+              id: user.id,
+              email: user.email,
+              name: user.name,
+              image: user.image,
+              isSuperAdmin: user.isSuperAdmin,
+              staffSubrole: user.staffSubrole,
+            }
+          }
+
+          console.log(`Invalid password for user: ${credentials.email}`)
+          return null
+        } catch (error) {
+          console.error('Database error during authentication:', error)
+          // If database connection fails, fall back to demo mode
+          const demoUser = validateDemoCredentials(credentials.email, credentials.password)
+          if (demoUser) {
+            console.log('Falling back to demo mode authentication')
+            return {
+              id: demoUser.id,
+              email: demoUser.email,
+              name: demoUser.name,
+              image: null,
+              isSuperAdmin: demoUser.isSuperAdmin,
+              staffSubrole: demoUser.staffSubrole,
+            }
           }
         }
 

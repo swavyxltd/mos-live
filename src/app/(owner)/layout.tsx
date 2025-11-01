@@ -22,14 +22,13 @@ export default async function OwnerLayout({
   }
   
   const org = await getActiveOrg()
-  if (!org) {
-    redirect('/auth/signin?error=NoOrganization')
-  }
+  // Owners don't need an org - they can access the portal to create/manage organizations
+  // org is optional for owners
   
   return (
     <Page
       user={session.user}
-      org={org}
+      org={org || undefined}
       userRole="OWNER"
       title="Owner Portal"
       breadcrumbs={[{ label: 'Overview' }]}
