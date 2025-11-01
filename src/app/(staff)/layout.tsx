@@ -70,17 +70,23 @@ export default async function StaffLayout({
     
     // Try to automatically set the active org from user's organizations
     if (session?.user?.id) {
-      const userOrgs = await getUserOrgs(session.user.id)
-      if (userOrgs.length > 0) {
-        // Use the first organization (or prioritize admin orgs)
-        // userOrgs is an array of UserOrgMembership objects with included org
-        const adminOrg = userOrgs.find((uo: any) => uo.role === 'ADMIN')
-        const selectedOrg = adminOrg || userOrgs[0]
-        
-        if (selectedOrg && (selectedOrg as any).org) {
-          await setActiveOrgId((selectedOrg as any).org.id)
-          org = (selectedOrg as any).org as any
+      try {
+        const userOrgs = await getUserOrgs(session.user.id)
+        if (userOrgs && userOrgs.length > 0) {
+          // Use the first organization (or prioritize admin orgs)
+          // userOrgs is an array of UserOrgMembership objects with included org
+          const adminOrg = userOrgs.find((uo: any) => uo.role === 'ADMIN')
+          const selectedOrg = adminOrg || userOrgs[0]
+          
+          // Type guard to ensure org exists
+          if (selectedOrg && typeof selectedOrg === 'object' && 'org' in selectedOrg && selectedOrg.org) {
+            await setActiveOrgId(selectedOrg.org.id)
+            org = selectedOrg.org
+          }
         }
+      } catch (error) {
+        console.error('Error setting active org:', error)
+        // Fall through to redirect if org setting fails
       }
     }
     
