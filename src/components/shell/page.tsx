@@ -15,7 +15,7 @@ interface PageProps {
     image?: string | null
     isSuperAdmin: boolean
   }
-  org: {
+  org?: {
     id: string
     name: string
     slug: string

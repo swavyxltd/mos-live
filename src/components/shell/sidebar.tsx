@@ -44,7 +44,7 @@ interface SidebarProps {
     image?: string | null
     isSuperAdmin: boolean
   }
-  org: {
+  org?: {
     id: string
     name: string
     slug: string
@@ -157,7 +157,7 @@ export function Sidebar({ user, org, userRole, staffSubrole }: SidebarProps) {
             <MadrasahLogo showText={false} textSize="sm" className="mr-3" />
             <div>
               <h1 className="text-sm font-semibold text-[var(--sidebar-foreground)]">Madrasah OS</h1>
-              <p className="text-xs text-[var(--muted-foreground)]">{org.name}</p>
+              <p className="text-xs text-[var(--muted-foreground)]">{org?.name || 'Madrasah OS'}</p>
             </div>
           </div>
           <Button
@@ -190,7 +190,7 @@ export function Sidebar({ user, org, userRole, staffSubrole }: SidebarProps) {
           <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--sidebar-border)]">
             <div className="flex flex-col items-start w-full">
               <MadrasahLogo showText={false} textSize="md" className="mb-2" />
-              <p className="text-sm font-medium text-[var(--sidebar-foreground)] text-left">{org.name}</p>
+              <p className="text-sm font-medium text-[var(--sidebar-foreground)] text-left">{org?.name || 'Madrasah OS'}</p>
             </div>
           </div>
 
