@@ -125,9 +125,19 @@ export default async function StaffLayout({
     if (!userRole) {
       redirect('/auth/signin?error=NotMember')
     }
-    // For now, default to ADMIN for database users
-    // TODO: Implement staff subrole storage in database
-    staffSubrole = 'ADMIN'
+    
+    // Set staffSubrole based on userRole
+    // ADMIN role -> ADMIN subrole
+    // STAFF role -> TEACHER subrole (default for staff)
+    // If user has staffSubrole in session, use that (from User model if stored)
+    if (userRole === 'ADMIN') {
+      staffSubrole = 'ADMIN'
+    } else if (userRole === 'STAFF') {
+      // Check if user has staffSubrole stored (from User model if we add it later)
+      // For now, default STAFF to TEACHER instead of ADMIN
+      staffSubrole = (session.user as any)?.staffSubrole || 'TEACHER'
+    }
+    // PARENT role doesn't use staffSubrole
   }
   
   return (
