@@ -45,7 +45,7 @@ export default async function StaffLayout({
     )
   }
 
-  let org = await getActiveOrg()
+  let org = await getActiveOrg(session?.user?.id)
   if (!org) {
     // Check if this is a demo user and we're in development
     if (isDemoMode() || (process.env.NODE_ENV !== 'production' && session?.user?.id?.startsWith('demo-'))) {

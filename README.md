@@ -35,7 +35,7 @@ A production-ready, multi-tenant SaaS platform for Islamic schools and madrasahs
 - **Database**: PostgreSQL
 - **Authentication**: NextAuth.js (Google OAuth + Credentials)
 - **Payments**: Stripe (metered billing + card payments)
-- **Storage**: Supabase
+- **Storage**: Vercel Blob
 - **Email**: Resend
 - **Messaging**: WhatsApp Cloud API
 - **Testing**: Playwright
@@ -101,7 +101,7 @@ Toggle dark mode by adding the `dark` class to the HTML element:
 - Node.js 18+ 
 - PostgreSQL database
 - Stripe account
-- Supabase account
+- Vercel Blob Storage (automatically configured)
 - Resend account
 - WhatsApp Business API (optional for dev)
 
@@ -172,10 +172,8 @@ STRIPE_PRICE_ID=price_...
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 
-# Supabase
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+# Vercel Blob Storage
+BLOB_READ_WRITE_TOKEN=vercel_blob_rw_xxx (automatically set when you create Blob Storage in Vercel)
 
 # Resend
 RESEND_API_KEY=re_...
@@ -264,7 +262,7 @@ npm run start        # Start production server
 - **Off-session**: Automatic payments for enabled accounts
 
 ### File Storage
-- Supabase for file storage (invoices, reports, etc.)
+- Vercel Blob Storage for file storage (invoices, reports, etc.)
 - Signed URLs for secure file access
 - Organized by buckets (invoices, receipts, reports, imports)
 

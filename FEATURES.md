@@ -89,7 +89,7 @@ A comprehensive management system for Islamic schools and madrasahs with full mu
 - ✅ Support ticket updates
 - ✅ Platform billing alerts
 
-### **File Storage (Supabase)**
+### **File Storage (Vercel Blob)**
 - ✅ Invoice PDF generation and storage
 - ✅ CSV export storage
 - ✅ Signed URL generation

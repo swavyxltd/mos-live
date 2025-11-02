@@ -27,7 +27,7 @@ export async function requireRole(requiredRoles: Role[], orgId?: string) {
     }
     
     // If no orgId provided, get active org
-    const activeOrgId = orgId || await getActiveOrgId()
+    const activeOrgId = orgId || await getActiveOrgId(session.user.id)
     if (!activeOrgId) {
       return NextResponse.json({ error: 'No organization selected' }, { status: 400 })
     }

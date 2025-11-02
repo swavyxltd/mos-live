@@ -1,5 +1,5 @@
 -- Update owner account with password
--- Run this in Supabase SQL Editor
+-- Run this in your database SQL editor (Neon, Vercel Postgres, etc.)
 
 -- First, add password column if it doesn't exist
 ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "password" TEXT;

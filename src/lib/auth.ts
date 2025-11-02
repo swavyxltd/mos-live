@@ -168,17 +168,20 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.isSuperAdmin = user.isSuperAdmin
         token.staffSubrole = user.staffSubrole
-        // Get role hints when user first signs in
-        if (user.id) {
-          token.roleHints = await getUserRoleHints(user.id)
-        }
+        token.sub = user.id
       }
+
+      const userId = user?.id ?? token.sub
+      if (userId) {
+        token.roleHints = await getUserRoleHints(userId)
+      }
+
       return token
     },
     async session({ session, token }) {
       if (token) {
         session.user.id = token.sub!
-        session.user.isSuperAdmin = token.isSuperAdmin as boolean
+        session.user.isSuperAdmin = (token.isSuperAdmin as boolean) ?? false
         session.user.staffSubrole = token.staffSubrole as string
         session.user.roleHints = token.roleHints as {
           isOwner: boolean

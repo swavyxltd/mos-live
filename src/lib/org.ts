@@ -1,32 +1,70 @@
 import { cookies } from 'next/headers'
-import { prisma } from './prisma'
+import { getServerSession } from 'next-auth'
 import { Role } from '@prisma/client'
+import { authOptions } from './auth'
+import { prisma } from './prisma'
 
 const ORG_COOKIE_NAME = 'madrasah-org-id'
 
-export async function getActiveOrgId(): Promise<string | null> {
-  const cookieStore = await cookies()
-  const orgId = cookieStore.get(ORG_COOKIE_NAME)?.value
-  
-  if (!orgId) return null
-  
+async function resolveUserId(userId?: string): Promise<string | null> {
+  if (userId) {
+    return userId
+  }
+
+  const session = await getServerSession(authOptions)
+  return session?.user?.id ?? null
+}
+
+export async function getActiveOrgId(userId?: string): Promise<string | null> {
+  const cookieStore = cookies()
+  const cookieOrgId = cookieStore.get(ORG_COOKIE_NAME)?.value ?? null
+
   // Check if we're in demo mode
   const { isDemoMode, DEMO_ORG } = await import('./demo-mode')
-  
+
   if (isDemoMode()) {
     return DEMO_ORG.id
   }
-  
-  // Verify the org exists
-  const org = await prisma.org.findUnique({
-    where: { id: orgId }
+
+  if (cookieOrgId) {
+    const orgExists = await prisma.org.findUnique({
+      where: { id: cookieOrgId },
+      select: { id: true }
+    })
+
+    if (orgExists) {
+      return cookieOrgId
+    }
+  }
+
+  const resolvedUserId = await resolveUserId(userId)
+  if (!resolvedUserId) {
+    return null
+  }
+
+  const membership = await prisma.userOrgMembership.findFirst({
+    where: { userId: resolvedUserId },
+    select: { orgId: true }
   })
-  
-  return org ? orgId : null
+
+  return membership?.orgId ?? null
 }
 
 export async function setActiveOrgId(orgId: string): Promise<void> {
-  const cookieStore = await cookies()
+  const cookieStore = cookies() as unknown as {
+    set?: (name: string, value: string, options: {
+      httpOnly: boolean
+      secure: boolean
+      sameSite: 'lax'
+      maxAge: number
+    }) => void
+  }
+
+  if (typeof cookieStore.set !== 'function') {
+    console.warn('[org] setActiveOrgId called in a read-only cookies context; skipping cookie write')
+    return
+  }
+
   cookieStore.set(ORG_COOKIE_NAME, orgId, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -35,15 +73,15 @@ export async function setActiveOrgId(orgId: string): Promise<void> {
   })
 }
 
-export async function getActiveOrg() {
+export async function getActiveOrg(userId?: string) {
   // Check if we're in demo mode first
   const { isDemoMode, DEMO_ORG } = await import('./demo-mode')
-  
+
   if (isDemoMode()) {
     return DEMO_ORG
   }
 
-  const orgId = await getActiveOrgId()
+  const orgId = await getActiveOrgId(userId)
   if (!orgId) return null
 
   return prisma.org.findUnique({
@@ -54,7 +92,7 @@ export async function getActiveOrg() {
 export async function getUserOrgs(userId: string) {
   // Check if we're in demo mode
   const { isDemoMode, DEMO_ORG, DEMO_USERS } = await import('./demo-mode')
-  
+
   if (isDemoMode()) {
     const demoUser = Object.values(DEMO_USERS).find(u => u.id === userId)
     if (demoUser) {
@@ -77,12 +115,12 @@ export async function getUserOrgs(userId: string) {
 export async function getUserRoleInOrg(userId: string, orgId: string): Promise<Role | null> {
   // Check if we're in demo mode
   const { isDemoMode, DEMO_USERS } = await import('./demo-mode')
-  
+
   if (isDemoMode()) {
     const user = Object.values(DEMO_USERS).find(u => u.id === userId)
     return user?.role as Role || null
   }
-  
+
   const membership = await prisma.userOrgMembership.findUnique({
     where: {
       userId_orgId: {
@@ -91,7 +129,7 @@ export async function getUserRoleInOrg(userId: string, orgId: string): Promise<R
       }
     }
   })
-  
+
   return membership?.role || null
 }
 

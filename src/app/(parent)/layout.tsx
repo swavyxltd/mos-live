@@ -15,7 +15,7 @@ export default async function ParentLayout({
     redirect('/auth/signin?portal=parent')
   }
   
-  const org = await getActiveOrg()
+  const org = await getActiveOrg(session.user.id)
   if (!org) {
     redirect('/auth/signin?portal=parent&error=NoOrganization')
   }
