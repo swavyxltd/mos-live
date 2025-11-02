@@ -183,24 +183,36 @@ export default function CreateUserPage() {
             {!formData.isSuperAdmin && (
               <div className="space-y-2">
                 <Label htmlFor="orgId">Organization *</Label>
-                <Select
-                  value={formData.orgId}
-                  onValueChange={(value) => {
-                    setFormData({ ...formData, orgId: value })
-                  }}
-                  required={!formData.isSuperAdmin}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select an organization" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {orgs.map((org) => (
-                      <SelectItem key={org.id} value={org.id}>
-                        {org.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {orgs.length === 0 ? (
+                  <div className="space-y-2">
+                    <p className="text-sm text-amber-600">No organizations available. Create one first.</p>
+                    <a
+                      href="/owner/orgs"
+                      className="text-sm text-blue-600 hover:underline"
+                    >
+                      Go to Organizations →
+                    </a>
+                  </div>
+                ) : (
+                  <Select
+                    value={formData.orgId}
+                    onValueChange={(value) => {
+                      setFormData({ ...formData, orgId: value })
+                    }}
+                    required={!formData.isSuperAdmin}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select an organization" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {orgs.map((org) => (
+                        <SelectItem key={org.id} value={org.id}>
+                          {org.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
             )}
 
