@@ -61,26 +61,26 @@ export async function GET(request: NextRequest) {
     const lastMonthInvoices = await prisma.invoice.findMany({
       where: {
         status: 'PAID',
-        paidDate: {
+        paidAt: {
           gte: lastMonth,
           lt: thisMonth
         }
       },
-      select: { amount: true }
+      select: { amountP: true }
     })
 
     const thisMonthInvoices = await prisma.invoice.findMany({
       where: {
         status: 'PAID',
-        paidDate: {
+        paidAt: {
           gte: thisMonth
         }
       },
-      select: { amount: true }
+      select: { amountP: true }
     })
 
-    const lastMonthRevenue = lastMonthInvoices.reduce((sum, inv) => sum + Number(inv.amount || 0), 0)
-    const thisMonthRevenue = thisMonthInvoices.reduce((sum, inv) => sum + Number(inv.amount || 0), 0)
+    const lastMonthRevenue = lastMonthInvoices.reduce((sum, inv) => sum + Number(inv.amountP || 0) / 100, 0)
+    const thisMonthRevenue = thisMonthInvoices.reduce((sum, inv) => sum + Number(inv.amountP || 0) / 100, 0)
     const revenueGrowth = lastMonthRevenue > 0 
       ? ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 
       : 0
@@ -140,10 +140,10 @@ export async function GET(request: NextRequest) {
             lte: monthEnd
           }
         },
-        select: { amount: true }
+        select: { amountP: true }
       })
       
-      const revenue = monthInvoices.reduce((sum, inv) => sum + Number(inv.amount || 0), 0)
+      const revenue = monthInvoices.reduce((sum, inv) => sum + Number(inv.amountP || 0) / 100, 0)
       const monthStudents = await prisma.student.count({
         where: {
           createdAt: { lte: monthEnd },
@@ -168,25 +168,25 @@ export async function GET(request: NextRequest) {
             where: {
               orgId: org.id,
               status: 'PAID',
-              paidDate: { gte: lastMonth }
+              paidAt: { gte: lastMonth }
             },
-            select: { amount: true }
+            select: { amountP: true }
           })
           
-          const orgRevenue = orgInvoices.reduce((sum, inv) => sum + Number(inv.amount || 0), 0)
+          const orgRevenue = orgInvoices.reduce((sum, inv) => sum + Number(inv.amountP || 0) / 100, 0)
           const prevOrgRevenue = await prisma.invoice.findMany({
             where: {
               orgId: org.id,
               status: 'PAID',
-              paidDate: {
+              paidAt: {
                 gte: new Date(lastMonth.getFullYear(), lastMonth.getMonth() - 1, 1),
                 lt: lastMonth
               }
             },
-            select: { amount: true }
+            select: { amountP: true }
           })
           
-          const prevRevenue = prevOrgRevenue.reduce((sum, inv) => sum + Number(inv.amount || 0), 0)
+          const prevRevenue = prevOrgRevenue.reduce((sum, inv) => sum + Number(inv.amountP || 0) / 100, 0)
           const growth = prevRevenue > 0 ? ((orgRevenue - prevRevenue) / prevRevenue) * 100 : 0
           
           return {

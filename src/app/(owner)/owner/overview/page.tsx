@@ -74,13 +74,47 @@ export default function OwnerOverviewPage() {
   // Load initial data
   useEffect(() => {
     fetch('/api/owner/dashboard')
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`)
+        }
+        return res.json()
+      })
       .then(data => {
-        setDashboardData(data)
-        setLastUpdated(new Date())
+        if (data && typeof data === 'object') {
+          setDashboardData(data)
+          setLastUpdated(new Date())
+        } else {
+          console.error('Invalid dashboard data received:', data)
+        }
       })
       .catch(err => {
         console.error('Error fetching dashboard data:', err)
+        // Set default empty data to prevent crashes
+        setDashboardData({
+          totalOrgs: 0,
+          totalStudents: 0,
+          totalUsers: 0,
+          mrr: 0,
+          arr: 0,
+          lastMonthRevenue: 0,
+          thisMonthRevenue: 0,
+          revenueGrowth: 0,
+          overdueCount: 0,
+          paymentSuccessRate: 0,
+          newOrgsThisMonth: 0,
+          churnRate: 0,
+          avgRevenuePerOrg: 0,
+          monthlyRevenue: [],
+          topOrgs: [],
+          recentActivity: [],
+          systemHealth: {
+            uptime: 0,
+            responseTime: 0,
+            errorRate: 0,
+            activeUsers: 0
+          }
+        })
       })
   }, [])
 
