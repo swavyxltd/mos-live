@@ -6,8 +6,6 @@ import { StatCard } from '@/components/ui/stat-card'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ParentWeeklyAttendanceCards } from '@/components/parent-weekly-attendance-cards'
-import { isDemoMode } from '@/lib/demo-mode'
-
 export default async function ParentDashboardPage() {
   const session = await getServerSession(authOptions)
   const org = await getActiveOrg(session?.user?.id)
@@ -17,9 +15,6 @@ export default async function ParentDashboardPage() {
   }
 
   const userRole = await getUserRoleInOrg(session.user.id, org.id) || 'PARENT'
-
-  // Check if we're in demo mode
-  const { isDemoMode } = await import('@/lib/demo-mode')
   
   let students: any[] = []
   let announcements: any[] = []
@@ -28,168 +23,9 @@ export default async function ParentDashboardPage() {
   let upcomingEvents: any[] = []
   let paymentStatus: any = null
 
-  if (isDemoMode()) {
-    // Demo data for parent dashboard - only show data for their children
-    students = [
-      {
-        id: 'demo-student-1',
-        firstName: 'Ahmed',
-        lastName: 'Hassan',
-        grade: '3',
-        studentClasses: [
-          {
-            class: {
-              id: 'demo-class-1',
-              name: 'Quran Recitation - Level 1',
-              schedule: 'Monday, Wednesday, Friday 5:00 PM - 7:00 PM',
-              room: 'Room A'
-            }
-          }
-        ]
-      },
-      {
-        id: 'demo-student-2',
-        firstName: 'Fatima',
-        lastName: 'Hassan',
-        grade: '5',
-        studentClasses: [
-          {
-            class: {
-              id: 'demo-class-2',
-              name: 'Islamic Studies - Level 2',
-              schedule: 'Monday, Wednesday, Friday 5:00 PM - 7:00 PM',
-              room: 'Room B'
-            }
-          }
-        ]
-      }
-    ]
-
-    announcements = [
-      {
-        id: 'demo-announcement-1',
-        subject: 'Winter Break Notice',
-        content: 'School will be closed for winter break from December 23 - January 2. Classes resume on January 3.',
-        createdAt: new Date('2024-12-05'),
-        type: 'ANNOUNCEMENT'
-      },
-      {
-        id: 'demo-announcement-2',
-        subject: 'End of Term Exams',
-        content: 'End of term examinations will be held next week. Please ensure your children are well-prepared.',
-        createdAt: new Date('2024-12-03'),
-        type: 'ANNOUNCEMENT'
-      }
-    ]
-
-    upcomingClasses = [
-      {
-        id: 'demo-class-1',
-        name: 'Quran Recitation - Level 1',
-        schedule: 'Monday, Wednesday, Friday 5:00 PM - 7:00 PM',
-        room: 'Room A',
-        teacher: 'Moulana Omar',
-        studentClasses: [
-          {
-            student: {
-              id: 'demo-student-1',
-              firstName: 'Ahmed',
-              lastName: 'Hassan'
-            }
-          }
-        ]
-      },
-      {
-        id: 'demo-class-2',
-        name: 'Islamic Studies - Level 2',
-        schedule: 'Monday, Wednesday, Friday 5:00 PM - 7:00 PM',
-        room: 'Room B',
-        teacher: 'Apa Aisha',
-        studentClasses: [
-          {
-            student: {
-              id: 'demo-student-2',
-              firstName: 'Fatima',
-              lastName: 'Hassan'
-            }
-          }
-        ]
-      }
-    ]
-
-    // Demo attendance data for parent's children (weekly structure)
-    weeklyAttendance = [
-      {
-        id: 'child-1',
-        name: 'Ahmed Hassan',
-        class: 'Quran Recitation - Level 1',
-        teacher: 'Moulana Omar',
-        overallAttendance: 85,
-        weeklyAttendance: [
-          { day: 'Mon', date: '2025-10-13', status: 'PRESENT', time: '4:00 PM' },
-          { day: 'Tue', date: '2025-10-14', status: 'LATE', time: '4:15 PM' },
-          { day: 'Wed', date: '2025-10-15', status: 'PRESENT', time: '4:00 PM' },
-          { day: 'Thu', date: '2025-10-16', status: 'ABSENT', time: undefined },
-          { day: 'Fri', date: '2025-10-17', status: 'PRESENT', time: '4:00 PM' },
-        ],
-      },
-      {
-        id: 'child-2',
-        name: 'Fatima Hassan',
-        class: 'Islamic Studies - Level 2',
-        teacher: 'Apa Aisha',
-        overallAttendance: 90,
-        weeklyAttendance: [
-          { day: 'Mon', date: '2025-10-13', status: 'PRESENT', time: '5:00 PM' },
-          { day: 'Tue', date: '2025-10-14', status: 'PRESENT', time: '5:00 PM' },
-          { day: 'Wed', date: '2025-10-15', status: 'PRESENT', time: '5:00 PM' },
-          { day: 'Thu', date: '2025-10-16', status: 'PRESENT', time: '5:00 PM' },
-          { day: 'Fri', date: '2025-10-17', status: 'LATE', time: '5:10 PM' },
-        ],
-      },
-    ]
-
-
-    upcomingEvents = [
-      {
-        id: 'demo-event-1',
-        title: 'Christmas Break',
-        date: new Date('2024-12-25'),
-        type: 'HOLIDAY',
-        description: 'School closed for Christmas Day'
-      },
-      {
-        id: 'demo-event-2',
-        title: 'New Year Holiday',
-        date: new Date('2025-01-01'),
-        type: 'HOLIDAY',
-        description: 'School closed for New Year'
-      },
-      {
-        id: 'demo-event-3',
-        title: 'End of Term Exams',
-        date: new Date('2024-12-20'),
-        type: 'EXAM',
-        description: 'Final examinations for all classes'
-      }
-    ]
-
-    // Demo payment status data
-    const today = new Date()
-    const nextPaymentDate = new Date('2025-10-15') // October 15th (3 days from today)
-    const daysUntilPayment = Math.ceil((nextPaymentDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-    
-    paymentStatus = {
-      status: daysUntilPayment <= 0 ? 'overdue' : daysUntilPayment <= 5 ? 'due' : 'up_to_date',
-      amount: 100.00, // £100 for both children (£50 each)
-      dueDate: nextPaymentDate,
-      daysUntilDue: daysUntilPayment,
-      isOverdue: daysUntilPayment <= 0
-    }
-  } else {
-    try {
-      // Get parent's students from database (excluding archived)
-      students = await prisma.student.findMany({
+  try {
+    // Get parent's students from database (excluding archived)
+    students = await prisma.student.findMany({
         where: { 
           orgId: org.id,
           primaryParentId: session.user.id,
@@ -204,8 +40,8 @@ export default async function ParentDashboardPage() {
       }
     })
 
-      // Get recent announcements
-      announcements = await prisma.message.findMany({
+    // Get recent announcements
+    announcements = await prisma.message.findMany({
         where: { 
           orgId: org.id,
           audience: 'ALL',
@@ -215,8 +51,8 @@ export default async function ParentDashboardPage() {
         take: 5
       })
 
-      // Get upcoming classes (next 7 days)
-      upcomingClasses = await prisma.class.findMany({
+    // Get upcoming classes (next 7 days)
+    upcomingClasses = await prisma.class.findMany({
         where: { 
           orgId: org.id,
           isArchived: false,
@@ -243,11 +79,11 @@ export default async function ParentDashboardPage() {
         }
       })
 
-      // Get weekly attendance for parent's students
-      const oneWeekAgo = new Date()
-      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
-      
-      weeklyAttendance = await prisma.attendance.findMany({
+    // Get weekly attendance for parent's students
+    const oneWeekAgo = new Date()
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
+    
+    weeklyAttendance = await prisma.attendance.findMany({
         where: {
           orgId: org.id,
           student: {
@@ -264,9 +100,9 @@ export default async function ParentDashboardPage() {
         }
       })
 
-      // Get payment status for parent's students
-      const today = new Date()
-      const upcomingInvoices = await prisma.invoice.findMany({
+    // Get payment status for parent's students
+    const today = new Date()
+    const upcomingInvoices = await prisma.invoice.findMany({
         where: {
           orgId: org.id,
           student: {
@@ -281,30 +117,32 @@ export default async function ParentDashboardPage() {
         take: 1
       })
 
-      if (upcomingInvoices.length > 0) {
-        const nextInvoice = upcomingInvoices[0]
-        const daysUntilDue = Math.ceil((nextInvoice.dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-        
-        paymentStatus = {
-          status: daysUntilDue <= 0 ? 'overdue' : daysUntilDue <= 5 ? 'due' : 'up_to_date',
-          amount: nextInvoice.amount,
-          dueDate: nextInvoice.dueDate,
-          daysUntilDue: daysUntilDue,
-          isOverdue: daysUntilDue <= 0
-        }
-      } else {
-        paymentStatus = {
-          status: 'up_to_date',
-          amount: 0,
-          dueDate: null,
-          daysUntilDue: null,
-          isOverdue: false
-        }
+    if (upcomingInvoices.length > 0) {
+      const nextInvoice = upcomingInvoices[0]
+      const daysUntilDue = Math.ceil((nextInvoice.dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+      
+      paymentStatus = {
+        status: daysUntilDue <= 0 ? 'overdue' : daysUntilDue <= 5 ? 'due' : 'up_to_date',
+        amount: nextInvoice.amount,
+        dueDate: nextInvoice.dueDate,
+        daysUntilDue: daysUntilDue,
+        isOverdue: daysUntilDue <= 0
       }
-    } catch (error: any) {
-      console.error('[ParentDashboard] Error fetching data:', error?.message || error)
-      // Keep empty arrays if database query fails
+    } else {
+      paymentStatus = {
+        status: 'up_to_date',
+        amount: 0,
+        dueDate: null,
+        daysUntilDue: null,
+        isOverdue: false
+      }
     }
+
+    // Get upcoming events (mock for now - can be added later)
+    upcomingEvents = []
+  } catch (error: any) {
+    console.error('[ParentDashboard] Error fetching data:', error?.message || error)
+    // Keep empty arrays if database query fails
   }
 
   // Calculate stats for parent's children
@@ -313,12 +151,7 @@ export default async function ParentDashboardPage() {
   
   // Calculate overall attendance rate from weekly attendance data
   const attendanceRate = weeklyAttendance.length > 0 
-    ? Math.round(weeklyAttendance.reduce((acc, child) => {
-        const totalDays = child.weeklyAttendance.length
-        if (totalDays === 0) return acc
-        const presentDays = child.weeklyAttendance.filter(day => day.status === 'PRESENT' || day.status === 'LATE').length
-        return acc + (presentDays / totalDays) * 100
-      }, 0) / weeklyAttendance.length)
+    ? Math.round((weeklyAttendance.filter(a => a.status === 'PRESENT' || a.status === 'LATE').length / weeklyAttendance.length) * 100)
     : 0
     
   const upcomingEventsCount = upcomingEvents.filter(e => e.date >= new Date()).length

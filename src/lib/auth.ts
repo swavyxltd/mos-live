@@ -8,28 +8,6 @@ import bcrypt from 'bcryptjs'
 
 // Helper function to get user role hints
 async function getUserRoleHints(userId: string) {
-  // Check if we're in demo mode
-  const { isDemoMode, DEMO_USERS } = await import('./demo-mode')
-  
-  if (isDemoMode()) {
-    const user = Object.values(DEMO_USERS).find(u => u.id === userId)
-    if (!user) {
-      return {
-        isOwner: false,
-        orgAdminOf: [],
-        orgStaffOf: [],
-        isParent: false
-      }
-    }
-    
-    return {
-      isOwner: user.isSuperAdmin || user.role === 'OWNER',
-      orgAdminOf: user.role === 'ADMIN' ? ['demo-org-1'] : [],
-      orgStaffOf: user.role === 'STAFF' ? ['demo-org-1'] : [],
-      isParent: user.role === 'PARENT'
-    }
-  }
-  
   // Get user's organization memberships
   const memberships = await prisma.userOrgMembership.findMany({
     where: { userId },
@@ -87,30 +65,6 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
-        // Check if we're in demo mode
-        const { isDemoMode, validateDemoCredentials, DEMO_USERS } = await import('./demo-mode')
-        
-        // Check demo credentials first if in demo mode
-        if (isDemoMode()) {
-          // Use demo mode authentication for demo users
-          const demoUser = validateDemoCredentials(credentials.email, credentials.password)
-          
-          if (demoUser) {
-            return {
-              id: demoUser.id,
-              email: demoUser.email,
-              name: demoUser.name,
-              image: null,
-              isSuperAdmin: demoUser.isSuperAdmin,
-              staffSubrole: demoUser.staffSubrole,
-            }
-          }
-          
-          // If demo mode is enabled but user is not a demo user,
-          // still check database for real users
-          // (fall through to database authentication below)
-        }
-        
         // Use database authentication
         try {
           const user = await prisma.user.findUnique({

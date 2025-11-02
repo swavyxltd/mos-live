@@ -71,105 +71,31 @@ export default function OwnerOverviewPage() {
     return <div>Redirecting...</div>
   }
 
-  // Generate dynamic demo data with some randomization
-  const generateDashboardData = (): DashboardData => {
-    const currentDate = new Date()
-    const lastMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
-    const thisMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
-    
-    // Add some randomization to make it feel dynamic
-    const baseOrgs = 47
-    const baseStudents = 1247
-    const randomFactor = 0.95 + Math.random() * 0.1 // ±5% variation
-    
-    const totalOrgs = Math.round(baseOrgs * randomFactor)
-    const totalStudents = Math.round(baseStudents * randomFactor)
-    const totalUsers = Math.round(89 * randomFactor)
-    const mrr = totalStudents * 1 // £1 per student per month
-    const arr = mrr * 12
-    const lastMonthRevenue = Math.round(1150 * randomFactor)
-    const thisMonthRevenue = Math.round(1247 * randomFactor)
-    const revenueGrowth = ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
-    const overdueCount = Math.max(0, Math.round(3 + (Math.random() - 0.5) * 2))
-    const paymentSuccessRate = Math.round((96.8 + (Math.random() - 0.5) * 2) * 10) / 10
-    const newOrgsThisMonth = Math.round(4 + (Math.random() - 0.5) * 2)
-    const churnRate = Math.round((2.1 + (Math.random() - 0.5) * 0.5) * 10) / 10
-    const avgRevenuePerOrg = mrr / totalOrgs
-
-    // Monthly revenue data for the last 12 months
-    const monthlyRevenue = [
-      { month: 'Jan 2024', revenue: Math.round(980 * randomFactor), students: Math.round(980 * randomFactor) },
-      { month: 'Feb 2024', revenue: Math.round(1050 * randomFactor), students: Math.round(1050 * randomFactor) },
-      { month: 'Mar 2024', revenue: Math.round(1120 * randomFactor), students: Math.round(1120 * randomFactor) },
-      { month: 'Apr 2024', revenue: Math.round(1080 * randomFactor), students: Math.round(1080 * randomFactor) },
-      { month: 'May 2024', revenue: Math.round(1150 * randomFactor), students: Math.round(1150 * randomFactor) },
-      { month: 'Jun 2024', revenue: Math.round(1200 * randomFactor), students: Math.round(1200 * randomFactor) },
-      { month: 'Jul 2024', revenue: Math.round(1180 * randomFactor), students: Math.round(1180 * randomFactor) },
-      { month: 'Aug 2024', revenue: Math.round(1220 * randomFactor), students: Math.round(1220 * randomFactor) },
-      { month: 'Sep 2024', revenue: Math.round(1190 * randomFactor), students: Math.round(1190 * randomFactor) },
-      { month: 'Oct 2024', revenue: Math.round(1230 * randomFactor), students: Math.round(1230 * randomFactor) },
-      { month: 'Nov 2024', revenue: Math.round(1150 * randomFactor), students: Math.round(1150 * randomFactor) },
-      { month: 'Dec 2024', revenue: thisMonthRevenue, students: totalStudents }
-    ]
-
-    // Top performing organizations
-    const topOrgs = [
-      { name: 'Leicester Islamic Centre', students: Math.round(156 * randomFactor), revenue: Math.round(156 * randomFactor), growth: 12.5 + (Math.random() - 0.5) * 2, status: 'active' },
-      { name: 'Manchester Islamic School', students: Math.round(134 * randomFactor), revenue: Math.round(134 * randomFactor), growth: 8.2 + (Math.random() - 0.5) * 2, status: 'active' },
-      { name: 'Birmingham Quran Academy', students: Math.round(98 * randomFactor), revenue: Math.round(98 * randomFactor), growth: 15.3 + (Math.random() - 0.5) * 2, status: 'active' },
-      { name: 'London Islamic Centre', students: Math.round(87 * randomFactor), revenue: Math.round(87 * randomFactor), growth: -2.1 + (Math.random() - 0.5) * 2, status: 'active' },
-      { name: 'Bradford Islamic School', students: Math.round(76 * randomFactor), revenue: Math.round(76 * randomFactor), growth: 5.7 + (Math.random() - 0.5) * 2, status: 'active' }
-    ]
-
-    // Recent activity with dynamic timestamps
-    const now = new Date()
-    const recentActivity = [
-      { type: 'payment', message: 'Payment received from Leicester Islamic Centre', amount: Math.round(156 * randomFactor), time: '2 hours ago', status: 'success' },
-      { type: 'org', message: 'New organization registered: Sheffield Islamic Academy', time: '4 hours ago', status: 'info' },
-      { type: 'payment', message: 'Payment failed for Birmingham Quran Academy', amount: Math.round(98 * randomFactor), time: '6 hours ago', status: 'error' },
-      { type: 'user', message: 'New admin user added to Manchester Islamic School', time: '8 hours ago', status: 'info' },
-      { type: 'payment', message: 'Payment received from London Islamic Centre', amount: Math.round(87 * randomFactor), time: '12 hours ago', status: 'success' }
-    ]
-
-    // System health metrics with slight variations
-    const systemHealth = {
-      uptime: Math.round((99.9 + (Math.random() - 0.5) * 0.1) * 10) / 10,
-      responseTime: Math.round(145 + (Math.random() - 0.5) * 20),
-      errorRate: Math.round((0.02 + (Math.random() - 0.5) * 0.01) * 100) / 100,
-      activeUsers: Math.round(totalUsers * (0.8 + Math.random() * 0.2))
-    }
-
-    return {
-      totalOrgs,
-      totalStudents,
-      totalUsers,
-      mrr,
-      arr,
-      lastMonthRevenue,
-      thisMonthRevenue,
-      revenueGrowth,
-      overdueCount,
-      paymentSuccessRate,
-      newOrgsThisMonth,
-      churnRate,
-      avgRevenuePerOrg,
-      monthlyRevenue,
-      topOrgs,
-      recentActivity,
-      systemHealth
-    }
-  }
-
   // Load initial data
   useEffect(() => {
-    setDashboardData(generateDashboardData())
+    fetch('/api/owner/dashboard')
+      .then(res => res.json())
+      .then(data => {
+        setDashboardData(data)
+        setLastUpdated(new Date())
+      })
+      .catch(err => {
+        console.error('Error fetching dashboard data:', err)
+      })
   }, [])
 
   // Auto-refresh every 30 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      setDashboardData(generateDashboardData())
-      setLastUpdated(new Date())
+      fetch('/api/owner/dashboard')
+        .then(res => res.json())
+        .then(data => {
+          setDashboardData(data)
+          setLastUpdated(new Date())
+        })
+        .catch(err => {
+          console.error('Error refreshing dashboard data:', err)
+        })
     }, 30000)
 
     return () => clearInterval(interval)
@@ -178,11 +104,16 @@ export default function OwnerOverviewPage() {
   // Button handlers
   const handleRefresh = async () => {
     setIsRefreshing(true)
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    setDashboardData(generateDashboardData())
-    setLastUpdated(new Date())
-    setIsRefreshing(false)
+    try {
+      const res = await fetch('/api/owner/dashboard')
+      const data = await res.json()
+      setDashboardData(data)
+      setLastUpdated(new Date())
+    } catch (err) {
+      console.error('Error refreshing dashboard data:', err)
+    } finally {
+      setIsRefreshing(false)
+    }
   }
 
   const handleViewAnalytics = () => {
