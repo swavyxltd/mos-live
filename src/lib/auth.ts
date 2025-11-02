@@ -135,11 +135,12 @@ export const authOptions: NextAuthOptions = {
           } else {
             // No password stored, accept demo123 for backward compatibility
             if (credentials.password !== 'demo123') {
-              console.log(`Invalid password for user: ${credentials.email}`)
+              console.log(`Invalid password for user: ${credentials.email} (no password stored)`)
               return null
             }
           }
           
+          console.log(`Successfully authenticated user: ${credentials.email}`)
           return {
             id: user.id,
             email: user.email,
@@ -148,21 +149,11 @@ export const authOptions: NextAuthOptions = {
             isSuperAdmin: user.isSuperAdmin,
             staffSubrole: user.staffSubrole,
           }
-        } catch (error) {
-          console.error('Database error during authentication:', error)
-          // If database connection fails, fall back to demo mode
-          const demoUser = validateDemoCredentials(credentials.email, credentials.password)
-          if (demoUser) {
-            console.log('Falling back to demo mode authentication')
-            return {
-              id: demoUser.id,
-              email: demoUser.email,
-              name: demoUser.name,
-              image: null,
-              isSuperAdmin: demoUser.isSuperAdmin,
-              staffSubrole: demoUser.staffSubrole,
-            }
-          }
+        } catch (error: any) {
+          console.error('Database error during authentication:', error?.message || error)
+          console.error('Error stack:', error?.stack)
+          // If database connection fails, don't fall back - return null to show error
+          return null
         }
 
         return null
