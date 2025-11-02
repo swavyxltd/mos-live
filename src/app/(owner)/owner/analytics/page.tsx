@@ -27,82 +27,28 @@ export default async function OwnerAnalyticsPage() {
     return <div>Loading...</div>
   }
 
-  // Comprehensive analytics data
-  const analyticsData = {
-    // Revenue Analytics
-    revenue: {
-      currentMRR: 1247,
-      lastMonthMRR: 1150,
-      growth: 8.4,
-      arr: 14964,
-      lifetimeValue: 18750,
-      averageRevenuePerUser: 26.5
-    },
+  // Fetch analytics data from API
+  let analyticsData: any = {
+    revenue: { currentMRR: 0, lastMonthMRR: 0, growth: 0, arr: 0, lifetimeValue: 0, averageRevenuePerUser: 0 },
+    growth: { newOrgsThisMonth: 0, newStudentsThisMonth: 0, churnRate: 0, retentionRate: 0, expansionRevenue: 0, contractionRevenue: 0 },
+    users: { totalActiveUsers: 0, newUsersThisMonth: 0, userGrowthRate: 0, averageSessionDuration: 0, pageViewsPerSession: 0, bounceRate: 0 },
+    geography: { topRegions: [] },
+    orgSizes: [],
+    payments: { successRate: 0, averagePaymentTime: 0, failedPayments: 0, refunds: 0, chargebacks: 0 },
+    revenueTrend: []
+  }
+
+  try {
+    const baseUrl = process.env.NEXTAUTH_URL || process.env.APP_BASE_URL || 'http://localhost:3000'
+    const analyticsRes = await fetch(`${baseUrl}/api/owner/analytics`, {
+      cache: 'no-store'
+    })
     
-    // Growth Metrics
-    growth: {
-      newOrgsThisMonth: 4,
-      newStudentsThisMonth: 97,
-      churnRate: 2.1,
-      retentionRate: 97.9,
-      expansionRevenue: 156,
-      contractionRevenue: 23
-    },
-    
-    // User Analytics
-    users: {
-      totalActiveUsers: 89,
-      newUsersThisMonth: 12,
-      userGrowthRate: 15.6,
-      averageSessionDuration: 24.5,
-      pageViewsPerSession: 8.3,
-      bounceRate: 12.4
-    },
-    
-    // Geographic Distribution
-    geography: {
-      topRegions: [
-        { region: 'London', orgs: 12, students: 456, revenue: 456 },
-        { region: 'Manchester', orgs: 8, students: 234, revenue: 234 },
-        { region: 'Birmingham', orgs: 6, students: 189, revenue: 189 },
-        { region: 'Leeds', orgs: 5, students: 156, revenue: 156 },
-        { region: 'Liverpool', orgs: 4, students: 123, revenue: 123 }
-      ]
-    },
-    
-    // Organization Size Distribution
-    orgSizes: [
-      { size: '1-10 students', count: 15, percentage: 32 },
-      { size: '11-25 students', count: 18, percentage: 38 },
-      { size: '26-50 students', count: 10, percentage: 21 },
-      { size: '51-100 students', count: 3, percentage: 6 },
-      { size: '100+ students', count: 1, percentage: 2 }
-    ],
-    
-    // Payment Analytics
-    payments: {
-      successRate: 96.8,
-      averagePaymentTime: 2.3,
-      failedPayments: 3,
-      refunds: 1,
-      chargebacks: 0
-    },
-    
-    // Revenue Trend Data
-    revenueTrend: [
-      { month: 'Jan 2024', revenue: 850, growth: 5.2 },
-      { month: 'Feb 2024', revenue: 920, growth: 8.2 },
-      { month: 'Mar 2024', revenue: 980, growth: 6.5 },
-      { month: 'Apr 2024', revenue: 1050, growth: 7.1 },
-      { month: 'May 2024', revenue: 1120, growth: 6.7 },
-      { month: 'Jun 2024', revenue: 1180, growth: 5.4 },
-      { month: 'Jul 2024', revenue: 1250, growth: 5.9 },
-      { month: 'Aug 2024', revenue: 1320, growth: 5.6 },
-      { month: 'Sep 2024', revenue: 1380, growth: 4.5 },
-      { month: 'Oct 2024', revenue: 1420, growth: 2.9 },
-      { month: 'Nov 2024', revenue: 1470, growth: 3.5 },
-      { month: 'Dec 2024', revenue: 1247, growth: -15.2 }
-    ]
+    if (analyticsRes.ok) {
+      analyticsData = await analyticsRes.json()
+    }
+  } catch (error) {
+    console.error('Error fetching analytics data:', error)
   }
 
   return (

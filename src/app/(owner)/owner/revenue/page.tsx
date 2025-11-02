@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -51,84 +51,46 @@ export default function OwnerRevenuePage() {
   }
   
   // Revenue data state
-  const [revenueData, setRevenueData] = useState({
-    current: {
-      mrr: 1247,
-      arr: 14964,
-      totalRevenue: 18750,
-      thisMonthCollected: 1156,
-      pendingRevenue: 91,
-      failedPayments: 3
-    },
-    breakdown: {
-      subscriptionRevenue: 1247,
-      oneTimePayments: 0,
-      refunds: 23,
-      chargebacks: 0,
-      netRevenue: 1224
-    },
-    paymentStatus: {
-      successful: 47,
-      pending: 3,
-      failed: 3,
-      refunded: 1,
-      successRate: 96.8
-    },
-    failedPayments: [
-      {
-        id: 'fp-001',
-        orgName: 'Birmingham Quran Academy',
-        amount: 98,
-        failureDate: '2024-12-05',
-        reason: 'Insufficient funds',
-        retryCount: 2,
-        nextRetry: '2024-12-08',
-        status: 'pending_retry',
-        stripePaymentIntentId: 'pi_demo_001', // Demo Stripe Payment Intent ID
-        organizationId: 'org_001'
-      },
-      {
-        id: 'fp-002',
-        orgName: 'Leeds Islamic School',
-        amount: 76,
-        failureDate: '2024-12-04',
-        reason: 'Card declined',
-        retryCount: 1,
-        nextRetry: '2024-12-07',
-        status: 'pending_retry',
-        stripePaymentIntentId: 'pi_demo_002', // Demo Stripe Payment Intent ID
-        organizationId: 'org_002'
-      },
-      {
-        id: 'fp-003',
-        orgName: 'Sheffield Islamic Centre',
-        amount: 45,
-        failureDate: '2024-12-03',
-        reason: 'Expired card',
-        retryCount: 3,
-        nextRetry: 'Manual contact required',
-        status: 'manual_review',
-        stripePaymentIntentId: 'pi_demo_003', // Demo Stripe Payment Intent ID
-        organizationId: 'org_003'
-      }
-    ],
-    topRevenueGenerators: [
-      { orgName: 'Leicester Islamic Centre', students: 156, monthlyRevenue: 156, growth: 12.5 },
-      { orgName: 'Manchester Islamic School', students: 134, monthlyRevenue: 134, growth: 8.2 },
-      { orgName: 'Birmingham Quran Academy', students: 98, monthlyRevenue: 98, growth: 15.3 },
-      { orgName: 'London Islamic Centre', students: 87, monthlyRevenue: 87, growth: -2.1 },
-      { orgName: 'Bradford Islamic School', students: 76, monthlyRevenue: 76, growth: 5.7 }
-    ]
-  })
+  const [revenueData, setRevenueData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  // Fetch revenue data
+  useEffect(() => {
+    fetch('/api/owner/revenue')
+      .then(res => res.json())
+      .then(data => {
+        setRevenueData(data)
+        setLoading(false)
+      })
+      .catch(err => {
+        console.error('Error fetching revenue data:', err)
+        setLoading(false)
+      })
+  }, [])
 
   // Handler functions
   const handleRefresh = async () => {
     setRefreshing(true)
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      const res = await fetch('/api/owner/revenue')
+      const data = await res.json()
+      setRevenueData(data)
+    } catch (err) {
+      console.error('Error refreshing revenue data:', err)
     } finally {
       setRefreshing(false)
     }
+  }
+
+  if (loading || !revenueData) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p>Loading revenue data...</p>
+        </div>
+      </div>
+    )
   }
 
   const handleExport = () => {

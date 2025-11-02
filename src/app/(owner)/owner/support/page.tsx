@@ -34,164 +34,71 @@ export default async function OwnerSupportPage() {
     return <div>Loading...</div>
   }
 
-  // Support center data
-  const supportData = {
-    // Support statistics
+  // Fetch support tickets from API
+  let supportData: any = {
     stats: {
-      totalTickets: 47,
-      openTickets: 12,
-      resolvedTickets: 33,
-      pendingTickets: 2,
-      averageResponseTime: 2.5,
-      customerSatisfaction: 4.7
+      totalTickets: 0,
+      openTickets: 0,
+      resolvedTickets: 0,
+      pendingTickets: 0,
+      averageResponseTime: 0,
+      customerSatisfaction: 0
     },
+    recentTickets: [],
+    teamPerformance: [],
+    commonIssues: [],
+    satisfactionTrends: []
+  }
+
+  try {
+    const baseUrl = process.env.NEXTAUTH_URL || process.env.APP_BASE_URL || 'http://localhost:3000'
+    const ticketsRes = await fetch(`${baseUrl}/api/owner/support/tickets`, {
+      cache: 'no-store'
+    })
     
-    // Recent tickets
-    recentTickets: [
-      {
-        id: 'TICKET-001',
-        title: 'Payment processing issue',
-        description: 'Unable to process monthly subscription payment',
-        status: 'open',
-        priority: 'high',
-        category: 'billing',
+    if (ticketsRes.ok) {
+      const tickets = await ticketsRes.json()
+      
+      // Format tickets for display
+      supportData.recentTickets = tickets.slice(0, 10).map((ticket: any) => ({
+        id: ticket.id,
+        title: ticket.subject,
+        description: ticket.body,
+        status: ticket.status.toLowerCase(),
+        priority: ticket.priority || 'medium',
+        category: ticket.category || 'general',
         customer: {
-          name: 'Ahmed Hassan',
-          email: 'ahmed@leicester-islamic.org',
-          orgName: 'Leicester Islamic Centre'
+          name: ticket.createdBy?.name || 'Unknown',
+          email: ticket.createdBy?.email || '',
+          orgName: ticket.org?.name || 'Unknown Org'
         },
-        assignedTo: 'Support Team',
-        createdAt: '2024-12-06T10:30:00Z',
-        lastActivity: '2024-12-06T14:20:00Z',
-        responseTime: '3.8 hours'
-      },
-      {
-        id: 'TICKET-002',
-        title: 'Student enrollment not working',
-        description: 'Getting error when trying to enroll new students',
-        status: 'in_progress',
-        priority: 'medium',
-        category: 'technical',
-        customer: {
-          name: 'Fatima Ali',
-          email: 'fatima@manchester-islamic.edu',
-          orgName: 'Manchester Islamic School'
-        },
-        assignedTo: 'Technical Team',
-        createdAt: '2024-12-06T09:15:00Z',
-        lastActivity: '2024-12-06T11:45:00Z',
-        responseTime: '2.5 hours'
-      },
-      {
-        id: 'TICKET-003',
-        title: 'Report generation slow',
-        description: 'Attendance reports taking too long to generate',
-        status: 'resolved',
-        priority: 'low',
-        category: 'performance',
-        customer: {
-          name: 'Moulana Omar',
-          email: 'omar@birmingham-quran.org',
-          orgName: 'Birmingham Quran Academy'
-        },
-        assignedTo: 'Development Team',
-        createdAt: '2024-12-05T16:20:00Z',
-        lastActivity: '2024-12-06T08:30:00Z',
-        responseTime: '16.2 hours'
-      },
-      {
-        id: 'TICKET-004',
-        title: 'Login issues for staff members',
-        description: 'Some staff members cannot log into their accounts',
-        status: 'open',
-        priority: 'high',
-        category: 'authentication',
-        customer: {
-          name: 'Sarah Ahmed',
-          email: 'sarah@leeds-islamic.edu',
-          orgName: 'Leeds Islamic School'
-        },
-        assignedTo: 'Support Team',
-        createdAt: '2024-12-05T14:10:00Z',
-        lastActivity: '2024-12-05T15:30:00Z',
-        responseTime: '1.3 hours'
-      },
-      {
-        id: 'TICKET-005',
-        title: 'Feature request: Bulk student import',
-        description: 'Would like to import multiple students at once',
-        status: 'pending',
-        priority: 'low',
-        category: 'feature_request',
-        customer: {
-          name: 'Hassan Khan',
-          email: 'hassan@london-islamic.org',
-          orgName: 'London Islamic Centre'
-        },
-        assignedTo: 'Product Team',
-        createdAt: '2024-12-04T11:45:00Z',
-        lastActivity: '2024-12-04T12:00:00Z',
-        responseTime: '15 minutes'
+        assignedTo: 'Unassigned', // Would need assignment tracking
+        createdAt: ticket.createdAt,
+        lastActivity: ticket.updatedAt,
+        responseTime: ticket.responses && ticket.responses.length > 0 
+          ? `${Math.floor((new Date(ticket.responses[0].createdAt).getTime() - new Date(ticket.createdAt).getTime()) / (1000 * 60 * 60))} hours`
+          : 'No response yet'
+      }))
+
+      // Calculate stats
+      supportData.stats.totalTickets = tickets.length
+      supportData.stats.openTickets = tickets.filter((t: any) => t.status === 'OPEN').length
+      supportData.stats.resolvedTickets = tickets.filter((t: any) => t.status === 'RESOLVED').length
+      supportData.stats.pendingTickets = tickets.filter((t: any) => t.status === 'PENDING').length
+      
+      // Calculate average response time (from first response)
+      const ticketsWithResponses = tickets.filter((t: any) => t.responses && t.responses.length > 0)
+      if (ticketsWithResponses.length > 0) {
+        const totalResponseTime = ticketsWithResponses.reduce((sum: number, t: any) => {
+          const firstResponse = t.responses[0]
+          const responseTime = new Date(firstResponse.createdAt).getTime() - new Date(t.createdAt).getTime()
+          return sum + responseTime
+        }, 0)
+        supportData.stats.averageResponseTime = Math.round((totalResponseTime / ticketsWithResponses.length) / (1000 * 60 * 60) * 10) / 10
       }
-    ],
-    
-    // Support team performance
-    teamPerformance: [
-      {
-        name: 'Support Team',
-        ticketsResolved: 18,
-        averageResponseTime: 2.1,
-        customerRating: 4.8,
-        activeTickets: 5
-      },
-      {
-        name: 'Technical Team',
-        ticketsResolved: 12,
-        averageResponseTime: 3.2,
-        customerRating: 4.6,
-        activeTickets: 4
-      },
-      {
-        name: 'Development Team',
-        ticketsResolved: 8,
-        averageResponseTime: 4.5,
-        customerRating: 4.7,
-        activeTickets: 2
-      },
-      {
-        name: 'Product Team',
-        ticketsResolved: 3,
-        averageResponseTime: 1.8,
-        customerRating: 4.9,
-        activeTickets: 1
-      }
-    ],
-    
-    // Common issues
-    commonIssues: [
-      { issue: 'Payment processing errors', count: 8, percentage: 17 },
-      { issue: 'Login/authentication problems', count: 6, percentage: 13 },
-      { issue: 'Student enrollment issues', count: 5, percentage: 11 },
-      { issue: 'Report generation slow', count: 4, percentage: 9 },
-      { issue: 'Email notifications not sending', count: 3, percentage: 6 },
-      { issue: 'Mobile app crashes', count: 2, percentage: 4 }
-    ],
-    
-    // Customer satisfaction trends
-    satisfactionTrends: [
-      { month: 'Jan 2024', rating: 4.2, tickets: 12 },
-      { month: 'Feb 2024', rating: 4.3, tickets: 15 },
-      { month: 'Mar 2024', rating: 4.4, tickets: 18 },
-      { month: 'Apr 2024', rating: 4.5, tickets: 22 },
-      { month: 'May 2024', rating: 4.6, tickets: 25 },
-      { month: 'Jun 2024', rating: 4.7, tickets: 28 },
-      { month: 'Jul 2024', rating: 4.6, tickets: 31 },
-      { month: 'Aug 2024', rating: 4.7, tickets: 35 },
-      { month: 'Sep 2024', rating: 4.8, tickets: 38 },
-      { month: 'Oct 2024', rating: 4.7, tickets: 42 },
-      { month: 'Nov 2024', rating: 4.8, tickets: 45 },
-      { month: 'Dec 2024', rating: 4.7, tickets: 47 }
-    ]
+    }
+  } catch (error) {
+    console.error('Error fetching support tickets:', error)
   }
 
   const getStatusBadge = (status: string) => {
@@ -409,7 +316,8 @@ export default async function OwnerSupportPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {supportData.teamPerformance.map((team, index) => (
+              {supportData.teamPerformance && supportData.teamPerformance.length > 0 ? (
+                supportData.teamPerformance.map((team: any, index: number) => (
                 <div key={index} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                   <div>
                     <p className="font-medium">{team.name}</p>
@@ -422,7 +330,10 @@ export default async function OwnerSupportPage() {
                     </p>
                   </div>
                 </div>
-              ))}
+              ))
+              ) : (
+                <p className="text-sm text-gray-500 text-center py-4">No team performance data available</p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -435,7 +346,8 @@ export default async function OwnerSupportPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {supportData.commonIssues.map((issue, index) => (
+              {supportData.commonIssues && supportData.commonIssues.length > 0 ? (
+                supportData.commonIssues.map((issue: any, index: number) => (
                 <div key={index} className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <div className="w-3 h-3 rounded-full bg-blue-500" />
@@ -446,7 +358,10 @@ export default async function OwnerSupportPage() {
                     <Badge variant="outline">{issue.percentage}%</Badge>
                   </div>
                 </div>
-              ))}
+              ))
+              ) : (
+                <p className="text-sm text-gray-500 text-center py-4">No common issues data available</p>
+              )}
             </div>
           </CardContent>
         </Card>

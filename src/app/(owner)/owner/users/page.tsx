@@ -69,185 +69,31 @@ export default function OwnerUsersPage() {
   }
 
   // User management data
-  const [userData, setUserData] = useState({
-    // User statistics
-    stats: {
-      totalUsers: 89,
-      activeUsers: 76,
-      newUsersThisMonth: 12,
-      adminUsers: 8,
-      staffUsers: 45,
-      parentUsers: 36,
-      inactiveUsers: 13
-    },
-    
-    // All users (expanded dataset for filtering)
-    allUsers: [
-      {
-        id: 'user-001',
-        name: 'Ahmed Hassan',
-        email: 'ahmed@leicester-islamic.org',
-        role: 'OWNER',
-        orgName: 'Leicester Islamic Centre',
-        lastActive: '2024-12-06T10:30:00Z',
-        status: 'active',
-        joinDate: '2024-01-15',
-        phone: '+44 7700 900001',
-        location: 'Leicester, UK',
-        students: [
-          {
-            name: 'Ahmad Hassan',
-            dob: '2010-05-15',
-            grade: 'Year 6',
-            class: '6A'
-          },
-          {
-            name: 'Aisha Hassan',
-            dob: '2012-08-22',
-            grade: 'Year 4',
-            class: '4B'
-          }
-        ]
-      },
-      {
-        id: 'user-002',
-        name: 'Fatima Ali',
-        email: 'fatima@manchester-islamic.edu',
-        role: 'ADMIN',
-        orgName: 'Manchester Islamic School',
-        lastActive: '2024-12-06T09:15:00Z',
-        status: 'active',
-        joinDate: '2024-02-20',
-        phone: '+44 7700 900002',
-        location: 'Manchester, UK',
-        students: []
-      },
-      {
-        id: 'user-003',
-        name: 'Moulana Omar',
-        email: 'omar@birmingham-quran.org',
-        role: 'STAFF',
-        orgName: 'Birmingham Quran Academy',
-        lastActive: '2024-12-05T16:45:00Z',
-        status: 'active',
-        joinDate: '2024-03-10',
-        phone: '+44 7700 900003',
-        location: 'Birmingham, UK'
-      },
-      {
-        id: 'user-004',
-        name: 'Sarah Ahmed',
-        email: 'sarah@leeds-islamic.edu',
-        role: 'PARENT',
-        orgName: 'Leeds Islamic School',
-        lastActive: '2024-12-05T14:20:00Z',
-        status: 'active',
-        joinDate: '2024-04-05',
-        phone: '+44 7700 900004',
-        location: 'Leeds, UK',
-        students: [
-          {
-            name: 'Yusuf Ahmed',
-            dob: '2009-12-03',
-            grade: 'Year 7',
-            class: '7A'
-          }
-        ]
-      },
-      {
-        id: 'user-005',
-        name: 'Hassan Khan',
-        email: 'hassan@london-islamic.org',
-        role: 'STAFF',
-        orgName: 'London Islamic Centre',
-        lastActive: '2024-12-04T11:30:00Z',
-        status: 'inactive',
-        joinDate: '2024-05-12',
-        phone: '+44 7700 900005',
-        location: 'London, UK',
-        students: []
-      },
-      {
-        id: 'user-006',
-        name: 'Aisha Patel',
-        email: 'aisha@bradford-islamic.edu',
-        role: 'STAFF',
-        orgName: 'Bradford Islamic School',
-        lastActive: '2024-12-05T08:30:00Z',
-        status: 'active',
-        joinDate: '2024-06-01',
-        phone: '+44 7700 900006',
-        location: 'Bradford, UK'
-      },
-      {
-        id: 'user-007',
-        name: 'Mohammed Ali',
-        email: 'mohammed@sheffield-islamic.org',
-        role: 'ADMIN',
-        orgName: 'Sheffield Islamic Centre',
-        lastActive: '2024-12-03T15:20:00Z',
-        status: 'inactive',
-        joinDate: '2024-07-15',
-        phone: '+44 7700 900007',
-        location: 'Sheffield, UK'
-      },
-      {
-        id: 'user-008',
-        name: 'Zainab Khan',
-        email: 'zainab@liverpool-islamic.edu',
-        role: 'PARENT',
-        orgName: 'Liverpool Islamic School',
-        lastActive: '2024-12-06T12:45:00Z',
-        status: 'active',
-        joinDate: '2024-08-20',
-        phone: '+44 7700 900008',
-        location: 'Liverpool, UK',
-        students: [
-          {
-            name: 'Hassan Khan',
-            dob: '2011-03-18',
-            grade: 'Year 5',
-            class: '5C'
-          },
-          {
-            name: 'Fatima Khan',
-            dob: '2013-07-09',
-            grade: 'Year 3',
-            class: '3A'
-          }
-        ]
-      }
-    ],
-    
-    // User activity summary
-    activity: {
-      loginsToday: 23,
-      loginsThisWeek: 156,
-      averageSessionDuration: 24.5,
-      mostActiveTime: '10:00 AM - 12:00 PM',
-      topFeatures: ['Dashboard', 'Students', 'Classes', 'Payments', 'Messages']
-    },
-    
-    // Role distribution
-    roleDistribution: [
-      { role: 'OWNER', count: 8, percentage: 9 },
-      { role: 'ADMIN', count: 12, percentage: 13 },
-      { role: 'STAFF', count: 45, percentage: 51 },
-      { role: 'PARENT', count: 24, percentage: 27 }
-    ],
-    
-    // Organizations with most users
-    topOrgsByUsers: [
-      { orgName: 'Leicester Islamic Centre', userCount: 8, activeUsers: 7 },
-      { orgName: 'Manchester Islamic School', userCount: 6, activeUsers: 5 },
-      { orgName: 'Birmingham Quran Academy', userCount: 5, activeUsers: 4 },
-      { orgName: 'London Islamic Centre', userCount: 4, activeUsers: 3 },
-      { orgName: 'Bradford Islamic School', userCount: 3, activeUsers: 3 }
-    ]
-  })
+  const [userData, setUserData] = useState<any>(null)
+  const [dataLoading, setDataLoading] = useState(true)
+
+  // Fetch user data
+  useEffect(() => {
+    if (status === 'loading') return
+
+    fetch('/api/owner/users/stats')
+      .then(res => res.json())
+      .then(data => {
+        setUserData(data)
+        setDataLoading(false)
+      })
+      .catch(err => {
+        console.error('Error fetching user data:', err)
+        setDataLoading(false)
+      })
+  }, [status])
+
+  if (status === 'loading' || dataLoading || !userData) {
+    return <div>Loading...</div>
+  }
 
   // Filter users based on search and filters
-  const filteredUsers = userData.allUsers.filter(user => {
+  const filteredUsers = (userData.allUsers || []).filter(user => {
     const matchesSearch = !searchTerm || 
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -287,15 +133,15 @@ export default function OwnerUsersPage() {
   })
 
   // Get unique organizations for filter
-  const uniqueOrgs = [...new Set(userData.allUsers.map(user => user.orgName))]
+  const uniqueOrgs = [...new Set((userData.allUsers || []).map(user => user.orgName))]
 
   // Handler functions
   const handleRefresh = async () => {
     setRefreshing(true)
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      // In real app, fetch fresh data here
+      const res = await fetch('/api/owner/users/stats')
+      const data = await res.json()
+      setUserData(data)
     } catch (error) {
       console.error('Error refreshing data:', error)
     } finally {
@@ -435,9 +281,9 @@ export default function OwnerUsersPage() {
             <Users className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{userData.stats.totalUsers}</div>
+            <div className="text-2xl font-bold">{userData?.stats?.totalUsers || 0}</div>
             <p className="text-xs text-muted-foreground">
-              <span className="text-green-600">+{userData.stats.newUsersThisMonth}</span> this month
+              <span className="text-green-600">+{userData?.stats?.newUsersThisMonth || 0}</span> this month
             </p>
           </CardContent>
         </Card>
@@ -448,9 +294,9 @@ export default function OwnerUsersPage() {
             <UserCheck className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{userData.stats.activeUsers}</div>
+            <div className="text-2xl font-bold">{userData?.stats?.activeUsers || 0}</div>
             <p className="text-xs text-muted-foreground">
-              {Math.round((userData.stats.activeUsers / userData.stats.totalUsers) * 100)}% of total
+              {userData?.stats?.totalUsers ? Math.round((userData.stats.activeUsers / userData.stats.totalUsers) * 100) : 0}% of total
             </p>
           </CardContent>
         </Card>
@@ -461,7 +307,7 @@ export default function OwnerUsersPage() {
             <Shield className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{userData.stats.adminUsers}</div>
+            <div className="text-2xl font-bold">{userData?.stats?.adminUsers || 0}</div>
             <p className="text-xs text-muted-foreground">
               Platform administrators
             </p>
@@ -474,7 +320,7 @@ export default function OwnerUsersPage() {
             <UserCheck className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{userData.stats.staffUsers}</div>
+            <div className="text-2xl font-bold">{userData?.stats?.staffUsers || 0}</div>
             <p className="text-xs text-muted-foreground">
               Organization staff
             </p>
@@ -577,7 +423,7 @@ export default function OwnerUsersPage() {
             {/* Results Summary */}
             <div className="flex items-center justify-between pt-2 border-t border-gray-200">
               <div className="text-sm text-gray-600">
-                Showing {filteredUsers.length} of {userData.allUsers.length} users
+                Showing {filteredUsers.length} of {userData?.allUsers?.length || 0} users
                 {(searchTerm || roleFilter !== 'all' || statusFilter !== 'all' || orgFilter !== 'all' || dateFilter !== 'all') && (
                   <span className="ml-2 text-blue-600">(filtered)</span>
                 )}
@@ -597,9 +443,9 @@ export default function OwnerUsersPage() {
           <CardHeader>
             <CardTitle>Users</CardTitle>
             <CardDescription>
-              {filteredUsers.length === userData.allUsers.length 
+              {filteredUsers.length === (userData?.allUsers?.length || 0)
                 ? 'All users in the platform' 
-                : `Filtered results (${filteredUsers.length} of ${userData.allUsers.length})`
+                : `Filtered results (${filteredUsers.length} of ${userData?.allUsers?.length || 0})`
               }
             </CardDescription>
           </CardHeader>
@@ -656,7 +502,7 @@ export default function OwnerUsersPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {userData.roleDistribution.map((role) => (
+              {(userData?.roleDistribution || []).map((role) => (
                 <div key={role.role} className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <div className="w-3 h-3 rounded-full bg-blue-500" />
@@ -688,28 +534,28 @@ export default function OwnerUsersPage() {
                   <Activity className="h-4 w-4 text-green-600" />
                   <span className="text-sm font-medium">Logins Today</span>
                 </div>
-                <Badge variant="outline">{userData.activity.loginsToday}</Badge>
+                <Badge variant="outline">{userData?.activity?.loginsToday || 0}</Badge>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Calendar className="h-4 w-4 text-blue-600" />
                   <span className="text-sm font-medium">Logins This Week</span>
                 </div>
-                <Badge variant="outline">{userData.activity.loginsThisWeek}</Badge>
+                <Badge variant="outline">{userData?.activity?.loginsThisWeek || 0}</Badge>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Clock className="h-4 w-4 text-purple-600" />
                   <span className="text-sm font-medium">Avg Session Duration</span>
                 </div>
-                <Badge variant="outline">{userData.activity.averageSessionDuration} min</Badge>
+                <Badge variant="outline">{userData?.activity?.averageSessionDuration || 0} min</Badge>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Activity className="h-4 w-4 text-orange-600" />
                   <span className="text-sm font-medium">Most Active Time</span>
                 </div>
-                <Badge variant="outline">{userData.activity.mostActiveTime}</Badge>
+                <Badge variant="outline">{userData?.activity?.mostActiveTime || 'N/A'}</Badge>
               </div>
             </div>
           </CardContent>
@@ -723,7 +569,7 @@ export default function OwnerUsersPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {userData.topOrgsByUsers.map((org, index) => (
+              {(userData?.topOrgsByUsers || []).map((org, index) => (
                 <div key={index} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
