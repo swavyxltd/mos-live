@@ -28,11 +28,14 @@ export async function GET(request: NextRequest) {
     const mrr = totalStudents * 1
     const arr = mrr * 12
 
-    // Get revenue from paid invoices
+    // Get revenue from paid invoices (only those with paidAt set and in this month)
     const thisMonthInvoices = await prisma.invoice.findMany({
       where: {
         status: 'PAID',
-        paidAt: { gte: thisMonth }
+        paidAt: {
+          not: null,
+          gte: thisMonth
+        }
       },
       select: { amountP: true }
     })
@@ -148,7 +151,10 @@ export async function GET(request: NextRequest) {
           where: {
             orgId: org.id,
             status: 'PAID',
-            paidAt: { gte: lastMonth }
+            paidAt: {
+              not: null,
+              gte: lastMonth
+            }
           },
           select: { amountP: true }
         })
@@ -162,6 +168,7 @@ export async function GET(request: NextRequest) {
             orgId: org.id,
             status: 'PAID',
             paidAt: {
+              not: null,
               gte: prevMonthStart,
               lt: lastMonth
             }
