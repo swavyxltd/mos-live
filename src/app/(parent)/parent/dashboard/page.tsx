@@ -187,16 +187,17 @@ export default async function ParentDashboardPage() {
       isOverdue: daysUntilPayment <= 0
     }
   } else {
-    // Get parent's students from database (excluding archived)
-    students = await prisma.student.findMany({
-      where: { 
-        orgId: org.id,
-        primaryParentId: session.user.id,
-        isArchived: false
-      },
-      include: {
-        studentClasses: {
-          include: {
+    try {
+      // Get parent's students from database (excluding archived)
+      students = await prisma.student.findMany({
+        where: { 
+          orgId: org.id,
+          primaryParentId: session.user.id,
+          isArchived: false
+        },
+        include: {
+          studentClasses: {
+            include: {
             class: true
           }
         }
@@ -234,10 +235,10 @@ export default async function ParentDashboardPage() {
             student: {
               primaryParentId: session.user.id
             }
+          },
+          include: {
+            student: true
           }
-        },
-        include: {
-          student: true
         }
       }
     })
