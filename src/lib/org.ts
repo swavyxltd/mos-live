@@ -19,13 +19,6 @@ export async function getActiveOrgId(userId?: string): Promise<string | null> {
   const cookieStore = cookies()
   const cookieOrgId = cookieStore.get(ORG_COOKIE_NAME)?.value ?? null
 
-  // Check if we're in demo mode
-  const { isDemoMode, DEMO_ORG } = await import('./demo-mode')
-
-  if (isDemoMode()) {
-    return DEMO_ORG.id
-  }
-
   if (cookieOrgId) {
     const orgExists = await prisma.org.findUnique({
       where: { id: cookieOrgId },
@@ -74,13 +67,6 @@ export async function setActiveOrgId(orgId: string): Promise<void> {
 }
 
 export async function getActiveOrg(userId?: string) {
-  // Check if we're in demo mode first
-  const { isDemoMode, DEMO_ORG } = await import('./demo-mode')
-
-  if (isDemoMode()) {
-    return DEMO_ORG
-  }
-
   const orgId = await getActiveOrgId(userId)
   if (!orgId) return null
 
@@ -90,20 +76,6 @@ export async function getActiveOrg(userId?: string) {
 }
 
 export async function getUserOrgs(userId: string) {
-  // Check if we're in demo mode
-  const { isDemoMode, DEMO_ORG, DEMO_USERS } = await import('./demo-mode')
-
-  if (isDemoMode()) {
-    const demoUser = Object.values(DEMO_USERS).find(u => u.id === userId)
-    if (demoUser) {
-      return [{
-        org: DEMO_ORG,
-        role: demoUser.role
-      }]
-    }
-    return []
-  }
-
   return prisma.userOrgMembership.findMany({
     where: { userId },
     include: {
@@ -113,14 +85,6 @@ export async function getUserOrgs(userId: string) {
 }
 
 export async function getUserRoleInOrg(userId: string, orgId: string): Promise<Role | null> {
-  // Check if we're in demo mode
-  const { isDemoMode, DEMO_USERS } = await import('./demo-mode')
-
-  if (isDemoMode()) {
-    const user = Object.values(DEMO_USERS).find(u => u.id === userId)
-    return user?.role as Role || null
-  }
-
   const membership = await prisma.userOrgMembership.findUnique({
     where: {
       userId_orgId: {

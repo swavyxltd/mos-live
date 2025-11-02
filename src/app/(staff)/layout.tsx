@@ -12,62 +12,12 @@ export default async function StaffLayout({
 }) {
   const session = await getServerSession(authOptions)
   
-  // Check if we're in demo mode first
-  const { isDemoMode, DEMO_ORG } = await import('@/lib/demo-mode')
-  
-  if (!session?.user && !isDemoMode()) {
+  if (!session?.user?.id) {
     redirect('/auth/signin')
   }
-  
-  // Handle demo mode without session
-  if (isDemoMode() && !session?.user) {
-    const demoOrg = DEMO_ORG
-    const userRole = 'STAFF' // Default role for demo users
-    const demoUser = {
-      id: 'demo-staff-1',
-      email: 'staff@demo.com',
-      name: 'Demo Staff',
-      image: null
-    }
-    
-    return (
-      <Page
-        user={demoUser}
-        org={demoOrg}
-        userRole={userRole}
-        title="Staff Portal"
-        breadcrumbs={[{ label: 'Dashboard' }]}
-      >
-        <StaffLayoutWrapper userRole={userRole}>
-          {children}
-        </StaffLayoutWrapper>
-      </Page>
-    )
-  }
 
-  let org = await getActiveOrg(session?.user?.id)
+  let org = await getActiveOrg(session.user.id)
   if (!org) {
-    // Check if this is a demo user and we're in development
-    if (isDemoMode() || (process.env.NODE_ENV !== 'production' && session?.user?.id?.startsWith('demo-'))) {
-      // Use demo org for demo users
-      const demoOrg = DEMO_ORG
-      const userRole = 'STAFF' // Default role for demo users
-      
-      return (
-        <Page
-          user={session.user}
-          org={demoOrg}
-          userRole={userRole}
-          title="Staff Portal"
-          breadcrumbs={[{ label: 'Dashboard' }]}
-        >
-          <StaffLayoutWrapper userRole={userRole}>
-            {children}
-          </StaffLayoutWrapper>
-        </Page>
-      )
-    }
-    
     // Try to automatically set the active org from user's organizations
     if (session?.user?.id) {
       try {
@@ -109,36 +59,24 @@ export default async function StaffLayout({
     }
   }
   
-  // Check if we're in demo mode
-  const { DEMO_USERS } = await import('@/lib/demo-mode')
-  let userRole = null
-  let staffSubrole = null
-  
-  if (isDemoMode()) {
-    // In demo mode, get role from demo users
-    const demoUser = Object.values(DEMO_USERS).find(u => u.id === session.user.id)
-    userRole = demoUser?.role || 'STAFF'
-    staffSubrole = (demoUser as any)?.staffSubrole || 'ADMIN' // Default to ADMIN for demo
-    // console.log('Demo user found:', demoUser, 'staffSubrole:', staffSubrole) // Debug log
-  } else {
-    userRole = await getUserRoleInOrg(session.user.id, org.id)
-    if (!userRole) {
-      redirect('/auth/signin?error=NotMember')
-    }
-    
-    // Set staffSubrole based on userRole
-    // ADMIN role -> ADMIN subrole
-    // STAFF role -> TEACHER subrole (default for staff)
-    // If user has staffSubrole in session, use that (from User model if stored)
-    if (userRole === 'ADMIN') {
-      staffSubrole = 'ADMIN'
-    } else if (userRole === 'STAFF') {
-      // Check if user has staffSubrole stored (from User model if we add it later)
-      // For now, default STAFF to TEACHER instead of ADMIN
-      staffSubrole = (session.user as any)?.staffSubrole || 'TEACHER'
-    }
-    // PARENT role doesn't use staffSubrole
+  let userRole = await getUserRoleInOrg(session.user.id, org.id)
+  if (!userRole) {
+    redirect('/auth/signin?error=NotMember')
   }
+  
+  // Set staffSubrole based on userRole
+  // ADMIN role -> ADMIN subrole
+  // STAFF role -> TEACHER subrole (default for staff)
+  // If user has staffSubrole in session, use that (from User model if stored)
+  let staffSubrole = null
+  if (userRole === 'ADMIN') {
+    staffSubrole = 'ADMIN'
+  } else if (userRole === 'STAFF') {
+    // Check if user has staffSubrole stored (from User model if we add it later)
+    // For now, default STAFF to TEACHER instead of ADMIN
+    staffSubrole = (session.user as any)?.staffSubrole || 'TEACHER'
+  }
+  // PARENT role doesn't use staffSubrole
   
   return (
     <Page
