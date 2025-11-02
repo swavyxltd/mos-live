@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useToast } from '@/hooks/use-toast'
+import { useState } from 'react'
+import { ToastContainer } from '@/components/ui/toast'
 
 interface Org {
   id: string
@@ -15,9 +16,34 @@ interface Org {
   slug: string
 }
 
+interface Toast {
+  id: string
+  type: 'success' | 'error' | 'warning' | 'info'
+  title: string
+  message: string
+  duration?: number
+}
+
 export default function CreateUserPage() {
   const router = useRouter()
-  const { toast } = useToast()
+  const [toasts, setToasts] = useState<Toast[]>([])
+  
+  const addToast = (toast: Omit<Toast, 'id'>) => {
+    const id = Math.random().toString(36).substr(2, 9)
+    setToasts((prev) => [...prev, { ...toast, id }])
+  }
+
+  const removeToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id))
+  }
+
+  const toast = ({ title, description, variant }: { title: string; description?: string; variant?: 'destructive' }) => {
+    addToast({
+      type: variant === 'destructive' ? 'error' : 'success',
+      title,
+      message: description || '',
+    })
+  }
   const [loading, setLoading] = useState(false)
   const [orgs, setOrgs] = useState<Org[]>([])
   const [formData, setFormData] = useState({
@@ -80,6 +106,7 @@ export default function CreateUserPage() {
 
   return (
     <div className="container mx-auto py-8 max-w-2xl">
+      <ToastContainer toasts={toasts} onClose={removeToast} />
       <Card>
         <CardHeader>
           <CardTitle>Create User Account</CardTitle>

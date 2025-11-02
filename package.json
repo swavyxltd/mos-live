@@ -12,6 +12,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "import:vercel": "tsx scripts/import-vercel.ts",
+    "create:accounts": "tsx scripts/create-test-accounts.ts",
     "setup:owner": "tsx setup-owner.ts",
     "setup:owner:prod": "tsx setup-owner-production.ts",
     "setup:owner:api": "./setup-owner-via-api.sh",
