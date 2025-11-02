@@ -88,11 +88,11 @@ export const authOptions: NextAuthOptions = {
         }
 
         // Check if we're in demo mode
-        const { isDemoMode, validateDemoCredentials } = await import('./demo-mode')
+        const { isDemoMode, validateDemoCredentials, DEMO_USERS } = await import('./demo-mode')
         
-        // Always check demo credentials first if in demo mode
+        // Check demo credentials first if in demo mode
         if (isDemoMode()) {
-          // Use demo mode authentication
+          // Use demo mode authentication for demo users
           const demoUser = validateDemoCredentials(credentials.email, credentials.password)
           
           if (demoUser) {
@@ -105,8 +105,10 @@ export const authOptions: NextAuthOptions = {
               staffSubrole: demoUser.staffSubrole,
             }
           }
-          // If demo mode is enabled but credentials don't match, return null
-          return null
+          
+          // If demo mode is enabled but user is not a demo user,
+          // still check database for real users
+          // (fall through to database authentication below)
         }
         
         // Use database authentication
