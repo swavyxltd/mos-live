@@ -89,18 +89,24 @@ export async function GET(request: NextRequest) {
     const successRate = totalPayments > 0 ? (successful / totalPayments) * 100 : 100
 
     // Get failed payments with org details for retry
-    const failedPaymentsList = await prisma.invoice.findMany({
-      where: {
-        status: 'OVERDUE',
-        dueDate: { lt: now }
-      },
-      include: {
-        org: { select: { name: true } },
-        student: { select: { firstName: true, lastName: true } }
-      },
-      orderBy: { dueDate: 'asc' },
-      take: 10
-    })
+    let failedPaymentsList: any[] = []
+    try {
+      failedPaymentsList = await prisma.invoice.findMany({
+        where: {
+          status: 'OVERDUE',
+          dueDate: { lt: now }
+        },
+        include: {
+          org: { select: { name: true } },
+          student: { select: { firstName: true, lastName: true } }
+        },
+        orderBy: { dueDate: 'asc' },
+        take: 10
+      })
+    } catch (error) {
+      console.error('Error fetching failed payments:', error)
+      // Continue with empty array
+    }
 
     const failedPaymentsFormatted = failedPaymentsList.map((inv, index) => ({
       id: inv.id,
