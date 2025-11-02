@@ -10,7 +10,7 @@ import { isDemoMode } from '@/lib/demo-mode'
 
 export default async function ParentDashboardPage() {
   const session = await getServerSession(authOptions)
-  const org = await getActiveOrg()
+  const org = await getActiveOrg(session?.user?.id)
   
   if (!session?.user?.id || !org) {
     return <div>Loading...</div>
