@@ -135,7 +135,7 @@ export async function GET(request: NextRequest) {
       const monthInvoices = await prisma.invoice.findMany({
         where: {
           status: 'PAID',
-          paidDate: {
+          paidAt: {
             gte: monthStart,
             lte: monthEnd
           }

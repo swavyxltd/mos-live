@@ -63,9 +63,9 @@ export async function GET(request: NextRequest) {
             orgId: org.id,
             status: 'PAID'
           },
-          select: { amount: true }
+          select: { amountP: true }
         })
-        const totalRevenue = invoices.reduce((sum, inv) => sum + Number(inv.amount || 0), 0)
+        const totalRevenue = invoices.reduce((sum, inv) => sum + Number(inv.amountP || 0) / 100, 0)
 
         // Get last activity (most recent invoice or student update)
         const lastInvoice = await prisma.invoice.findFirst({
