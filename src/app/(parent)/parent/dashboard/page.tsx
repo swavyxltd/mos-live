@@ -204,102 +204,106 @@ export default async function ParentDashboardPage() {
       }
     })
 
-    // Get recent announcements
-    announcements = await prisma.message.findMany({
-      where: { 
-        orgId: org.id,
-        audience: 'ALL',
-        status: 'SENT'
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 5
-    })
+      // Get recent announcements
+      announcements = await prisma.message.findMany({
+        where: { 
+          orgId: org.id,
+          audience: 'ALL',
+          status: 'SENT'
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 5
+      })
 
-    // Get upcoming classes (next 7 days)
-    upcomingClasses = await prisma.class.findMany({
-      where: { 
-        orgId: org.id,
-        isArchived: false,
-        studentClasses: {
-          some: {
-            student: {
-              primaryParentId: session.user.id,
-              isArchived: false
+      // Get upcoming classes (next 7 days)
+      upcomingClasses = await prisma.class.findMany({
+        where: { 
+          orgId: org.id,
+          isArchived: false,
+          studentClasses: {
+            some: {
+              student: {
+                primaryParentId: session.user.id,
+                isArchived: false
+              }
+            }
+          }
+        },
+        include: {
+          studentClasses: {
+            where: {
+              student: {
+                primaryParentId: session.user.id
+              }
+            },
+            include: {
+              student: true
             }
           }
         }
-      },
-      include: {
-        studentClasses: {
-          where: {
-            student: {
-              primaryParentId: session.user.id
-            }
-          },
-          include: {
-            student: true
-          }
-        }
-      }
-    })
+      })
 
-    // Get weekly attendance for parent's students
-    const oneWeekAgo = new Date()
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
-    
-    weeklyAttendance = await prisma.attendance.findMany({
-      where: {
-        orgId: org.id,
-        student: {
-          primaryParentId: session.user.id,
-          isArchived: false
-        },
-        date: {
-          gte: oneWeekAgo
-        }
-      },
-      include: {
-        student: true,
-        class: true
-      }
-    })
-
-    // Get payment status for parent's students
-    const today = new Date()
-    const upcomingInvoices = await prisma.invoice.findMany({
-      where: {
-        orgId: org.id,
-        student: {
-          primaryParentId: session.user.id,
-          isArchived: false
-        },
-        status: {
-          in: ['PENDING', 'OVERDUE']
-        }
-      },
-      orderBy: { dueDate: 'asc' },
-      take: 1
-    })
-
-    if (upcomingInvoices.length > 0) {
-      const nextInvoice = upcomingInvoices[0]
-      const daysUntilDue = Math.ceil((nextInvoice.dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+      // Get weekly attendance for parent's students
+      const oneWeekAgo = new Date()
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
       
-      paymentStatus = {
-        status: daysUntilDue <= 0 ? 'overdue' : daysUntilDue <= 5 ? 'due' : 'up_to_date',
-        amount: nextInvoice.amount,
-        dueDate: nextInvoice.dueDate,
-        daysUntilDue: daysUntilDue,
-        isOverdue: daysUntilDue <= 0
+      weeklyAttendance = await prisma.attendance.findMany({
+        where: {
+          orgId: org.id,
+          student: {
+            primaryParentId: session.user.id,
+            isArchived: false
+          },
+          date: {
+            gte: oneWeekAgo
+          }
+        },
+        include: {
+          student: true,
+          class: true
+        }
+      })
+
+      // Get payment status for parent's students
+      const today = new Date()
+      const upcomingInvoices = await prisma.invoice.findMany({
+        where: {
+          orgId: org.id,
+          student: {
+            primaryParentId: session.user.id,
+            isArchived: false
+          },
+          status: {
+            in: ['PENDING', 'OVERDUE']
+          }
+        },
+        orderBy: { dueDate: 'asc' },
+        take: 1
+      })
+
+      if (upcomingInvoices.length > 0) {
+        const nextInvoice = upcomingInvoices[0]
+        const daysUntilDue = Math.ceil((nextInvoice.dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+        
+        paymentStatus = {
+          status: daysUntilDue <= 0 ? 'overdue' : daysUntilDue <= 5 ? 'due' : 'up_to_date',
+          amount: nextInvoice.amount,
+          dueDate: nextInvoice.dueDate,
+          daysUntilDue: daysUntilDue,
+          isOverdue: daysUntilDue <= 0
+        }
+      } else {
+        paymentStatus = {
+          status: 'up_to_date',
+          amount: 0,
+          dueDate: null,
+          daysUntilDue: null,
+          isOverdue: false
+        }
       }
-    } else {
-      paymentStatus = {
-        status: 'up_to_date',
-        amount: 0,
-        dueDate: null,
-        daysUntilDue: null,
-        isOverdue: false
-      }
+    } catch (error: any) {
+      console.error('[ParentDashboard] Error fetching data:', error?.message || error)
+      // Keep empty arrays if database query fails
     }
   }
 
