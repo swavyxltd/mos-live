@@ -108,12 +108,12 @@ export async function GET(request: NextRequest) {
       // Continue with empty array
     }
 
-    const failedPaymentsFormatted = failedPaymentsList.map((inv, index) => ({
+    const failedPaymentsFormatted = failedPaymentsList.map((inv: any) => ({
       id: inv.id,
-      orgName: inv.org.name,
-      studentName: `${inv.student.firstName} ${inv.student.lastName}`,
+      orgName: inv.org?.name || 'Unknown Org',
+      studentName: inv.student ? `${inv.student.firstName} ${inv.student.lastName}` : 'Unknown Student',
       amount: Number(inv.amountP || 0) / 100,
-      failureDate: inv.dueDate.toISOString().split('T')[0],
+      failureDate: inv.dueDate ? inv.dueDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
       reason: 'Payment overdue',
       retryCount: 0,
       nextRetry: null,
