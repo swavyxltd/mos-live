@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import { Sidebar } from './sidebar'
 import { Topbar } from './topbar'
 import { OverduePaymentBanner } from '@/components/overdue-payment-banner'
+import { PaymentRequiredBanner } from '@/components/payment-required-banner'
 
 interface PageProps {
   children: React.ReactNode
@@ -35,6 +36,7 @@ export function Page({ children, user, org, userRole, staffSubrole, title, bread
         <main className="py-6">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             {userRole === 'PARENT' && <OverduePaymentBanner />}
+            {userRole !== 'PARENT' && userRole !== 'OWNER' && <PaymentRequiredBanner />}
             {children}
           </div>
         </main>
