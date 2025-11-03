@@ -53,14 +53,15 @@ interface BillingRecord {
 export default function SettingsPage() {
   const { data: session, update } = useSession()
   const [loading, setLoading] = useState(false)
+  const [loadingOrgSettings, setLoadingOrgSettings] = useState(true)
   const [orgSettings, setOrgSettings] = useState<OrganizationSettings>({
-    name: 'Al-Noor Islamic School',
+    name: '',
     timezone: 'Europe/London',
     lateThreshold: 15,
-    address: '123 Education Street, London, SW1A 1AA',
-    phone: '+44 20 7123 4567',
-    email: 'admin@alnoor-school.co.uk',
-    officeHours: 'Monday - Friday: 9:00 AM - 5:00 PM\nSaturday: 10:00 AM - 2:00 PM\nSunday: Closed'
+    address: '',
+    phone: '',
+    email: '',
+    officeHours: ''
   })
   const [userSettings, setUserSettings] = useState<UserSettings>({
     name: '',
@@ -87,52 +88,8 @@ export default function SettingsPage() {
   const [paymentSetupClientSecret, setPaymentSetupClientSecret] = useState<string | undefined>(undefined)
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
 
-  // Demo billing data - payments TO the madrasah
-  const billingRecords: BillingRecord[] = [
-    {
-      id: '1',
-      date: '2024-01-01',
-      amount: 47.00,
-      status: 'paid',
-      description: 'Monthly subscription - January 2024 (47 students)',
-      invoiceId: 'MAD-INV-001'
-    },
-    {
-      id: '2',
-      date: '2023-12-01',
-      amount: 45.00,
-      status: 'paid',
-      description: 'Monthly subscription - December 2023 (45 students)',
-      invoiceId: 'MAD-INV-002'
-    },
-    {
-      id: '3',
-      date: '2023-11-01',
-      amount: 43.00,
-      status: 'paid',
-      description: 'Monthly subscription - November 2023 (43 students)',
-      invoiceId: 'MAD-INV-003'
-    },
-    {
-      id: '4',
-      date: '2023-10-01',
-      amount: 41.00,
-      status: 'paid',
-      description: 'Monthly subscription - October 2023 (41 students)',
-      invoiceId: 'MAD-INV-004'
-    },
-    {
-      id: '5',
-      date: '2023-09-01',
-      amount: 39.00,
-      status: 'paid',
-      description: 'Monthly subscription - September 2023 (39 students)',
-      invoiceId: 'MAD-INV-005'
-    }
-  ]
-
-  // Calculate summary statistics
-  // const totalPaid = billingRecords.filter(p => p.status === 'paid').reduce((sum, p) => sum + p.amount, 0)
+  const [billingRecords, setBillingRecords] = useState<BillingRecord[]>([])
+  const [loadingBillingRecords, setLoadingBillingRecords] = useState(true)
 
   useEffect(() => {
     if (session?.user) {
@@ -144,10 +101,12 @@ export default function SettingsPage() {
     }
   }, [session])
 
-  // Fetch platform billing data
+  // Fetch all settings data
   useEffect(() => {
+    fetchOrgSettings()
     fetchPlatformBilling()
     fetchStudentCount()
+    fetchBillingRecords()
   }, [])
 
   const fetchPlatformBilling = async () => {
@@ -169,6 +128,29 @@ export default function SettingsPage() {
     }
   }
 
+  const fetchOrgSettings = async () => {
+    try {
+      setLoadingOrgSettings(true)
+      const response = await fetch('/api/settings/organization')
+      if (response.ok) {
+        const data = await response.json()
+        setOrgSettings({
+          name: data.name || '',
+          timezone: data.timezone || 'Europe/London',
+          lateThreshold: data.lateThreshold || 15,
+          address: data.address || '',
+          phone: data.phone || '',
+          email: data.email || '',
+          officeHours: data.officeHours || ''
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching organization settings:', error)
+    } finally {
+      setLoadingOrgSettings(false)
+    }
+  }
+
   const fetchStudentCount = async () => {
     try {
       const response = await fetch('/api/students')
@@ -179,6 +161,41 @@ export default function SettingsPage() {
       }
     } catch (error) {
       console.error('Error fetching student count:', error)
+    }
+  }
+
+  const fetchBillingRecords = async () => {
+    try {
+      setLoadingBillingRecords(true)
+      // Fetch platform billing records
+      const billing = await fetch('/api/settings/platform-payment')
+      if (billing.ok) {
+        const billingData = await billing.json()
+        
+        // Create billing records from PlatformOrgBilling data
+        const records: BillingRecord[] = []
+        
+        if (billingData.lastBilledAt && billingData.lastBilledStudentCount) {
+          const billedDate = new Date(billingData.lastBilledAt)
+          const billedAmount = billingData.lastBilledStudentCount // £1 per student
+          const status = billingData.subscriptionStatus === 'active' || billingData.subscriptionStatus === 'trialing' ? 'paid' : 'pending'
+          
+          records.push({
+            id: '1',
+            date: billedDate.toISOString().split('T')[0],
+            amount: billedAmount,
+            status: status,
+            description: `Monthly subscription - ${billingData.lastBilledStudentCount} student${billingData.lastBilledStudentCount !== 1 ? 's' : ''}`,
+            invoiceId: billingData.subscriptionStatus || 'PLATFORM-' + billedDate.getTime()
+          })
+        }
+        
+        setBillingRecords(records)
+      }
+    } catch (error) {
+      console.error('Error fetching billing records:', error)
+    } finally {
+      setLoadingBillingRecords(false)
     }
   }
 
@@ -829,25 +846,25 @@ export default function SettingsPage() {
             <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
               <StatCard
                 title="Current Students"
-                value={47}
+                value={studentCount}
                 description="Active enrollments"
-                detail="+5 new this month"
+                detail={loadingBilling ? 'Loading...' : `£${studentCount.toFixed(2)} per month`}
                 icon={<Users className="h-4 w-4" />}
               />
               
               <StatCard
                 title="Monthly Cost"
-                value="£47.00"
+                value={`£${studentCount.toFixed(2)}`}
                 description="£1 per student"
-                detail="Automatic billing"
+                detail={loadingBilling ? 'Loading...' : `${studentCount} active students`}
                 icon={<div className="text-lg font-bold">£</div>}
               />
               
               <StatCard
                 title="Next Payment"
-                value="Feb 1"
-                description="Automatic billing"
-                detail="Monthly subscription"
+                value={getNextPaymentDate() ? getNextPaymentDate()!.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'N/A'}
+                description={getNextPaymentDate() ? getNextPaymentDate()!.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' }) : 'No payment date set'}
+                detail={loadingBilling ? 'Loading...' : 'Automatic billing'}
                 icon={<Calendar className="h-4 w-4" />}
               />
             </div>
