@@ -389,7 +389,7 @@ export async function sendOrgSetupInvitation({
                         Welcome to Madrasah OS
                       </h1>
                       <p style="margin: 0 0 24px 0; font-size: 16px; color: #6b7280; line-height: 1.6; text-align: center; max-width: 480px; margin-left: auto; margin-right: auto;">
-                        You've been invited to set up <strong>${orgName}</strong> on Madrasah OS. Click below to create your account and complete the setup.
+                        Assalamu alaikum!<br><br>You've been invited to set up <strong>${orgName}</strong> on Madrasah OS. Click below to create your account and complete the setup.
                       </p>
                       
                       <!-- Button -->
