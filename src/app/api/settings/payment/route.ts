@@ -13,6 +13,14 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Owner accounts don't need payment settings
+    if (session.user.isSuperAdmin) {
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Owner accounts do not require payment settings' 
+      })
+    }
+
     const org = await getActiveOrg()
     if (!org) {
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
@@ -63,6 +71,17 @@ export async function GET() {
     
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Owner accounts don't need payment checks
+    if (session.user.isSuperAdmin) {
+      return NextResponse.json({
+        autoPayEnabled: true,
+        paymentMethodId: null,
+        preferredPaymentMethod: null,
+        lastUpdated: null,
+        paymentMethods: []
+      })
     }
 
     const org = await getActiveOrg()
@@ -121,6 +140,14 @@ export async function DELETE() {
     
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Owner accounts don't have payment methods to delete
+    if (session.user.isSuperAdmin) {
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Owner accounts do not have payment methods' 
+      })
     }
 
     const org = await getActiveOrg()

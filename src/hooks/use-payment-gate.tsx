@@ -22,9 +22,21 @@ export function usePaymentGate() {
     if (session?.user?.id) {
       checkPaymentStatus()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session])
 
   const checkPaymentStatus = async () => {
+    // Owner accounts don't need payment checks
+    if (session?.user?.isSuperAdmin) {
+      setPaymentStatus({
+        hasPaymentMethod: true, // Always allow owners
+        autoPayEnabled: true,
+        lastUpdated: undefined
+      })
+      setLoading(false)
+      return
+    }
+
     try {
       const response = await fetch('/api/settings/payment')
       if (response.ok) {
@@ -52,6 +64,11 @@ export function usePaymentGate() {
   }
 
   const checkAction = (action: string): boolean => {
+    // Owner accounts bypass all payment checks
+    if (session?.user?.isSuperAdmin) {
+      return true
+    }
+
     // If still loading, block the action to be safe
     if (loading) {
       console.log('Payment gate: Still loading, blocking action')
