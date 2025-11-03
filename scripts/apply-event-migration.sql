@@ -1,3 +1,6 @@
+-- Safe migration script for Event model
+-- This can be run manually or via Prisma Studio
+
 -- CreateTable
 CREATE TABLE IF NOT EXISTS "Event" (
     "id" TEXT NOT NULL,
@@ -44,3 +47,4 @@ BEGIN
         FOREIGN KEY ("classId") REFERENCES "Class"("id") ON DELETE SET NULL ON UPDATE CASCADE;
     END IF;
 END $$;
+
