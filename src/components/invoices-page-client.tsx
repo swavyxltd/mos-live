@@ -205,204 +205,21 @@ export function InvoicesPageClient({ initialInvoices = [] }: InvoicesPageClientP
     }
   }
 
-  // Legacy demo mode check removed - always use real API data
-  if (false) {
-        // Demo data
-        const demoInvoices: Invoice[] = [
-          {
-            id: 'demo-invoice-1',
-            invoiceNumber: 'INV-2025-001',
-            studentName: 'Ahmed Hassan',
-            parentName: 'Mohammed Hassan',
-            parentEmail: 'mohammed.hassan@example.com',
-            amount: 50.00,
-            currency: 'GBP',
-            status: 'PAID',
-            dueDate: '2025-01-15',
-            paidDate: '2025-01-05',
-            createdAt: '2025-01-01',
-            updatedAt: '2025-01-05',
-            student: {
-              id: 'student-1',
-              hasStripeAutoPayment: true
-            },
-            class: {
-              id: 'class-1',
-              name: 'Quran Recitation - Level 1'
-            }
-          },
-          {
-            id: 'demo-invoice-2',
-            invoiceNumber: 'INV-2025-002',
-            studentName: 'Fatima Ali',
-            parentName: 'Aisha Ali',
-            parentEmail: 'aisha.ali@example.com',
-            amount: 50.00,
-            currency: 'GBP',
-            status: 'PENDING',
-            dueDate: '2025-01-20',
-            createdAt: '2025-01-01',
-            updatedAt: '2025-01-01',
-            student: {
-              id: 'student-2',
-              hasStripeAutoPayment: false
-            },
-            class: {
-              id: 'class-2',
-              name: 'Islamic Studies - Intermediate'
-            }
-          },
-          {
-            id: 'demo-invoice-3',
-            invoiceNumber: 'INV-2025-003',
-            studentName: 'Yusuf Patel',
-            parentName: 'Priya Patel',
-            parentEmail: 'priya.patel@example.com',
-            amount: 25.00,
-            currency: 'GBP',
-            status: 'OVERDUE',
-            dueDate: '2025-01-10',
-            createdAt: '2025-01-01',
-            updatedAt: '2025-01-01',
-            student: {
-              id: 'student-3',
-              hasStripeAutoPayment: false
-            },
-            class: {
-              id: 'class-1',
-              name: 'Quran Recitation - Level 1'
-            }
-          },
-          {
-            id: 'demo-invoice-4',
-            invoiceNumber: 'INV-2024-001',
-            studentName: 'Ahmed Hassan',
-            parentName: 'Mohammed Hassan',
-            parentEmail: 'mohammed.hassan@example.com',
-            amount: 50.00,
-            currency: 'GBP',
-            status: 'PAID',
-            dueDate: '2024-12-01',
-            paidDate: '2024-11-28',
-            createdAt: '2024-11-01',
-            updatedAt: '2024-11-28',
-            student: {
-              id: 'student-1',
-              hasStripeAutoPayment: false
-            },
-            class: {
-              id: 'class-1',
-              name: 'Quran Recitation - Level 1'
-            }
-          }
-        ]
-        setInvoices(demoInvoices)
-        
-        // Demo payment records
-        const demoPaymentRecords: PaymentRecord[] = [
-          {
-            id: 'payment-1',
-            invoiceNumber: 'INV-2025-001',
-            studentName: 'Ahmed Hassan',
-            parentName: 'Mohammed Hassan',
-            amount: 50.00,
-            currency: 'GBP',
-            paymentMethod: 'Credit Card',
-            paymentDate: '2025-01-05',
-            status: 'SUCCEEDED',
-            transactionId: 'txn_123456789',
-            notes: 'Payment processed successfully'
-          },
-          {
-            id: 'payment-2',
-            invoiceNumber: 'INV-2025-002',
-            studentName: 'Fatima Ali',
-            parentName: 'Aisha Ali',
-            amount: 50.00,
-            currency: 'GBP',
-            paymentMethod: 'Bank Transfer',
-            paymentDate: '2025-01-10',
-            status: 'SUCCEEDED',
-            transactionId: 'txn_987654321',
-            notes: 'Bank transfer received'
-          },
-          {
-            id: 'payment-3',
-            invoiceNumber: 'INV-2025-003',
-            studentName: 'Yusuf Patel',
-            parentName: 'Priya Patel',
-            amount: 25.00,
-            currency: 'GBP',
-            paymentMethod: 'Cash',
-            paymentDate: '2025-01-15',
-            status: 'SUCCEEDED',
-            notes: 'Cash payment received at office'
-          },
-          {
-            id: 'payment-4',
-            invoiceNumber: 'INV-2025-004',
-            studentName: 'Amina Khan',
-            parentName: 'Moulana Omar',
-            amount: 50.00,
-            currency: 'GBP',
-            paymentMethod: 'Credit Card',
-            paymentDate: '2025-01-20',
-            status: 'FAILED',
-            transactionId: 'txn_failed_123',
-            notes: 'Card declined - insufficient funds'
-          },
-          {
-            id: 'payment-5',
-            invoiceNumber: 'INV-2024-001',
-            studentName: 'Ahmed Hassan',
-            parentName: 'Mohammed Hassan',
-            amount: 50.00,
-            currency: 'GBP',
-            paymentMethod: 'Credit Card',
-            paymentDate: '2024-12-01',
-            status: 'SUCCEEDED',
-            transactionId: 'txn_123456789',
-            notes: 'Payment processed successfully'
-          },
-          {
-            id: 'payment-6',
-            invoiceNumber: 'INV-2024-002',
-            studentName: 'Fatima Ali',
-            parentName: 'Aisha Ali',
-            amount: 50.00,
-            currency: 'GBP',
-            paymentMethod: 'Bank Transfer',
-            paymentDate: '2024-11-28',
-            status: 'SUCCEEDED',
-            transactionId: 'txn_987654321',
-            notes: 'Bank transfer received'
-          }
-        ]
-        setPaymentRecords(demoPaymentRecords)
-        
-        // Demo classes
-        const demoClasses = [
-          { id: 'class-1', name: 'Quran Recitation - Level 1' },
-          { id: 'class-2', name: 'Islamic Studies - Intermediate' },
-          { id: 'class-3', name: 'Arabic Language - Beginner' }
-        ]
-        setClasses(demoClasses)
-      } else {
-        const response = await fetch('/api/payments')
-        const data = await response.json()
-        setInvoices(data)
-        
-        // Fetch classes
+  // Fetch classes on component mount
+  useEffect(() => {
+    const fetchClasses = async () => {
+      try {
         const classesResponse = await fetch('/api/classes')
-        const classesData = await classesResponse.json()
-        setClasses(classesData)
+        if (classesResponse.ok) {
+          const classesData = await classesResponse.json()
+          setClasses(classesData)
+        }
+      } catch (error) {
+        console.error('Error fetching classes:', error)
       }
-    } catch (error) {
-      console.error('Error fetching invoices:', error)
-    } finally {
-      setLoading(false)
     }
-  }
+    fetchClasses()
+  }, [])
 
 
   const handleViewInvoice = async (invoiceId: string) => {
