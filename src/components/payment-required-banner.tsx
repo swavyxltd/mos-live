@@ -58,16 +58,29 @@ export function PaymentRequiredBanner() {
     await new Promise(resolve => setTimeout(resolve, 2000))
     
     // Check multiple times with delays to handle webhook processing time
+    let foundPaymentMethod = false
     for (let i = 0; i < 5; i++) {
-      await checkPaymentStatus()
-      if (hasPaymentMethod) {
-        break
+      try {
+        const response = await fetch('/api/settings/platform-payment')
+        if (response.ok) {
+          const data = await response.json()
+          if (data.paymentMethodId) {
+            setHasPaymentMethod(true)
+            foundPaymentMethod = true
+            break
+          }
+        }
+      } catch (error) {
+        console.error('Error checking payment status:', error)
       }
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      if (i < 4) { // Don't wait after the last check
+        await new Promise(resolve => setTimeout(resolve, 2000))
+      }
     }
     
     // If still no payment method after all checks, reload the page
-    if (!hasPaymentMethod) {
+    if (!foundPaymentMethod) {
       window.location.reload()
     }
   }
