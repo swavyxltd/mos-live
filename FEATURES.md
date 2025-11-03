@@ -15,7 +15,7 @@ A comprehensive management system for Islamic schools and madrasahs with full mu
 - ✅ Isolated data access with proper authorization
 
 ### **Authentication & Authorization**
-- ✅ NextAuth.js with Google OAuth + Credentials
+- ✅ NextAuth.js with Credentials
 - ✅ Role-based access control (SUPERADMIN, OWNER, ADMIN, STAFF, PARENT)
 - ✅ Session management with JWT tokens
 - ✅ Protected routes and API endpoints

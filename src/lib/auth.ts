@@ -1,5 +1,4 @@
 import type { NextAuthOptions } from 'next-auth'
-import GoogleProvider from 'next-auth/providers/google'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { PrismaAdapter } from '@auth/prisma-adapter'
 import { prisma } from './prisma'
@@ -46,14 +45,6 @@ export const authOptions: NextAuthOptions = {
   // Use NEXTAUTH_URL if set, otherwise construct from request
   secret: process.env.NEXTAUTH_SECRET,
   providers: [
-    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
-      ? [
-          GoogleProvider({
-            clientId: process.env.GOOGLE_CLIENT_ID.trim(),
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET.trim(),
-          }),
-        ]
-      : []),
     CredentialsProvider({
       name: 'credentials',
       credentials: {

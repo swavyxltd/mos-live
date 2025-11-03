@@ -33,7 +33,7 @@ A production-ready, multi-tenant SaaS platform for Islamic schools and madrasahs
 - **Frontend**: Next.js 15 (App Router), TypeScript, Tailwind CSS
 - **Backend**: Next.js API Routes, Prisma ORM
 - **Database**: PostgreSQL
-- **Authentication**: NextAuth.js (Google OAuth + Credentials)
+- **Authentication**: NextAuth.js (Credentials)
 - **Payments**: Stripe (metered billing + card payments)
 - **Storage**: Vercel Blob
 - **Email**: Resend
@@ -161,10 +161,6 @@ APP_BASE_URL=http://localhost:3000
 
 # Database
 DATABASE_URL="postgresql://user:password@localhost:5432/madrasah_os?sslmode=require"
-
-# OAuth
-GOOGLE_CLIENT_ID=your-google-client-id
-GOOGLE_CLIENT_SECRET=your-google-client-secret
 
 # Stripe
 STRIPE_SECRET_KEY=sk_test_...
