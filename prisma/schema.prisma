@@ -123,6 +123,7 @@ model Org {
   holidays              Holiday[]
   terms                 Term[]
   exams                 Exam[]
+  events                Event[]
   supportTickets        SupportTicket[]
   invitations           Invitation[]
   auditLogs             AuditLog[]
@@ -159,6 +160,7 @@ model Class {
   studentClasses StudentClass[]
   attendance     Attendance[]
   exams          Exam[]
+  events         Event[]
 }
 
 model Student {
@@ -336,6 +338,25 @@ model Exam {
   notes     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  org   Org    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  class Class? @relation(fields: [classId], references: [id], onDelete: Cascade)
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  orgId       String
+  title       String
+  type        String // CLASS, EXAM, MEETING, HOLIDAY, EVENT
+  date        DateTime
+  startTime   String?
+  endTime     String?
+  location    String?
+  teacher     String?
+  description String?
+  classId     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   org   Org    @relation(fields: [orgId], references: [id], onDelete: Cascade)
   class Class? @relation(fields: [classId], references: [id], onDelete: Cascade)
