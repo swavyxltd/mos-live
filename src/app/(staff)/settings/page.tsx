@@ -656,15 +656,19 @@ export default function SettingsPage() {
               </div>
             </div>
             
-            <div className="flex items-center justify-between">
-              <div>
-                <Label>Enable Automatic Payments</Label>
-                <p className="text-sm text-gray-500">Automatically charge your Stripe payment method monthly</p>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Banknote className="h-4 w-4 text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-1">Automatic Monthly Billing</h3>
+                  <p className="text-sm text-gray-600">
+                    Your organization will be automatically charged monthly based on the number of active students (£1 per student per month). 
+                    This is mandatory and cannot be disabled.
+                  </p>
+                </div>
               </div>
-              <Switch 
-                checked={paymentSettings.autoPayEnabled}
-                onCheckedChange={(checked) => handlePaymentSettingsChange('autoPayEnabled', checked)}
-              />
             </div>
 
             {platformBilling?.hasPaymentMethod ? (

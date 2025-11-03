@@ -44,6 +44,9 @@ export async function GET() {
 
     // Fetch payment methods from Stripe
     let paymentMethods: any[] = []
+    let hasPaymentMethod = !!billing.defaultPaymentMethodId
+    let actualPaymentMethodId = billing.defaultPaymentMethodId
+    
     if (billing.stripeCustomerId) {
       try {
         const methods = await stripe.paymentMethods.list({
@@ -61,14 +64,41 @@ export async function GET() {
           },
           isDefault: pm.id === billing.defaultPaymentMethodId
         }))
+        
+        // If we have payment methods in Stripe but no defaultPaymentMethodId in DB, use the first one
+        if (paymentMethods.length > 0 && !billing.defaultPaymentMethodId) {
+          // Update database with the first payment method
+          const firstMethod = paymentMethods[0]
+          actualPaymentMethodId = firstMethod.id
+          hasPaymentMethod = true
+          
+          // Update database to sync with Stripe
+          await prisma.platformOrgBilling.update({
+            where: { orgId: org.id },
+            data: {
+              defaultPaymentMethodId: firstMethod.id
+            }
+          })
+          
+          // Also set as default in Stripe if not already
+          try {
+            await stripe.customers.update(billing.stripeCustomerId, {
+              invoice_settings: {
+                default_payment_method: firstMethod.id
+              }
+            })
+          } catch (stripeError) {
+            console.error('Error setting default payment method in Stripe:', stripeError)
+          }
+        }
       } catch (error) {
         console.error('Error fetching payment methods:', error)
       }
     }
 
     return NextResponse.json({
-      hasPaymentMethod: !!billing.defaultPaymentMethodId,
-      paymentMethodId: billing.defaultPaymentMethodId,
+      hasPaymentMethod,
+      paymentMethodId: actualPaymentMethodId,
       paymentMethods,
       subscriptionStatus: billing.subscriptionStatus,
       trialEndDate: billing.trialEndDate?.toISOString() || null,
