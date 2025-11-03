@@ -11,8 +11,10 @@ export default function SignInPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
   
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
+  const resetSuccess = searchParams.get('reset') === 'success'
 
   useEffect(() => {
     // Check if already signed in
@@ -22,7 +24,14 @@ export default function SignInPage() {
         window.location.href = redirectUrl
       }
     })
-  }, [callbackUrl])
+
+    // Show success message if redirected from password reset
+    if (resetSuccess) {
+      setSuccessMessage('Password reset successful! Please sign in with your new password.')
+      // Clear the query parameter
+      window.history.replaceState({}, '', '/auth/signin')
+    }
+  }, [callbackUrl, resetSuccess])
 
   const handleCredentialsSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -83,6 +92,13 @@ export default function SignInPage() {
           </p>
         </div>
 
+        {/* Success message */}
+        {successMessage && (
+          <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl text-sm">
+            {successMessage}
+          </div>
+        )}
+
         {/* Error message */}
         {error && (
           <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
@@ -140,9 +156,8 @@ export default function SignInPage() {
             </div>
             <div className="mt-2 text-right">
               <a
-                href="#"
+                href="/auth/forgot-password"
                 className="text-xs text-neutral-600 hover:text-neutral-900 transition-colors"
-                onClick={(e) => e.preventDefault()}
               >
                 Forgot password?
               </a>

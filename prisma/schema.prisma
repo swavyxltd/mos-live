@@ -63,6 +63,7 @@ model User {
   auditLogs              AuditLog[]
   parentBillingProfile   ParentBillingProfile?
   reviewedApplications   Application[]           @relation("ApplicationReviewer")
+  passwordResetTokens    PasswordResetToken[]
 }
 
 model VerificationToken {
@@ -442,4 +443,17 @@ model ApplicationChild {
   updatedAt     DateTime  @updatedAt
 
   application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
 }

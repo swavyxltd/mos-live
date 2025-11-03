@@ -166,3 +166,77 @@ export async function sendPaymentFailedPlatform({
     text: `Payment Failed - ${orgName}\n\nError: ${errorMessage}`
   })
 }
+
+export async function sendPasswordResetEmail({
+  to,
+  resetUrl
+}: {
+  to: string
+  resetUrl: string
+}) {
+  return sendEmail({
+    to,
+    subject: 'Reset your Madrasah OS password',
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; background-color: #f9fafb; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; padding: 40px 20px;">
+            <tr>
+              <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07); overflow: hidden;">
+                  <!-- Logo -->
+                  <tr>
+                    <td align="center" style="padding: 40px 40px 20px 40px;">
+                      <img src="${process.env.APP_BASE_URL || 'https://madrasah-live.vercel.app'}/logo.png" alt="Madrasah OS" style="max-width: 198px; height: auto;" />
+                    </td>
+                  </tr>
+                  
+                  <!-- Content -->
+                  <tr>
+                    <td style="padding: 0 40px 40px 40px;">
+                      <h1 style="margin: 0 0 12px 0; font-size: 24px; font-weight: 600; color: #111827; line-height: 1.4;">
+                        Password Reset Request
+                      </h1>
+                      <p style="margin: 0 0 32px 0; font-size: 16px; color: #6b7280; line-height: 1.6;">
+                        You requested to reset your password. Click the button below to continue.
+                      </p>
+                      
+                      <!-- Button -->
+                      <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td align="center" style="padding: 0 0 32px 0;">
+                            <a href="${resetUrl}" style="display: inline-block; background-color: #3b82f6; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-weight: 500; font-size: 16px;">
+                              Reset Password
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+                      
+                      <!-- Divider -->
+                      <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td style="padding: 0 0 32px 0; border-top: 1px solid #e5e7eb;"></td>
+                        </tr>
+                      </table>
+                      
+                      <!-- Footer -->
+                      <p style="margin: 0; font-size: 14px; color: #9ca3af; line-height: 1.6;">
+                        If you didn't request this, you can safely ignore this email.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+      </html>
+    `,
+    text: `Password Reset Request\n\nYou requested to reset your password. Click the link below to continue:\n\n${resetUrl}\n\nIf you didn't request this, you can safely ignore this email.`
+  })
+}
