@@ -225,7 +225,7 @@ export async function sendPasswordResetEmail({
                   <!-- Logo -->
                   <tr>
                     <td align="center" style="padding: 40px 40px 20px 40px;">
-                      <img src="${process.env.APP_BASE_URL || 'https://madrasah-live.vercel.app'}/logo.png" alt="Madrasah OS" style="max-width: 198px; height: auto;" />
+                      <img src="${(process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'https://app.madrasah.io').replace(/\/$/, '')}/logo.png" alt="Madrasah OS" style="max-width: 198px; height: auto;" />
                     </td>
                   </tr>
                   

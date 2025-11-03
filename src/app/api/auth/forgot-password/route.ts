@@ -53,9 +53,9 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Generate reset URL
-    const baseUrl = process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'https://madrasah-live.vercel.app'
-    const resetUrl = `${baseUrl}/auth/reset-password?token=${token}`
+    // Generate reset URL - use custom domain app.madrasah.io
+    const baseUrl = process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'https://app.madrasah.io'
+    const resetUrl = `${baseUrl.replace(/\/$/, '')}/auth/reset-password?token=${token}`
 
     // Send password reset email
     try {
