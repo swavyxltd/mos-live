@@ -617,7 +617,7 @@ export async function sendStaffInvitation({
                         You've Been Invited
                       </h1>
                       <p style="margin: 0 0 24px 0; font-size: 16px; color: #6b7280; line-height: 1.6; text-align: center; max-width: 480px; margin-left: auto; margin-right: auto;">
-                        You've been invited to join <strong>${orgName}</strong> as a <strong>${roleLabel}</strong>. Click below to create your account and get started.
+                        Assalamu alaikum!<br><br>You've been invited to join <strong>${orgName}</strong> as a <strong>${roleLabel}</strong>. Click below to create your account and get started.
                       </p>
                       
                       <!-- Button -->
