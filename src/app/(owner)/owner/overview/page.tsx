@@ -163,14 +163,14 @@ export default function OwnerOverviewPage() {
     
     const csvData = [
       ['Metric', 'Value'],
-      ['Total Organizations', dashboardData.totalOrgs],
-      ['Total Students', dashboardData.totalStudents],
-      ['Monthly Recurring Revenue', `£${dashboardData.mrr.toLocaleString()}`],
-      ['Annual Recurring Revenue', `£${dashboardData.arr.toLocaleString()}`],
-      ['Payment Success Rate', `${dashboardData.paymentSuccessRate}%`],
-      ['Overdue Accounts', dashboardData.overdueCount],
-      ['Churn Rate', `${dashboardData.churnRate}%`],
-      ['Average Revenue per Org', `£${dashboardData.avgRevenuePerOrg.toFixed(0)}`]
+      ['Total Organizations', dashboardData.totalOrgs ?? 0],
+      ['Total Students', dashboardData.totalStudents ?? 0],
+      ['Monthly Recurring Revenue', `£${(dashboardData.mrr ?? 0).toLocaleString()}`],
+      ['Annual Recurring Revenue', `£${(dashboardData.arr ?? 0).toLocaleString()}`],
+      ['Payment Success Rate', `${dashboardData.paymentSuccessRate ?? 0}%`],
+      ['Overdue Accounts', dashboardData.overdueCount ?? 0],
+      ['Churn Rate', `${dashboardData.churnRate ?? 0}%`],
+      ['Average Revenue per Org', `£${(dashboardData.avgRevenuePerOrg ?? 0).toFixed(0)}`]
     ]
     
     const csvContent = csvData.map(row => row.join(',')).join('\n')
@@ -257,9 +257,9 @@ export default function OwnerOverviewPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">£{dashboardData.mrr.toLocaleString()}</div>
+            <div className="text-2xl font-bold">£{(dashboardData.mrr ?? 0).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              <span className="text-green-600">+{dashboardData.revenueGrowth.toFixed(1)}%</span> from last month
+              <span className="text-green-600">+{((dashboardData.revenueGrowth ?? 0).toFixed(1))}%</span> from last month
             </p>
           </CardContent>
         </Card>
@@ -285,9 +285,9 @@ export default function OwnerOverviewPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{dashboardData.totalStudents.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{(dashboardData.totalStudents ?? 0).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              <span className="text-green-600">+{Math.round(dashboardData.totalStudents * 0.08)}</span> this month
+              <span className="text-green-600">+{Math.round((dashboardData.totalStudents ?? 0) * 0.08)}</span> this month
             </p>
           </CardContent>
         </Card>
@@ -299,9 +299,9 @@ export default function OwnerOverviewPage() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">£{dashboardData.arr.toLocaleString()}</div>
+            <div className="text-2xl font-bold">£{(dashboardData.arr ?? 0).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              <span className="text-green-600">+{dashboardData.revenueGrowth.toFixed(1)}%</span> growth
+              <span className="text-green-600">+{((dashboardData.revenueGrowth ?? 0).toFixed(1))}%</span> growth
             </p>
           </CardContent>
         </Card>
@@ -348,7 +348,7 @@ export default function OwnerOverviewPage() {
             <BarChart3 className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">£{dashboardData.avgRevenuePerOrg.toFixed(0)}</div>
+            <div className="text-2xl font-bold">£{((dashboardData.avgRevenuePerOrg ?? 0).toFixed(0))}</div>
             <p className="text-xs text-muted-foreground">Per month</p>
           </CardContent>
         </Card>

@@ -200,17 +200,21 @@ export async function GET(request: NextRequest) {
     )
 
     // Get recent activity (payments and orgs)
-    const recentPayments = await prisma.invoice.findMany({
+    const allRecentPayments = await prisma.invoice.findMany({
       where: {
         status: 'PAID',
-        paidDate: { gte: new Date(now.getTime() - 24 * 60 * 60 * 1000) }
+        paidAt: { not: null }
       },
-      orderBy: { paidDate: 'desc' },
-      take: 5,
+      orderBy: { paidAt: 'desc' },
+      take: 10,
       include: {
         org: { select: { name: true } }
       }
     })
+    
+    const recentPayments = allRecentPayments
+      .filter(payment => payment.paidAt && payment.paidAt >= new Date(now.getTime() - 24 * 60 * 60 * 1000))
+      .slice(0, 5)
 
     const recentOrgs = await prisma.org.findMany({
       where: {
@@ -221,13 +225,17 @@ export async function GET(request: NextRequest) {
     })
 
     const recentActivity = [
-      ...recentPayments.map(payment => ({
-        type: 'payment',
-        message: `Payment received from ${payment.org.name}`,
-        amount: Number(payment.amount || 0),
-        time: `${Math.floor((now.getTime() - payment.paidDate.getTime()) / (60 * 60 * 1000))} hours ago`,
-        status: 'success'
-      })),
+      ...recentPayments
+        .filter(payment => payment.paidAt) // Only include payments with paidAt
+        .map(payment => ({
+          type: 'payment',
+          message: `Payment received from ${payment.org.name}`,
+          amount: Number(payment.amountP || 0) / 100,
+          time: payment.paidAt 
+            ? `${Math.floor((now.getTime() - payment.paidAt.getTime()) / (60 * 60 * 1000))} hours ago`
+            : 'Recently',
+          status: 'success'
+        })),
       ...recentOrgs.map(org => ({
         type: 'org',
         message: `New organization registered: ${org.name}`,
@@ -235,8 +243,8 @@ export async function GET(request: NextRequest) {
         status: 'info'
       }))
     ].sort((a, b) => {
-      const aHours = parseInt(a.time)
-      const bHours = parseInt(b.time)
+      const aHours = parseInt(a.time) || 0
+      const bHours = parseInt(b.time) || 0
       return aHours - bHours
     }).slice(0, 5)
 
