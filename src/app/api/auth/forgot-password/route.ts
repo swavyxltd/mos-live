@@ -19,9 +19,16 @@ export async function POST(request: NextRequest) {
       where: { email: email.toLowerCase().trim() },
     })
 
+    console.log('🔍 Password reset request:', {
+      email: email.toLowerCase().trim(),
+      userFound: !!user,
+      userId: user?.id,
+    })
+
     // For security, always return success even if user doesn't exist
     // This prevents email enumeration attacks
     if (!user) {
+      console.log('⚠️  User not found - returning success without sending email')
       return NextResponse.json({
         message: 'If an account exists with that email, a password reset link has been sent.',
       })

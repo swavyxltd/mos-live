@@ -2,11 +2,21 @@ import { Resend } from 'resend'
 
 // Check if we're in demo mode
 const isDemoMode = () => {
-  return process.env.NODE_ENV === 'development' || 
-         !process.env.DATABASE_URL || 
-         process.env.DATABASE_URL.includes('demo') ||
-         !process.env.RESEND_API_KEY ||
-         process.env.RESEND_API_KEY === 're_demo_key'
+  const result = {
+    isDevelopment: process.env.NODE_ENV === 'development',
+    noDatabase: !process.env.DATABASE_URL,
+    databaseHasDemo: process.env.DATABASE_URL?.includes('demo') || false,
+    noApiKey: !process.env.RESEND_API_KEY,
+    isDemoKey: process.env.RESEND_API_KEY === 're_demo_key',
+  }
+  
+  const inDemoMode = result.isDevelopment || result.noDatabase || result.databaseHasDemo || result.noApiKey || result.isDemoKey
+  
+  if (inDemoMode) {
+    console.log('⚠️  DEMO MODE ACTIVE:', result)
+  }
+  
+  return inDemoMode
 }
 
 export const resend = isDemoMode() ? null : new Resend(process.env.RESEND_API_KEY)
