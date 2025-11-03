@@ -207,6 +207,25 @@ export async function sendPasswordResetEmail({
   to: string
   resetUrl: string
 }) {
+  // Ensure resetUrl is a proper absolute URL
+  let safeResetUrl = resetUrl.trim()
+  
+  // If it's not already an absolute URL, make it one
+  if (!safeResetUrl.startsWith('http://') && !safeResetUrl.startsWith('https://')) {
+    const baseUrl = process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'https://app.madrasah.io'
+    safeResetUrl = `${baseUrl.replace(/\/+$/, '')}/${safeResetUrl.replace(/^\//, '')}`
+  }
+  
+  // Escape any HTML in the URL to prevent XSS
+  const escapedResetUrl = safeResetUrl.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  
+  console.log('📧 Password reset email:', {
+    to,
+    originalUrl: resetUrl,
+    safeUrl: safeResetUrl,
+    escapedUrl: escapedResetUrl
+  })
+  
   return sendEmail({
     to,
     subject: 'Reset your Madrasah OS password',
@@ -243,7 +262,7 @@ export async function sendPasswordResetEmail({
                       <table width="100%" cellpadding="0" cellspacing="0">
                         <tr>
                           <td align="center" style="padding: 0 0 32px 0;">
-                            <a href="${resetUrl}" style="display: inline-block; background-color: #3b82f6; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-weight: 500; font-size: 16px;">
+                            <a href="${escapedResetUrl}" style="display: inline-block; background-color: #3b82f6; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-weight: 500; font-size: 16px;">
                               Reset Password
                             </a>
                           </td>
@@ -270,6 +289,6 @@ export async function sendPasswordResetEmail({
         </body>
       </html>
     `,
-    text: `Password Reset Request\n\nYou requested to reset your password. Click the link below to continue:\n\n${resetUrl}\n\nIf you didn't request this, you can safely ignore this email.`
+    text: `Password Reset Request\n\nYou requested to reset your password. Click the link below to continue:\n\n${safeResetUrl}\n\nIf you didn't request this, you can safely ignore this email.`
   })
 }
