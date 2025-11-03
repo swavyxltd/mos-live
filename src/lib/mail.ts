@@ -48,7 +48,8 @@ export async function sendEmail({
   }
 
   try {
-    const fromAddress = process.env.RESEND_FROM || 'Madrasah OS <noreply@madrasah.io>'
+    // Trim any whitespace/newlines from RESEND_FROM (common issue from env vars)
+    const fromAddress = (process.env.RESEND_FROM || 'Madrasah OS <noreply@madrasah.io>').trim()
     console.log('📧 Sending email via Resend:', {
       from: fromAddress,
       to: Array.isArray(to) ? to : [to],
