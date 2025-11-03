@@ -210,14 +210,32 @@ export async function sendPasswordResetEmail({
   // Ensure resetUrl is a proper absolute URL
   let safeResetUrl = resetUrl.trim()
   
+  // Remove any duplicate URL patterns (fix malformed URLs)
+  // Pattern: https://domain/https://domain/https://domain/path -> https://domain/path
+  safeResetUrl = safeResetUrl.replace(/^(https?:\/\/[^\/]+)\/https?:\/\//g, '$1')
+  safeResetUrl = safeResetUrl.replace(/^(https?:\/\/[^\/]+)\/([^\/]+)\/https?:\/\//g, '$1')
+  
+  // Extract the actual domain and path
+  const urlMatch = safeResetUrl.match(/^(https?:\/\/[^\/\?]+)(.*)$/)
+  if (urlMatch) {
+    const [, protocolDomain, path] = urlMatch
+    // Remove any remaining protocol/domain duplicates from path
+    const cleanPath = path.replace(/\/https?:\/\/[^\/\?]+/g, '').replace(/^\/+/g, '/')
+    safeResetUrl = protocolDomain + cleanPath
+  }
+  
   // If it's not already an absolute URL, make it one
   if (!safeResetUrl.startsWith('http://') && !safeResetUrl.startsWith('https://')) {
     const baseUrl = process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'https://app.madrasah.io'
-    safeResetUrl = `${baseUrl.replace(/\/+$/, '')}/${safeResetUrl.replace(/^\//, '')}`
+    const cleanBaseUrl = baseUrl.trim().replace(/\/+$/, '')
+    safeResetUrl = `${cleanBaseUrl}/${safeResetUrl.replace(/^\//, '')}`
   }
   
-  // Escape any HTML in the URL to prevent XSS
-  const escapedResetUrl = safeResetUrl.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  // Final cleanup - ensure single protocol and domain
+  safeResetUrl = safeResetUrl.replace(/^(https?:\/\/[^\/]+)\/https?:\/\//g, '$1')
+  
+  // Escape any HTML in the URL to prevent XSS (but preserve the URL structure)
+  const escapedResetUrl = safeResetUrl.replace(/&/g, '&amp;')
   
   console.log('📧 Password reset email:', {
     to,

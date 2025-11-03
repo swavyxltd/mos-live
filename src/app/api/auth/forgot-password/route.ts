@@ -54,18 +54,29 @@ export async function POST(request: NextRequest) {
     })
 
     // Generate reset URL - use custom domain app.madrasah.io
+    // Get base URL from environment or default to app.madrasah.io
     let baseUrl = process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'https://app.madrasah.io'
-    // Remove trailing slashes and any protocol/domain duplication
+    
+    // Clean up the base URL - remove trailing slashes and whitespace
     baseUrl = baseUrl.trim().replace(/\/+$/, '')
+    
     // Ensure it starts with http:// or https://
     if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
       baseUrl = `https://${baseUrl}`
     }
+    
+    // Remove any duplicate protocol/domain patterns that might have been accidentally set
+    // This prevents issues like: https://domain.com/https://domain.com
+    baseUrl = baseUrl.replace(/^https?:\/\/([^\/]+)\/https?:\/\/([^\/]+)\/?/, 'https://$1')
+    baseUrl = baseUrl.replace(/^(https?:\/\/[^\/]+)\/https?:\/\//, '$1')
+    
+    // Construct the reset URL
     const resetUrl = `${baseUrl}/auth/reset-password?token=${token}`
     
     console.log('🔗 Generated reset URL:', {
       baseUrl,
       resetUrl,
+      tokenLength: token.length,
       envVars: {
         APP_BASE_URL: process.env.APP_BASE_URL,
         NEXTAUTH_URL: process.env.NEXTAUTH_URL
