@@ -327,6 +327,9 @@ export default function SettingsPage() {
   }
 
   const handlePaymentSuccess = async (paymentMethodId: string) => {
+    // Wait a moment for webhook to process
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    
     // Refresh billing data
     await fetchPlatformBilling()
     

@@ -24,7 +24,16 @@ export function PaymentRequiredBanner() {
     }
 
     checkPaymentStatus()
-  }, [session, status])
+    
+    // Poll payment status every 5 seconds if no payment method (for webhook delay)
+    const interval = setInterval(() => {
+      if (!hasPaymentMethod && !loading) {
+        checkPaymentStatus()
+      }
+    }, 5000)
+    
+    return () => clearInterval(interval)
+  }, [session, status, hasPaymentMethod, loading])
 
   const checkPaymentStatus = async () => {
     try {
@@ -43,11 +52,24 @@ export function PaymentRequiredBanner() {
     }
   }
 
-  const handlePaymentSuccess = () => {
+  const handlePaymentSuccess = async () => {
     setShowPaymentModal(false)
-    setHasPaymentMethod(true)
-    // Refresh the page to ensure all payment gates are updated
-    window.location.reload()
+    // Wait a moment for webhook to process, then check payment status
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    
+    // Check multiple times with delays to handle webhook processing time
+    for (let i = 0; i < 5; i++) {
+      await checkPaymentStatus()
+      if (hasPaymentMethod) {
+        break
+      }
+      await new Promise(resolve => setTimeout(resolve, 2000))
+    }
+    
+    // If still no payment method after all checks, reload the page
+    if (!hasPaymentMethod) {
+      window.location.reload()
+    }
   }
 
   // Don't show if loading, already has payment, owner account, or dismissed
