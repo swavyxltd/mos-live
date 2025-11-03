@@ -62,12 +62,12 @@ export default function SignInPage() {
 
   return (
     <div className="w-full max-w-[440px]">
-      {/* Logo above card - 30% of card width */}
+      {/* Logo above card - 50% bigger */}
       <div className="mb-6 flex justify-center">
         <img 
           src="/logo.png" 
           alt="Madrasah OS" 
-          className="w-[132px] h-auto"
+          className="w-[198px] h-auto"
         />
       </div>
       
