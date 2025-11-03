@@ -52,12 +52,22 @@ export async function POST(request: NextRequest) {
 
     // Send password reset email
     try {
-      await sendPasswordResetEmail({
+      const emailResult = await sendPasswordResetEmail({
         to: user.email,
         resetUrl,
       })
-    } catch (emailError) {
-      console.error('Failed to send password reset email:', emailError)
+      console.log('✅ Password reset email sent:', {
+        to: user.email,
+        result: emailResult,
+        resetUrl
+      })
+    } catch (emailError: any) {
+      console.error('❌ Failed to send password reset email:', {
+        error: emailError,
+        message: emailError?.message,
+        stack: emailError?.stack,
+        to: user.email
+      })
       // Still return success to prevent email enumeration
     }
 

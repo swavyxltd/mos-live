@@ -24,18 +24,31 @@ export async function sendEmail({
 }) {
   // In demo mode, just log the email instead of sending
   if (isDemoMode()) {
-    console.log('📧 DEMO EMAIL:', {
+    console.log('⚠️  DEMO MODE - Email not sent (logged only):', {
       to: Array.isArray(to) ? to : [to],
       subject,
-      html,
-      text
+      reason: {
+        isDevelopment: process.env.NODE_ENV === 'development',
+        hasDatabase: !!process.env.DATABASE_URL,
+        hasApiKey: !!process.env.RESEND_API_KEY,
+        apiKeyValue: process.env.RESEND_API_KEY === 're_demo_key' ? 'demo_key' : 'set'
+      }
     })
     return { id: 'demo-email-' + Date.now() }
   }
 
   try {
+    const fromAddress = process.env.RESEND_FROM || 'Madrasah OS <noreply@madrasah.io>'
+    console.log('📧 Sending email via Resend:', {
+      from: fromAddress,
+      to: Array.isArray(to) ? to : [to],
+      subject,
+      hasApiKey: !!process.env.RESEND_API_KEY,
+      isDemoMode: isDemoMode()
+    })
+    
     const { data, error } = await resend!.emails.send({
-      from: process.env.RESEND_FROM || 'Madrasah OS <noreply@madrasah.io>',
+      from: fromAddress,
       to: Array.isArray(to) ? to : [to],
       subject,
       html,
@@ -43,13 +56,22 @@ export async function sendEmail({
     })
     
     if (error) {
-      console.error('Resend error:', error)
+      console.error('❌ Resend API error:', {
+        error,
+        message: error.message,
+        name: error.name
+      })
       throw new Error(`Failed to send email: ${error.message}`)
     }
     
+    console.log('✅ Email sent successfully:', data)
     return data
-  } catch (error) {
-    console.error('Email send error:', error)
+  } catch (error: any) {
+    console.error('❌ Email send error:', {
+      error,
+      message: error?.message,
+      stack: error?.stack
+    })
     throw error
   }
 }
