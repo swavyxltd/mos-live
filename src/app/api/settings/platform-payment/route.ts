@@ -117,11 +117,25 @@ export async function POST(request: NextRequest) {
       message: error?.message,
       stack: error?.stack,
       type: error?.type,
-      code: error?.code
+      code: error?.code,
+      statusCode: error?.statusCode
     })
     
     // Return more specific error message
     const errorMessage = error?.message || 'Failed to create setup intent'
+    
+    // Check if it's a Stripe connection error
+    if (errorMessage.includes('connection') || errorMessage.includes('retried')) {
+      return NextResponse.json(
+        { 
+          error: 'Unable to connect to Stripe. Please check your internet connection and try again. If the problem persists, check your Stripe API key configuration.',
+          details: error?.type || error?.code,
+          retryable: true
+        },
+        { status: 503 } // Service Unavailable
+      )
+    }
+    
     return NextResponse.json(
       { error: errorMessage, details: error?.type || error?.code },
       { status: 500 }

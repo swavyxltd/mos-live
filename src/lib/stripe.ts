@@ -4,6 +4,9 @@ import { prisma } from './prisma'
 export const stripe: Stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, {
       apiVersion: '2024-06-20',
+      maxNetworkRetries: 2,
+      timeout: 30000, // 30 seconds timeout
+      httpClient: Stripe.createFetchHttpClient(),
     })
   : (null as unknown as Stripe)
 
@@ -73,6 +76,12 @@ export async function createPlatformSetupIntent(orgId: string) {
     throw new Error('Stripe is not initialized. Please check STRIPE_SECRET_KEY environment variable.')
   }
 
+  // Validate API key format
+  const apiKey = process.env.STRIPE_SECRET_KEY
+  if (!apiKey || (!apiKey.startsWith('sk_live_') && !apiKey.startsWith('sk_test_'))) {
+    throw new Error('Invalid Stripe API key format. Key must start with sk_live_ or sk_test_')
+  }
+
   const billing = await ensurePlatformCustomer(orgId)
   
   if (!billing.stripeCustomerId) {
@@ -80,6 +89,14 @@ export async function createPlatformSetupIntent(orgId: string) {
   }
   
   try {
+    // Test connection first by fetching customer
+    try {
+      await stripe.customers.retrieve(billing.stripeCustomerId)
+    } catch (customerError: any) {
+      console.error('Failed to retrieve Stripe customer:', customerError)
+      throw new Error(`Cannot connect to Stripe customer: ${customerError.message}`)
+    }
+
     const setupIntent = await stripe.setupIntents.create({
       customer: billing.stripeCustomerId,
       payment_method_types: ['card'],
@@ -93,6 +110,16 @@ export async function createPlatformSetupIntent(orgId: string) {
     return setupIntent
   } catch (error: any) {
     console.error('Stripe API error creating setup intent:', error)
+    
+    // Provide more specific error messages
+    if (error.type === 'StripeConnectionError' || error.type === 'StripeAPIError') {
+      throw new Error(`Stripe connection error: ${error.message}. Please check your internet connection and Stripe service status.`)
+    } else if (error.type === 'StripeAuthenticationError') {
+      throw new Error('Stripe authentication failed. Please check your STRIPE_SECRET_KEY environment variable.')
+    } else if (error.type === 'StripeInvalidRequestError') {
+      throw new Error(`Invalid Stripe request: ${error.message}`)
+    }
+    
     throw new Error(`Stripe API error: ${error.message || 'Failed to create setup intent'}`)
   }
 }
