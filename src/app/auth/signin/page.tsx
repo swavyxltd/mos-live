@@ -62,36 +62,30 @@ export default function SignInPage() {
 
   return (
     <div className="w-full max-w-[440px]">
-      {/* Frosted glass card */}
-      <div className="rounded-2xl border border-white/30 bg-white/75 dark:bg-neutral-900/75 backdrop-blur-xl shadow-[0_8px_30px_rgba(0,0,0,0.08)] p-8">
+      {/* Logo above card - 30% of card width */}
+      <div className="mb-6 flex justify-center">
+        <img 
+          src="/logo.png" 
+          alt="Madrasah OS" 
+          className="w-[132px] h-auto"
+        />
+      </div>
+      
+      {/* White card with soft shadow */}
+      <div className="rounded-2xl bg-white shadow-[0_8px_30px_rgba(0,0,0,0.08)] p-8">
         {/* Header */}
         <div className="mb-6">
-          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-neutral-900 dark:bg-white mb-4">
-            <svg
-              className="w-5 h-5 text-white dark:text-black"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 7l5 5m0 0l-5 5m5-5H6"
-              />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-semibold text-neutral-900 dark:text-white mb-2">
+          <h1 className="text-2xl font-semibold text-neutral-900 mb-2">
             Sign in with email
           </h1>
-          <p className="text-sm text-neutral-600 dark:text-neutral-400">
+          <p className="text-sm text-neutral-600">
             Access your Madrasah OS dashboard.
           </p>
         </div>
 
         {/* Error message */}
         {error && (
-          <div className="mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl text-sm">
+          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
             {error}
           </div>
         )}
@@ -101,14 +95,14 @@ export default function SignInPage() {
           {/* Email input */}
           <div>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400 dark:text-neutral-500" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
               <input
                 id="email"
                 name="email"
                 type="email"
                 autoComplete="email"
                 required
-                className="w-full pl-10 pr-4 h-11 rounded-xl border border-neutral-200/70 dark:border-neutral-700/70 bg-white/50 dark:bg-neutral-800/50 backdrop-blur-sm text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-500 focus:ring-0 transition-colors"
+                className="w-full pl-10 pr-4 h-11 rounded-xl border border-neutral-200/70 bg-white text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
                 placeholder="Email"
               />
             </div>
@@ -117,20 +111,20 @@ export default function SignInPage() {
           {/* Password input */}
           <div>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400 dark:text-neutral-500" />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
               <input
                 id="password"
                 name="password"
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="current-password"
                 required
-                className="w-full pl-10 pr-12 h-11 rounded-xl border border-neutral-200/70 dark:border-neutral-700/70 bg-white/50 dark:bg-neutral-800/50 backdrop-blur-sm text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-500 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-500 focus:ring-0 transition-colors"
+                className="w-full pl-10 pr-12 h-11 rounded-xl border border-neutral-200/70 bg-white text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
                 placeholder="Password"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors"
               >
                 {showPassword ? (
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -147,7 +141,7 @@ export default function SignInPage() {
             <div className="mt-2 text-right">
               <a
                 href="#"
-                className="text-xs text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 transition-colors"
+                className="text-xs text-neutral-600 hover:text-neutral-900 transition-colors"
                 onClick={(e) => e.preventDefault()}
               >
                 Forgot password?
@@ -159,7 +153,7 @@ export default function SignInPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full h-11 bg-neutral-900 dark:bg-white text-white dark:text-black font-medium rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full h-11 bg-neutral-900 text-white font-medium rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? 'Signing in...' : 'Get Started'}
           </button>
