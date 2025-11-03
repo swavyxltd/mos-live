@@ -6,6 +6,7 @@ import { Plus, Users, Calendar, Heart, AlertTriangle, Archive, ArchiveRestore } 
 import { StudentsPageClient } from '@/components/students-page-client'
 import { AddStudentModal } from '@/components/add-student-modal'
 import { AddStudentSuccessModal } from '@/components/add-student-success-modal'
+import { RestrictedAction } from '@/components/restricted-action'
 
 interface Student {
   id: string
@@ -114,12 +115,12 @@ export function StudentsPageWrapper({ initialStudents, classes }: StudentsPageWr
               </>
             )}
           </Button>
-          <Button onClick={() => {
-            setIsAddModalOpen(true)
-          }}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Student
-          </Button>
+          <RestrictedAction action="add-student" onClick={() => setIsAddModalOpen(true)}>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Student
+            </Button>
+          </RestrictedAction>
         </div>
       </div>
 

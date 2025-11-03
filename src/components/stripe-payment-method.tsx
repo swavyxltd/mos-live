@@ -18,18 +18,31 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY 
 interface StripePaymentMethodProps {
   onSuccess?: (paymentMethodId: string) => void
   onCancel?: () => void
+  clientSecret?: string // Allow passing client secret from parent
+  isPlatformBilling?: boolean // Flag to use platform billing endpoint
 }
 
-function PaymentMethodForm({ onSuccess, onCancel }: StripePaymentMethodProps) {
+function PaymentMethodForm({ onSuccess, onCancel, clientSecret: propClientSecret, isPlatformBilling }: StripePaymentMethodProps) {
   const stripe = useStripe()
   const elements = useElements()
   const [loading, setLoading] = useState(false)
-  const [clientSecret, setClientSecret] = useState<string>('')
-  const [initializing, setInitializing] = useState(true)
+  const [clientSecret, setClientSecret] = useState<string>(propClientSecret || '')
+  const [initializing, setInitializing] = useState(!propClientSecret)
 
   useEffect(() => {
-    // Get setup intent from API
-    fetch('/api/stripe/setup-intent', {
+    // If client secret is provided, skip fetching
+    if (propClientSecret) {
+      setClientSecret(propClientSecret)
+      setInitializing(false)
+      return
+    }
+
+    // Get setup intent from API - use platform billing endpoint if flag is set
+    const endpoint = isPlatformBilling 
+      ? '/api/settings/platform-payment' 
+      : '/api/stripe/setup-intent'
+    
+    fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
     })
@@ -48,7 +61,7 @@ function PaymentMethodForm({ onSuccess, onCancel }: StripePaymentMethodProps) {
       .finally(() => {
         setInitializing(false)
       })
-  }, [])
+  }, [propClientSecret, isPlatformBilling])
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -171,7 +184,7 @@ function PaymentMethodForm({ onSuccess, onCancel }: StripePaymentMethodProps) {
   )
 }
 
-export function StripePaymentMethodModal({ onSuccess, onCancel }: StripePaymentMethodProps) {
+export function StripePaymentMethodModal({ onSuccess, onCancel, clientSecret, isPlatformBilling = true }: StripePaymentMethodProps) {
   return (
     <div 
       className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
@@ -196,7 +209,12 @@ export function StripePaymentMethodModal({ onSuccess, onCancel }: StripePaymentM
           </CardHeader>
           <CardContent className="px-6 pb-6">
             <Elements stripe={stripePromise}>
-              <PaymentMethodForm onSuccess={onSuccess} onCancel={onCancel} />
+              <PaymentMethodForm 
+                onSuccess={onSuccess} 
+                onCancel={onCancel} 
+                clientSecret={clientSecret}
+                isPlatformBilling={isPlatformBilling}
+              />
             </Elements>
           </CardContent>
         </Card>
