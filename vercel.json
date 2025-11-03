@@ -1,5 +1,11 @@
 {
   "buildCommand": "npx prisma generate && next build",
   "framework": "nextjs",
-  "installCommand": "npm install --legacy-peer-deps"
+  "installCommand": "npm install --legacy-peer-deps",
+  "crons": [
+    {
+      "path": "/api/cron/billing",
+      "schedule": "0 0 * * *"
+    }
+  ]
 }

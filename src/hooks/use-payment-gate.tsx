@@ -38,13 +38,14 @@ export function usePaymentGate() {
     }
 
     try {
-      const response = await fetch('/api/settings/payment')
+      // Check platform billing (org must have card on file)
+      const response = await fetch('/api/settings/platform-payment')
       if (response.ok) {
         const data = await response.json()
         setPaymentStatus({
           hasPaymentMethod: !!data.paymentMethodId,
-          autoPayEnabled: data.autoPayEnabled,
-          lastUpdated: data.lastUpdated
+          autoPayEnabled: true, // Platform billing is always auto
+          lastUpdated: data.trialEndDate || undefined
         })
       } else {
         setPaymentStatus({

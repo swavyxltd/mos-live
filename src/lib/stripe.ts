@@ -7,13 +7,13 @@ export const stripe: Stripe = process.env.STRIPE_SECRET_KEY
     })
   : (null as unknown as Stripe)
 
-// Platform billing (metered)
+// Platform billing - Create or get Stripe customer
 export async function ensurePlatformCustomer(orgId: string) {
   const existing = await prisma.platformOrgBilling.findUnique({
     where: { orgId }
   })
   
-  if (existing) {
+  if (existing?.stripeCustomerId) {
     return existing
   }
   
@@ -34,12 +34,90 @@ export async function ensurePlatformCustomer(orgId: string) {
     }
   })
   
-  // Create subscription with metered pricing
+  // Calculate billing anniversary date (day of month when org was created)
+  const orgCreatedDate = org.createdAt
+  const billingAnniversaryDate = orgCreatedDate.getDate()
+  
+  // Calculate trial end date (1 month from creation)
+  const trialEndDate = new Date(orgCreatedDate)
+  trialEndDate.setMonth(trialEndDate.getMonth() + 1)
+  
+  // Create or update billing record
+  if (existing) {
+    return prisma.platformOrgBilling.update({
+      where: { orgId },
+      data: {
+        stripeCustomerId: customer.id,
+        billingAnniversaryDate,
+        trialEndDate,
+        subscriptionStatus: 'trialing'
+      }
+    })
+  }
+  
+  return prisma.platformOrgBilling.create({
+    data: {
+      orgId,
+      stripeCustomerId: customer.id,
+      billingAnniversaryDate,
+      trialEndDate,
+      subscriptionStatus: 'trialing'
+    }
+  })
+}
+
+// Create setup intent for platform org to add payment method
+export async function createPlatformSetupIntent(orgId: string) {
+  const billing = await ensurePlatformCustomer(orgId)
+  
+  if (!billing.stripeCustomerId) {
+    throw new Error('Stripe customer not found')
+  }
+  
+  return stripe.setupIntents.create({
+    customer: billing.stripeCustomerId,
+    payment_method_types: ['card'],
+    usage: 'off_session',
+    metadata: {
+      orgId,
+      type: 'platform'
+    }
+  })
+}
+
+// Create subscription with variable pricing (quantity = student count)
+export async function createPlatformSubscription(orgId: string, studentCount: number) {
+  const billing = await ensurePlatformCustomer(orgId)
+  
+  if (!billing.stripeCustomerId) {
+    throw new Error('Stripe customer not found')
+  }
+  
+  if (!billing.defaultPaymentMethodId) {
+    throw new Error('Payment method not set. Please add a card first.')
+  }
+  
+  // Check if subscription already exists
+  if (billing.stripeSubscriptionId) {
+    // Update existing subscription quantity
+    return updatePlatformSubscription(orgId, studentCount)
+  }
+  
+  // Calculate trial end timestamp
+  const trialEnd = billing.trialEndDate 
+    ? Math.floor(billing.trialEndDate.getTime() / 1000)
+    : undefined
+  
+  // Create subscription with variable quantity
   const subscription = await stripe.subscriptions.create({
-    customer: customer.id,
+    customer: billing.stripeCustomerId,
     items: [{
       price: process.env.STRIPE_PRICE_ID!,
+      quantity: studentCount
     }],
+    default_payment_method: billing.defaultPaymentMethodId,
+    trial_end: trialEnd,
+    billing_cycle_anchor: undefined, // Let Stripe handle billing cycle
     metadata: {
       orgId,
       type: 'platform'
@@ -48,13 +126,52 @@ export async function ensurePlatformCustomer(orgId: string) {
   
   const subscriptionItem = subscription.items.data[0]
   
-  return prisma.platformOrgBilling.create({
+  // Update billing record
+  await prisma.platformOrgBilling.update({
+    where: { orgId },
     data: {
-      orgId,
-      stripeCustomerId: customer.id,
+      stripeSubscriptionId: subscription.id,
       stripeSubscriptionItemId: subscriptionItem.id,
+      subscriptionStatus: subscription.status,
+      lastBilledStudentCount: studentCount
     }
   })
+  
+  return subscription
+}
+
+// Update subscription quantity based on student count
+export async function updatePlatformSubscription(orgId: string, studentCount: number) {
+  const billing = await prisma.platformOrgBilling.findUnique({
+    where: { orgId }
+  })
+  
+  if (!billing?.stripeSubscriptionId || !billing.stripeSubscriptionItemId) {
+    throw new Error('Subscription not found')
+  }
+  
+  // Update subscription item quantity
+  await stripe.subscriptionItems.update(billing.stripeSubscriptionItemId, {
+    quantity: studentCount
+  })
+  
+  // Update billing record
+  await prisma.platformOrgBilling.update({
+    where: { orgId },
+    data: {
+      lastBilledStudentCount: studentCount,
+      lastBilledAt: new Date()
+    }
+  })
+}
+
+// Check if org has payment method on file
+export async function hasPlatformPaymentMethod(orgId: string): Promise<boolean> {
+  const billing = await prisma.platformOrgBilling.findUnique({
+    where: { orgId }
+  })
+  
+  return !!billing?.defaultPaymentMethodId
 }
 
 // Parent billing
@@ -117,30 +234,12 @@ export async function ensureParentCustomer(orgId: string, parentUserId: string) 
   })
 }
 
-export async function reportUsage(orgId: string, activeStudentCount: number) {
-  const billing = await prisma.platformOrgBilling.findUnique({
-    where: { orgId }
-  })
-  
-  if (!billing) {
-    throw new Error('Platform billing not found')
-  }
-  
-  const timestamp = Math.floor(Date.now() / 1000)
-  
-  await stripe.subscriptionItems.createUsageRecord(
-    billing.stripeSubscriptionItemId,
-    {
-      quantity: activeStudentCount,
-      timestamp,
-      action: 'set'
-    }
-  )
-  
-  await prisma.platformOrgBilling.update({
-    where: { id: billing.id },
-    data: {
-      lastUsageReportedAt: new Date()
+// Count active students for an org
+export async function getActiveStudentCount(orgId: string): Promise<number> {
+  return prisma.student.count({
+    where: {
+      orgId,
+      isArchived: false
     }
   })
 }

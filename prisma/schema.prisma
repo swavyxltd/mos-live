@@ -45,7 +45,7 @@ model User {
   emailVerified DateTime?
   image         String?
   phone         String?
-  password      String?   // Hashed password using bcrypt
+  password      String? // Hashed password using bcrypt
   isSuperAdmin  Boolean   @default(false)
   isArchived    Boolean   @default(false)
   archivedAt    DateTime?
@@ -399,8 +399,15 @@ model AuditLog {
 model PlatformOrgBilling {
   id                       String    @id @default(cuid())
   orgId                    String    @unique
-  stripeCustomerId         String
-  stripeSubscriptionItemId String
+  stripeCustomerId         String?
+  stripeSubscriptionId     String?
+  stripeSubscriptionItemId String?
+  defaultPaymentMethodId   String?
+  billingAnniversaryDate   Int? // Day of month (1-31) when billing occurs
+  trialEndDate             DateTime? // When free trial ends
+  subscriptionStatus       String? // active, trialing, past_due, canceled, etc.
+  lastBilledAt             DateTime?
+  lastBilledStudentCount   Int?
   lastUsageReportedAt      DateTime?
   createdAt                DateTime  @default(now())
   updatedAt                DateTime  @updatedAt

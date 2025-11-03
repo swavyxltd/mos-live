@@ -41,6 +41,15 @@ export async function POST(request: NextRequest) {
         await handleSetupIntentSucceeded(event.data.object)
         break
       
+      case 'customer.subscription.created':
+      case 'customer.subscription.updated':
+        await handleSubscriptionUpdated(event.data.object)
+        break
+      
+      case 'customer.subscription.deleted':
+        await handleSubscriptionDeleted(event.data.object)
+        break
+      
       case 'invoice.payment_succeeded':
         await handleInvoicePaymentSucceeded(event.data.object)
         break
@@ -139,6 +148,65 @@ async function handlePaymentIntentFailed(paymentIntent: any) {
 async function handleSetupIntentSucceeded(setupIntent: any) {
   const { metadata } = setupIntent
   
+  // Handle platform billing (org setup)
+  if (metadata.orgId && metadata.type === 'platform') {
+    // Attach payment method to customer
+    await stripe.paymentMethods.attach(setupIntent.payment_method, {
+      customer: setupIntent.customer
+    })
+    
+    // Set as default payment method
+    await stripe.customers.update(setupIntent.customer, {
+      invoice_settings: {
+        default_payment_method: setupIntent.payment_method
+      }
+    })
+    
+    // Update platform billing record
+    await prisma.platformOrgBilling.updateMany({
+      where: {
+        orgId: metadata.orgId,
+        stripeCustomerId: setupIntent.customer
+      },
+      data: {
+        defaultPaymentMethodId: setupIntent.payment_method
+      }
+    })
+    
+    // Create subscription if not exists (with trial)
+    const billing = await prisma.platformOrgBilling.findUnique({
+      where: { orgId: metadata.orgId }
+    })
+    
+    if (billing && !billing.stripeSubscriptionId) {
+      // Get active student count
+      const studentCount = await prisma.student.count({
+        where: {
+          orgId: metadata.orgId,
+          isArchived: false
+        }
+      })
+      
+      // Import createPlatformSubscription
+      const { createPlatformSubscription } = await import('@/lib/stripe')
+      await createPlatformSubscription(metadata.orgId, studentCount)
+    }
+    
+    // Log the action
+    await prisma.auditLog.create({
+      data: {
+        orgId: metadata.orgId,
+        action: 'PLATFORM_PAYMENT_METHOD_SAVED',
+        targetType: 'PlatformOrgBilling',
+        data: {
+          setupIntentId: setupIntent.id,
+          paymentMethodId: setupIntent.payment_method
+        }
+      }
+    })
+  }
+  
+  // Handle parent billing
   if (metadata.orgId && metadata.parentUserId) {
     // Update parent billing profile with default payment method
     await prisma.parentBillingProfile.updateMany({
@@ -183,6 +251,65 @@ async function handleInvoicePaymentSucceeded(invoice: any) {
   }
 }
 
+async function handleSubscriptionUpdated(subscription: any) {
+  const { metadata } = subscription
+  
+  if (metadata?.orgId && metadata.type === 'platform') {
+    // Update subscription status in database
+    await prisma.platformOrgBilling.updateMany({
+      where: {
+        orgId: metadata.orgId,
+        stripeSubscriptionId: subscription.id
+      },
+      data: {
+        subscriptionStatus: subscription.status
+      }
+    })
+    
+    await prisma.auditLog.create({
+      data: {
+        orgId: metadata.orgId,
+        action: 'PLATFORM_SUBSCRIPTION_UPDATED',
+        targetType: 'PlatformOrgBilling',
+        data: {
+          subscriptionId: subscription.id,
+          status: subscription.status
+        }
+      }
+    })
+  }
+}
+
+async function handleSubscriptionDeleted(subscription: any) {
+  const { metadata } = subscription
+  
+  if (metadata?.orgId && metadata.type === 'platform') {
+    // Update subscription status
+    await prisma.platformOrgBilling.updateMany({
+      where: {
+        orgId: metadata.orgId,
+        stripeSubscriptionId: subscription.id
+      },
+      data: {
+        subscriptionStatus: 'canceled',
+        stripeSubscriptionId: null,
+        stripeSubscriptionItemId: null
+      }
+    })
+    
+    await prisma.auditLog.create({
+      data: {
+        orgId: metadata.orgId,
+        action: 'PLATFORM_SUBSCRIPTION_CANCELED',
+        targetType: 'PlatformOrgBilling',
+        data: {
+          subscriptionId: subscription.id
+        }
+      }
+    })
+  }
+}
+
 async function handleInvoicePaymentFailed(invoice: any) {
   // Handle platform billing invoice payment failure
   if (invoice.metadata?.orgId) {
@@ -208,6 +335,16 @@ async function handleInvoicePaymentFailed(invoice: any) {
         updateUrl: `${process.env.APP_BASE_URL}/settings/billing`
       })
     }
+    
+    // Update subscription status
+    await prisma.platformOrgBilling.updateMany({
+      where: {
+        orgId: invoice.metadata.orgId
+      },
+      data: {
+        subscriptionStatus: 'past_due'
+      }
+    })
     
     await prisma.auditLog.create({
       data: {
