@@ -209,27 +209,14 @@ export default function SettingsPage() {
   }
 
   const handlePaymentSettingsChange = async (field: keyof PaymentSettings, value: boolean | string) => {
+    // Auto-pay is always enabled for platform billing - users cannot disable it
+    if (field === 'autoPayEnabled') {
+      toast.info('Automatic monthly billing is mandatory and cannot be disabled')
+      return
+    }
+    
     const updatedSettings = { ...paymentSettings, [field]: value }
     setPaymentSettings(updatedSettings)
-    
-    // Auto-save when auto-pay is toggled
-    if (field === 'autoPayEnabled') {
-      try {
-        const response = await fetch('/api/settings/payment', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updatedSettings)
-        })
-        
-        if (response.ok) {
-          toast.success(`Auto-pay ${value ? 'enabled' : 'disabled'} automatically`)
-        } else {
-          toast.error('Failed to save auto-pay setting')
-        }
-      } catch (error) {
-        toast.error('Failed to save auto-pay setting')
-      }
-    }
   }
 
   const handleSaveOrgSettings = async () => {
@@ -768,9 +755,9 @@ export default function SettingsPage() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Auto-pay</span>
                     <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${paymentSettings.autoPayEnabled ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                      <span className={`text-sm font-medium ${paymentSettings.autoPayEnabled ? 'text-green-700' : 'text-red-700'}`}>
-                        {paymentSettings.autoPayEnabled ? 'Enabled' : 'Disabled'}
+                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                      <span className="text-sm font-medium text-green-700">
+                        Enabled (Mandatory)
                       </span>
                     </div>
                   </div>
