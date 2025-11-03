@@ -48,7 +48,6 @@ export default function CreateUserPage() {
   const [formData, setFormData] = useState({
     email: '',
     name: '',
-    password: '',
     phone: '',
     isSuperAdmin: false,
     orgId: '',
@@ -77,7 +76,10 @@ export default function CreateUserPage() {
       const response = await fetch('/api/users/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          sendInvitation: !formData.isSuperAdmin // Always send invitation for non-super-admin users
+        })
       })
 
       const data = await response.json()
@@ -138,17 +140,15 @@ export default function CreateUserPage() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password *</Label>
-              <Input
-                id="password"
-                type="password"
-                required
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                placeholder="Set a secure password"
-              />
-            </div>
+            {!formData.isSuperAdmin && (
+              <div className="space-y-2">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-sm text-blue-800">
+                    An invitation email will be sent to this user. They will set their own password when creating their account.
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="phone">Phone (Optional)</Label>

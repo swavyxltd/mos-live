@@ -33,9 +33,6 @@ interface UserSettings {
   name: string
   email: string
   phone: string
-  currentPassword: string
-  newPassword: string
-  confirmPassword: string
 }
 
 interface PaymentSettings {
@@ -68,11 +65,9 @@ export default function SettingsPage() {
   const [userSettings, setUserSettings] = useState<UserSettings>({
     name: '',
     email: '',
-    phone: '',
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
+    phone: ''
   })
+  const [isSendingReset, setIsSendingReset] = useState(false)
   const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>({
     autoPayEnabled: true,
     paymentMethodId: 'pm_demo_1234567890',
@@ -133,10 +128,7 @@ export default function SettingsPage() {
       setUserSettings({
         name: session.user.name || '',
         email: session.user.email || '',
-        phone: session.user.phone || '',
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
+        phone: session.user.phone || ''
       })
     }
   }, [session])
@@ -195,11 +187,6 @@ export default function SettingsPage() {
   }
 
   const handleSaveUserSettings = async () => {
-    if (userSettings.newPassword !== userSettings.confirmPassword) {
-      toast.error('New passwords do not match')
-      return
-    }
-
     setLoading(true)
     try {
       const response = await fetch('/api/settings/user', {
@@ -208,9 +195,7 @@ export default function SettingsPage() {
         body: JSON.stringify({
           name: userSettings.name,
           email: userSettings.email,
-          phone: userSettings.phone,
-          currentPassword: userSettings.currentPassword,
-          newPassword: userSettings.newPassword
+          phone: userSettings.phone
         })
       })
       
@@ -218,13 +203,6 @@ export default function SettingsPage() {
         toast.success('User settings saved successfully')
         // Update session
         await update()
-        // Clear password fields
-        setUserSettings(prev => ({
-          ...prev,
-          currentPassword: '',
-          newPassword: '',
-          confirmPassword: ''
-        }))
       } else {
         throw new Error('Failed to save user settings')
       }
@@ -232,6 +210,31 @@ export default function SettingsPage() {
       toast.error('Failed to save user settings')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleRequestPasswordReset = async () => {
+    setIsSendingReset(true)
+    try {
+      const response = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: userSettings.email || session?.user?.email
+        })
+      })
+      
+      const data = await response.json()
+      
+      if (response.ok) {
+        toast.success('Password reset email sent! Check your inbox.')
+      } else {
+        toast.error(data.error || 'Failed to send password reset email')
+      }
+    } catch (error) {
+      toast.error('Failed to send password reset email')
+    } finally {
+      setIsSendingReset(false)
     }
   }
 
@@ -518,38 +521,31 @@ export default function SettingsPage() {
                   placeholder="Enter your phone number"
                 />
               </div>
-              <div>
-                <Label htmlFor="current-password">Current Password</Label>
-                <Input
-                  id="current-password"
-                  type="password"
-                  value={userSettings.currentPassword}
-                  onChange={(e) => handleUserSettingsChange('currentPassword', e.target.value)}
-                  placeholder="Enter current password"
-                />
-              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="new-password">New Password</Label>
-                <Input
-                  id="new-password"
-                  type="password"
-                  value={userSettings.newPassword}
-                  onChange={(e) => handleUserSettingsChange('newPassword', e.target.value)}
-                  placeholder="Enter new password"
-                />
-              </div>
-              <div>
-                <Label htmlFor="confirm-password">Confirm Password</Label>
-                <Input
-                  id="confirm-password"
-                  type="password"
-                  value={userSettings.confirmPassword}
-                  onChange={(e) => handleUserSettingsChange('confirmPassword', e.target.value)}
-                  placeholder="Confirm new password"
-                />
+            <div className="border-t pt-4 mt-4">
+              <div className="space-y-2">
+                <Label>Password</Label>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    To change your password, click the button below to receive a reset link via email.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleRequestPasswordReset}
+                    disabled={isSendingReset || loading}
+                  >
+                    {isSendingReset ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      'Reset Password'
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
 

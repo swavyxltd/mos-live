@@ -280,22 +280,10 @@ export default async function StaffDetailsPage({ params }: StaffDetailsPageProps
                 </div>
               </div>
               
-              <div>
-                <Label className="text-sm font-medium text-gray-700">Password</Label>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
-                    ••••••••
-                  </span>
-                  <Button variant="ghost" size="sm">
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              
               <div className="pt-2 border-t">
-                <Button variant="outline" size="sm" className="w-full">
-                  Reset Password
-                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Passwords are private and cannot be viewed. Users can reset their own passwords via the forgot password link.
+                </p>
               </div>
             </CardContent>
           </Card>

@@ -22,7 +22,8 @@ export function AddOrganisationForm({ onSuccess, onCancel }: AddOrganisationForm
     address: '',
     phone: '',
     email: '',
-    website: ''
+    website: '',
+    adminEmail: ''
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
@@ -149,6 +150,21 @@ export function AddOrganisationForm({ onSuccess, onCancel }: AddOrganisationForm
         />
       </div>
 
+      <div className="space-y-2">
+        <Label htmlFor="adminEmail">Admin Email *</Label>
+        <Input
+          id="adminEmail"
+          type="email"
+          value={formData.adminEmail}
+          onChange={(e) => setFormData(prev => ({ ...prev, adminEmail: e.target.value }))}
+          placeholder="admin@organisation.org"
+          required
+        />
+        <p className="text-xs text-[var(--muted-foreground)]">
+          An invitation email will be sent to this address to set up the organization
+        </p>
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="phone">Phone</Label>
@@ -161,7 +177,7 @@ export function AddOrganisationForm({ onSuccess, onCancel }: AddOrganisationForm
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">Organization Email</Label>
           <Input
             id="email"
             type="email"

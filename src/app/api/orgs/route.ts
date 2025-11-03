@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import crypto from 'crypto'
+import { sendOrgSetupInvitation } from '@/lib/mail'
 
 export async function GET(request: NextRequest) {
   try {
@@ -56,7 +58,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, slug, timezone, description, address, phone, email, website } = body
+    const { name, slug, timezone, description, address, phone, email, website, adminEmail } = body
 
     if (!name || !slug) {
       return NextResponse.json(
@@ -65,6 +67,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    if (!adminEmail) {
+      return NextResponse.json(
+        { error: 'Admin email is required to send invitation' },
+        { status: 400 }
+      )
+    }
+
+    // Create org
     const org = await prisma.org.create({
       data: {
         name,
@@ -81,13 +91,46 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    // Create invitation token
+    const token = crypto.randomBytes(32).toString('hex')
+    const expiresAt = new Date()
+    expiresAt.setDate(expiresAt.getDate() + 7) // 7 days
+
+    // Create invitation for admin
+    await prisma.invitation.create({
+      data: {
+        orgId: org.id,
+        email: adminEmail,
+        role: 'ADMIN',
+        token,
+        expiresAt
+      }
+    })
+
+    // Send invitation email
+    try {
+      const baseUrl = process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'https://app.madrasah.io'
+      const cleanBaseUrl = baseUrl.trim().replace(/\/+$/, '')
+      const signupUrl = `${cleanBaseUrl}/auth/signup?token=${token}`
+      
+      await sendOrgSetupInvitation({
+        to: adminEmail,
+        orgName: name,
+        signupUrl
+      })
+    } catch (emailError) {
+      console.error('Failed to send invitation email:', emailError)
+      // Don't fail org creation if email fails
+    }
+
     return NextResponse.json({
       success: true,
       org: {
         id: org.id,
         name: org.name,
         slug: org.slug
-      }
+      },
+      message: 'Organization created and invitation sent'
     })
 
   } catch (error: any) {

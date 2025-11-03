@@ -340,3 +340,342 @@ export async function sendPasswordResetEmail({
     text: `Password Reset Request\n\nYou requested to reset your password. Click the link below to continue:\n\n${safeResetUrl}\n\nIf you didn't request this, you can safely ignore this email.`
   })
 }
+
+export async function sendOrgSetupInvitation({
+  to,
+  orgName,
+  signupUrl
+}: {
+  to: string
+  orgName: string
+  signupUrl: string
+}) {
+  // Ensure signupUrl is clean
+  let safeSignupUrl = signupUrl.trim()
+  const urlMatch = safeSignupUrl.match(/^(https?:\/\/[^\/\?]+)(.*)$/)
+  if (urlMatch) {
+    const [, protocolDomain, path] = urlMatch
+    const cleanPath = path.replace(/\/https?:\/\/[^\/\?]+/g, '').replace(/^\/+/g, '/')
+    safeSignupUrl = protocolDomain + cleanPath
+  }
+  const escapedSignupUrl = safeSignupUrl.replace(/&/g, '&amp;')
+  
+  return sendEmail({
+    to,
+    subject: `Set up ${orgName} on Madrasah OS`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; background-color: #f9fafb; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; padding: 60px 20px;">
+            <tr>
+              <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07); overflow: hidden; max-width: 600px;">
+                  <!-- Logo -->
+                  <tr>
+                    <td align="center" style="padding: 48px 40px 32px 40px;">
+                      <img src="${(process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'https://app.madrasah.io').replace(/\/$/, '')}/logo.png" alt="Madrasah OS" style="max-width: 198px; height: auto; display: block;" />
+                    </td>
+                  </tr>
+                  
+                  <!-- Content -->
+                  <tr>
+                    <td align="center" style="padding: 0 40px 48px 40px;">
+                      <h1 style="margin: 0 0 12px 0; font-size: 28px; font-weight: 600; color: #111827; line-height: 1.4; text-align: center;">
+                        Welcome to Madrasah OS
+                      </h1>
+                      <p style="margin: 0 0 24px 0; font-size: 16px; color: #6b7280; line-height: 1.6; text-align: center; max-width: 480px; margin-left: auto; margin-right: auto;">
+                        You've been invited to set up <strong>${orgName}</strong> on Madrasah OS. Click below to create your account and complete the setup.
+                      </p>
+                      
+                      <!-- Button -->
+                      <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td align="center" style="padding: 0 0 40px 0;">
+                            <a href="${escapedSignupUrl}" style="display: inline-block; background-color: #3b82f6; color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 10px; font-weight: 600; font-size: 16px; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);">
+                              Set Up Organization
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+                      
+                      <!-- Divider -->
+                      <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td align="center" style="padding: 0 0 40px 0;">
+                            <div style="border-top: 1px solid #e5e7eb; width: 100%; max-width: 520px;"></div>
+                          </td>
+                        </tr>
+                      </table>
+                      
+                      <!-- Footer Links -->
+                      <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td align="center" style="padding: 0; border-top: 1px solid #e5e7eb;">
+                            <table cellpadding="0" cellspacing="0" style="margin: 32px auto 0 auto;">
+                              <tr>
+                                <td align="center" style="padding: 0 16px;">
+                                  <a href="https://madrasah.io" style="font-size: 12px; color: #6b7280; text-decoration: none; line-height: 1.6;">
+                                    madrasah.io
+                                  </a>
+                                </td>
+                                <td style="padding: 0 16px;">
+                                  <span style="font-size: 12px; color: #d1d5db;">•</span>
+                                </td>
+                                <td align="center" style="padding: 0 16px;">
+                                  <a href="https://app.madrasah.io/support" style="font-size: 12px; color: #6b7280; text-decoration: none; line-height: 1.6;">
+                                    Support
+                                  </a>
+                                </td>
+                              </tr>
+                            </table>
+                            <p style="margin: 24px 0 0 0; font-size: 11px; color: #9ca3af; text-align: center;">
+                              © ${new Date().getFullYear()} Madrasah OS. All rights reserved.
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+      </html>
+    `,
+    text: `Welcome to Madrasah OS\n\nYou've been invited to set up ${orgName} on Madrasah OS. Click below to create your account:\n\n${safeSignupUrl}\n\nBest regards,\nThe Madrasah OS Team`
+  })
+}
+
+export async function sendOrgSetupConfirmation({
+  to,
+  orgName,
+  dashboardUrl
+}: {
+  to: string
+  orgName: string
+  dashboardUrl: string
+}) {
+  let safeDashboardUrl = dashboardUrl.trim()
+  const urlMatch = safeDashboardUrl.match(/^(https?:\/\/[^\/\?]+)(.*)$/)
+  if (urlMatch) {
+    const [, protocolDomain, path] = urlMatch
+    const cleanPath = path.replace(/\/https?:\/\/[^\/\?]+/g, '').replace(/^\/+/g, '/')
+    safeDashboardUrl = protocolDomain + cleanPath
+  }
+  const escapedDashboardUrl = safeDashboardUrl.replace(/&/g, '&amp;')
+  
+  return sendEmail({
+    to,
+    subject: `${orgName} is ready on Madrasah OS`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; background-color: #f9fafb; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; padding: 60px 20px;">
+            <tr>
+              <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07); overflow: hidden; max-width: 600px;">
+                  <!-- Logo -->
+                  <tr>
+                    <td align="center" style="padding: 48px 40px 32px 40px;">
+                      <img src="${(process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'https://app.madrasah.io').replace(/\/$/, '')}/logo.png" alt="Madrasah OS" style="max-width: 198px; height: auto; display: block;" />
+                    </td>
+                  </tr>
+                  
+                  <!-- Content -->
+                  <tr>
+                    <td align="center" style="padding: 0 40px 48px 40px;">
+                      <h1 style="margin: 0 0 12px 0; font-size: 28px; font-weight: 600; color: #111827; line-height: 1.4; text-align: center;">
+                        Organization Setup Complete
+                      </h1>
+                      <p style="margin: 0 0 24px 0; font-size: 16px; color: #6b7280; line-height: 1.6; text-align: center; max-width: 480px; margin-left: auto; margin-right: auto;">
+                        <strong>${orgName}</strong> has been successfully set up on Madrasah OS. You can now start using all features.
+                      </p>
+                      
+                      <!-- Button -->
+                      <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td align="center" style="padding: 0 0 40px 0;">
+                            <a href="${escapedDashboardUrl}" style="display: inline-block; background-color: #3b82f6; color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 10px; font-weight: 600; font-size: 16px; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);">
+                              Go to Dashboard
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+                      
+                      <!-- Divider -->
+                      <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td align="center" style="padding: 0 0 40px 0;">
+                            <div style="border-top: 1px solid #e5e7eb; width: 100%; max-width: 520px;"></div>
+                          </td>
+                        </tr>
+                      </table>
+                      
+                      <p style="margin: 0 0 40px 0; font-size: 14px; color: #6b7280; line-height: 1.6; text-align: center;">
+                        If you need help getting started, visit our support page or contact our team.
+                      </p>
+                      
+                      <!-- Footer Links -->
+                      <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td align="center" style="padding: 0; border-top: 1px solid #e5e7eb;">
+                            <table cellpadding="0" cellspacing="0" style="margin: 32px auto 0 auto;">
+                              <tr>
+                                <td align="center" style="padding: 0 16px;">
+                                  <a href="https://madrasah.io" style="font-size: 12px; color: #6b7280; text-decoration: none; line-height: 1.6;">
+                                    madrasah.io
+                                  </a>
+                                </td>
+                                <td style="padding: 0 16px;">
+                                  <span style="font-size: 12px; color: #d1d5db;">•</span>
+                                </td>
+                                <td align="center" style="padding: 0 16px;">
+                                  <a href="https://app.madrasah.io/support" style="font-size: 12px; color: #6b7280; text-decoration: none; line-height: 1.6;">
+                                    Support
+                                  </a>
+                                </td>
+                              </tr>
+                            </table>
+                            <p style="margin: 24px 0 0 0; font-size: 11px; color: #9ca3af; text-align: center;">
+                              © ${new Date().getFullYear()} Madrasah OS. All rights reserved.
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+      </html>
+    `,
+    text: `Organization Setup Complete\n\n${orgName} has been successfully set up on Madrasah OS. You can now start using all features.\n\nAccess your dashboard: ${safeDashboardUrl}\n\nBest regards,\nThe Madrasah OS Team`
+  })
+}
+
+export async function sendStaffInvitation({
+  to,
+  orgName,
+  role,
+  signupUrl
+}: {
+  to: string
+  orgName: string
+  role: string
+  signupUrl: string
+}) {
+  let safeSignupUrl = signupUrl.trim()
+  const urlMatch = safeSignupUrl.match(/^(https?:\/\/[^\/\?]+)(.*)$/)
+  if (urlMatch) {
+    const [, protocolDomain, path] = urlMatch
+    const cleanPath = path.replace(/\/https?:\/\/[^\/\?]+/g, '').replace(/^\/+/g, '/')
+    safeSignupUrl = protocolDomain + cleanPath
+  }
+  const escapedSignupUrl = safeSignupUrl.replace(/&/g, '&amp;')
+  
+  const roleLabel = role === 'ADMIN' ? 'Administrator' : role === 'STAFF' ? 'Staff Member' : role
+  
+  return sendEmail({
+    to,
+    subject: `Join ${orgName} on Madrasah OS`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; background-color: #f9fafb; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; padding: 60px 20px;">
+            <tr>
+              <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07); overflow: hidden; max-width: 600px;">
+                  <!-- Logo -->
+                  <tr>
+                    <td align="center" style="padding: 48px 40px 32px 40px;">
+                      <img src="${(process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'https://app.madrasah.io').replace(/\/$/, '')}/logo.png" alt="Madrasah OS" style="max-width: 198px; height: auto; display: block;" />
+                    </td>
+                  </tr>
+                  
+                  <!-- Content -->
+                  <tr>
+                    <td align="center" style="padding: 0 40px 48px 40px;">
+                      <h1 style="margin: 0 0 12px 0; font-size: 28px; font-weight: 600; color: #111827; line-height: 1.4; text-align: center;">
+                        You've Been Invited
+                      </h1>
+                      <p style="margin: 0 0 24px 0; font-size: 16px; color: #6b7280; line-height: 1.6; text-align: center; max-width: 480px; margin-left: auto; margin-right: auto;">
+                        You've been invited to join <strong>${orgName}</strong> as a <strong>${roleLabel}</strong>. Click below to create your account and get started.
+                      </p>
+                      
+                      <!-- Button -->
+                      <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td align="center" style="padding: 0 0 40px 0;">
+                            <a href="${escapedSignupUrl}" style="display: inline-block; background-color: #3b82f6; color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 10px; font-weight: 600; font-size: 16px; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);">
+                              Create Account
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+                      
+                      <!-- Divider -->
+                      <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td align="center" style="padding: 0 0 40px 0;">
+                            <div style="border-top: 1px solid #e5e7eb; width: 100%; max-width: 520px;"></div>
+                          </td>
+                        </tr>
+                      </table>
+                      
+                      <!-- Footer Links -->
+                      <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td align="center" style="padding: 0; border-top: 1px solid #e5e7eb;">
+                            <table cellpadding="0" cellspacing="0" style="margin: 32px auto 0 auto;">
+                              <tr>
+                                <td align="center" style="padding: 0 16px;">
+                                  <a href="https://madrasah.io" style="font-size: 12px; color: #6b7280; text-decoration: none; line-height: 1.6;">
+                                    madrasah.io
+                                  </a>
+                                </td>
+                                <td style="padding: 0 16px;">
+                                  <span style="font-size: 12px; color: #d1d5db;">•</span>
+                                </td>
+                                <td align="center" style="padding: 0 16px;">
+                                  <a href="https://app.madrasah.io/support" style="font-size: 12px; color: #6b7280; text-decoration: none; line-height: 1.6;">
+                                    Support
+                                  </a>
+                                </td>
+                              </tr>
+                            </table>
+                            <p style="margin: 24px 0 0 0; font-size: 11px; color: #9ca3af; text-align: center;">
+                              © ${new Date().getFullYear()} Madrasah OS. All rights reserved.
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+      </html>
+    `,
+    text: `You've Been Invited\n\nYou've been invited to join ${orgName} as a ${roleLabel} on Madrasah OS. Click below to create your account:\n\n${safeSignupUrl}\n\nBest regards,\nThe Madrasah OS Team`
+  })
+}

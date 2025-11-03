@@ -8,17 +8,13 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
-import { SetPasswordModal } from '@/components/set-password-modal'
 import { 
   User, 
   Mail, 
   Phone, 
-  Key, 
   Shield, 
   GraduationCap,
   Copy,
-  Eye,
-  EyeOff,
   Edit,
   Archive
 } from 'lucide-react'
@@ -57,11 +53,8 @@ export function StaffDetailModal({
   onEdit,
   onArchive
 }: StaffDetailModalProps) {
-  const [showPassword, setShowPassword] = useState(false)
   const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false)
   const [isArchiving, setIsArchiving] = useState(false)
-  const [isSetPasswordModalOpen, setIsSetPasswordModalOpen] = useState(false)
-  const [isSettingPassword, setIsSettingPassword] = useState(false)
 
   if (!staff) return null
 
@@ -91,24 +84,6 @@ export function StaffDetailModal({
     }
   }
 
-  const handleResetPassword = () => {
-    setIsSetPasswordModalOpen(true)
-  }
-
-  const handleSetPassword = async (newPassword: string) => {
-    setIsSettingPassword(true)
-    try {
-      console.log(`Setting new password for staff member: ${staff.id}`)
-      console.log(`New password for ${staff.name}: ${newPassword}`)
-      // TODO: Implement actual password set API call
-      // For now, just log the action
-      console.log(`Password set for ${staff.name} would be processed (demo mode)`)
-    } catch (error) {
-      console.error('Error setting password:', error)
-    } finally {
-      setIsSettingPassword(false)
-    }
-  }
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Staff Details">
@@ -151,7 +126,6 @@ export function StaffDetailModal({
                 <span>{staff.phone}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Key className="h-4 w-4" />
                 <span className="font-mono">{staff.username}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -212,10 +186,10 @@ export function StaffDetailModal({
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label className="text-sm font-medium text-gray-700">Username</Label>
+              <Label className="text-sm font-medium text-gray-700">Email</Label>
               <div className="flex items-center gap-2 mt-1">
                 <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
-                  {staff.username}
+                  {staff.email || staff.username}
                 </span>
                 <Button variant="ghost" size="sm">
                   <Copy className="h-4 w-4" />
@@ -223,31 +197,10 @@ export function StaffDetailModal({
               </div>
             </div>
             
-            <div>
-              <Label className="text-sm font-medium text-gray-700">Password</Label>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
-                  {showPassword ? 'password123' : '••••••••'}
-                </span>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
-              </div>
-            </div>
-            
             <div className="pt-2 border-t">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-full"
-                onClick={handleResetPassword}
-              >
-                Reset Password
-              </Button>
+              <p className="text-xs text-muted-foreground mb-2">
+                Passwords are private and cannot be viewed. Users can reset their own passwords via the forgot password link.
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -311,14 +264,6 @@ export function StaffDetailModal({
         isLoading={isArchiving}
       />
 
-      {/* Set Password Modal */}
-      <SetPasswordModal
-        isOpen={isSetPasswordModalOpen}
-        onClose={() => setIsSetPasswordModalOpen(false)}
-        onSetPassword={handleSetPassword}
-        staffName={staff.name}
-        isLoading={isSettingPassword}
-      />
     </Modal>
   )
 }

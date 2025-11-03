@@ -15,6 +15,7 @@ export default function SignInPage() {
   
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
   const resetSuccess = searchParams.get('reset') === 'success'
+  const signupSuccess = searchParams.get('signup') === 'success'
 
   useEffect(() => {
     // Check if already signed in
@@ -31,7 +32,14 @@ export default function SignInPage() {
       // Clear the query parameter
       window.history.replaceState({}, '', '/auth/signin')
     }
-  }, [callbackUrl, resetSuccess])
+
+    // Show success message if redirected from signup
+    if (signupSuccess) {
+      setSuccessMessage('Account created successfully! Please sign in to continue.')
+      // Clear the query parameter
+      window.history.replaceState({}, '', '/auth/signin')
+    }
+  }, [callbackUrl, resetSuccess, signupSuccess])
 
   const handleCredentialsSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()

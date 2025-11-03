@@ -14,7 +14,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, email, phone, currentPassword, newPassword } = body
+    const { name, email, phone } = body
 
     // Get current user
     const user = await prisma.user.findUnique({
@@ -25,33 +25,19 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // If changing password, verify current password
-    if (newPassword && currentPassword) {
-      // In demo mode, check against demo password
-      if (process.env.NODE_ENV === 'development' || !process.env.DATABASE_URL) {
-        if (currentPassword !== 'demo123') {
-          return NextResponse.json({ error: 'Current password is incorrect' }, { status: 400 })
-        }
-      } else {
-        // In production, you would verify the hashed password
-        // const isValidPassword = await bcrypt.compare(currentPassword, user.password)
-        // if (!isValidPassword) {
-        //   return NextResponse.json({ error: 'Current password is incorrect' }, { status: 400 })
-        // }
-      }
+    // Reject password changes - users must use password reset email
+    if (body.currentPassword || body.newPassword) {
+      return NextResponse.json(
+        { error: 'Password changes must be done via password reset email. Use the "Reset Password" button in settings.' },
+        { status: 400 }
+      )
     }
 
-    // Update user data
+    // Update user data (only profile info, no password)
     const updateData: any = {
       name,
       email,
       phone
-    }
-
-    // If new password provided, hash it
-    if (newPassword) {
-      const hashedPassword = await bcrypt.hash(newPassword, 12)
-      updateData.password = hashedPassword
     }
 
     const updatedUser = await prisma.user.update({
