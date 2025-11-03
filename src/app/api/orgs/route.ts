@@ -82,12 +82,11 @@ export async function POST(request: NextRequest) {
         timezone: timezone || 'Europe/London',
         settings: JSON.stringify({ lateThreshold: 15 }),
         status: 'ACTIVE',
-        // Optional fields
-        description,
-        address,
-        phone,
-        email,
-        website
+        // Optional fields (only include if they exist in schema)
+        address: address || undefined,
+        phone: phone || undefined,
+        email: email || undefined
+        // Note: description and website are not in the Org schema
       }
     })
 
