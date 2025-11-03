@@ -72,20 +72,33 @@ export default function OwnerUsersPage() {
   const [userData, setUserData] = useState<any>(null)
   const [dataLoading, setDataLoading] = useState(true)
 
+  const fetchUsers = async () => {
+    try {
+      console.log('📥 Fetching users from API...')
+      const response = await fetch('/api/owner/users/stats')
+      if (response.ok) {
+        const data = await response.json()
+        console.log('📦 Received users data:', {
+          totalUsers: data.stats?.totalUsers,
+          allUsersCount: data.allUsers?.length
+        })
+        setUserData(data)
+      } else {
+        console.error('❌ API response not OK:', response.status, response.statusText)
+        const errorData = await response.json().catch(() => null)
+        console.error('Error details:', errorData)
+      }
+    } catch (err) {
+      console.error('❌ Error fetching user data:', err)
+    } finally {
+      setDataLoading(false)
+    }
+  }
+
   // Fetch user data
   useEffect(() => {
     if (status === 'loading') return
-
-    fetch('/api/owner/users/stats')
-      .then(res => res.json())
-      .then(data => {
-        setUserData(data)
-        setDataLoading(false)
-      })
-      .catch(err => {
-        console.error('Error fetching user data:', err)
-        setDataLoading(false)
-      })
+    fetchUsers()
   }, [status])
 
   if (status === 'loading' || dataLoading || !userData) {
@@ -138,14 +151,16 @@ export default function OwnerUsersPage() {
   // Handler functions
   const handleRefresh = async () => {
     setRefreshing(true)
+    setDataLoading(true)
     try {
-      const res = await fetch('/api/owner/users/stats')
-      const data = await res.json()
-      setUserData(data)
+      console.log('🔄 Refreshing users list...')
+      await fetchUsers()
+      console.log('✅ Users list refreshed, count:', userData?.allUsers?.length || 0)
     } catch (error) {
-      console.error('Error refreshing data:', error)
+      console.error('❌ Error refreshing data:', error)
     } finally {
       setRefreshing(false)
+      setDataLoading(false)
     }
   }
 

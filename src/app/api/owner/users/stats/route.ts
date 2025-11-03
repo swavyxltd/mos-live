@@ -100,6 +100,15 @@ export async function GET(request: NextRequest) {
           select: {
             memberships: true
           }
+        },
+        memberships: {
+          include: {
+            user: {
+              select: {
+                isArchived: true
+              }
+            }
+          }
         }
       },
       orderBy: {
