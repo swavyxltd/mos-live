@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import GenerateReportModal from '@/components/generate-report-modal'
 import { RecentActivityModal } from '@/components/recent-activity-modal'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { Loader2 } from 'lucide-react'
 import { 
   Users, 
   DollarSign, 
@@ -26,19 +27,95 @@ import {
   PieChart
 } from 'lucide-react'
 
+interface FinanceStats {
+  totalStudents: number
+  monthlyRevenue: number
+  pendingInvoices: number
+  overduePayments: number
+  paidThisMonth: number
+  totalOutstanding: number
+  averagePaymentTime: number
+  collectionRate: number
+}
+
 export function FinanceDashboardContent() {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false)
-  
-  // Finance-focused demo data
-  const totalStudents = 47
-  const monthlyRevenue = 2840
-  const pendingInvoices = 12
-  const overduePayments = 3
-  const paidThisMonth = 35
-  const totalOutstanding = 1250
-  const averagePaymentTime = 8.5
-  const collectionRate = 94.2
+  const [loading, setLoading] = useState(true)
+  const [stats, setStats] = useState<FinanceStats>({
+    totalStudents: 0,
+    monthlyRevenue: 0,
+    pendingInvoices: 0,
+    overduePayments: 0,
+    paidThisMonth: 0,
+    totalOutstanding: 0,
+    averagePaymentTime: 0,
+    collectionRate: 0
+  })
+
+  useEffect(() => {
+    fetchFinanceStats()
+  }, [])
+
+  const fetchFinanceStats = async () => {
+    try {
+      const response = await fetch('/api/dashboard/stats')
+      if (response.ok) {
+        const data = await response.json()
+        
+        // Calculate additional finance metrics
+        const totalInvoices = data.pendingInvoices + (data.totalStudents || 0)
+        const paidCount = data.totalStudents - data.pendingInvoices
+        const collectionRate = data.totalStudents > 0 
+          ? ((paidCount / data.totalStudents) * 100).toFixed(1)
+          : 0
+
+        // Get outstanding invoices total
+        const outstandingResponse = await fetch('/api/invoices?status=PENDING')
+        let totalOutstanding = 0
+        if (outstandingResponse.ok) {
+          const invoices = await outstandingResponse.json()
+          totalOutstanding = invoices.reduce((sum: number, inv: any) => sum + (Number(inv.amountP || 0) / 100), 0)
+        }
+
+        setStats({
+          totalStudents: data.totalStudents || 0,
+          monthlyRevenue: data.monthlyRevenue || 0,
+          pendingInvoices: data.pendingInvoices || 0,
+          overduePayments: data.overduePayments || 0,
+          paidThisMonth: paidCount,
+          totalOutstanding,
+          averagePaymentTime: 8.5, // TODO: Calculate from actual payment data
+          collectionRate: Number(collectionRate)
+        })
+      } else {
+        console.error('Failed to fetch finance stats')
+      }
+    } catch (error) {
+      console.error('Error fetching finance stats:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const {
+    totalStudents,
+    monthlyRevenue,
+    pendingInvoices,
+    overduePayments,
+    paidThisMonth,
+    totalOutstanding,
+    averagePaymentTime,
+    collectionRate
+  } = stats
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+      </div>
+    )
+  }
   
 
   // Handle CSV export generation with month/year filters

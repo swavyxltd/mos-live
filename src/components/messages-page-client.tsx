@@ -17,48 +17,82 @@ interface MessageData {
 export function MessagesPageClient() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [messageType, setMessageType] = useState<'all' | 'class' | 'individual'>('all')
-  const [recentMessages, setRecentMessages] = useState([
-    {
-      id: '1',
-      title: 'Holiday Announcement',
-      audience: 'all',
-      sentAt: '2 days ago',
-      content: 'School will be closed for winter break from Dec 23 - Jan 2',
-      status: 'sent'
-    },
-    {
-      id: '2',
-      title: 'Exam Schedule',
-      audience: 'class',
-      sentAt: '1 week ago',
-      content: 'End of term exams will be held next week',
-      status: 'sent'
+  const [recentMessages, setRecentMessages] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchMessages()
+  }, [])
+
+  const fetchMessages = async () => {
+    try {
+      const response = await fetch('/api/messages')
+      if (response.ok) {
+        const data = await response.json()
+        // Transform API data for frontend
+        const transformed = data.map((msg: any) => ({
+          id: msg.id,
+          title: msg.title,
+          audience: msg.audience?.toLowerCase() || 'all',
+          sentAt: formatTimeAgo(new Date(msg.createdAt)),
+          content: msg.body,
+          status: msg.status?.toLowerCase() || 'sent'
+        }))
+        setRecentMessages(transformed)
+      } else {
+        console.error('Failed to fetch messages')
+        setRecentMessages([])
+      }
+    } catch (error) {
+      console.error('Error fetching messages:', error)
+      setRecentMessages([])
+    } finally {
+      setLoading(false)
     }
-  ])
+  }
+
+  const formatTimeAgo = (date: Date): string => {
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+
+    if (diffMins < 1) return 'Just now'
+    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`
+    return date.toLocaleDateString()
+  }
 
   const handleSendMessage = async (data: MessageData) => {
-    console.log('📧 DEMO MESSAGE SENDING:', {
-      type: data.audience,
-      title: data.title,
-      message: data.message,
-      channels: data.channels,
-      classId: data.classId,
-      parentId: data.parentId
-    })
+    try {
+      const response = await fetch('/api/messages/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          title: data.title,
+          body: data.message,
+          audience: data.audience.toUpperCase(),
+          channel: data.channels[0]?.toUpperCase() || 'EMAIL',
+          classIds: data.classId ? [data.classId] : undefined
+        })
+      })
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-
-    // Add to recent messages
-    const newMessage = {
-      id: Date.now().toString(),
-      title: data.title,
-      audience: data.audience,
-      sentAt: 'Just now',
-      content: data.message,
-      status: 'sent'
+      if (response.ok) {
+        const newMessage = await response.json()
+        // Refresh messages list
+        fetchMessages()
+      } else {
+        console.error('Failed to send message')
+        alert('Failed to send message. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error sending message:', error)
+      alert('Error sending message. Please try again.')
     }
-    setRecentMessages(prev => [newMessage, ...prev])
   }
 
   const openModal = (type: 'all' | 'class' | 'individual') => {

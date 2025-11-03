@@ -14,21 +14,75 @@ import { Plus, Download, Calendar, Clock, MapPin, Users } from 'lucide-react'
 
 export default function CalendarPage() {
   const { data: session, status } = useSession()
+  const [events, setEvents] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (status === 'loading') return
+    fetchEvents()
+  }, [status])
+
+  const fetchEvents = async () => {
+    try {
+      const now = new Date()
+      const startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString()
+      const endDate = new Date(now.getFullYear(), now.getMonth() + 3, 0).toISOString()
+
+      const response = await fetch(`/api/events?startDate=${startDate}&endDate=${endDate}`)
+      if (response.ok) {
+        const data = await response.json()
+        // Transform API data for frontend
+        const transformed = data.map((event: any) => ({
+          id: event.id,
+          title: event.title,
+          type: event.type || 'EVENT',
+          date: new Date(event.date),
+          startTime: event.startTime || '',
+          endTime: event.endTime || '',
+          location: event.location || '',
+          teacher: event.teacher || '',
+          description: event.description || '',
+          class: event.class
+        }))
+        setEvents(transformed)
+      } else {
+        console.error('Failed to fetch events')
+        setEvents([])
+      }
+    } catch (error) {
+      console.error('Error fetching events:', error)
+      setEvents([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Use events from API
+  // Legacy demo data removed - always use real API data
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>
+  }
+
+  // Legacy demo data removed - use events from API
+  const demoEvents: any[] = []
+
+  // Remove duplicate state declarations
+  const [selectedEvent, setSelectedEvent] = useState<any>(null)
+  const [eventDetailOpen, setEventDetailOpen] = useState(false)
+  const [filters, setFilters] = useState({
+    eventTypes: [] as string[],
+    dateRange: 'all'
+  })
+  const [filteredEvents, setFilteredEvents] = useState<any[]>(events)
   
-  // Load demo data immediately - October 2025 onwards with Christmas holidays
-  const demoEvents = [
-    // October 2025 Events
-    {
-      id: 'demo-event-1',
-      title: 'Quran Recitation - Level 1',
-      type: 'CLASS',
-      date: new Date('2025-10-01T16:00:00'),
-      startTime: '4:00 PM',
-      endTime: '5:00 PM',
-      location: 'Room A',
-      teacher: 'Moulana Omar',
-      description: 'Regular class session'
-    },
+  // Force update filteredEvents when events change
+  React.useEffect(() => {
+    setFilteredEvents(events)
+  }, [events])
+  
+  const [showAllUpcoming, setShowAllUpcoming] = useState(false)
+
+  // Legacy demo data removed - events are now loaded from API
     {
       id: 'demo-event-2',
       title: 'Islamic Studies - Level 2',

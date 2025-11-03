@@ -72,13 +72,7 @@ export function validateDemoCredentials(email: string, password: string) {
 }
 
 export function isDemoMode(): boolean {
-  // Enable demo mode if:
-  // 1. Explicitly enabled via environment variable
-  // 2. We're in development
-  // 3. DATABASE_URL is not set
-  // 4. DATABASE_URL contains 'demo'
-  return process.env.ENABLE_DEMO_MODE === 'true' ||
-         process.env.NODE_ENV === 'development' || 
-         !process.env.DATABASE_URL || 
-         process.env.DATABASE_URL.includes('demo')
+  // Only enable demo mode if explicitly enabled via environment variable
+  // In production, always use real database data
+  return process.env.ENABLE_DEMO_MODE === 'true'
 }

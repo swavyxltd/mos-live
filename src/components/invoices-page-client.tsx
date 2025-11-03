@@ -146,7 +146,67 @@ export function InvoicesPageClient({ initialInvoices = [] }: InvoicesPageClientP
   const fetchInvoices = async () => {
     setLoading(true)
     try {
-      if (isDemoMode()) {
+      // Always use real API data
+      const response = await fetch('/api/invoices')
+      if (response.ok) {
+        const data = await response.json()
+        // Transform API data to match Invoice interface
+        const transformed = data.map((inv: any) => ({
+          id: inv.id,
+          invoiceNumber: inv.invoiceNumber || `INV-${inv.id.slice(0, 8)}`,
+          studentName: `${inv.student?.firstName || ''} ${inv.student?.lastName || ''}`.trim(),
+          parentName: inv.student?.primaryParent?.name || '',
+          parentEmail: inv.student?.primaryParent?.email || '',
+          amount: Number(inv.amountP || 0) / 100,
+          currency: inv.currency || 'GBP',
+          status: inv.status,
+          dueDate: inv.dueDate ? new Date(inv.dueDate).toISOString().split('T')[0] : '',
+          paidDate: inv.paidAt ? new Date(inv.paidAt).toISOString().split('T')[0] : undefined,
+          createdAt: inv.createdAt ? new Date(inv.createdAt).toISOString().split('T')[0] : '',
+          updatedAt: inv.updatedAt ? new Date(inv.updatedAt).toISOString().split('T')[0] : '',
+          student: {
+            id: inv.student?.id || '',
+            hasStripeAutoPayment: inv.student?.hasStripeAutoPayment || false
+          },
+          class: {
+            id: inv.classId || '',
+            name: inv.class?.name || 'No Class'
+          }
+        }))
+        setInvoices(transformed)
+        
+        // Get payment records
+        const paymentsResponse = await fetch('/api/payments')
+        if (paymentsResponse.ok) {
+          const paymentsData = await paymentsResponse.json()
+          // Transform payment data
+          const paymentRecords: PaymentRecord[] = paymentsData.map((payment: any) => ({
+            id: payment.id,
+            invoiceNumber: payment.invoice?.invoiceNumber || '',
+            studentName: payment.invoice?.student ? `${payment.invoice.student.firstName} ${payment.invoice.student.lastName}` : '',
+            amount: Number(payment.amountP || 0) / 100,
+            currency: payment.currency || 'GBP',
+            status: payment.status,
+            method: payment.method || 'CARD',
+            date: payment.createdAt ? new Date(payment.createdAt).toISOString().split('T')[0] : '',
+            invoiceId: payment.invoiceId || ''
+          }))
+          setPaymentRecords(paymentRecords)
+        }
+      } else {
+        console.error('Failed to fetch invoices')
+        setInvoices([])
+      }
+    } catch (error) {
+      console.error('Error fetching invoices:', error)
+      setInvoices([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Legacy demo mode check removed - always use real API data
+  if (false) {
         // Demo data
         const demoInvoices: Invoice[] = [
           {

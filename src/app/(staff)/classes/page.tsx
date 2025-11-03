@@ -15,99 +15,43 @@ export default async function ClassesPage() {
     return <div>Loading...</div>
   }
 
-  // Check if we're in demo mode
-  const { isDemoMode } = await import('@/lib/demo-mode')
-  
-  let classes: any[] = []
-
-  if (isDemoMode()) {
-    // Demo data for classes
-    classes = [
-      {
-        id: 'demo-class-1',
-        name: 'Quran Recitation - Level 1',
-        description: 'Basic Quran recitation for beginners',
-        grade: '1-3',
-        maxStudents: 15,
-        schedule: 'Monday, Wednesday, Friday 4:00 PM - 5:00 PM',
-        room: 'Room A',
-        orgId: org.id,
-        createdAt: new Date('2024-09-01'),
-        updatedAt: new Date('2024-12-06'),
-        teacher: {
-          name: 'Moulana Omar',
-          email: 'staff@demo.com'
-        },
-        studentClasses: [
-          {
-            student: { firstName: 'Ahmed', lastName: 'Hassan' },
-            enrolledAt: new Date('2024-09-01')
-          },
-          {
-            student: { firstName: 'Fatima', lastName: 'Ali' },
-            enrolledAt: new Date('2024-09-01')
-          },
-          {
-            student: { firstName: 'Yusuf', lastName: 'Patel' },
-            enrolledAt: new Date('2024-09-15')
+  // Always use real database data
+  // Get classes from database
+  const classes = await prisma.class.findMany({
+    where: { 
+      orgId: org.id,
+      isArchived: false
+    },
+    include: {
+      teacher: {
+        select: { name: true, email: true }
+      },
+      studentClasses: {
+        include: {
+          student: {
+            select: { firstName: true, lastName: true, isArchived: true }
           }
-        ],
-        _count: {
-          studentClasses: 3
+        },
+        where: {
+          student: {
+            isArchived: false
+          }
         }
       },
-      {
-        id: 'demo-class-2',
-        name: 'Islamic Studies - Level 2',
-        description: 'Intermediate Islamic studies and history',
-        grade: '4-6',
-        maxStudents: 12,
-        schedule: 'Tuesday, Thursday 5:00 PM - 6:00 PM',
-        room: 'Room B',
-        orgId: org.id,
-        createdAt: new Date('2024-09-01'),
-        updatedAt: new Date('2024-12-06'),
-        teacher: {
-          name: 'Apa Aisha',
-          email: 'parent@demo.com'
-        },
-        studentClasses: [
-          {
-            student: { firstName: 'Mariam', lastName: 'Ahmed' },
-            enrolledAt: new Date('2024-09-01')
-          },
-          {
-            student: { firstName: 'Hassan', lastName: 'Khan' },
-            enrolledAt: new Date('2024-09-01')
-          }
-        ],
-        _count: {
-          studentClasses: 2
-        }
-      }
-    ]
-  } else {
-    // Get classes from database
-    classes = await prisma.class.findMany({
-      where: { orgId: org.id },
-      include: {
-        teacher: {
-          select: { name: true, email: true }
-        },
-        studentClasses: {
-          include: {
-            student: {
-              select: { firstName: true, lastName: true }
+      _count: {
+        select: { 
+          studentClasses: {
+            where: {
+              student: {
+                isArchived: false
+              }
             }
           }
-        },
-        _count: {
-          select: { studentClasses: true }
         }
-      },
-      orderBy: { createdAt: 'desc' }
-    })
-  }
+      }
+    },
+    orderBy: { createdAt: 'desc' }
+  })
 
   return (
     <div className="space-y-6">

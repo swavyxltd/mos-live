@@ -11,52 +11,37 @@ export default async function FeesPage() {
     return <div>Loading...</div>
   }
 
-  // Check if we're in demo mode
-  const { isDemoMode } = await import('@/lib/demo-mode')
+  // Always use real database data
+  const { prisma } = await import('@/lib/prisma')
   
-  let feesPlans: any[] = []
-
-  if (isDemoMode()) {
-    // Demo fees data
-    feesPlans = [
-      {
-        id: 'demo-fees-1',
-        name: 'Monthly Tuition Fee',
-        description: 'Standard monthly tuition for all students',
-        amount: 50.00,
-        currency: 'GBP',
-        billingCycle: 'MONTHLY',
-        isActive: true,
-        studentCount: 47,
-        createdAt: new Date('2024-09-01T00:00:00.000Z'),
-        updatedAt: new Date('2024-12-06T00:00:00.000Z')
-      },
-      {
-        id: 'demo-fees-2',
-        name: 'Registration Fee',
-        description: 'One-time registration fee for new students',
-        amount: 25.00,
-        currency: 'GBP',
-        billingCycle: 'ONE_TIME',
-        isActive: true,
-        studentCount: 5,
-        createdAt: new Date('2024-09-01T00:00:00.000Z'),
-        updatedAt: new Date('2024-12-06T00:00:00.000Z')
-      },
-      {
-        id: 'demo-fees-3',
-        name: 'Exam Fee',
-        description: 'End of term examination fee',
-        amount: 15.00,
-        currency: 'GBP',
-        billingCycle: 'TERMLY',
-        isActive: true,
-        studentCount: 47,
-        createdAt: new Date('2024-09-01T00:00:00.000Z'),
-        updatedAt: new Date('2024-12-06T00:00:00.000Z')
+  // Get fees from database
+  const feesPlans = await prisma.fee.findMany({
+    where: {
+      orgId: org.id
+    },
+    include: {
+      _count: {
+        select: {
+          invoices: true
+        }
       }
-    ]
-  }
+    },
+    orderBy: { createdAt: 'desc' }
+  })
 
-  return <FeesPageClient initialFees={feesPlans} />
+  // Transform fees data for frontend
+  const transformedFees = feesPlans.map(fee => ({
+    id: fee.id,
+    name: fee.name,
+    description: fee.description || '',
+    amount: Number(fee.amountP) / 100,
+    currency: fee.currency || 'GBP',
+    billingCycle: fee.billingCycle || 'MONTHLY',
+    isActive: fee.isActive,
+    studentCount: fee._count.invoices,
+    createdAt: fee.createdAt,
+    updatedAt: fee.updatedAt
+  }))
+
+  return <FeesPageClient initialFees={transformedFees} />
 }

@@ -54,69 +54,42 @@ export default function SupportPage() {
 
   useEffect(() => {
     if (status === 'loading') return
-
-    // Demo data for support tickets
-    const demoTickets: SupportTicket[] = [
-      {
-        id: 'ticket-1',
-        subject: 'How to export student attendance data?',
-        body: 'I need to export attendance data for the last month to share with parents. Can you help me with the steps?',
-        status: 'OPEN',
-        role: 'STAFF',
-        createdAt: new Date('2024-12-05').toISOString(),
-        updatedAt: new Date('2024-12-05').toISOString(),
-        createdBy: {
-          id: 'user-1',
-          name: 'Ahmad Hassan',
-          email: 'ahmad@madrasah.com'
-        }
-      },
-        {
-          id: 'ticket-2',
-          subject: 'Payment processing issue',
-          body: 'Parents are reporting that they cannot complete online payments. The payment page shows an error.',
-          status: 'IN_PROGRESS',
-          role: 'ADMIN',
-          createdAt: new Date('2024-12-04').toISOString(),
-          updatedAt: new Date('2024-12-05').toISOString(),
-          createdBy: {
-            id: 'user-2',
-            name: 'Fatima Ali',
-            email: 'fatima@madrasah.com'
-          },
-          responses: [
-            {
-              id: 'response-1',
-              ticketId: 'ticket-2',
-              body: 'Thank you for reporting this issue. I\'ve identified the problem and it should be resolved within 24 hours.',
-              createdAt: new Date('2024-12-05').toISOString(),
-              createdBy: {
-                id: 'owner-1',
-                name: 'Support Team',
-                email: 'support@madrasah.io'
-              }
-            }
-          ]
-        },
-      {
-        id: 'ticket-3',
-        subject: 'WhatsApp integration setup',
-        body: 'I need help setting up WhatsApp messaging for our madrasah. The integration seems to be failing.',
-        status: 'CLOSED',
-        role: 'ADMIN',
-        createdAt: new Date('2024-12-01').toISOString(),
-        updatedAt: new Date('2024-12-03').toISOString(),
-        createdBy: {
-          id: 'user-3',
-          name: 'Moulana Omar',
-          email: 'omar@madrasah.com'
-        }
-      }
-    ]
-
-    setTickets(demoTickets)
-    setLoading(false)
+    fetchTickets()
   }, [status])
+
+  const fetchTickets = async () => {
+    try {
+      const response = await fetch('/api/support/tickets')
+      if (response.ok) {
+        const data = await response.json()
+        // Transform API data to match SupportTicket interface
+        const transformed: SupportTicket[] = data.map((ticket: any) => ({
+          id: ticket.id,
+          subject: ticket.subject,
+          body: ticket.body,
+          status: ticket.status,
+          role: ticket.role || 'STAFF',
+          createdAt: ticket.createdAt,
+          updatedAt: ticket.updatedAt,
+          createdBy: ticket.createdBy || {
+            id: '',
+            name: 'Unknown',
+            email: ''
+          },
+          responses: ticket.responses || []
+        }))
+        setTickets(transformed)
+      } else {
+        console.error('Failed to fetch tickets')
+        setTickets([])
+      }
+    } catch (error) {
+      console.error('Error fetching tickets:', error)
+      setTickets([])
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleCreateTicket = async (e: React.FormEvent) => {
     e.preventDefault()

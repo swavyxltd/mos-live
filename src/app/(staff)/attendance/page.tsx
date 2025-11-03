@@ -11,110 +11,78 @@ export default async function AttendancePage() {
     return <div>Loading...</div>
   }
 
-  // Check if we're in demo mode
-  const { isDemoMode } = await import('@/lib/demo-mode')
+  // Always use real database data
+  const { prisma } = await import('@/lib/prisma')
   
-  let attendanceData: any[] = []
-
-  if (isDemoMode()) {
-    // Enhanced demo attendance data with weekly attendance and percentages
-    attendanceData = [
-      {
-        id: 'demo-attendance-1',
-        name: 'Quran Recitation - Level 1',
-        teacher: 'Moulana Omar',
-        date: new Date('2024-12-06'),
-        totalStudents: 3,
-        present: 2,
-        absent: 0,
-        late: 1,
-        students: [
-          { 
-            id: 's1',
-            name: 'Ahmed Hassan', 
-            status: 'PRESENT', 
-            time: '4:00 PM',
-            attendancePercentage: 95,
-            weeklyAttendance: [
-              { day: 'Mon', status: 'PRESENT', time: '4:00 PM' },
-              { day: 'Tue', status: 'PRESENT', time: '3:58 PM' },
-              { day: 'Wed', status: 'LATE', time: '4:12 PM' },
-              { day: 'Thu', status: 'PRESENT', time: '4:01 PM' },
-              { day: 'Fri', status: 'PRESENT', time: '3:59 PM' }
-            ]
-          },
-          { 
-            id: 's2',
-            name: 'Fatima Ali', 
-            status: 'PRESENT', 
-            time: '4:02 PM',
-            attendancePercentage: 100,
-            weeklyAttendance: [
-              { day: 'Mon', status: 'PRESENT', time: '4:00 PM' },
-              { day: 'Tue', status: 'PRESENT', time: '3:57 PM' },
-              { day: 'Wed', status: 'PRESENT', time: '4:02 PM' },
-              { day: 'Thu', status: 'PRESENT', time: '3:59 PM' },
-              { day: 'Fri', status: 'PRESENT', time: '4:01 PM' }
-            ]
-          },
-          { 
-            id: 's3',
-            name: 'Yusuf Patel', 
-            status: 'LATE', 
-            time: '4:15 PM',
-            attendancePercentage: 80,
-            weeklyAttendance: [
-              { day: 'Mon', status: 'ABSENT' },
-              { day: 'Tue', status: 'PRESENT', time: '4:05 PM' },
-              { day: 'Wed', status: 'LATE', time: '4:18 PM' },
-              { day: 'Thu', status: 'PRESENT', time: '4:03 PM' },
-              { day: 'Fri', status: 'LATE', time: '4:15 PM' }
-            ]
-          }
-        ]
+  // Get attendance records from database
+  const attendanceRecords = await prisma.attendance.findMany({
+    where: {
+      orgId: org.id
+    },
+    include: {
+      student: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          isArchived: true
+        }
       },
-      {
-        id: 'demo-attendance-2',
-        name: 'Islamic Studies - Level 2',
-        teacher: 'Apa Aisha',
-        date: new Date('2024-12-05'),
-        totalStudents: 2,
-        present: 1,
-        absent: 1,
-        late: 0,
-        students: [
-          { 
-            id: 's4',
-            name: 'Mariam Ahmed', 
-            status: 'PRESENT', 
-            time: '5:00 PM',
-            attendancePercentage: 90,
-            weeklyAttendance: [
-              { day: 'Mon', status: 'PRESENT', time: '5:00 PM' },
-              { day: 'Tue', status: 'ABSENT' },
-              { day: 'Wed', status: 'PRESENT', time: '5:02 PM' },
-              { day: 'Thu', status: 'PRESENT', time: '4:58 PM' },
-              { day: 'Fri', status: 'PRESENT', time: '5:01 PM' }
-            ]
-          },
-          { 
-            id: 's5',
-            name: 'Hassan Khan', 
-            status: 'ABSENT', 
-            time: null,
-            attendancePercentage: 70,
-            weeklyAttendance: [
-              { day: 'Mon', status: 'PRESENT', time: '5:05 PM' },
-              { day: 'Tue', status: 'ABSENT' },
-              { day: 'Wed', status: 'ABSENT' },
-              { day: 'Thu', status: 'PRESENT', time: '5:02 PM' },
-              { day: 'Fri', status: 'ABSENT' }
-            ]
-          }
-        ]
+      class: {
+        select: {
+          id: true,
+          name: true
+        }
       }
-    ]
-  }
+    },
+    orderBy: {
+      date: 'desc'
+    },
+    take: 100 // Limit to recent 100 records
+  })
+
+  // Group attendance by class and date
+  const attendanceByClass = attendanceRecords.reduce((acc, record) => {
+    if (record.student.isArchived) return acc
+    
+    const classId = record.classId || 'no-class'
+    const dateKey = record.date.toISOString().split('T')[0]
+    const key = `${classId}-${dateKey}`
+    
+    if (!acc[key]) {
+      acc[key] = {
+        id: key,
+        classId: classId,
+        name: record.class?.name || 'No Class',
+        date: record.date,
+        totalStudents: 0,
+        present: 0,
+        absent: 0,
+        late: 0,
+        students: []
+      }
+    }
+    
+    acc[key].totalStudents++
+    if (record.status === 'PRESENT') {
+      acc[key].present++
+    } else if (record.status === 'ABSENT') {
+      acc[key].absent++
+    } else if (record.status === 'LATE') {
+      acc[key].late++
+    }
+    
+    acc[key].students.push({
+      id: record.student.id,
+      name: `${record.student.firstName} ${record.student.lastName}`,
+      status: record.status,
+      time: record.time || undefined
+    })
+    
+    return acc
+  }, {} as Record<string, any>)
+
+  const attendanceData = Object.values(attendanceByClass).slice(0, 10) // Show most recent 10
 
   return <AttendancePageClient attendanceData={attendanceData} />
 }

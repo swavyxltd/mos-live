@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { QuickAddMenu } from '@/components/quick-add-menu'
 import GenerateReportModal from '@/components/generate-report-modal'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   Users, 
   BookOpen, 
@@ -23,22 +23,88 @@ import {
   Target,
   Activity,
   Eye,
-  FileText
+  FileText,
+  Loader2
 } from 'lucide-react'
+
+interface DashboardStats {
+  totalStudents: number
+  newStudentsThisMonth: number
+  studentGrowth: number
+  activeClasses: number
+  staffMembers: number
+  attendanceRate: number
+  attendanceGrowth: number
+  monthlyRevenue: number
+  revenueGrowth: number
+  pendingInvoices: number
+  overduePayments: number
+  pendingApplications: number
+  attendanceTrend: Array<{ date: string; value: number }>
+}
 
 export function DashboardContent() {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
-  
-  // Demo data for now - will be replaced with real data fetching
-  const totalStudents = 47
-  const activeClasses = 8
-  const staffMembers = 12
-  const todayAttendance = 89
-  const monthlyRevenue = 2840
-  const pendingInvoices = 12
-  const overduePayments = 3
-  const newEnrollments = 5
-  const pendingApplications = 8
+  const [loading, setLoading] = useState(true)
+  const [stats, setStats] = useState<DashboardStats>({
+    totalStudents: 0,
+    newStudentsThisMonth: 0,
+    studentGrowth: 0,
+    activeClasses: 0,
+    staffMembers: 0,
+    attendanceRate: 0,
+    attendanceGrowth: 0,
+    monthlyRevenue: 0,
+    revenueGrowth: 0,
+    pendingInvoices: 0,
+    overduePayments: 0,
+    pendingApplications: 0,
+    attendanceTrend: []
+  })
+
+  useEffect(() => {
+    fetchDashboardStats()
+  }, [])
+
+  const fetchDashboardStats = async () => {
+    try {
+      const response = await fetch('/api/dashboard/stats')
+      if (response.ok) {
+        const data = await response.json()
+        setStats(data)
+      } else {
+        console.error('Failed to fetch dashboard stats')
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const {
+    totalStudents,
+    newStudentsThisMonth,
+    studentGrowth,
+    activeClasses,
+    staffMembers,
+    attendanceRate,
+    attendanceGrowth,
+    monthlyRevenue,
+    revenueGrowth,
+    pendingInvoices,
+    overduePayments,
+    pendingApplications,
+    attendanceTrend
+  } = stats
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+      </div>
+    )
+  }
   
   // Handle filter changes
   const handleFilterChange = (filter: string) => {
@@ -82,22 +148,10 @@ export function DashboardContent() {
     }
   }
   
-  // Demo data for charts and additional info
-  const attendanceData = [
-    // Last 7 days (most recent) - using current dates
-    { date: '2025-10-01', value: 78 },
-    { date: '2025-10-02', value: 82 },
-    { date: '2025-10-03', value: 75 },
-    { date: '2025-10-04', value: 88 },
-    { date: '2025-10-05', value: 90 },
-    { date: '2025-10-06', value: 85 },
-    { date: '2025-10-07', value: 92 },
-    
-    // Last 30 days (additional recent data)
-    { date: '2025-09-01', value: 87 },
-    { date: '2025-09-02', value: 89 },
-    { date: '2025-09-03', value: 91 },
-    { date: '2025-09-04', value: 88 },
+  // Use real attendance trend data from API
+  const attendanceData = attendanceTrend.length > 0 
+    ? attendanceTrend 
+    : [
     { date: '2025-09-05', value: 85 },
     { date: '2025-09-06', value: 87 },
     { date: '2025-09-07', value: 89 },
@@ -231,9 +285,9 @@ export function DashboardContent() {
           <StatCard
             title="Total Students"
             value={totalStudents}
-            change={{ value: "+12.5%", type: "positive" }}
+            change={studentGrowth > 0 ? { value: `+${studentGrowth.toFixed(1)}%`, type: "positive" } : studentGrowth < 0 ? { value: `${studentGrowth.toFixed(1)}%`, type: "negative" } : undefined}
             description="Active enrollments"
-            detail="+5 new this month"
+            detail={newStudentsThisMonth > 0 ? `+${newStudentsThisMonth} new this month` : "No new students this month"}
             icon={<Users className="h-4 w-4" />}
           />
         </Link>
@@ -241,7 +295,7 @@ export function DashboardContent() {
           <StatCard
             title="Monthly Revenue"
             value={`£${monthlyRevenue.toLocaleString()}`}
-            change={{ value: "+8.2%", type: "positive" }}
+            change={revenueGrowth > 0 ? { value: `+${revenueGrowth.toFixed(1)}%`, type: "positive" } : revenueGrowth < 0 ? { value: `${revenueGrowth.toFixed(1)}%`, type: "negative" } : undefined}
             description="Recurring revenue"
             detail="MRR growth trend"
             icon={<DollarSign className="h-4 w-4" />}
@@ -250,10 +304,10 @@ export function DashboardContent() {
         <Link href="/attendance" className="block">
           <StatCard
             title="This Week's Attendance"
-            value={`${todayAttendance}%`}
-            change={{ value: "+5%", type: "positive" }}
+            value={`${attendanceRate}%`}
+            change={attendanceGrowth > 0 ? { value: `+${attendanceGrowth}%`, type: "positive" } : attendanceGrowth < 0 ? { value: `${attendanceGrowth}%`, type: "negative" } : undefined}
             description="Average attendance rate"
-            detail="Above target of 85%"
+            detail={attendanceRate >= 85 ? "Above target of 85%" : "Below target of 85%"}
             icon={<UserCheck className="h-4 w-4" />}
           />
         </Link>
@@ -261,9 +315,8 @@ export function DashboardContent() {
           <StatCard
             title="Active Classes"
             value={activeClasses}
-            change={{ value: "+2", type: "positive" }}
             description="Currently running"
-            detail="8 teachers, 12 staff"
+            detail={`${staffMembers} staff members`}
             icon={<BookOpen className="h-4 w-4" />}
           />
         </Link>
@@ -288,8 +341,8 @@ export function DashboardContent() {
         <Link href="/students" className="block">
           <StatCard
             title="New Enrollments"
-            value={newEnrollments}
-            change={{ value: "This month", type: "positive" }}
+            value={newStudentsThisMonth}
+            change={studentGrowth > 0 ? { value: "This month", type: "positive" } : undefined}
             description="Recent additions"
             detail="Growth indicator"
             icon={<TrendingUp className="h-4 w-4" />}

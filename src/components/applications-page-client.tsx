@@ -57,8 +57,27 @@ export function ApplicationsPageClient({ orgSlug }: ApplicationsPageClientProps)
 
   const fetchApplications = async () => {
     try {
-      // Use demo data for now
-      setApplications(getDemoApplications())
+      const response = await fetch('/api/applications')
+      if (response.ok) {
+        const data = await response.json()
+        // Transform API data to match Application interface
+        const transformed = data.map((app: any) => ({
+          id: app.id,
+          status: app.status,
+          guardianName: app.guardianName,
+          guardianPhone: app.guardianPhone,
+          guardianEmail: app.guardianEmail,
+          submittedAt: app.submittedAt,
+          children: app.children || [],
+          preferredClass: app.preferredClass || '',
+          additionalNotes: app.additionalNotes || '',
+          adminNotes: app.adminNotes || ''
+        }))
+        setApplications(transformed)
+      } else {
+        console.error('Failed to fetch applications')
+        setApplications([])
+      }
     } catch (error) {
       console.error('Error fetching applications:', error)
       setApplications([])
@@ -67,6 +86,7 @@ export function ApplicationsPageClient({ orgSlug }: ApplicationsPageClientProps)
     }
   }
 
+  // Legacy demo data removed - always use real API data
   const getDemoApplications = (): Application[] => [
     {
       id: '1',
