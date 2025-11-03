@@ -113,14 +113,27 @@ export async function POST(request: NextRequest) {
       const cleanBaseUrl = baseUrl.trim().replace(/\/+$/, '')
       const signupUrl = `${cleanBaseUrl}/auth/signup?token=${token}`
       
+      console.log('📧 Attempting to send org setup invitation:', {
+        to: adminEmail,
+        orgName: name,
+        signupUrl,
+        hasResendKey: !!process.env.RESEND_API_KEY
+      })
+      
       await sendOrgSetupInvitation({
         to: adminEmail,
         orgName: name,
         signupUrl
       })
-    } catch (emailError) {
-      console.error('Failed to send invitation email:', emailError)
-      // Don't fail org creation if email fails
+      
+      console.log('✅ Org setup invitation email sent successfully')
+    } catch (emailError: any) {
+      console.error('❌ Failed to send invitation email:', {
+        error: emailError,
+        message: emailError?.message,
+        stack: emailError?.stack
+      })
+      // Don't fail org creation if email fails, but log it
     }
 
     return NextResponse.json({

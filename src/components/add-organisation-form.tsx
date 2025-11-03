@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { isDemoMode } from '@/lib/demo-mode'
 
 interface AddOrganisationFormProps {
   onSuccess: () => void
@@ -34,28 +33,32 @@ export function AddOrganisationForm({ onSuccess, onCancel }: AddOrganisationForm
     setError('')
 
     try {
-      if (isDemoMode()) {
-        // Demo mode - just simulate success
-        console.log('Demo: Creating organisation:', formData)
-        await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API call
-        onSuccess()
-      } else {
-        // Real API call
-        const response = await fetch('/api/orgs', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(formData)
-        })
+      // Real API call - always make it
+      const response = await fetch('/api/orgs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+      })
 
-        if (!response.ok) {
-          throw new Error('Failed to create organisation')
-        }
+      const data = await response.json()
 
-        onSuccess()
+      if (!response.ok) {
+        throw new Error(data.error || data.message || 'Failed to create organisation')
       }
+
+      console.log('✅ Organisation created successfully:', data)
+      
+      // Show success message
+      if (data.message) {
+        // Could show a toast here if needed
+        console.log('Success:', data.message)
+      }
+      
+      onSuccess()
     } catch (err) {
+      console.error('❌ Error creating organisation:', err)
       setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
       setIsLoading(false)

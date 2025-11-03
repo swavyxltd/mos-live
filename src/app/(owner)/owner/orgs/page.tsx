@@ -16,22 +16,25 @@ export default function OwnerOrgsPage() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
 
-  useEffect(() => {
-    if (status === 'loading') return
-
-    // Fetch real data from API
-    fetch('/api/owner/orgs/stats')
-      .then(res => res.json())
-      .then(data => {
+  const fetchOrgs = async () => {
+    try {
+      const response = await fetch('/api/owner/orgs/stats')
+      if (response.ok) {
+        const data = await response.json()
         if (Array.isArray(data)) {
           setOrgsWithStats(data)
         }
-        setLoading(false)
-      })
-      .catch(err => {
-        console.error('Error fetching organisations:', err)
-        setLoading(false)
-      })
+      }
+    } catch (err) {
+      console.error('Error fetching organisations:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (status === 'loading') return
+    fetchOrgs()
   }, [status])
 
   if (status === 'loading' || loading) {
@@ -51,17 +54,11 @@ export default function OwnerOrgsPage() {
     setIsModalOpen(false)
   }
 
-  const handleOrganisationCreated = () => {
+  const handleOrganisationCreated = async () => {
     setIsModalOpen(false)
     // Refresh the organisations list
-    fetch('/api/owner/orgs/stats')
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          setOrgsWithStats(data)
-        }
-      })
-      .catch(err => console.error('Error refreshing organisations:', err))
+    setLoading(true)
+    await fetchOrgs()
   }
 
   // Filter organizations based on search term
