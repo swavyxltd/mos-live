@@ -32,7 +32,16 @@ export function AddOrganisationForm({ onSuccess, onCancel }: AddOrganisationForm
     setIsLoading(true)
     setError('')
 
+    // Validate required fields
+    if (!formData.name || !formData.slug || !formData.adminEmail) {
+      setError('Please fill in all required fields (Name, Slug, and Admin Email)')
+      setIsLoading(false)
+      return
+    }
+
     try {
+      console.log('📤 Creating organisation:', { name: formData.name, slug: formData.slug, adminEmail: formData.adminEmail })
+      
       // Real API call - always make it
       const response = await fetch('/api/orgs', {
         method: 'POST',
@@ -42,24 +51,44 @@ export function AddOrganisationForm({ onSuccess, onCancel }: AddOrganisationForm
         body: JSON.stringify(formData)
       })
 
-      const data = await response.json()
+      console.log('📥 Response status:', response.status, response.statusText)
+
+      let data
+      try {
+        data = await response.json()
+      } catch (jsonError) {
+        console.error('❌ Failed to parse JSON response:', jsonError)
+        const text = await response.text()
+        console.error('Response text:', text)
+        throw new Error('Invalid response from server')
+      }
 
       if (!response.ok) {
-        throw new Error(data.error || data.message || 'Failed to create organisation')
+        console.error('❌ API error response:', data)
+        throw new Error(data.error || data.message || `Failed to create organisation (${response.status})`)
       }
 
       console.log('✅ Organisation created successfully:', data)
       
-      // Show success message
-      if (data.message) {
-        // Could show a toast here if needed
-        console.log('Success:', data.message)
-      }
+      // Reset form
+      setFormData({
+        name: '',
+        slug: '',
+        timezone: 'Europe/London',
+        description: '',
+        address: '',
+        phone: '',
+        email: '',
+        website: '',
+        adminEmail: ''
+      })
       
+      // Call success callback
       onSuccess()
     } catch (err) {
       console.error('❌ Error creating organisation:', err)
-      setError(err instanceof Error ? err.message : 'An error occurred')
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred while creating the organisation'
+      setError(errorMessage)
     } finally {
       setIsLoading(false)
     }
