@@ -22,7 +22,6 @@ export async function GET(request: NextRequest) {
         id: true,
         name: true,
         slug: true,
-        city: true,
         timezone: true,
         createdAt: true,
         updatedAt: true,
@@ -102,7 +101,7 @@ export async function GET(request: NextRequest) {
           id: org.id,
           name: org.name,
           slug: org.slug,
-          city: org.city || null,
+          city: null, // City field doesn't exist in schema
           timezone: org.timezone,
           createdAt: org.createdAt,
           updatedAt: org.updatedAt,

@@ -18,15 +18,22 @@ export default function OwnerOrgsPage() {
 
   const fetchOrgs = async () => {
     try {
+      console.log('📥 Fetching organisations from API...')
       const response = await fetch('/api/owner/orgs/stats')
       if (response.ok) {
         const data = await response.json()
+        console.log('📦 Received organisations data:', data.length, 'orgs')
         if (Array.isArray(data)) {
           setOrgsWithStats(data)
+          console.log('✅ Updated organisations state, new count:', data.length)
         }
+      } else {
+        console.error('❌ API response not OK:', response.status, response.statusText)
+        const errorData = await response.json().catch(() => null)
+        console.error('Error details:', errorData)
       }
     } catch (err) {
-      console.error('Error fetching organisations:', err)
+      console.error('❌ Error fetching organisations:', err)
     } finally {
       setLoading(false)
     }
@@ -57,8 +64,16 @@ export default function OwnerOrgsPage() {
   const handleOrganisationCreated = async () => {
     setIsModalOpen(false)
     // Refresh the organisations list
+    console.log('🔄 Refreshing organisations list...')
     setLoading(true)
-    await fetchOrgs()
+    try {
+      await fetchOrgs()
+      console.log('✅ Organisations list refreshed, count:', orgsWithStats.length)
+    } catch (err) {
+      console.error('❌ Error refreshing organisations:', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   // Filter organizations based on search term
