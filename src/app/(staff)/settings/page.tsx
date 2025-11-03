@@ -175,9 +175,9 @@ export default function SettingsPage() {
         // Create billing records from PlatformOrgBilling data
         const records: BillingRecord[] = []
         
-        if (billingData.lastBilledAt && billingData.lastBilledStudentCount) {
+        if (billingData.lastBilledAt && billingData.lastBilledStudentCount !== undefined) {
           const billedDate = new Date(billingData.lastBilledAt)
-          const billedAmount = billingData.lastBilledStudentCount // £1 per student
+          const billedAmount = billingData.lastBilledStudentCount // £1 per student, so amount = student count
           const status = billingData.subscriptionStatus === 'active' || billingData.subscriptionStatus === 'trialing' ? 'paid' : 'pending'
           
           records.push({
