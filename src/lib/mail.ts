@@ -255,32 +255,32 @@ export async function sendPasswordResetEmail({
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
         </head>
         <body style="margin: 0; padding: 0; background-color: #f9fafb; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
-          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; padding: 40px 20px;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; padding: 60px 20px;">
             <tr>
               <td align="center">
-                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07); overflow: hidden;">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07); overflow: hidden; max-width: 600px;">
                   <!-- Logo -->
                   <tr>
-                    <td align="center" style="padding: 40px 40px 20px 40px;">
-                      <img src="${(process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'https://app.madrasah.io').replace(/\/$/, '')}/logo.png" alt="Madrasah OS" style="max-width: 198px; height: auto;" />
+                    <td align="center" style="padding: 48px 40px 32px 40px;">
+                      <img src="${(process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'https://app.madrasah.io').replace(/\/$/, '')}/logo.png" alt="Madrasah OS" style="max-width: 198px; height: auto; display: block;" />
                     </td>
                   </tr>
                   
                   <!-- Content -->
                   <tr>
-                    <td style="padding: 0 40px 40px 40px;">
-                      <h1 style="margin: 0 0 12px 0; font-size: 24px; font-weight: 600; color: #111827; line-height: 1.4;">
+                    <td align="center" style="padding: 0 40px 48px 40px;">
+                      <h1 style="margin: 0 0 12px 0; font-size: 28px; font-weight: 600; color: #111827; line-height: 1.4; text-align: center;">
                         Password Reset Request
                       </h1>
-                      <p style="margin: 0 0 32px 0; font-size: 16px; color: #6b7280; line-height: 1.6;">
+                      <p style="margin: 0 0 40px 0; font-size: 16px; color: #6b7280; line-height: 1.6; text-align: center; max-width: 480px; margin-left: auto; margin-right: auto;">
                         You requested to reset your password. Click the button below to continue.
                       </p>
                       
                       <!-- Button -->
                       <table width="100%" cellpadding="0" cellspacing="0">
                         <tr>
-                          <td align="center" style="padding: 0 0 32px 0;">
-                            <a href="${escapedResetUrl}" style="display: inline-block; background-color: #3b82f6; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-weight: 500; font-size: 16px;">
+                          <td align="center" style="padding: 0 0 40px 0;">
+                            <a href="${escapedResetUrl}" style="display: inline-block; background-color: #3b82f6; color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 10px; font-weight: 600; font-size: 16px; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);">
                               Reset Password
                             </a>
                           </td>
@@ -290,14 +290,44 @@ export async function sendPasswordResetEmail({
                       <!-- Divider -->
                       <table width="100%" cellpadding="0" cellspacing="0">
                         <tr>
-                          <td style="padding: 0 0 32px 0; border-top: 1px solid #e5e7eb;"></td>
+                          <td align="center" style="padding: 0 0 40px 0;">
+                            <div style="border-top: 1px solid #e5e7eb; width: 100%; max-width: 520px;"></div>
+                          </td>
                         </tr>
                       </table>
                       
-                      <!-- Footer -->
-                      <p style="margin: 0; font-size: 14px; color: #9ca3af; line-height: 1.6;">
+                      <!-- Disclaimer -->
+                      <p style="margin: 0 0 40px 0; font-size: 14px; color: #9ca3af; line-height: 1.6; text-align: center;">
                         If you didn't request this, you can safely ignore this email.
                       </p>
+                      
+                      <!-- Footer Links -->
+                      <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td align="center" style="padding: 0; border-top: 1px solid #e5e7eb;">
+                            <table cellpadding="0" cellspacing="0" style="margin: 32px auto 0 auto;">
+                              <tr>
+                                <td align="center" style="padding: 0 16px;">
+                                  <a href="https://madrasah.io" style="font-size: 12px; color: #6b7280; text-decoration: none; line-height: 1.6;">
+                                    madrasah.io
+                                  </a>
+                                </td>
+                                <td style="padding: 0 16px;">
+                                  <span style="font-size: 12px; color: #d1d5db;">•</span>
+                                </td>
+                                <td align="center" style="padding: 0 16px;">
+                                  <a href="https://app.madrasah.io/support" style="font-size: 12px; color: #6b7280; text-decoration: none; line-height: 1.6;">
+                                    Support
+                                  </a>
+                                </td>
+                              </tr>
+                            </table>
+                            <p style="margin: 24px 0 0 0; font-size: 11px; color: #9ca3af; text-align: center;">
+                              © ${new Date().getFullYear()} Madrasah OS. All rights reserved.
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
                     </td>
                   </tr>
                 </table>
