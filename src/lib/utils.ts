@@ -12,22 +12,44 @@ export function formatCurrency(amountP: number): string {
   }).format(amountP / 100)
 }
 
-export function formatDate(date: Date): string {
+export function formatDate(date: Date | string | null | undefined): string {
+  if (!date) return 'N/A'
+  
+  // Convert string to Date if needed
+  const dateObj = typeof date === 'string' ? new Date(date) : date
+  
+  // Check if date is valid
+  if (isNaN(dateObj.getTime())) {
+    console.error('Invalid date:', date)
+    return 'Invalid Date'
+  }
+  
   return new Intl.DateTimeFormat('en-GB', {
     year: 'numeric',
     month: 'short',
     day: 'numeric'
-  }).format(date)
+  }).format(dateObj)
 }
 
-export function formatDateTime(date: Date): string {
+export function formatDateTime(date: Date | string | null | undefined): string {
+  if (!date) return 'N/A'
+  
+  // Convert string to Date if needed
+  const dateObj = typeof date === 'string' ? new Date(date) : date
+  
+  // Check if date is valid
+  if (isNaN(dateObj.getTime())) {
+    console.error('Invalid date:', date)
+    return 'Invalid Date'
+  }
+  
   return new Intl.DateTimeFormat('en-GB', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit'
-  }).format(date)
+  }).format(dateObj)
 }
 
 export function getInitials(name: string): string {
