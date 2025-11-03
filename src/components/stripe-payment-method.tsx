@@ -46,17 +46,23 @@ function PaymentMethodForm({ onSuccess, onCancel, clientSecret: propClientSecret
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
     })
-      .then(res => res.json())
+      .then(async (res) => {
+        const data = await res.json()
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to create setup intent')
+        }
+        return data
+      })
       .then(data => {
         if (data.clientSecret) {
           setClientSecret(data.clientSecret)
         } else {
-          toast.error(data.error || 'Failed to initialize payment setup')
+          throw new Error(data.error || 'Failed to initialize payment setup')
         }
       })
       .catch((error) => {
         console.error('Setup intent error:', error)
-        toast.error('Failed to initialize payment setup')
+        toast.error(error.message || 'Failed to create setup intent. Please check your Stripe configuration.')
       })
       .finally(() => {
         setInitializing(false)

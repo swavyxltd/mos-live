@@ -68,21 +68,33 @@ export async function ensurePlatformCustomer(orgId: string) {
 
 // Create setup intent for platform org to add payment method
 export async function createPlatformSetupIntent(orgId: string) {
+  // Check if Stripe is initialized
+  if (!stripe) {
+    throw new Error('Stripe is not initialized. Please check STRIPE_SECRET_KEY environment variable.')
+  }
+
   const billing = await ensurePlatformCustomer(orgId)
   
   if (!billing.stripeCustomerId) {
     throw new Error('Stripe customer not found')
   }
   
-  return stripe.setupIntents.create({
-    customer: billing.stripeCustomerId,
-    payment_method_types: ['card'],
-    usage: 'off_session',
-    metadata: {
-      orgId,
-      type: 'platform'
-    }
-  })
+  try {
+    const setupIntent = await stripe.setupIntents.create({
+      customer: billing.stripeCustomerId,
+      payment_method_types: ['card'],
+      usage: 'off_session',
+      metadata: {
+        orgId,
+        type: 'platform'
+      }
+    })
+    
+    return setupIntent
+  } catch (error: any) {
+    console.error('Stripe API error creating setup intent:', error)
+    throw new Error(`Stripe API error: ${error.message || 'Failed to create setup intent'}`)
+  }
 }
 
 // Create subscription with variable pricing (quantity = student count)

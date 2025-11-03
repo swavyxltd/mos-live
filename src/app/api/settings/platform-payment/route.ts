@@ -111,10 +111,19 @@ export async function POST(request: NextRequest) {
       clientSecret: setupIntent.client_secret,
       setupIntentId: setupIntent.id
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating setup intent:', error)
+    console.error('Error details:', {
+      message: error?.message,
+      stack: error?.stack,
+      type: error?.type,
+      code: error?.code
+    })
+    
+    // Return more specific error message
+    const errorMessage = error?.message || 'Failed to create setup intent'
     return NextResponse.json(
-      { error: 'Failed to create setup intent' },
+      { error: errorMessage, details: error?.type || error?.code },
       { status: 500 }
     )
   }
