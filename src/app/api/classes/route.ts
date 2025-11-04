@@ -62,12 +62,15 @@ export async function GET(request: NextRequest) {
   try {
     console.log('[API] GET /api/classes - Starting request')
     
-    if (!requireRole || typeof requireRole !== 'function') {
-      console.error('[API] requireRole is not a function:', typeof requireRole)
+    // Import requireRole dynamically to avoid circular dependency issues
+    const { requireRole: requireRoleFn, requireOrg: requireOrgFn } = await import('@/lib/roles')
+    
+    if (!requireRoleFn || typeof requireRoleFn !== 'function') {
+      console.error('[API] requireRole is not a function:', typeof requireRoleFn)
       return NextResponse.json({ error: 'Internal server error: requireRole not available' }, { status: 500 })
     }
     
-    const session = await requireRole(['ADMIN', 'OWNER'])(request)
+    const session = await requireRoleFn(['ADMIN', 'OWNER'])(request)
     if (session instanceof NextResponse) {
       console.log('[API] Session check failed:', session.status)
       return session
