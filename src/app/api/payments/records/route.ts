@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
 
     console.log('[API] Session validated, user:', session.user?.email)
     
-    const orgId = await requireOrg(request)
+    const orgId = await requireOrgFn(request)
     if (orgId instanceof NextResponse) {
       console.log('[API] Org check failed:', orgId.status)
       return orgId
@@ -98,7 +98,7 @@ export async function PATCH(request: NextRequest) {
     const session = await requireRole(['ADMIN', 'OWNER'])(request)
     if (session instanceof NextResponse) return session
 
-    const orgId = await requireOrg(request)
+    const orgId = await requireOrgFn(request)
     if (orgId instanceof NextResponse) return orgId
 
     const body = await request.json()
