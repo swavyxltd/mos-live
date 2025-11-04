@@ -51,8 +51,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(records)
   } catch (error: any) {
     console.error('Error fetching payment records:', error)
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    })
     return NextResponse.json(
-      { error: 'Failed to fetch payment records' },
+      { error: error.message || 'Failed to fetch payment records' },
       { status: 500 }
     )
   }

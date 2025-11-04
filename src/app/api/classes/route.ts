@@ -87,10 +87,15 @@ export async function GET(request: NextRequest) {
     })
     
     return NextResponse.json(classes)
-  } catch (error) {
+  } catch (error: any) {
     console.error('Get classes error:', error)
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    })
     return NextResponse.json(
-      { error: 'Failed to fetch classes' },
+      { error: error.message || 'Failed to fetch classes' },
       { status: 500 }
     )
   }
