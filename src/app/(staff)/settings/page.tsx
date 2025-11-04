@@ -575,7 +575,8 @@ export default function SettingsPage() {
 
         <TabsContent value="profile" className="space-y-6">
           {/* User Profile Settings */}
-          <CardHeader>
+          <Card>
+            <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <User className="h-5 w-5" />
               Profile Settings
@@ -652,7 +653,8 @@ export default function SettingsPage() {
 
         <TabsContent value="payment" className="space-y-6">
           {/* Payment Details */}
-          <CardHeader>
+          <Card>
+            <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CreditCard className="h-5 w-5" />
               Payment Details
@@ -859,7 +861,8 @@ export default function SettingsPage() {
 
         <TabsContent value="subscription" className="space-y-6">
           {/* App Subscription Management */}
-          <CardHeader>
+          <Card>
+            <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Banknote className="h-5 w-5" />
               App Subscription Management
