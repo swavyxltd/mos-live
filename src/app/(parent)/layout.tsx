@@ -40,7 +40,7 @@ export default async function ParentLayout({
   }
 
   // Check if organization is deactivated
-  if (org && org.status === 'DEACTIVATED') {
+  if (org.status === 'DEACTIVATED') {
     redirect('/auth/account-deactivated')
   }
   

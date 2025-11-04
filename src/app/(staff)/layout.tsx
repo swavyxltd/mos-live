@@ -26,10 +26,20 @@ export default async function StaffLayout({
         console.log(`[StaffLayout] Found ${userOrgs?.length || 0} organizations for user`)
         
         if (userOrgs && Array.isArray(userOrgs) && userOrgs.length > 0) {
+          // Filter out deactivated organizations
+          const activeOrgs = userOrgs.filter((uo: any) => 
+            uo && uo.org && uo.org.status !== 'DEACTIVATED'
+          )
+          
+          if (activeOrgs.length === 0) {
+            console.error(`[StaffLayout] User only has deactivated organizations`)
+            redirect('/auth/account-deactivated')
+          }
+          
           // Use the first organization (or prioritize admin orgs)
           // userOrgs is an array of UserOrgMembership objects with included org
-          const adminOrg = userOrgs.find((uo: any) => uo && uo.role === 'ADMIN')
-          const selectedOrg = adminOrg || userOrgs[0]
+          const adminOrg = activeOrgs.find((uo: any) => uo && uo.role === 'ADMIN')
+          const selectedOrg = adminOrg || activeOrgs[0]
           
           console.log(`[StaffLayout] Selected org:`, selectedOrg?.org?.id, selectedOrg?.org?.name)
           
@@ -38,8 +48,9 @@ export default async function StaffLayout({
             console.log(`[StaffLayout] Setting active org to: ${selectedOrg.org.id}`)
             // Set the cookie for future requests, but use the org directly now
             await setActiveOrgId(selectedOrg.org.id)
-            org = selectedOrg.org
-            console.log(`[StaffLayout] Org set successfully:`, org.id, org.name)
+            // Re-fetch org to ensure we have all fields
+            org = await getActiveOrg(session.user.id)
+            console.log(`[StaffLayout] Org set successfully:`, org?.id, org?.name)
           } else {
             console.error(`[StaffLayout] Selected org missing required properties:`, selectedOrg)
           }
@@ -59,8 +70,13 @@ export default async function StaffLayout({
     }
   }
 
+  // Ensure org is not null before proceeding
+  if (!org) {
+    redirect('/auth/signin?error=NoOrganization')
+  }
+
   // Check if organization is deactivated
-  if (org && org.status === 'DEACTIVATED') {
+  if (org.status === 'DEACTIVATED') {
     redirect('/auth/account-deactivated')
   }
   
