@@ -22,11 +22,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
           include: {
             class: {
               include: {
-                teacher: {
-                  include: {
-                    user: true
-                  }
-                }
+                teacher: true
               }
             }
           }
@@ -45,7 +41,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     // Get primary class (first one or default)
     const primaryClass = student.studentClasses[0]?.class || null
-    const teacherName = primaryClass?.teacher?.user?.name || 'N/A'
+    const teacherName = primaryClass?.teacher?.name || 'N/A'
 
     // Transform student data
     const transformedStudent = {
@@ -54,22 +50,21 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       lastName: student.lastName,
       dateOfBirth: student.dob ? student.dob.toISOString().split('T')[0] : '',
       age,
-      grade: student.grade || '',
-      address: student.address || '',
+      grade: '', // Grade not in schema - using empty string
+      address: '', // Address not in schema - using empty string
       class: primaryClass?.name || 'N/A',
       teacher: teacherName,
       parentName: student.primaryParent?.name || '',
       parentEmail: student.primaryParent?.email || '',
       parentPhone: student.primaryParent?.phone || '',
-      emergencyContact: student.emergencyContact || '',
+      emergencyContact: '', // Emergency contact not in schema - using empty string
       allergies: student.allergies || 'None',
       medicalNotes: student.medicalNotes || '',
-      enrollmentDate: student.enrollmentDate 
-        ? student.enrollmentDate.toISOString() 
-        : student.createdAt.toISOString(),
-      status: student.status || 'ACTIVE',
+      enrollmentDate: student.createdAt.toISOString(), // Using createdAt as enrollmentDate
+      status: 'ACTIVE', // Status not in schema - defaulting to ACTIVE
       isArchived: student.isArchived,
       archivedAt: student.archivedAt ? student.archivedAt.toISOString() : null,
+      createdAt: student.createdAt.toISOString(),
       classes: student.studentClasses.map(sc => ({
         id: sc.class.id,
         name: sc.class.name
