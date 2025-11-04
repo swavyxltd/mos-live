@@ -14,7 +14,7 @@ export async function requireAuth(request: NextRequest) {
   return session
 }
 
-export async function requireRole(requiredRoles: Role[], orgId?: string) {
+export function requireRole(requiredRoles: Role[], orgId?: string) {
   return async (request: NextRequest) => {
     const session = await requireAuth(request)
     if (session instanceof NextResponse) return session
