@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge'
 import GenerateReportModal from '@/components/generate-report-modal'
 import { useStaffPermissions } from '@/lib/staff-permissions'
 import { StaffSubrole } from '@/types/staff-roles'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 
 interface OrganizationSettings {
   name: string
@@ -90,6 +91,7 @@ export default function SettingsPage() {
 
   const [billingRecords, setBillingRecords] = useState<BillingRecord[]>([])
   const [loadingBillingRecords, setLoadingBillingRecords] = useState(true)
+  const [activeTab, setActiveTab] = useState('organization')
 
   useEffect(() => {
     if (session?.user) {
@@ -428,14 +430,42 @@ export default function SettingsPage() {
             }
           </p>
         </div>
-        <Button onClick={handleSaveOrgSettings} disabled={loading || isFinanceOfficer}>
-          {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-          Save Changes
-        </Button>
+        {activeTab === 'organization' && (
+          <Button onClick={handleSaveOrgSettings} disabled={loading || isFinanceOfficer}>
+            {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+            Save Changes
+          </Button>
+        )}
+        {activeTab === 'profile' && (
+          <Button onClick={handleSaveUserSettings} disabled={loading}>
+            {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+            Save Profile
+          </Button>
+        )}
       </div>
 
-      <div className="space-y-6">
-        {/* Organization Settings */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="organization" className="flex items-center gap-2">
+            <Globe className="h-4 w-4" />
+            Organization
+          </TabsTrigger>
+          <TabsTrigger value="profile" className="flex items-center gap-2">
+            <User className="h-4 w-4" />
+            Profile
+          </TabsTrigger>
+          <TabsTrigger value="payment" className="flex items-center gap-2">
+            <CreditCard className="h-4 w-4" />
+            Payment
+          </TabsTrigger>
+          <TabsTrigger value="subscription" className="flex items-center gap-2">
+            <Banknote className="h-4 w-4" />
+            Subscription
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="organization" className="space-y-6">
+          {/* Organization Settings */}
         <Card className={isFinanceOfficer ? "opacity-50 pointer-events-none" : ""}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -541,9 +571,10 @@ export default function SettingsPage() {
             </div>
           </CardContent>
         </Card>
+        </TabsContent>
 
-        {/* User Profile Settings */}
-        <Card>
+        <TabsContent value="profile" className="space-y-6">
+          {/* User Profile Settings */}
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <User className="h-5 w-5" />
@@ -615,17 +646,12 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <div className="flex justify-end">
-              <Button onClick={handleSaveUserSettings} disabled={loading}>
-                {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-                Save Profile
-              </Button>
-            </div>
           </CardContent>
         </Card>
+        </TabsContent>
 
-        {/* Payment Details */}
-        <Card>
+        <TabsContent value="payment" className="space-y-6">
+          {/* Payment Details */}
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CreditCard className="h-5 w-5" />
@@ -829,9 +855,10 @@ export default function SettingsPage() {
 
           </CardContent>
         </Card>
+        </TabsContent>
 
-        {/* App Subscription Management */}
-        <Card>
+        <TabsContent value="subscription" className="space-y-6">
+          {/* App Subscription Management */}
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Banknote className="h-5 w-5" />
@@ -925,8 +952,8 @@ export default function SettingsPage() {
             </div>
           </CardContent>
         </Card>
-
-      </div>
+        </TabsContent>
+      </Tabs>
 
       {showPaymentModal && (
         <StripePaymentMethodModal
