@@ -146,7 +146,18 @@ export const authOptions: NextAuthOptions = {
 
       const userId = user?.id ?? token.sub
       if (userId) {
-        token.roleHints = await getUserRoleHints(userId)
+        try {
+          token.roleHints = await getUserRoleHints(userId)
+        } catch (error) {
+          console.error('Error getting role hints in JWT callback:', error)
+          // Set default role hints on error to allow authentication
+          token.roleHints = {
+            isOwner: false,
+            orgAdminOf: [],
+            orgStaffOf: [],
+            isParent: false
+          }
+        }
       }
 
       return token
