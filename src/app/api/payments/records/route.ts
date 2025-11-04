@@ -6,11 +6,28 @@ import { prisma } from '@/lib/prisma'
 // GET: Fetch payment records with filters
 export async function GET(request: NextRequest) {
   try {
+    console.log('[API] GET /api/payments/records - Starting request')
+    
+    if (!requireRole || typeof requireRole !== 'function') {
+      console.error('[API] requireRole is not a function:', typeof requireRole)
+      return NextResponse.json({ error: 'Internal server error: requireRole not available' }, { status: 500 })
+    }
+    
     const session = await requireRole(['ADMIN', 'OWNER'])(request)
-    if (session instanceof NextResponse) return session
+    if (session instanceof NextResponse) {
+      console.log('[API] Session check failed:', session.status)
+      return session
+    }
 
+    console.log('[API] Session validated, user:', session.user?.email)
+    
     const orgId = await requireOrg(request)
-    if (orgId instanceof NextResponse) return orgId
+    if (orgId instanceof NextResponse) {
+      console.log('[API] Org check failed:', orgId.status)
+      return orgId
+    }
+    
+    console.log('[API] Org ID:', orgId)
 
     const { searchParams } = new URL(request.url)
     const month = searchParams.get('month')
@@ -53,14 +70,23 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(records)
   } catch (error: any) {
-    console.error('Error fetching payment records:', error)
-    console.error('Error details:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name
+    console.error('[API] ❌ Error fetching payment records:', error)
+    console.error('[API] Error details:', {
+      message: error?.message || 'Unknown error',
+      stack: error?.stack || 'No stack trace',
+      name: error?.name || 'Unknown',
+      cause: error?.cause || 'No cause'
     })
+    
+    // Return a more detailed error response
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch payment records' },
+      { 
+        error: error?.message || 'Failed to fetch payment records',
+        details: process.env.NODE_ENV === 'development' ? {
+          stack: error?.stack,
+          name: error?.name
+        } : undefined
+      },
       { status: 500 }
     )
   }
