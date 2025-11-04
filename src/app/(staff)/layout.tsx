@@ -70,8 +70,8 @@ export default async function StaffLayout({
     }
   }
 
-  // Ensure org is not null before proceeding
-  if (!org) {
+  // Ensure org is not null and has required fields before proceeding
+  if (!org || !org.id || !org.name) {
     redirect('/auth/signin?error=NoOrganization')
   }
 
