@@ -22,7 +22,6 @@ import {
   X
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { format } from 'date-fns'
 
 interface PaymentRecord {
   id: string
@@ -197,7 +196,7 @@ export default function PaymentRecordsPageClient() {
       `£${(r.amountP / 100).toFixed(2)}`,
       r.method || '',
       r.status,
-      r.paidAt ? format(new Date(r.paidAt), 'yyyy-MM-dd') : '',
+      r.paidAt ? new Date(r.paidAt).toISOString().split('T')[0] : '',
       r.reference || '',
       r.notes || ''
     ])
@@ -382,7 +381,14 @@ export default function PaymentRecordsPageClient() {
                       <TableCell>{getMethodLabel(record.method)}</TableCell>
                       <TableCell>{getStatusBadge(record.status)}</TableCell>
                       <TableCell>
-                        {record.paidAt ? format(new Date(record.paidAt), 'dd MMM yyyy') : '-'}
+                        {record.paidAt ? (() => {
+                          try {
+                            const date = new Date(record.paidAt)
+                            return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                          } catch {
+                            return '-'
+                          }
+                        })() : '-'}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-2 justify-end">

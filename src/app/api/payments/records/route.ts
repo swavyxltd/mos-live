@@ -48,6 +48,9 @@ export async function GET(request: NextRequest) {
       ]
     })
 
+    console.log(`[API] Found ${records.length} payment records for org ${orgId}`)
+    console.log(`[API] Records:`, records.map(r => ({ id: r.id, month: r.month, status: r.status, student: `${r.student.firstName} ${r.student.lastName}` })))
+
     return NextResponse.json(records)
   } catch (error: any) {
     console.error('Error fetching payment records:', error)

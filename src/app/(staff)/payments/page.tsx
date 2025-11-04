@@ -84,6 +84,8 @@ export default function PaymentsPage() {
       }
 
       const data = await response.json()
+      console.log('✅ Payment records fetched:', data.length, 'records')
+      console.log('📊 Records data:', data)
       setRecords(data)
     } catch (error: any) {
       console.error('Error fetching payment records:', error)
