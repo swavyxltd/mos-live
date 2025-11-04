@@ -126,6 +126,8 @@ model Org {
   events                Event[]
   supportTickets        SupportTicket[]
   invitations           Invitation[]
+  parentInvitations     ParentInvitation[]
+  paymentRecords        MonthlyPaymentRecord[]
   auditLogs             AuditLog[]
   platformBilling       PlatformOrgBilling?
   applications          Application[]
@@ -150,17 +152,19 @@ model Class {
   description String?
   schedule    String
   teacherId   String?
+  monthlyFeeP Int? // Monthly fee in pence (fixed fee per class)
   isArchived  Boolean   @default(false)
   archivedAt  DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  org            Org            @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  teacher        User?          @relation("ClassTeacher", fields: [teacherId], references: [id])
+  org            Org                    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  teacher        User?                  @relation("ClassTeacher", fields: [teacherId], references: [id])
   studentClasses StudentClass[]
   attendance     Attendance[]
   exams          Exam[]
   events         Event[]
+  paymentRecords MonthlyPaymentRecord[]
 }
 
 model Student {
@@ -177,12 +181,14 @@ model Student {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  org            Org            @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  primaryParent  User?          @relation("StudentPrimaryParent", fields: [primaryParentId], references: [id])
-  studentClasses StudentClass[]
-  attendance     Attendance[]
-  invoices       Invoice[]
-  progressLogs   ProgressLog[]
+  org               Org                    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  primaryParent     User?                  @relation("StudentPrimaryParent", fields: [primaryParentId], references: [id])
+  studentClasses    StudentClass[]
+  attendance        Attendance[]
+  invoices          Invoice[]
+  progressLogs      ProgressLog[]
+  parentInvitations ParentInvitation[]
+  paymentRecords    MonthlyPaymentRecord[]
 }
 
 model StudentClass {
@@ -401,6 +407,47 @@ model Invitation {
   createdAt  DateTime  @default(now())
 
   org Org @relation(fields: [orgId], references: [id], onDelete: Cascade)
+}
+
+model ParentInvitation {
+  id          String    @id @default(cuid())
+  orgId       String
+  studentId   String
+  parentEmail String
+  token       String    @unique
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  org     Org     @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([parentEmail])
+}
+
+model MonthlyPaymentRecord {
+  id        String    @id @default(cuid())
+  orgId     String
+  studentId String
+  classId   String
+  month     String // Format: "YYYY-MM"
+  amountP   Int // Amount in pence
+  method    String? // CASH, BANK_TRANSFER, STRIPE
+  status    String    @default("PENDING") // PENDING, PAID, LATE
+  paidAt    DateTime?
+  notes     String?
+  reference String? // Payment reference number
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  org     Org     @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  class   Class   @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, classId, month])
+  @@index([orgId, month])
+  @@index([status])
 }
 
 model AuditLog {

@@ -12,10 +12,21 @@ export async function GET(request: NextRequest) {
     if (orgId instanceof NextResponse) return orgId
     
     const classes = await prisma.class.findMany({
-      where: { orgId },
+      where: { orgId, isArchived: false },
       select: {
         id: true,
-        name: true
+        name: true,
+        description: true,
+        schedule: true,
+        teacherId: true,
+        monthlyFeeP: true,
+        teacher: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
       },
       orderBy: { name: 'asc' }
     })
