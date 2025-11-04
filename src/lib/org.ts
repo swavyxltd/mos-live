@@ -67,12 +67,50 @@ export async function setActiveOrgId(orgId: string): Promise<void> {
 }
 
 export async function getActiveOrg(userId?: string) {
-  const orgId = await getActiveOrgId(userId)
-  if (!orgId) return null
+  try {
+    const orgId = await getActiveOrgId(userId)
+    if (!orgId) return null
 
-  return prisma.org.findUnique({
-    where: { id: orgId }
-  })
+    return prisma.org.findUnique({
+      where: { id: orgId },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        timezone: true,
+        settings: true,
+        createdAt: true,
+        updatedAt: true,
+        status: true,
+        suspendedAt: true,
+        suspendedReason: true,
+        pausedAt: true,
+        pausedReason: true,
+        deactivatedAt: true,
+        deactivatedReason: true,
+        cancellationRequestedAt: true,
+        cancellationReason: true,
+        lastPaymentDate: true,
+        paymentFailureCount: true,
+        autoSuspendEnabled: true,
+        address: true,
+        phone: true,
+        email: true,
+        officeHours: true,
+        stripeEnabled: true,
+        stripePublishableKey: true,
+        stripeSecretKey: true,
+        stripeWebhookSecret: true,
+        autoPaymentEnabled: true,
+        cashPaymentEnabled: true,
+        bankTransferEnabled: true,
+        paymentInstructions: true,
+      }
+    })
+  } catch (error) {
+    console.error('Error getting active org:', error)
+    return null
+  }
 }
 
 export async function getUserOrgs(userId: string) {
