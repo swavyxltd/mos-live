@@ -609,7 +609,7 @@ export default function SettingsPage() {
               Account Management
             </CardTitle>
             <CardDescription>
-              Close or deactivate your Madrasah OS account. This action will send a cancellation request to our support team.
+              Request to close your Madrasah OS account. This will send a cancellation request to our support team. We'll reach out to discuss your needs before any action is taken.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -619,8 +619,8 @@ export default function SettingsPage() {
                 <div className="flex-1">
                   <h3 className="text-sm font-semibold text-red-900 mb-1">Important Notice</h3>
                   <p className="text-sm text-red-700">
-                    Closing your account will send a cancellation request to our support team. We'll reach out to understand your reasons and see if we can help. 
-                    If you still wish to proceed, your account will be deactivated and all access will be blocked.
+                    Requesting account closure will send a cancellation request to our support team. We'll reach out to understand your reasons and see if we can help. 
+                    Your account will remain active until we speak with you. If you still wish to proceed after our conversation, we can deactivate your account.
                   </p>
                 </div>
               </div>

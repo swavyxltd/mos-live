@@ -39,16 +39,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
     }
 
-    // Update organization with cancellation request
+    // IMPORTANT: Only record the cancellation request - DO NOT deactivate automatically
+    // The owner will manually deactivate after speaking with the user if needed
+    // This only sends an email to support@madrasah.io for owner review
     await prisma.org.update({
       where: { id: orgId },
       data: {
         cancellationRequestedAt: new Date(),
         cancellationReason: reason || 'User requested account cancellation'
+        // Note: status is NOT changed to DEACTIVATED here
+        // Owner must manually deactivate using /api/owner/orgs/[orgId]/deactivate
       }
     })
 
-    // Send email to support
+    // Send email to support@madrasah.io for owner review
     const adminEmail = org.memberships.find(m => m.role === 'ADMIN' || m.role === 'OWNER')?.user?.email || org.email
     await sendAccountCancellationRequestEmail({
       orgName: org.name,
