@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
     console.log('[API] Session validated, user:', session.user?.email)
     
-    const orgId = await requireOrgFn(request)
+    const orgId = await requireOrg(request)
     if (orgId instanceof NextResponse) {
       console.log('[API] Org check failed:', orgId.status)
       return orgId
