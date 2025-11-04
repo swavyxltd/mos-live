@@ -79,14 +79,16 @@ export default function PaymentsPage() {
       setLoading(true)
       const response = await fetch('/api/payments/records')
       if (!response.ok) {
-        throw new Error('Failed to fetch payment records')
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        console.error('Failed to fetch payment records:', response.status, errorData)
+        throw new Error(errorData.error || 'Failed to fetch payment records')
       }
 
       const data = await response.json()
       setRecords(data)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching payment records:', error)
-      toast.error('Failed to load payment records')
+      toast.error(error.message || 'Failed to load payment records')
     } finally {
       setLoading(false)
     }
@@ -98,9 +100,14 @@ export default function PaymentsPage() {
       if (response.ok) {
         const data = await response.json()
         setClasses(data)
+      } else {
+        console.error('Failed to fetch classes:', response.status, response.statusText)
+        const errorData = await response.json().catch(() => ({}))
+        console.error('Error details:', errorData)
       }
     } catch (error) {
       console.error('Error fetching classes:', error)
+      toast.error('Failed to load classes')
     }
   }
 
@@ -279,12 +286,12 @@ export default function PaymentsPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <Label htmlFor="month" className="text-sm">Month</Label>
-              <Select value={monthFilter} onValueChange={setMonthFilter}>
+              <Select value={monthFilter || 'all'} onValueChange={(v) => setMonthFilter(v === 'all' ? '' : v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="All months" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All months</SelectItem>
+                  <SelectItem value="all">All months</SelectItem>
                   {uniqueMonths.map(m => (
                     <SelectItem key={m} value={m}>{m}</SelectItem>
                   ))}
@@ -293,12 +300,12 @@ export default function PaymentsPage() {
             </div>
             <div>
               <Label htmlFor="class" className="text-sm">Class</Label>
-              <Select value={classFilter} onValueChange={setClassFilter}>
+              <Select value={classFilter || 'all'} onValueChange={(v) => setClassFilter(v === 'all' ? '' : v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="All classes" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All classes</SelectItem>
+                  <SelectItem value="all">All classes</SelectItem>
                   {classes.map(c => (
                     <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                   ))}
@@ -307,12 +314,12 @@ export default function PaymentsPage() {
             </div>
             <div>
               <Label htmlFor="method" className="text-sm">Payment Method</Label>
-              <Select value={methodFilter} onValueChange={setMethodFilter}>
+              <Select value={methodFilter || 'all'} onValueChange={(v) => setMethodFilter(v === 'all' ? '' : v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="All methods" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All methods</SelectItem>
+                  <SelectItem value="all">All methods</SelectItem>
                   <SelectItem value="CASH">Cash</SelectItem>
                   <SelectItem value="BANK_TRANSFER">Bank Transfer</SelectItem>
                   <SelectItem value="STRIPE">Card Payment</SelectItem>
@@ -321,12 +328,12 @@ export default function PaymentsPage() {
             </div>
             <div>
               <Label htmlFor="status" className="text-sm">Status</Label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select value={statusFilter || 'all'} onValueChange={(v) => setStatusFilter(v === 'all' ? '' : v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All statuses</SelectItem>
+                  <SelectItem value="all">All statuses</SelectItem>
                   <SelectItem value="PENDING">Pending</SelectItem>
                   <SelectItem value="PAID">Paid</SelectItem>
                   <SelectItem value="LATE">Late</SelectItem>
