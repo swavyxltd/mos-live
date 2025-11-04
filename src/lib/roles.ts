@@ -31,6 +31,17 @@ export function requireRole(requiredRoles: Role[], orgId?: string) {
     if (!activeOrgId) {
       return NextResponse.json({ error: 'No organization selected' }, { status: 400 })
     }
+
+    // Check if organization is deactivated
+    const { prisma } = await import('./prisma')
+    const org = await prisma.org.findUnique({
+      where: { id: activeOrgId },
+      select: { status: true }
+    })
+    
+    if (org?.status === 'DEACTIVATED') {
+      return NextResponse.json({ error: 'This organization has been deactivated' }, { status: 403 })
+    }
     
     const userRole = await getUserRoleInOrg(user.id, activeOrgId)
     if (!userRole) {

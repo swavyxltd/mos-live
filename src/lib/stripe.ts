@@ -274,6 +274,20 @@ export async function ensureParentCustomer(orgId: string, parentUserId: string) 
 }
 
 // Count active students for an org
+export async function cancelStripeSubscription(subscriptionId: string) {
+  if (!stripe) {
+    throw new Error('Stripe is not initialized')
+  }
+
+  try {
+    await stripe.subscriptions.cancel(subscriptionId)
+    return true
+  } catch (error: any) {
+    console.error('Error canceling Stripe subscription:', error)
+    throw new Error(`Failed to cancel subscription: ${error.message}`)
+  }
+}
+
 export async function getActiveStudentCount(orgId: string): Promise<number> {
   return prisma.student.count({
     where: {

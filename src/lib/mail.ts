@@ -940,3 +940,186 @@ export async function sendPaymentConfirmationEmail({
     text: `Payment Confirmation - ${orgName}\n\nAssalamu alaikum!\n\nThis email confirms that your payment has been received and processed.\n\nStudent: ${studentName}\nClass: ${className}\nMonth: ${month}\nPayment Method: ${methodLabel}\n${reference ? `Reference: ${reference}\n` : ''}Amount Paid: ${amountFormatted}\n\nJazakallahu Khairan\nThank you for your payment. We appreciate your continued support.\n\nBest regards,\n${orgName}`
   })
 }
+
+export async function sendAccountCancellationRequestEmail({
+  orgName,
+  orgId,
+  adminEmail,
+  adminName,
+  reason
+}: {
+  orgName: string
+  orgId: string
+  adminEmail: string
+  adminName: string
+  reason: string
+}) {
+  return sendEmail({
+    to: 'support@madrasah.io',
+    subject: `Account Cancellation Request - ${orgName}`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; background-color: #f9fafb; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; padding: 60px 20px;">
+            <tr>
+              <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07); overflow: hidden; max-width: 600px;">
+                  <!-- Header -->
+                  <tr>
+                    <td style="background-color: #dc2626; padding: 32px 40px; text-align: center;">
+                      <h1 style="margin: 0; font-size: 24px; font-weight: 600; color: #ffffff;">
+                        Account Cancellation Request
+                      </h1>
+                    </td>
+                  </tr>
+                  
+                  <!-- Content -->
+                  <tr>
+                    <td style="padding: 40px;">
+                      <p style="margin: 0 0 20px 0; font-size: 16px; color: #111827; line-height: 1.6;">
+                        A cancellation request has been received from the following organization:
+                      </p>
+                      
+                      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+                        <tr>
+                          <td style="padding: 0 0 12px 0; font-size: 14px; color: #6b7280; font-weight: 600;">Organization:</td>
+                          <td style="padding: 0 0 12px 0; font-size: 14px; color: #111827; text-align: right;">${orgName}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 0 0 12px 0; font-size: 14px; color: #6b7280; font-weight: 600;">Organization ID:</td>
+                          <td style="padding: 0 0 12px 0; font-size: 14px; color: #111827; text-align: right; font-family: monospace;">${orgId}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 0 0 12px 0; font-size: 14px; color: #6b7280; font-weight: 600;">Admin Name:</td>
+                          <td style="padding: 0 0 12px 0; font-size: 14px; color: #111827; text-align: right;">${adminName}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 0 0 12px 0; font-size: 14px; color: #6b7280; font-weight: 600;">Admin Email:</td>
+                          <td style="padding: 0 0 12px 0; font-size: 14px; color: #111827; text-align: right;">${adminEmail}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 0; font-size: 14px; color: #6b7280; font-weight: 600;">Reason:</td>
+                          <td style="padding: 0; font-size: 14px; color: #111827; text-align: right;">${reason}</td>
+                        </tr>
+                      </table>
+                      
+                      <p style="margin: 20px 0 0 0; font-size: 16px; color: #111827; line-height: 1.6;">
+                        Please contact the organization to understand their reasons and see if we can help. If they still wish to proceed, you can deactivate their account from the owner dashboard.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+      </html>
+    `,
+    text: `Account Cancellation Request - ${orgName}\n\nA cancellation request has been received:\n\nOrganization: ${orgName}\nOrganization ID: ${orgId}\nAdmin Name: ${adminName}\nAdmin Email: ${adminEmail}\nReason: ${reason}\n\nPlease contact the organization to understand their reasons and see if we can help. If they still wish to proceed, you can deactivate their account from the owner dashboard.`
+  })
+}
+
+export async function sendOrgDeactivationEmail({
+  to,
+  orgName,
+  adminName
+}: {
+  to: string
+  orgName: string
+  adminName: string
+}) {
+  return sendEmail({
+    to,
+    subject: `Account Deactivated - ${orgName}`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; background-color: #f9fafb; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; padding: 60px 20px;">
+            <tr>
+              <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07); overflow: hidden; max-width: 600px;">
+                  <!-- Logo -->
+                  <tr>
+                    <td align="center" style="padding: 48px 40px 32px 40px;">
+                      <img src="${(process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'https://app.madrasah.io').replace(/\/$/, '')}/logo.png" alt="Madrasah OS" style="max-width: 198px; height: auto; display: block;" />
+                    </td>
+                  </tr>
+                  
+                  <!-- Content -->
+                  <tr>
+                    <td align="center" style="padding: 0 40px 48px 40px;">
+                      <h1 style="margin: 0 0 12px 0; font-size: 28px; font-weight: 600; color: #111827; line-height: 1.4; text-align: center;">
+                        Assalamu alaikum ${adminName}
+                      </h1>
+                      <p style="margin: 0 0 40px 0; font-size: 16px; color: #6b7280; line-height: 1.6; text-align: center; max-width: 480px; margin-left: auto; margin-right: auto;">
+                        We're sorry to hear that you've decided to leave Madrasah OS. We understand that every organization's journey is unique, and we respect your decision.
+                      </p>
+                      
+                      <div style="background-color: #f0fdf4; border-left: 4px solid #22c55e; padding: 20px; border-radius: 8px; margin-bottom: 32px;">
+                        <p style="margin: 0; font-size: 16px; color: #166534; line-height: 1.6; text-align: center;">
+                          <strong>Jazakallahu Khairan</strong> for being part of our community. We wish you and ${orgName} all the best in your future endeavors. May Allah (SWT) bless your work and grant you continued success.
+                        </p>
+                      </div>
+                      
+                      <p style="margin: 0 0 20px 0; font-size: 16px; color: #111827; line-height: 1.6; text-align: center;">
+                        Your account has been deactivated and all access has been blocked. All billing has been stopped.
+                      </p>
+                      
+                      <p style="margin: 0 0 32px 0; font-size: 16px; color: #111827; line-height: 1.6; text-align: center;">
+                        If you ever wish to return, we'll always be here to welcome you back. Feel free to reach out to us at <a href="mailto:support@madrasah.io" style="color: #2563eb; text-decoration: none;">support@madrasah.io</a> if you have any questions or if there's anything we can help with.
+                      </p>
+                      
+                      <p style="margin: 32px 0 0 0; font-size: 16px; color: #6b7280; line-height: 1.6; text-align: center;">
+                        Barakallahu feekum,<br/>
+                        <strong>The Madrasah OS Team</strong>
+                      </p>
+                      
+                      <!-- Footer Links -->
+                      <table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 48px; border-top: 1px solid #e5e7eb; padding-top: 32px;">
+                        <tr>
+                          <td align="center">
+                            <table cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+                              <tr>
+                                <td align="center" style="padding: 0 16px;">
+                                  <a href="https://madrasah.io" style="font-size: 12px; color: #6b7280; text-decoration: none; line-height: 1.6;">
+                                    madrasah.io
+                                  </a>
+                                </td>
+                                <td style="padding: 0 16px;">
+                                  <span style="font-size: 12px; color: #d1d5db;">•</span>
+                                </td>
+                                <td align="center" style="padding: 0 16px;">
+                                  <a href="https://app.madrasah.io/support" style="font-size: 12px; color: #6b7280; text-decoration: none; line-height: 1.6;">
+                                    Support
+                                  </a>
+                                </td>
+                              </tr>
+                            </table>
+                            <p style="margin: 24px 0 0 0; font-size: 11px; color: #9ca3af; text-align: center;">
+                              © ${new Date().getFullYear()} Madrasah OS. All rights reserved.
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+      </html>
+    `,
+    text: `Account Deactivated - ${orgName}\n\nAssalamu alaikum ${adminName},\n\nWe're sorry to hear that you've decided to leave Madrasah OS. We understand that every organization's journey is unique, and we respect your decision.\n\nJazakallahu Khairan for being part of our community. We wish you and ${orgName} all the best in your future endeavors. May Allah (SWT) bless your work and grant you continued success.\n\nYour account has been deactivated and all access has been blocked. All billing has been stopped.\n\nIf you ever wish to return, we'll always be here to welcome you back. Feel free to reach out to us at support@madrasah.io if you have any questions or if there's anything we can help with.\n\nBarakallahu feekum,\nThe Madrasah OS Team`
+  })
+}

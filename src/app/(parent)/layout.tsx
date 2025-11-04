@@ -38,6 +38,11 @@ export default async function ParentLayout({
   if (!org) {
     redirect('/auth/signin?portal=parent&error=NoOrganization')
   }
+
+  // Check if organization is deactivated
+  if (org.status === 'DEACTIVATED') {
+    redirect('/auth/account-deactivated')
+  }
   
   const userRole = await getUserRoleInOrg(session.user.id, org.id)
   if (userRole !== 'PARENT') {

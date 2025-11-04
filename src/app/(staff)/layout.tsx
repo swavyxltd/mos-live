@@ -58,6 +58,11 @@ export default async function StaffLayout({
       redirect('/auth/signin?error=NoOrganization')
     }
   }
+
+  // Check if organization is deactivated
+  if (org.status === 'DEACTIVATED') {
+    redirect('/auth/account-deactivated')
+  }
   
   let userRole = await getUserRoleInOrg(session.user.id, org.id)
   if (!userRole) {

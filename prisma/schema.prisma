@@ -84,14 +84,18 @@ model Org {
   updatedAt DateTime @updatedAt
 
   // Account Status Management
-  status              String    @default("ACTIVE") // ACTIVE, SUSPENDED, PAUSED
-  suspendedAt         DateTime?
-  suspendedReason     String?
-  pausedAt            DateTime?
-  pausedReason        String?
-  lastPaymentDate     DateTime?
-  paymentFailureCount Int       @default(0)
-  autoSuspendEnabled  Boolean   @default(true)
+  status                  String    @default("ACTIVE") // ACTIVE, SUSPENDED, PAUSED, DEACTIVATED
+  suspendedAt             DateTime?
+  suspendedReason         String?
+  pausedAt                DateTime?
+  pausedReason            String?
+  deactivatedAt           DateTime?
+  deactivatedReason       String?
+  cancellationRequestedAt DateTime?
+  cancellationReason      String?
+  lastPaymentDate         DateTime?
+  paymentFailureCount     Int       @default(0)
+  autoSuspendEnabled      Boolean   @default(true)
 
   // Contact Information
   address     String?
