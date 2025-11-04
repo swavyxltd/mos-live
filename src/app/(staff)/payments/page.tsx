@@ -19,7 +19,9 @@ import {
   DollarSign,
   FileText,
   Edit,
-  X
+  X,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -51,6 +53,7 @@ export default function PaymentsPage() {
   const [classes, setClasses] = useState<Array<{ id: string; name: string }>>([])
 
   // Filters
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
   const [monthFilter, setMonthFilter] = useState('')
   const [classFilter, setClassFilter] = useState('')
   const [methodFilter, setMethodFilter] = useState('')
@@ -71,7 +74,7 @@ export default function PaymentsPage() {
 
   useEffect(() => {
     filterRecords()
-  }, [records, monthFilter, classFilter, methodFilter, statusFilter])
+  }, [records, selectedYear, monthFilter, classFilter, methodFilter, statusFilter])
 
   const fetchRecords = async () => {
     try {
@@ -115,9 +118,18 @@ export default function PaymentsPage() {
   const filterRecords = () => {
     let filtered = records
 
+    // Filter by year and month
     if (monthFilter) {
-      filtered = filtered.filter(r => r.month === monthFilter)
+      const monthValue = `${selectedYear}-${String(monthFilter).padStart(2, '0')}`
+      filtered = filtered.filter(r => r.month === monthValue)
+    } else if (selectedYear) {
+      // If only year is selected, show all months for that year
+      filtered = filtered.filter(r => {
+        const [year] = r.month.split('-')
+        return parseInt(year) === selectedYear
+      })
     }
+    
     if (classFilter) {
       filtered = filtered.filter(r => r.class.id === classFilter)
     }
@@ -256,8 +268,52 @@ export default function PaymentsPage() {
     setShowEditModal(true)
   }
 
-  // Get unique months for filter
-  const uniqueMonths = Array.from(new Set(records.map(r => r.month))).sort().reverse()
+  // Get unique years and months from records
+  const uniqueMonthsByYear = records.reduce((acc, r) => {
+    const [year, month] = r.month.split('-')
+    const yearNum = parseInt(year)
+    const monthNum = parseInt(month)
+    if (!acc[yearNum]) {
+      acc[yearNum] = new Set<number>()
+    }
+    acc[yearNum].add(monthNum)
+    return acc
+  }, {} as Record<number, Set<number>>)
+
+  const availableYears = Object.keys(uniqueMonthsByYear).map(Number).sort((a, b) => b - a)
+  
+  // Get months for selected year
+  const monthsForSelectedYear = selectedYear && uniqueMonthsByYear[selectedYear]
+    ? Array.from(uniqueMonthsByYear[selectedYear]).sort((a, b) => b - a)
+    : []
+
+  // Month names
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ]
+
+  // Set initial year to the most recent year with records
+  useEffect(() => {
+    if (availableYears.length > 0 && !availableYears.includes(selectedYear)) {
+      setSelectedYear(availableYears[0])
+    }
+  }, [records])
+
+  const handleYearChange = (delta: number) => {
+    const currentIndex = availableYears.indexOf(selectedYear)
+    const newIndex = currentIndex + delta
+    if (newIndex >= 0 && newIndex < availableYears.length) {
+      setSelectedYear(availableYears[newIndex])
+      setMonthFilter('') // Reset month filter when changing year
+    }
+  }
+
+  const formatMonthDisplay = (monthStr: string) => {
+    const [year, month] = monthStr.split('-')
+    const monthNum = parseInt(month)
+    return `${monthNames[monthNum - 1]} ${year}`
+  }
 
   return (
     <div className="space-y-6">
@@ -274,6 +330,38 @@ export default function PaymentsPage() {
           Export CSV
         </Button>
       </div>
+
+      {/* Year Selector */}
+      {availableYears.length > 0 && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-center gap-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleYearChange(-1)}
+                disabled={availableYears.indexOf(selectedYear) === 0}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <div className="text-center">
+                <Label className="text-sm text-muted-foreground mb-1 block">Year</Label>
+                <div className="text-2xl font-bold text-[var(--foreground)]">
+                  {selectedYear}
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleYearChange(1)}
+                disabled={availableYears.indexOf(selectedYear) === availableYears.length - 1}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Filters */}
       <Card>
@@ -293,8 +381,10 @@ export default function PaymentsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All months</SelectItem>
-                  {uniqueMonths.map(m => (
-                    <SelectItem key={m} value={m}>{m}</SelectItem>
+                  {monthsForSelectedYear.map(monthNum => (
+                    <SelectItem key={monthNum} value={String(monthNum)}>
+                      {monthNames[monthNum - 1]}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -381,7 +471,7 @@ export default function PaymentsPage() {
                 <TableBody>
                   {filteredRecords.map((record) => (
                     <TableRow key={record.id}>
-                      <TableCell className="font-medium">{record.month}</TableCell>
+                      <TableCell className="font-medium">{formatMonthDisplay(record.month)}</TableCell>
                       <TableCell>
                         {record.student.firstName} {record.student.lastName}
                       </TableCell>
