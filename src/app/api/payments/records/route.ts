@@ -77,9 +77,49 @@ export async function PATCH(request: NextRequest) {
       )
     }
 
+    // Get the current record to check if status is changing to PAID
+    const currentRecord = await prisma.monthlyPaymentRecord.findUnique({
+      where: { id, orgId },
+      include: {
+        student: {
+          include: {
+            primaryParent: {
+              select: {
+                email: true,
+                name: true
+              }
+            }
+          }
+        },
+        class: {
+          select: {
+            name: true
+          }
+        },
+        org: {
+          select: {
+            name: true
+          }
+        }
+      }
+    })
+
+    if (!currentRecord) {
+      return NextResponse.json(
+        { error: 'Payment record not found' },
+        { status: 404 }
+      )
+    }
+
+    const wasPending = currentRecord.status === 'PENDING'
+    const isBeingMarkedPaid = status === 'PAID' && wasPending
+    const shouldSendEmail = isBeingMarkedPaid && 
+      (currentRecord.method === 'CASH' || currentRecord.method === 'BANK_TRANSFER') &&
+      currentRecord.student.primaryParent?.email
+
     const updateData: any = {}
     if (status) updateData.status = status
-    if (paidAt !== undefined) updateData.paidAt = paidAt ? new Date(paidAt) : null
+    if (paidAt !== undefined) updateData.paidAt = paidAt ? new Date(paidAt) : new Date()
     if (notes !== undefined) updateData.notes = notes
     if (reference !== undefined) updateData.reference = reference
 
@@ -102,6 +142,27 @@ export async function PATCH(request: NextRequest) {
         }
       }
     })
+
+    // Send email notification if payment was marked as paid manually (cash/bank transfer)
+    if (shouldSendEmail && currentRecord.student.primaryParent) {
+      try {
+        const { sendPaymentConfirmationEmail } = await import('@/lib/mail')
+        await sendPaymentConfirmationEmail({
+          to: currentRecord.student.primaryParent.email,
+          orgName: currentRecord.org.name,
+          studentName: `${currentRecord.student.firstName} ${currentRecord.student.lastName}`,
+          className: currentRecord.class.name,
+          month: currentRecord.month,
+          amount: currentRecord.amountP,
+          paymentMethod: currentRecord.method || 'Unknown',
+          reference: reference || currentRecord.reference
+        })
+        console.log(`✅ Payment confirmation email sent to ${currentRecord.student.primaryParent.email}`)
+      } catch (emailError) {
+        console.error('Error sending payment confirmation email:', emailError)
+        // Don't fail the request if email fails
+      }
+    }
 
     return NextResponse.json(record)
   } catch (error: any) {

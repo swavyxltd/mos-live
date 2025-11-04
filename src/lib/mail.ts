@@ -797,3 +797,146 @@ export async function sendStaffInvitation({
     text: `You've Been Invited\n\nYou've been invited to join ${orgName} as a ${roleLabel} on Madrasah OS. Click below to create your account:\n\n${safeSignupUrl}\n\nBest regards,\nThe Madrasah OS Team`
   })
 }
+
+export async function sendPaymentConfirmationEmail({
+  to,
+  orgName,
+  studentName,
+  className,
+  month,
+  amount,
+  paymentMethod,
+  reference
+}: {
+  to: string
+  orgName: string
+  studentName: string
+  className: string
+  month: string
+  amount: number
+  paymentMethod: string
+  reference?: string | null
+}) {
+  const amountFormatted = `£${(amount / 100).toFixed(2)}`
+  const methodLabel = paymentMethod === 'CASH' ? 'Cash' 
+    : paymentMethod === 'BANK_TRANSFER' ? 'Bank Transfer' 
+    : paymentMethod === 'STRIPE' ? 'Card Payment' 
+    : paymentMethod
+
+  return sendEmail({
+    to,
+    subject: `Payment Confirmation - ${orgName}`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; background-color: #f9fafb; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; padding: 60px 20px;">
+            <tr>
+              <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07); overflow: hidden; max-width: 600px;">
+                  <!-- Logo -->
+                  <tr>
+                    <td align="center" style="padding: 48px 40px 32px 40px;">
+                      <img src="${(process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'https://app.madrasah.io').replace(/\/$/, '')}/logo.png" alt="Madrasah OS" style="max-width: 198px; height: auto; display: block;" />
+                    </td>
+                  </tr>
+                  
+                  <!-- Content -->
+                  <tr>
+                    <td align="center" style="padding: 0 40px 48px 40px;">
+                      <h1 style="margin: 0 0 12px 0; font-size: 28px; font-weight: 600; color: #111827; line-height: 1.4; text-align: center;">
+                        Payment Confirmation
+                      </h1>
+                      <p style="margin: 0 0 40px 0; font-size: 16px; color: #6b7280; line-height: 1.6; text-align: center; max-width: 480px; margin-left: auto; margin-right: auto;">
+                        Assalamu alaikum!<br><br>This email confirms that your payment has been received and processed.
+                      </p>
+                      
+                      <!-- Invoice Details -->
+                      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; border-radius: 12px; padding: 24px; margin-bottom: 32px;">
+                        <tr>
+                          <td style="padding: 0 0 16px 0;">
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                              <tr>
+                                <td style="padding: 0 0 8px 0; font-size: 14px; color: #6b7280;">Student:</td>
+                                <td align="right" style="padding: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #111827;">${studentName}</td>
+                              </tr>
+                              <tr>
+                                <td style="padding: 0 0 8px 0; font-size: 14px; color: #6b7280;">Class:</td>
+                                <td align="right" style="padding: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #111827;">${className}</td>
+                              </tr>
+                              <tr>
+                                <td style="padding: 0 0 8px 0; font-size: 14px; color: #6b7280;">Month:</td>
+                                <td align="right" style="padding: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #111827;">${month}</td>
+                              </tr>
+                              <tr>
+                                <td style="padding: 0 0 8px 0; font-size: 14px; color: #6b7280;">Payment Method:</td>
+                                <td align="right" style="padding: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #111827;">${methodLabel}</td>
+                              </tr>
+                              ${reference ? `
+                              <tr>
+                                <td style="padding: 0 0 8px 0; font-size: 14px; color: #6b7280;">Reference:</td>
+                                <td align="right" style="padding: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #111827; font-family: monospace;">${reference}</td>
+                              </tr>
+                              ` : ''}
+                              <tr>
+                                <td style="padding: 16px 0 0 0; border-top: 2px solid #e5e7eb; font-size: 16px; font-weight: 600; color: #111827;">Amount Paid:</td>
+                                <td align="right" style="padding: 16px 0 0 0; border-top: 2px solid #e5e7eb; font-size: 20px; font-weight: 700; color: #059669;">${amountFormatted}</td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                      
+                      <!-- Thank you message -->
+                      <div style="background-color: #f0fdf4; border-left: 4px solid #22c55e; padding: 16px 20px; border-radius: 8px; margin-bottom: 32px;">
+                        <p style="margin: 0; font-size: 16px; font-weight: 600; color: #166534; text-align: center;">
+                          Jazakallahu Khairan
+                        </p>
+                        <p style="margin: 8px 0 0 0; font-size: 14px; color: #15803d; text-align: center;">
+                          Thank you for your payment. We appreciate your continued support.
+                        </p>
+                      </div>
+                      
+                      <!-- Footer Links -->
+                      <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td align="center" style="padding: 0; border-top: 1px solid #e5e7eb;">
+                            <table cellpadding="0" cellspacing="0" style="margin: 32px auto 0 auto;">
+                              <tr>
+                                <td align="center" style="padding: 0 16px;">
+                                  <a href="https://madrasah.io" style="font-size: 12px; color: #6b7280; text-decoration: none; line-height: 1.6;">
+                                    madrasah.io
+                                  </a>
+                                </td>
+                                <td style="padding: 0 16px;">
+                                  <span style="font-size: 12px; color: #d1d5db;">•</span>
+                                </td>
+                                <td align="center" style="padding: 0 16px;">
+                                  <a href="https://app.madrasah.io/support" style="font-size: 12px; color: #6b7280; text-decoration: none; line-height: 1.6;">
+                                    Support
+                                  </a>
+                                </td>
+                              </tr>
+                            </table>
+                            <p style="margin: 24px 0 0 0; font-size: 11px; color: #9ca3af; text-align: center;">
+                              © ${new Date().getFullYear()} Madrasah OS. All rights reserved.
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+      </html>
+    `,
+    text: `Payment Confirmation - ${orgName}\n\nAssalamu alaikum!\n\nThis email confirms that your payment has been received and processed.\n\nStudent: ${studentName}\nClass: ${className}\nMonth: ${month}\nPayment Method: ${methodLabel}\n${reference ? `Reference: ${reference}\n` : ''}Amount Paid: ${amountFormatted}\n\nJazakallahu Khairan\nThank you for your payment. We appreciate your continued support.\n\nBest regards,\n${orgName}`
+  })
+}

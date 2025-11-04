@@ -11,16 +11,15 @@ import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
 import { 
   Download, 
-  Search, 
   Filter, 
   CheckCircle, 
   Clock, 
   AlertCircle,
   Loader2,
   DollarSign,
-  Calendar,
-  User,
-  BookOpen
+  FileText,
+  Edit,
+  X
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
@@ -64,6 +63,7 @@ export default function PaymentRecordsPageClient() {
   const [editingNotes, setEditingNotes] = useState('')
   const [editingReference, setEditingReference] = useState('')
   const [markingPaid, setMarkingPaid] = useState(false)
+  const [savingNotes, setSavingNotes] = useState(false)
 
   useEffect(() => {
     fetchRecords()
@@ -77,13 +77,7 @@ export default function PaymentRecordsPageClient() {
   const fetchRecords = async () => {
     try {
       setLoading(true)
-      const params = new URLSearchParams()
-      if (monthFilter) params.append('month', monthFilter)
-      if (classFilter) params.append('classId', classFilter)
-      if (methodFilter) params.append('method', methodFilter)
-      if (statusFilter) params.append('status', statusFilter)
-
-      const response = await fetch(`/api/payments/records?${params.toString()}`)
+      const response = await fetch('/api/payments/records')
       if (!response.ok) {
         throw new Error('Failed to fetch payment records')
       }
@@ -151,7 +145,7 @@ export default function PaymentRecordsPageClient() {
         throw new Error('Failed to mark payment as paid')
       }
 
-      toast.success('Payment marked as paid')
+      toast.success('Payment marked as paid. Confirmation email sent to parent.')
       await fetchRecords()
       setShowEditModal(false)
       setSelectedRecord(null)
@@ -166,6 +160,7 @@ export default function PaymentRecordsPageClient() {
   const handleUpdateNotes = async () => {
     if (!selectedRecord) return
 
+    setSavingNotes(true)
     try {
       const response = await fetch('/api/payments/records', {
         method: 'PATCH',
@@ -188,6 +183,8 @@ export default function PaymentRecordsPageClient() {
     } catch (error) {
       console.error('Error updating notes:', error)
       toast.error('Failed to update notes')
+    } finally {
+      setSavingNotes(false)
     }
   }
 
@@ -205,7 +202,7 @@ export default function PaymentRecordsPageClient() {
       r.notes || ''
     ])
 
-    const csv = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n')
+    const csv = [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -215,6 +212,7 @@ export default function PaymentRecordsPageClient() {
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
+    toast.success('CSV exported successfully')
   }
 
   const getStatusBadge = (status: string) => {
@@ -255,6 +253,7 @@ export default function PaymentRecordsPageClient() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-xl font-semibold text-[var(--foreground)]">Payment Records</h2>
@@ -271,15 +270,15 @@ export default function PaymentRecordsPageClient() {
       {/* Filters */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Filter className="h-4 w-4" />
             Filters
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <Label htmlFor="month">Month</Label>
+              <Label htmlFor="month" className="text-sm">Month</Label>
               <Select value={monthFilter} onValueChange={setMonthFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="All months" />
@@ -293,7 +292,7 @@ export default function PaymentRecordsPageClient() {
               </Select>
             </div>
             <div>
-              <Label htmlFor="class">Class</Label>
+              <Label htmlFor="class" className="text-sm">Class</Label>
               <Select value={classFilter} onValueChange={setClassFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="All classes" />
@@ -307,7 +306,7 @@ export default function PaymentRecordsPageClient() {
               </Select>
             </div>
             <div>
-              <Label htmlFor="method">Payment Method</Label>
+              <Label htmlFor="method" className="text-sm">Payment Method</Label>
               <Select value={methodFilter} onValueChange={setMethodFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="All methods" />
@@ -321,7 +320,7 @@ export default function PaymentRecordsPageClient() {
               </Select>
             </div>
             <div>
-              <Label htmlFor="status">Status</Label>
+              <Label htmlFor="status" className="text-sm">Status</Label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="All statuses" />
@@ -343,16 +342,16 @@ export default function PaymentRecordsPageClient() {
         <CardHeader>
           <CardTitle>Payment Records ({filteredRecords.length})</CardTitle>
           <CardDescription>
-            View and manage monthly payment records
+            View and manage monthly payment records. Stripe payments are automatically marked as paid.
           </CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="flex items-center justify-center py-8">
+            <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : filteredRecords.length === 0 ? (
-            <div className="text-center py-8">
+            <div className="text-center py-12">
               <DollarSign className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground">No payment records found</p>
             </div>
@@ -364,12 +363,11 @@ export default function PaymentRecordsPageClient() {
                     <TableHead>Month</TableHead>
                     <TableHead>Student</TableHead>
                     <TableHead>Class</TableHead>
-                    <TableHead>Amount</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
                     <TableHead>Method</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Paid Date</TableHead>
-                    <TableHead>Reference</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -377,31 +375,23 @@ export default function PaymentRecordsPageClient() {
                     <TableRow key={record.id}>
                       <TableCell className="font-medium">{record.month}</TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                          {record.student.firstName} {record.student.lastName}
-                        </div>
+                        {record.student.firstName} {record.student.lastName}
                       </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <BookOpen className="h-4 w-4 text-muted-foreground" />
-                          {record.class.name}
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-medium">£{(record.amountP / 100).toFixed(2)}</TableCell>
+                      <TableCell>{record.class.name}</TableCell>
+                      <TableCell className="text-right font-medium">£{(record.amountP / 100).toFixed(2)}</TableCell>
                       <TableCell>{getMethodLabel(record.method)}</TableCell>
                       <TableCell>{getStatusBadge(record.status)}</TableCell>
                       <TableCell>
                         {record.paidAt ? format(new Date(record.paidAt), 'dd MMM yyyy') : '-'}
                       </TableCell>
-                      <TableCell className="font-mono text-sm">{record.reference || '-'}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
+                      <TableCell className="text-right">
+                        <div className="flex gap-2 justify-end">
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => openEditModal(record)}
                           >
+                            <Edit className="h-3 w-3 mr-1" />
                             Edit
                           </Button>
                           {record.status === 'PENDING' && 
@@ -410,6 +400,7 @@ export default function PaymentRecordsPageClient() {
                               size="sm"
                               onClick={() => handleMarkPaid(record)}
                             >
+                              <CheckCircle className="h-3 w-3 mr-1" />
                               Mark Paid
                             </Button>
                           )}
@@ -426,10 +417,22 @@ export default function PaymentRecordsPageClient() {
 
       {/* Edit Modal */}
       {showEditModal && selectedRecord && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-md mx-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md">
             <CardHeader>
-              <CardTitle>Edit Payment Record</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Edit Payment Record</CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setShowEditModal(false)
+                    setSelectedRecord(null)
+                  }}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
               <CardDescription>
                 {selectedRecord.student.firstName} {selectedRecord.student.lastName} - {selectedRecord.month}
               </CardDescription>
@@ -442,6 +445,7 @@ export default function PaymentRecordsPageClient() {
                   value={editingReference}
                   onChange={(e) => setEditingReference(e.target.value)}
                   placeholder="Enter payment reference number"
+                  className="mt-1"
                 />
               </div>
               <div>
@@ -452,6 +456,7 @@ export default function PaymentRecordsPageClient() {
                   onChange={(e) => setEditingNotes(e.target.value)}
                   rows={4}
                   placeholder="Add any notes about this payment"
+                  className="mt-1"
                 />
               </div>
               {selectedRecord.status === 'PENDING' && 
@@ -474,6 +479,9 @@ export default function PaymentRecordsPageClient() {
                       </>
                     )}
                   </Button>
+                  <p className="text-xs text-muted-foreground mt-2 text-center">
+                    A confirmation email will be sent to the parent
+                  </p>
                 </div>
               )}
               <div className="flex gap-2 pt-4">
@@ -489,9 +497,20 @@ export default function PaymentRecordsPageClient() {
                 </Button>
                 <Button
                   onClick={handleUpdateNotes}
+                  disabled={savingNotes}
                   className="flex-1"
                 >
-                  Save Notes
+                  {savingNotes ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="h-4 w-4 mr-2" />
+                      Save Notes
+                    </>
+                  )}
                 </Button>
               </div>
             </CardContent>
@@ -501,4 +520,3 @@ export default function PaymentRecordsPageClient() {
     </div>
   )
 }
-
