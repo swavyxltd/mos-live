@@ -296,17 +296,37 @@ export default function PaymentsPage() {
       }
       const studentData = await response.json()
       
-      // Format student data for the modal
+      // Format student data for the modal (matching the format used in students-list.tsx)
       const formattedStudent = {
-        ...studentData,
+        id: studentData.id,
         name: `${studentData.firstName} ${studentData.lastName}`,
+        firstName: studentData.firstName,
+        lastName: studentData.lastName,
         dateOfBirth: studentData.dateOfBirth ? new Date(studentData.dateOfBirth).toLocaleDateString() : '',
+        age: studentData.age || 0,
+        grade: studentData.grade || '',
+        address: studentData.address || '',
+        class: studentData.class || 'N/A',
+        teacher: studentData.teacher || 'N/A',
+        parentName: studentData.parentName || '',
+        parentEmail: studentData.parentEmail || '',
+        parentPhone: studentData.parentPhone || '',
+        emergencyContact: studentData.emergencyContact || '',
+        allergies: studentData.allergies || 'None',
+        medicalNotes: studentData.medicalNotes || '',
         enrollmentDate: studentData.enrollmentDate 
           ? new Date(studentData.enrollmentDate).toLocaleDateString() 
           : new Date(studentData.createdAt).toLocaleDateString(),
+        status: (studentData.status || 'ACTIVE') as 'ACTIVE' | 'INACTIVE',
+        isArchived: studentData.isArchived || false,
         archivedAt: studentData.archivedAt ? new Date(studentData.archivedAt).toLocaleDateString() : undefined,
         overallAttendance: studentData.attendanceRate || 0,
-        weeklyAttendance: [], // TODO: Fetch attendance data
+        weeklyAttendance: [] as Array<{
+          day: string
+          date: string
+          status: 'PRESENT' | 'ABSENT' | 'LATE' | 'NOT_SCHEDULED'
+          time?: string
+        }>,
         recentTrend: 'stable' as 'up' | 'down' | 'stable'
       }
       
