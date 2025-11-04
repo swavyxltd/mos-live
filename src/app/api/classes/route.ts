@@ -103,16 +103,26 @@ export async function GET(request: NextRequest) {
       orderBy: { name: 'asc' }
     })
     
+    console.log(`[API] Found ${classes.length} classes for org ${orgId}`)
     return NextResponse.json(classes)
   } catch (error: any) {
-    console.error('Get classes error:', error)
-    console.error('Error details:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name
+    console.error('[API] ❌ Error fetching classes:', error)
+    console.error('[API] Error details:', {
+      message: error?.message || 'Unknown error',
+      stack: error?.stack || 'No stack trace',
+      name: error?.name || 'Unknown',
+      cause: error?.cause || 'No cause'
     })
+    
+    // Return a more detailed error response
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch classes' },
+      { 
+        error: error?.message || 'Failed to fetch classes',
+        details: process.env.NODE_ENV === 'development' ? {
+          stack: error?.stack,
+          name: error?.name
+        } : undefined
+      },
       { status: 500 }
     )
   }
