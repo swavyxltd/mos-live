@@ -1,14 +1,16 @@
 export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
-import { requireRole, requireOrg } from '@/lib/roles'
 import { prisma } from '@/lib/prisma'
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await requireRole(['ADMIN', 'OWNER'])(request)
+    // Import requireRole dynamically to avoid circular dependency issues
+    const { requireRole: requireRoleFn, requireOrg: requireOrgFn } = await import('@/lib/roles')
+    
+    const session = await requireRoleFn(['ADMIN', 'OWNER'])(request)
     if (session instanceof NextResponse) return session
 
-    const orgId = await requireOrg(request)
+    const orgId = await requireOrgFn(request)
     if (orgId instanceof NextResponse) return orgId
 
     const body = await request.json()
