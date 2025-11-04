@@ -1,19 +1,21 @@
 export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { requireRole, requireOrg } from '@/lib/roles'
 
 // GET: Fetch payment records with filters
 export async function GET(request: NextRequest) {
   try {
     console.log('[API] GET /api/payments/records - Starting request')
     
-    if (!requireRole || typeof requireRole !== 'function') {
-      console.error('[API] requireRole is not a function:', typeof requireRole)
+    // Import requireRole dynamically to avoid circular dependency issues
+    const { requireRole: requireRoleFn, requireOrg: requireOrgFn } = await import('@/lib/roles')
+    
+    if (!requireRoleFn || typeof requireRoleFn !== 'function') {
+      console.error('[API] requireRole is not a function:', typeof requireRoleFn)
       return NextResponse.json({ error: 'Internal server error: requireRole not available' }, { status: 500 })
     }
     
-    const session = await requireRole(['ADMIN', 'OWNER'])(request)
+    const session = await requireRoleFn(['ADMIN', 'OWNER'])(request)
     if (session instanceof NextResponse) {
       console.log('[API] Session check failed:', session.status)
       return session
@@ -95,7 +97,10 @@ export async function GET(request: NextRequest) {
 // PATCH: Update payment record (mark as paid, add notes, etc.)
 export async function PATCH(request: NextRequest) {
   try {
-    const session = await requireRole(['ADMIN', 'OWNER'])(request)
+    // Import requireRole dynamically to avoid circular dependency issues
+    const { requireRole: requireRoleFn, requireOrg: requireOrgFn } = await import('@/lib/roles')
+    
+    const session = await requireRoleFn(['ADMIN', 'OWNER'])(request)
     if (session instanceof NextResponse) return session
 
     const orgId = await requireOrgFn(request)
