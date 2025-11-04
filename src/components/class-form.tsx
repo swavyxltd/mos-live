@@ -22,6 +22,7 @@ interface ClassFormData {
     endTime: string
   }
   teacherId: string
+  monthlyFee: number
 }
 
 interface ClassFormProps {
@@ -65,7 +66,8 @@ export function ClassForm({ initialData, isEditing = false, onSubmit, onCancel }
       startTime: initialData?.schedule?.startTime || '4:00 PM',
       endTime: initialData?.schedule?.endTime || '5:00 PM'
     },
-    teacherId: initialData?.teacherId || ''
+    teacherId: initialData?.teacherId || '',
+    monthlyFee: initialData?.monthlyFee || 0
   })
 
   const handleInputChange = (field: keyof ClassFormData, value: any) => {
@@ -194,6 +196,22 @@ export function ClassForm({ initialData, isEditing = false, onSubmit, onCancel }
                 placeholder="e.g., Room A, Hall 1"
               />
             </div>
+          </div>
+
+          {/* Monthly Fee */}
+          <div className="space-y-2">
+            <Label htmlFor="monthlyFee">Monthly Fee (£) *</Label>
+            <Input
+              id="monthlyFee"
+              type="number"
+              min="0"
+              step="0.01"
+              value={formData.monthlyFee}
+              onChange={(e) => handleInputChange('monthlyFee', parseFloat(e.target.value) || 0)}
+              placeholder="e.g., 25.00"
+              required
+            />
+            <p className="text-xs text-gray-500">Fixed monthly fee for this class. This will be used when creating payment records.</p>
           </div>
 
           {/* Schedule */}

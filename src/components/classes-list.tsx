@@ -94,15 +94,22 @@ export function ClassesList({ classes }: ClassesListProps) {
                 </div>
               </div>
               
-              {/* Student count */}
+              {/* Student count and Monthly Fee */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center text-sm text-gray-600">
                   <Users className="h-4 w-4 mr-2" />
                   <span>{cls._count.studentClasses} students</span>
                 </div>
-                <Badge variant="secondary">
-                  {cls._count.studentClasses > 0 ? 'Active' : 'Empty'}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  {(cls as any).monthlyFeeP && (
+                    <span className="text-sm font-medium text-gray-900">
+                      £{((cls as any).monthlyFeeP / 100).toFixed(2)}/month
+                    </span>
+                  )}
+                  <Badge variant="secondary">
+                    {cls._count.studentClasses > 0 ? 'Active' : 'Empty'}
+                  </Badge>
+                </div>
               </div>
               
               {/* Actions */}

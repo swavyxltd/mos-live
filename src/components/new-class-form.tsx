@@ -2,20 +2,44 @@
 
 import { ClassForm } from '@/components/class-form'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 
 export function NewClassForm() {
   const router = useRouter()
 
   const handleSubmit = async (data: any) => {
-    // In a real application, you would save to the database here
-    console.log('Creating new class:', data)
-    
-    // For demo purposes, we'll just simulate a successful creation
-    // In production, you would use prisma.class.create()
-    await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API call
-    
-    // Redirect back to classes page
-    router.push('/classes')
+    try {
+      // Convert schedule object to string format
+      const scheduleString = JSON.stringify({
+        days: data.schedule.days,
+        startTime: data.schedule.startTime,
+        endTime: data.schedule.endTime
+      })
+
+      const response = await fetch('/api/classes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: data.name,
+          description: data.description || null,
+          schedule: scheduleString,
+          teacherId: data.teacherId || null,
+          monthlyFeeP: data.monthlyFee || 0
+        })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to create class')
+      }
+
+      toast.success('Class created successfully')
+      router.push('/classes')
+    } catch (error: any) {
+      console.error('Error creating class:', error)
+      toast.error(error.message || 'Failed to create class')
+      throw error
+    }
   }
 
   const handleCancel = () => {

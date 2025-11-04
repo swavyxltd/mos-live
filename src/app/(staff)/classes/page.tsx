@@ -22,7 +22,14 @@ export default async function ClassesPage() {
       orgId: org.id,
       isArchived: false
     },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      schedule: true,
+      teacherId: true,
+      monthlyFeeP: true,
+      createdAt: true,
       teacher: {
         select: { name: true, email: true }
       },

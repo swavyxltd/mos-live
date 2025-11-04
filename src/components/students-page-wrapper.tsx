@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button'
 import { Plus, Users, Calendar, Heart, AlertTriangle, Archive, ArchiveRestore } from 'lucide-react'
 import { StudentsPageClient } from '@/components/students-page-client'
 import { AddStudentModal } from '@/components/add-student-modal'
-import { AddStudentSuccessModal } from '@/components/add-student-success-modal'
 import { RestrictedAction } from '@/components/restricted-action'
 
 interface Student {
@@ -50,33 +49,16 @@ interface StudentsPageWrapperProps {
 export function StudentsPageWrapper({ initialStudents, classes }: StudentsPageWrapperProps) {
   const [students, setStudents] = useState<Student[]>(initialStudents)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
-  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false)
-  const [newStudentData, setNewStudentData] = useState<any>(null)
   const [showArchived, setShowArchived] = useState(false)
 
-  const handleAddStudent = (studentData: any) => {
-    // Add the new student to the list
-    setStudents(prev => [...prev, studentData])
-    
-    // Store student data for success modal
-    setNewStudentData(studentData)
-    
-    // Close add modal and show success modal
+  const handleAddStudent = async (studentData: any) => {
+    // Close add modal
     setIsAddModalOpen(false)
-    setIsSuccessModalOpen(true)
+    
+    // Refresh the page to get updated student list
+    window.location.reload()
   }
 
-  const handleSendInvite = () => {
-    // TODO: Implement send invite email functionality
-    console.log('Send invite email to:', newStudentData?.parentEmail)
-    // For now, just show a placeholder message
-    alert('Invite email functionality will be configured later')
-  }
-
-  const handleCloseSuccessModal = () => {
-    setIsSuccessModalOpen(false)
-    setNewStudentData(null)
-  }
 
   const handleStudentArchiveChange = (id: string, isArchived: boolean) => {
     setStudents(prevStudents => 
@@ -205,16 +187,6 @@ export function StudentsPageWrapper({ initialStudents, classes }: StudentsPageWr
         classes={classes}
       />
 
-      {/* Success Modal */}
-      {newStudentData && (
-        <AddStudentSuccessModal
-          isOpen={isSuccessModalOpen}
-          onClose={handleCloseSuccessModal}
-          onSendInvite={handleSendInvite}
-          studentName={`${newStudentData.firstName} ${newStudentData.lastName}`}
-          parentEmail={newStudentData.parentEmail}
-        />
-      )}
     </div>
   )
 }
