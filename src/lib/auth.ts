@@ -7,36 +7,64 @@ import bcrypt from 'bcryptjs'
 
 // Helper function to get user role hints
 async function getUserRoleHints(userId: string) {
-  // Get user's organization memberships
-  const memberships = await prisma.userOrgMembership.findMany({
-    where: { userId },
-    include: { org: true }
-  })
-  
-  const user = await prisma.user.findUnique({
-    where: { id: userId }
-  })
-  
-  const isOwner = user?.isSuperAdmin || false
-  const orgAdminOf: string[] = []
-  const orgStaffOf: string[] = []
-  let isParent = false
-  
-  for (const membership of memberships) {
-    if (membership.role === 'ADMIN') {
-      orgAdminOf.push(membership.orgId)
-    } else if (['STAFF', 'ADMIN'].includes(membership.role)) {
-      orgStaffOf.push(membership.orgId)
-    } else if (membership.role === 'PARENT') {
-      isParent = true
+  try {
+    // Get user's organization memberships
+    // Filter out deactivated organizations during role hint calculation
+    // This allows users to authenticate, but layouts will block access later
+    const memberships = await prisma.userOrgMembership.findMany({
+      where: { userId },
+      include: { 
+        org: {
+          select: {
+            id: true,
+            status: true
+          }
+        }
+      }
+    })
+    
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    })
+    
+    const isOwner = user?.isSuperAdmin || false
+    const orgAdminOf: string[] = []
+    const orgStaffOf: string[] = []
+    let isParent = false
+    
+    // Only include active organizations in role hints
+    // This allows authentication to succeed, but layouts will block deactivated orgs
+    for (const membership of memberships) {
+      // Skip deactivated organizations or if org is null
+      if (!membership.org || membership.org.status === 'DEACTIVATED') {
+        continue
+      }
+      
+      if (membership.role === 'ADMIN') {
+        orgAdminOf.push(membership.orgId)
+      } else if (['STAFF', 'ADMIN'].includes(membership.role)) {
+        orgStaffOf.push(membership.orgId)
+      } else if (membership.role === 'PARENT') {
+        isParent = true
+      }
     }
-  }
-  
-  return {
-    isOwner,
-    orgAdminOf,
-    orgStaffOf,
-    isParent
+    
+    return {
+      isOwner,
+      orgAdminOf,
+      orgStaffOf,
+      isParent
+    }
+  } catch (error) {
+    console.error('Error getting user role hints:', error)
+    // Return default role hints on error to allow authentication
+    // Layouts will handle blocking if needed
+    return {
+      isOwner: false,
+      orgAdminOf: [],
+      orgStaffOf: [],
+      isParent: false
+    }
   }
 }
 
