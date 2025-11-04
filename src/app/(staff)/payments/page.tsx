@@ -22,6 +22,7 @@ import {
   X
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { StudentDetailModal } from '@/components/student-detail-modal'
 
 interface PaymentRecord {
   id: string
@@ -63,6 +64,11 @@ export default function PaymentsPage() {
   const [editingReference, setEditingReference] = useState('')
   const [markingPaid, setMarkingPaid] = useState(false)
   const [savingNotes, setSavingNotes] = useState(false)
+
+  // Student detail modal state
+  const [selectedStudent, setSelectedStudent] = useState<any | null>(null)
+  const [showStudentModal, setShowStudentModal] = useState(false)
+  const [loadingStudent, setLoadingStudent] = useState(false)
 
   useEffect(() => {
     fetchRecords()
@@ -281,6 +287,39 @@ export default function PaymentsPage() {
     return `${monthNames[monthNum - 1]} ${year}`
   }
 
+  const handleViewStudent = async (studentId: string) => {
+    try {
+      setLoadingStudent(true)
+      const response = await fetch(`/api/students/${studentId}`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch student details')
+      }
+      const studentData = await response.json()
+      
+      // Format student data for the modal
+      const formattedStudent = {
+        ...studentData,
+        name: `${studentData.firstName} ${studentData.lastName}`,
+        dateOfBirth: studentData.dateOfBirth ? new Date(studentData.dateOfBirth).toLocaleDateString() : '',
+        enrollmentDate: studentData.enrollmentDate 
+          ? new Date(studentData.enrollmentDate).toLocaleDateString() 
+          : new Date(studentData.createdAt).toLocaleDateString(),
+        archivedAt: studentData.archivedAt ? new Date(studentData.archivedAt).toLocaleDateString() : undefined,
+        overallAttendance: studentData.attendanceRate || 0,
+        weeklyAttendance: [], // TODO: Fetch attendance data
+        recentTrend: 'stable' as 'up' | 'down' | 'stable'
+      }
+      
+      setSelectedStudent(formattedStudent)
+      setShowStudentModal(true)
+    } catch (error) {
+      console.error('Error fetching student:', error)
+      toast.error('Failed to load student details')
+    } finally {
+      setLoadingStudent(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -407,7 +446,13 @@ export default function PaymentsPage() {
                     <TableRow key={record.id}>
                       <TableCell className="font-medium">{formatMonthDisplay(record.month)}</TableCell>
                       <TableCell>
-                        {record.student.firstName} {record.student.lastName}
+                        <button
+                          onClick={() => handleViewStudent(record.student.id)}
+                          className="text-left hover:text-blue-600 hover:underline transition-colors cursor-pointer font-medium"
+                          disabled={loadingStudent}
+                        >
+                          {record.student.firstName} {record.student.lastName}
+                        </button>
                       </TableCell>
                       <TableCell>{record.class.name}</TableCell>
                       <TableCell className="text-right font-medium">£{(record.amountP / 100).toFixed(2)}</TableCell>
@@ -556,6 +601,17 @@ export default function PaymentsPage() {
           </Card>
         </div>
       )}
+
+      {/* Student Detail Modal */}
+      <StudentDetailModal
+        student={selectedStudent}
+        isOpen={showStudentModal}
+        onClose={() => {
+          setShowStudentModal(false)
+          setSelectedStudent(null)
+        }}
+        classes={classes}
+      />
     </div>
   )
 }
