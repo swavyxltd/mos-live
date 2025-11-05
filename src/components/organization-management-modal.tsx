@@ -1121,8 +1121,6 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
                   <ul className="text-sm text-yellow-700 space-y-1">
                     <li>• Pausing or suspending will lock ALL admin, staff, and teacher accounts</li>
                     <li>• Students and parents will still have access to their accounts</li>
-                    <li>• Deactivating will completely block ALL access (admin, staff, parent, teacher)</li>
-                    <li>• Deactivating will stop all billing and send a farewell email</li>
                     <li>• You can reactivate the account at any time</li>
                     <li>• Suspended accounts require manual review to reactivate</li>
                   </ul>
