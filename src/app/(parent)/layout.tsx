@@ -39,8 +39,8 @@ export default async function ParentLayout({
     redirect('/auth/signin?portal=parent&error=NoOrganization')
   }
 
-  // Check if organization is deactivated
-  if (org.status === 'DEACTIVATED') {
+  // Check if organization is deactivated (handle null/undefined status)
+  if (org.status && org.status === 'DEACTIVATED') {
     redirect('/auth/account-deactivated')
   }
   

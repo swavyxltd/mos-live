@@ -26,9 +26,9 @@ export default async function StaffLayout({
         console.log(`[StaffLayout] Found ${userOrgs?.length || 0} organizations for user`)
         
         if (userOrgs && Array.isArray(userOrgs) && userOrgs.length > 0) {
-          // Filter out deactivated organizations
+          // Filter out deactivated organizations (safely handle null/undefined status)
           const activeOrgs = userOrgs.filter((uo: any) => 
-            uo && uo.org && uo.org.status !== 'DEACTIVATED'
+            uo && uo.org && uo.org.status && uo.org.status !== 'DEACTIVATED'
           )
           
           if (activeOrgs.length === 0) {
@@ -75,8 +75,8 @@ export default async function StaffLayout({
     redirect('/auth/signin?error=NoOrganization')
   }
 
-  // Check if organization is deactivated
-  if (org.status === 'DEACTIVATED') {
+  // Check if organization is deactivated (handle null/undefined status)
+  if (org.status && org.status === 'DEACTIVATED') {
     redirect('/auth/account-deactivated')
   }
   
