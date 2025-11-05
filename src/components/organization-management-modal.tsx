@@ -34,8 +34,7 @@ import {
   X,
   Plus,
   Search,
-  Filter,
-  XCircle
+  Filter
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -378,40 +377,6 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
     }
   }
 
-  const handleDeactivateAccount = async () => {
-    if (!organization) return
-    
-    const confirmed = confirm(`⚠️ Are you sure you want to DEACTIVATE this organization?\n\nThis will:\n- Completely block ALL access (admin, staff, parent, teacher accounts)\n- Stop all billing\n- Send a farewell email to organization admins\n\nThis action is irreversible without owner intervention.`)
-    if (!confirmed) return
-    
-    setIsChangingStatus(true)
-    try {
-      const response = await fetch(`/api/owner/orgs/${organization.id}/deactivate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          reason: statusChangeReason || 'Account deactivated by platform administrator'
-        }),
-      })
-
-      const result = await response.json()
-      
-      if (result.success) {
-        toast.success(`Account Deactivated Successfully! ${result.message}. ${result.affectedUsers} user accounts have been blocked.`)
-        setStatusChangeReason('')
-        onClose() // Close modal to refresh data
-      } else {
-        toast.error(`Failed to deactivate account: ${result.error}`)
-      }
-    } catch (error) {
-      console.error('Error deactivating account:', error)
-      toast.error('Error deactivating account. Please try again.')
-    } finally {
-      setIsChangingStatus(false)
-    }
-  }
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Manage ${organization.name}`} size="xl">
@@ -1148,20 +1113,6 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
                       </Button>
                     </div>
 
-                    <div className="flex items-center justify-between p-4 border-2 border-red-300 rounded-lg bg-red-50">
-                      <div>
-                        <h3 className="font-medium text-red-900">Deactivate Account</h3>
-                        <p className="text-sm text-red-700">Completely block all access, stop billing, and send farewell email</p>
-                      </div>
-                      <Button 
-                        variant="destructive" 
-                        onClick={handleDeactivateAccount}
-                        disabled={isChangingStatus || organization?.status === 'DEACTIVATED'}
-                      >
-                        <XCircle className="h-4 w-4 mr-2" />
-                        {isChangingStatus ? 'Deactivating...' : 'Deactivate'}
-                      </Button>
-                    </div>
                   </div>
                 </div>
 

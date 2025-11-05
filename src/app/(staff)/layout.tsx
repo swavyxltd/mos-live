@@ -27,20 +27,10 @@ export default async function StaffLayout({
         console.log(`[StaffLayout] Found ${userOrgs?.length || 0} organizations for user`)
         
         if (userOrgs && Array.isArray(userOrgs) && userOrgs.length > 0) {
-          // Filter out deactivated organizations (safely handle null/undefined status)
-          const activeOrgs = userOrgs.filter((uo: any) => 
-            uo && uo.org && uo.org.status && uo.org.status !== 'DEACTIVATED'
-          )
-          
-          if (activeOrgs.length === 0) {
-            console.error(`[StaffLayout] User only has deactivated organizations`)
-            redirect('/auth/account-deactivated')
-          }
-          
           // Use the first organization (or prioritize admin orgs)
           // userOrgs is an array of UserOrgMembership objects with included org
-          const adminOrg = activeOrgs.find((uo: any) => uo && uo.role === 'ADMIN')
-          const selectedOrg = adminOrg || activeOrgs[0]
+          const adminOrg = userOrgs.find((uo: any) => uo && uo.role === 'ADMIN')
+          const selectedOrg = adminOrg || userOrgs[0]
           
           console.log(`[StaffLayout] Selected org:`, selectedOrg?.org?.id, selectedOrg?.org?.name)
           
@@ -74,11 +64,6 @@ export default async function StaffLayout({
   // Ensure org is not null and has required fields before proceeding
   if (!org || !org.id || !org.name) {
     redirect('/auth/signin?error=NoOrganization')
-  }
-
-  // Check if organization is deactivated (handle null/undefined status)
-  if (org.status && org.status === 'DEACTIVATED') {
-    redirect('/auth/account-deactivated')
   }
   
   let userRole: Role | null = null
@@ -119,7 +104,7 @@ export default async function StaffLayout({
     <Page
       user={session.user}
       org={orgForPage}
-      userRole={userRole}
+      userRole={userRole as string}
       staffSubrole={staffSubrole}
       title={staffSubrole === 'FINANCE_OFFICER' ? "Finance Dashboard" : "Staff Portal"}
       breadcrumbs={[{ label: staffSubrole === 'FINANCE_OFFICER' ? 'Finance Dashboard' : 'Dashboard' }]}

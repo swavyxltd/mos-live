@@ -86,10 +86,6 @@ export async function getActiveOrg(userId?: string) {
         suspendedReason: true,
         pausedAt: true,
         pausedReason: true,
-        deactivatedAt: true,
-        deactivatedReason: true,
-        cancellationRequestedAt: true,
-        cancellationReason: true,
         lastPaymentDate: true,
         paymentFailureCount: true,
         autoSuspendEnabled: true,
@@ -117,16 +113,7 @@ export async function getUserOrgs(userId: string) {
   return prisma.userOrgMembership.findMany({
     where: { userId },
     include: {
-      org: {
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          status: true, // Explicitly include status
-          createdAt: true,
-          updatedAt: true
-        }
-      }
+      org: true
     }
   })
 }

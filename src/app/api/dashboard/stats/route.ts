@@ -22,14 +22,6 @@ export async function GET(request: NextRequest) {
         { status: 404 }
       )
     }
-    
-    // Check if organization is deactivated
-    if (org.status && org.status === 'DEACTIVATED') {
-      return NextResponse.json(
-        { error: 'This organization has been deactivated' },
-        { status: 403 }
-      )
-    }
 
     const now = new Date()
     const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1)

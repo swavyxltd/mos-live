@@ -9,15 +9,12 @@ import bcrypt from 'bcryptjs'
 async function getUserRoleHints(userId: string) {
   try {
     // Get user's organization memberships
-    // Filter out deactivated organizations during role hint calculation
-    // This allows users to authenticate, but layouts will block access later
     const memberships = await prisma.userOrgMembership.findMany({
       where: { userId },
       include: { 
         org: {
           select: {
-            id: true,
-            status: true
+            id: true
           }
         }
       }
@@ -32,11 +29,10 @@ async function getUserRoleHints(userId: string) {
     const orgStaffOf: string[] = []
     let isParent = false
     
-        // Only include active organizations in role hints
-        // This allows authentication to succeed, but layouts will block deactivated orgs
+        // Include organizations in role hints
         for (const membership of memberships) {
-          // Skip deactivated organizations or if org is null (safely handle null/undefined status)
-          if (!membership.org || !membership.org.status || membership.org.status === 'DEACTIVATED') {
+          // Skip if org is null
+          if (!membership.org) {
             continue
           }
       

@@ -361,34 +361,6 @@ export default function SettingsPage() {
   }
 
   // Handle CSV export generation with month/year filters for subscription payments
-  const handleRequestAccountCancellation = async () => {
-    if (!confirm('Are you sure you want to request account cancellation? This will send a request to our support team.')) {
-      return
-    }
-
-    setLoading(true)
-    try {
-      const response = await fetch('/api/settings/cancel-account', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          reason: 'User requested account cancellation'
-        })
-      })
-      
-      if (response.ok) {
-        toast.success('Cancellation request sent. Our support team will contact you shortly.')
-      } else {
-        const data = await response.json()
-        throw new Error(data.error || 'Failed to send cancellation request')
-      }
-    } catch (error) {
-      console.error('Error requesting account cancellation:', error)
-      toast.error('Failed to send cancellation request. Please try again.')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleGenerateReport = async (month: number, year: number) => {
     try {
@@ -598,51 +570,6 @@ export default function SettingsPage() {
                 Use line breaks to separate different days/times
               </p>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Account Cancellation */}
-        <Card className="border-red-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-red-700">
-              <AlertTriangle className="h-5 w-5" />
-              Account Management
-            </CardTitle>
-            <CardDescription>
-              Request to close your Madrasah OS account. This will send a cancellation request to our support team. We'll reach out to discuss your needs before any action is taken.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-red-900 mb-1">Important Notice</h3>
-                  <p className="text-sm text-red-700">
-                    Requesting account closure will send a cancellation request to our support team. We'll reach out to understand your reasons and see if we can help. 
-                    Your account will remain active until we speak with you. If you still wish to proceed after our conversation, we can deactivate your account.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <Button 
-              variant="destructive" 
-              onClick={handleRequestAccountCancellation}
-              disabled={loading}
-              className="w-full"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <XCircle className="h-4 w-4 mr-2" />
-                  Request Account Cancellation
-                </>
-              )}
-            </Button>
           </CardContent>
         </Card>
         </TabsContent>
