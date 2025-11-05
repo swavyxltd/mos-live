@@ -68,10 +68,11 @@ export default async function ParentLayout({
   }
   
   // Ensure org has all required fields for Page component
-  const orgForPage = org.id && org.name && org.slug ? {
+  // slug is optional - if missing, use org name as fallback
+  const orgForPage = org.id && org.name ? {
     id: org.id,
     name: org.name,
-    slug: org.slug
+    slug: org.slug || org.name.toLowerCase().replace(/\s+/g, '-')
   } : undefined
   
   return (
