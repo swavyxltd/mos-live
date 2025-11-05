@@ -942,11 +942,6 @@ export async function sendPaymentConfirmationEmail({
 }
                       </p>
                       
-                      <p style="margin: 32px 0 0 0; font-size: 16px; color: #6b7280; line-height: 1.6; text-align: center;">
-                        Barakallahu feekum,<br/>
-                        <strong>The Madrasah OS Team</strong>
-                      </p>
-                      
                       <!-- Footer Links -->
                       <table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 48px; border-top: 1px solid #e5e7eb; padding-top: 32px;">
                         <tr>
