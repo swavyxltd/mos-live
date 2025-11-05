@@ -55,7 +55,14 @@ export default async function ParentLayout({
     redirect('/auth/account-deactivated')
   }
   
-  const userRole = await getUserRoleInOrg(session.user.id, org.id)
+  let userRole = null
+  try {
+    userRole = await getUserRoleInOrg(session.user.id, org.id)
+  } catch (error: any) {
+    console.error('[ParentLayout] Error getting user role:', error?.message || error)
+    redirect('/auth/signin?portal=parent&error=NotParent')
+  }
+  
   if (userRole !== 'PARENT') {
     redirect('/auth/signin?portal=parent&error=NotParent')
   }
