@@ -6,6 +6,7 @@ import { Sidebar } from './sidebar'
 import { Topbar } from './topbar'
 import { OverduePaymentBanner } from '@/components/overdue-payment-banner'
 import { PaymentRequiredBanner } from '@/components/payment-required-banner'
+import { MaintenanceNotificationBanner } from '@/components/maintenance-notification-banner'
 
 interface PageProps {
   children: React.ReactNode
@@ -35,6 +36,7 @@ export function Page({ children, user, org, userRole, staffSubrole, title, bread
         <Topbar title={title} breadcrumbs={breadcrumbs} user={user} userRole={userRole} />
         <main className="py-6">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <MaintenanceNotificationBanner />
             {userRole === 'PARENT' && <OverduePaymentBanner />}
             {(userRole === 'ADMIN' || userRole === 'STAFF') && <PaymentRequiredBanner />}
             {children}

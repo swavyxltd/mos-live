@@ -48,17 +48,32 @@ export async function sendEmail({
   }
 
   try {
-    // Trim any whitespace/newlines from RESEND_FROM (common issue from env vars)
-    const fromAddress = (process.env.RESEND_FROM || 'Madrasah OS <noreply@madrasah.io>').trim()
+    // Get platform settings for email configuration
+    const { getPlatformSettings } = await import('@/lib/platform-settings')
+    const platformSettings = await getPlatformSettings()
+    
+    // Use platform settings for from address, fallback to env var, then default
+    const fromAddress = (platformSettings?.emailFromAddress || process.env.RESEND_FROM || 'Madrasah OS <noreply@madrasah.io>').trim()
+    
+    // Resend API key is managed in Vercel environment variables
+    const apiKey = process.env.RESEND_API_KEY
+    
+    // Create Resend instance with the API key
+    const resendInstance = apiKey ? new Resend(apiKey) : null
+    
+    if (!resendInstance) {
+      throw new Error('Resend API key not configured')
+    }
+    
     console.log('📧 Sending email via Resend:', {
       from: fromAddress,
       to: Array.isArray(to) ? to : [to],
       subject,
-      hasApiKey: !!process.env.RESEND_API_KEY,
+      hasApiKey: !!apiKey,
       isDemoMode: isDemoMode()
     })
     
-    const { data, error } = await resend!.emails.send({
+    const { data, error } = await resendInstance.emails.send({
       from: fromAddress,
       to: Array.isArray(to) ? to : [to],
       subject,
@@ -237,11 +252,16 @@ export async function sendPasswordResetEmail({
   // Escape any HTML in the URL to prevent XSS (but preserve the URL structure)
   const escapedResetUrl = safeResetUrl.replace(/&/g, '&amp;')
   
+  // Get logo URL from platform settings
+  const { getLogoUrlForEmail } = await import('@/lib/mail-helpers')
+  const logoUrl = await getLogoUrlForEmail()
+  
   console.log('📧 Password reset email:', {
     to,
     originalUrl: resetUrl,
     safeUrl: safeResetUrl,
-    escapedUrl: escapedResetUrl
+    escapedUrl: escapedResetUrl,
+    logoUrl
   })
   
   return sendEmail({
@@ -262,7 +282,7 @@ export async function sendPasswordResetEmail({
                   <!-- Logo -->
                   <tr>
                     <td align="center" style="padding: 48px 40px 32px 40px;">
-                      <img src="${(process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'https://app.madrasah.io').replace(/\/$/, '')}/logo.png" alt="Madrasah OS" style="max-width: 198px; height: auto; display: block;" />
+                      <img src="${logoUrl}" alt="Madrasah OS" style="max-width: 198px; height: auto; display: block;" />
                     </td>
                   </tr>
                   

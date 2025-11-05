@@ -6,8 +6,8 @@ import { getToken } from 'next-auth/jwt'
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   
-  // Allow auth routes and API routes to pass through
-  if (pathname.startsWith('/auth') || pathname.startsWith('/api') || pathname.startsWith('/_next')) {
+  // Allow auth routes, API routes, and maintenance page to pass through
+  if (pathname.startsWith('/auth') || pathname.startsWith('/api') || pathname.startsWith('/_next') || pathname.startsWith('/maintenance')) {
     return NextResponse.next()
   }
   

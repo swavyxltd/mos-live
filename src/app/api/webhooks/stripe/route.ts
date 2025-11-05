@@ -72,6 +72,90 @@ export async function POST(request: NextRequest) {
 async function handlePaymentIntentSucceeded(paymentIntent: any) {
   const { metadata } = paymentIntent
   
+  // Handle platform overdue payment
+  if (metadata.type === 'platform_overdue' && metadata.orgId && metadata.invoiceId) {
+    try {
+      // Pay the invoice using the payment method from the payment intent
+      const invoice = await stripe.invoices.retrieve(metadata.invoiceId)
+      
+      // If invoice is not paid yet, pay it using the payment intent's payment method
+      if (invoice.status !== 'paid') {
+        await stripe.invoices.pay(metadata.invoiceId, {
+          payment_method: paymentIntent.payment_method
+        })
+      }
+
+      // Get updated subscription status
+      const subscription = invoice.subscription 
+        ? await stripe.subscriptions.retrieve(invoice.subscription as string)
+        : null
+      
+      const subscriptionStatus = subscription?.status || 'active'
+
+      // Update billing record
+      const billing = await prisma.platformOrgBilling.findUnique({
+        where: { orgId: metadata.orgId }
+      })
+
+      if (billing) {
+        await prisma.platformOrgBilling.update({
+          where: { id: billing.id },
+          data: {
+            subscriptionStatus,
+            lastBilledAt: new Date()
+          }
+        })
+      }
+
+      // Update org status if it was suspended
+      const org = await prisma.org.findUnique({
+        where: { id: metadata.orgId },
+        select: { status: true }
+      })
+
+      if (org?.status === 'SUSPENDED') {
+        await prisma.org.update({
+          where: { id: metadata.orgId },
+          data: {
+            status: 'ACTIVE',
+            suspendedAt: null,
+            suspendedReason: null,
+            paymentFailureCount: 0,
+            lastPaymentDate: new Date()
+          }
+        })
+      } else {
+        await prisma.org.update({
+          where: { id: metadata.orgId },
+          data: {
+            lastPaymentDate: new Date(),
+            paymentFailureCount: 0
+          }
+        })
+      }
+
+      // Create audit log
+      await prisma.auditLog.create({
+        data: {
+          orgId: metadata.orgId,
+          action: 'PLATFORM_BILLING_OVERDUE_PAID',
+          targetType: 'PlatformOrgBilling',
+          targetId: billing?.id,
+          data: JSON.stringify({
+            paymentIntentId: paymentIntent.id,
+            invoiceId: metadata.invoiceId,
+            amount: paymentIntent.amount,
+            subscriptionStatus
+          })
+        }
+      })
+    } catch (error: any) {
+      console.error('Error processing platform overdue payment:', error)
+    }
+    return
+  }
+  
+  // Handle parent invoice payment
   if (metadata.orgId && metadata.parentUserId && metadata.invoiceId) {
     // Update payment record
     await prisma.payment.updateMany({

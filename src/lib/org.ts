@@ -16,7 +16,7 @@ async function resolveUserId(userId?: string): Promise<string | null> {
 }
 
 export async function getActiveOrgId(userId?: string): Promise<string | null> {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const cookieOrgId = cookieStore.get(ORG_COOKIE_NAME)?.value ?? null
 
   if (cookieOrgId) {
@@ -44,7 +44,7 @@ export async function getActiveOrgId(userId?: string): Promise<string | null> {
 }
 
 export async function setActiveOrgId(orgId: string): Promise<void> {
-  const cookieStore = cookies() as unknown as {
+  const cookieStore = await cookies() as unknown as {
     set?: (name: string, value: string, options: {
       httpOnly: boolean
       secure: boolean

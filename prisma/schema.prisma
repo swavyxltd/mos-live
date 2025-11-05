@@ -483,6 +483,52 @@ model PlatformOrgBilling {
   org Org @relation(fields: [orgId], references: [id], onDelete: Cascade)
 }
 
+model PlatformSettings {
+  id                    String   @id @default(cuid())
+  
+  // Platform Configuration
+  defaultTimezone       String   @default("Europe/London")
+  trialPeriodDays       Int      @default(14)
+  
+  // Branding
+  logoUrl               String?
+  faviconUrl            String?
+  
+  // Email Configuration
+  resendApiKey          String?
+  emailFromAddress      String?  @default("Madrasah OS <noreply@madrasah.io>")
+  
+  // Maintenance
+  maintenanceMode       Boolean  @default(false)
+  maintenanceMessage    String?
+  scheduledMaintenanceAt DateTime? // When maintenance is scheduled to start
+  
+  // Billing Settings
+  basePricePerStudent   Int      @default(100) // in pence (£1.00)
+  billingDayOfMonth     Int      @default(1) // 1-31
+  gracePeriodDays       Int      @default(14)
+  autoBillingEnabled     Boolean  @default(true)
+  billingNotificationsEnabled Boolean @default(true)
+  
+  // Stripe Configuration
+  stripePublishableKey  String?
+  stripeSecretKey       String?
+  stripeWebhookSecret   String?
+  stripeTestMode        Boolean  @default(true)
+  
+  // Security
+  passwordMinLength     Int      @default(8)
+  passwordRequireUppercase Boolean @default(true)
+  passwordRequireLowercase Boolean @default(true)
+  passwordRequireNumbers Boolean @default(true)
+  passwordRequireSpecial Boolean @default(false)
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  @@map("platform_settings")
+}
+
 model Application {
   id                 String    @id @default(cuid())
   orgId              String

@@ -3,6 +3,7 @@ import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { getActiveOrg, getUserRoleInOrg, getUserOrgs, setActiveOrgId } from '@/lib/org'
 import { Page } from '@/components/shell/page'
+import { getPlatformSettings } from '@/lib/platform-settings'
 
 export default async function ParentLayout({
   children,
@@ -13,6 +14,14 @@ export default async function ParentLayout({
   
   if (!session?.user?.id) {
     redirect('/auth/signin?portal=parent')
+  }
+
+  // Check maintenance mode - owners can bypass
+  if (!session.user.isSuperAdmin) {
+    const settings = await getPlatformSettings()
+    if (settings?.maintenanceMode) {
+      redirect('/maintenance')
+    }
   }
   
   let org = await getActiveOrg(session.user.id)

@@ -5,6 +5,7 @@ import { getActiveOrg, getUserRoleInOrg, getUserOrgs, setActiveOrgId } from '@/l
 import { Page } from '@/components/shell/page'
 import { StaffLayoutWrapper } from '@/components/staff-layout-wrapper'
 import { Role } from '@prisma/client'
+import { getPlatformSettings } from '@/lib/platform-settings'
 
 export default async function StaffLayout({
   children,
@@ -15,6 +16,14 @@ export default async function StaffLayout({
   
   if (!session?.user?.id) {
     redirect('/auth/signin')
+  }
+
+  // Check maintenance mode - owners can bypass
+  if (!session.user.isSuperAdmin) {
+    const settings = await getPlatformSettings()
+    if (settings?.maintenanceMode) {
+      redirect('/maintenance')
+    }
   }
 
   let org = await getActiveOrg(session.user.id)
@@ -64,6 +73,18 @@ export default async function StaffLayout({
   // Ensure org is not null and has required fields before proceeding
   if (!org || !org.id || !org.name) {
     redirect('/auth/signin?error=NoOrganization')
+  }
+
+  // Check if organization is suspended - redirect admin/staff to suspended page
+  if (org.status === 'SUSPENDED') {
+    const suspendedUrl = `/auth/account-suspended?org=${encodeURIComponent(org.name)}&reason=${encodeURIComponent(org.suspendedReason || 'Account suspended due to overdue payment')}`
+    redirect(suspendedUrl)
+  }
+
+  // Check if organization is paused - redirect admin/staff to paused page
+  if (org.status === 'PAUSED') {
+    const pausedUrl = `/auth/account-paused?org=${encodeURIComponent(org.name)}&reason=${encodeURIComponent(org.pausedReason || 'Account paused')}`
+    redirect(pausedUrl)
   }
   
   let userRole: Role | null = null
