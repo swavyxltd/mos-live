@@ -67,10 +67,17 @@ export default async function ParentLayout({
     redirect('/auth/signin?portal=parent&error=NotParent')
   }
   
+  // Ensure org has all required fields for Page component
+  const orgForPage = org.id && org.name && org.slug ? {
+    id: org.id,
+    name: org.name,
+    slug: org.slug
+  } : undefined
+  
   return (
     <Page
       user={session.user}
-      org={org}
+      org={orgForPage}
       userRole="PARENT"
       title="Parent Portal"
       breadcrumbs={[{ label: 'Dashboard' }]}

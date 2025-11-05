@@ -107,10 +107,17 @@ export default async function StaffLayout({
   }
   // PARENT role doesn't use staffSubrole
   
+  // Ensure org has all required fields for Page component
+  const orgForPage = org.id && org.name && org.slug ? {
+    id: org.id,
+    name: org.name,
+    slug: org.slug
+  } : undefined
+  
   return (
     <Page
       user={session.user}
-      org={org}
+      org={orgForPage}
       userRole={userRole}
       staffSubrole={staffSubrole}
       title={staffSubrole === 'FINANCE_OFFICER' ? "Finance Dashboard" : "Staff Portal"}
