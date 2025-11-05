@@ -22,12 +22,22 @@ export default async function ParentLayout({
       const userOrgs = await getUserOrgs(session.user.id)
       
       if (userOrgs && Array.isArray(userOrgs) && userOrgs.length > 0) {
+        // Filter out deactivated organizations (safely handle null/undefined status)
+        const activeOrgs = userOrgs.filter((uo: any) => 
+          uo && uo.org && uo.org.status && uo.org.status !== 'DEACTIVATED'
+        )
+        
+        if (activeOrgs.length === 0) {
+          redirect('/auth/account-deactivated')
+        }
+        
         // Use the first organization
-        const selectedOrg = userOrgs[0]
+        const selectedOrg = activeOrgs[0]
         
         if (selectedOrg && selectedOrg.org && selectedOrg.org.id) {
           await setActiveOrgId(selectedOrg.org.id)
-          org = selectedOrg.org
+          // Re-fetch org to ensure we have all fields
+          org = await getActiveOrg(session.user.id)
         }
       }
     } catch (error: any) {
@@ -35,7 +45,8 @@ export default async function ParentLayout({
     }
   }
   
-  if (!org) {
+  // Ensure org is not null and has required fields before proceeding
+  if (!org || !org.id || !org.name) {
     redirect('/auth/signin?portal=parent&error=NoOrganization')
   }
 

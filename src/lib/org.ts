@@ -117,7 +117,16 @@ export async function getUserOrgs(userId: string) {
   return prisma.userOrgMembership.findMany({
     where: { userId },
     include: {
-      org: true
+      org: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          status: true, // Explicitly include status
+          createdAt: true,
+          updatedAt: true
+        }
+      }
     }
   })
 }

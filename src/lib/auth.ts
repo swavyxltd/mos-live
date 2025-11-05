@@ -32,13 +32,13 @@ async function getUserRoleHints(userId: string) {
     const orgStaffOf: string[] = []
     let isParent = false
     
-    // Only include active organizations in role hints
-    // This allows authentication to succeed, but layouts will block deactivated orgs
-    for (const membership of memberships) {
-      // Skip deactivated organizations or if org is null
-      if (!membership.org || membership.org.status === 'DEACTIVATED') {
-        continue
-      }
+        // Only include active organizations in role hints
+        // This allows authentication to succeed, but layouts will block deactivated orgs
+        for (const membership of memberships) {
+          // Skip deactivated organizations or if org is null (safely handle null/undefined status)
+          if (!membership.org || !membership.org.status || membership.org.status === 'DEACTIVATED') {
+            continue
+          }
       
       if (membership.role === 'ADMIN') {
         orgAdminOf.push(membership.orgId)
