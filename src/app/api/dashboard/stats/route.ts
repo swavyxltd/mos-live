@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
     })
 
     // Get staff members
-    const staffMembers = await prisma.membership.count({
+    const staffMembers = await prisma.userOrgMembership.count({
       where: {
         orgId: org.id,
         role: { in: ['ADMIN', 'STAFF'] }

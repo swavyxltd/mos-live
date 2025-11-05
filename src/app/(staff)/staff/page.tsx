@@ -15,7 +15,7 @@ export default async function StaffPage() {
   const { prisma } = await import('@/lib/prisma')
   
   // Get staff members from database
-  const memberships = await prisma.membership.findMany({
+  const memberships = await prisma.userOrgMembership.findMany({
     where: {
       orgId: org.id,
       role: { in: ['ADMIN', 'STAFF'] }
