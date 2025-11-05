@@ -132,16 +132,25 @@ export async function getUserOrgs(userId: string) {
 }
 
 export async function getUserRoleInOrg(userId: string, orgId: string): Promise<Role | null> {
-  const membership = await prisma.userOrgMembership.findUnique({
-    where: {
-      userId_orgId: {
-        userId,
-        orgId
-      }
+  try {
+    if (!userId || !orgId) {
+      return null
     }
-  })
+    
+    const membership = await prisma.userOrgMembership.findUnique({
+      where: {
+        userId_orgId: {
+          userId,
+          orgId
+        }
+      }
+    })
 
-  return membership?.role || null
+    return membership?.role || null
+  } catch (error) {
+    console.error('Error getting user role in org:', error)
+    return null
+  }
 }
 
 export async function getOrgBySlug(slug: string) {

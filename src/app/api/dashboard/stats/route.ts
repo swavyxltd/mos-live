@@ -15,11 +15,19 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const org = await getActiveOrg()
+    const org = await getActiveOrg(session.user.id)
     if (!org) {
       return NextResponse.json(
         { error: 'Organization not found' },
         { status: 404 }
+      )
+    }
+    
+    // Check if organization is deactivated
+    if (org.status && org.status === 'DEACTIVATED') {
+      return NextResponse.json(
+        { error: 'This organization has been deactivated' },
+        { status: 403 }
       )
     }
 
