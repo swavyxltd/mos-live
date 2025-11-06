@@ -266,32 +266,37 @@ export default function SettingsPage() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: userSettings.name,
-          email: userSettings.email,
-          phone: userSettings.phone
+          name: userSettings.name || '',
+          email: userSettings.email || '',
+          phone: userSettings.phone || ''
         })
       })
       
       const data = await response.json()
       
-      if (response.ok) {
+      if (response.ok && data.success) {
         toast.success('User settings saved successfully')
-        // Update session with new user data
-        await update({
-          ...session,
-          user: {
-            ...session?.user,
-            name: data.user?.name || userSettings.name,
-            email: data.user?.email || userSettings.email,
-            phone: data.user?.phone || userSettings.phone
-          }
-        })
-        // Reload the page to ensure all components reflect the new name
-        window.location.reload()
+        
+        // Update local state with the saved data
+        if (data.user) {
+          setUserSettings({
+            name: data.user.name || '',
+            email: data.user.email || '',
+            phone: data.user.phone || ''
+          })
+        }
+        
+        // Update session - NextAuth's update function triggers a refetch
+        await update()
+        
+        // Small delay before reload to ensure session update completes
+        setTimeout(() => {
+          window.location.reload()
+        }, 500)
       } else {
         const errorMessage = data.error || 'Failed to save user settings'
         toast.error(errorMessage)
-        console.error('Error saving user settings:', errorMessage)
+        console.error('Error saving user settings:', errorMessage, data)
       }
     } catch (error) {
       console.error('Error saving user settings:', error)
@@ -618,13 +623,9 @@ export default function SettingsPage() {
                   id="user-email"
                   type="email"
                   value={userSettings.email}
-                  disabled
-                  className="bg-gray-50 cursor-not-allowed"
+                  onChange={(e) => handleUserSettingsChange('email', e.target.value)}
                   placeholder="Enter your email"
                 />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Email cannot be changed from profile settings. Contact support if you need to change your email.
-                </p>
               </div>
             </div>
 

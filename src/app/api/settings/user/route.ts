@@ -33,27 +33,60 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Don't allow email changes - email is tied to authentication
-    // If email needs to be changed, it should be done through a separate verification process
+    // Validate email format if provided
     if (email && email !== user.email) {
-      return NextResponse.json(
-        { error: 'Email cannot be changed from profile settings. Please contact support if you need to change your email.' },
-        { status: 400 }
-      )
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(email)) {
+        return NextResponse.json(
+          { error: 'Invalid email format' },
+          { status: 400 }
+        )
+      }
+      
+      // Check if email is already taken by another user
+      const existingUser = await prisma.user.findUnique({
+        where: { email }
+      })
+      
+      if (existingUser && existingUser.id !== session.user.id) {
+        return NextResponse.json(
+          { error: 'Email is already in use by another account' },
+          { status: 400 }
+        )
+      }
     }
 
-    // Update user data (only profile info, no password, no email)
-    const updateData: any = {
-      name: name || user.name,
-      phone: phone !== undefined ? phone : user.phone
+    // Update user data (name, email, phone - no password)
+    const updateData: any = {}
+    
+    // Update name if provided (allow empty string to clear name)
+    if (name !== undefined) {
+      updateData.name = name
     }
     
-    // Only update fields that have values
-    if (!name) {
-      delete updateData.name
+    // Update email if provided and different
+    if (email !== undefined && email !== user.email) {
+      updateData.email = email
     }
-    if (phone === undefined || phone === null) {
-      delete updateData.phone
+    
+    // Update phone if provided
+    if (phone !== undefined) {
+      updateData.phone = phone
+    }
+    
+    // Only proceed if there's something to update
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json({ 
+        success: true, 
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          image: user.image,
+          isSuperAdmin: user.isSuperAdmin
+        }
+      })
     }
 
     const updatedUser = await prisma.user.update({
