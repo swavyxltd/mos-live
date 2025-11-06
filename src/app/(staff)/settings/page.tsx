@@ -286,13 +286,12 @@ export default function SettingsPage() {
           })
         }
         
-        // Update session - NextAuth's update function triggers a refetch
+        // Force NextAuth to refresh the session by calling update()
+        // This triggers the JWT callback which fetches fresh user data from database
         await update()
         
-        // Small delay before reload to ensure session update completes
-        setTimeout(() => {
-          window.location.reload()
-        }, 500)
+        // Reload the page to ensure all components reflect the new data
+        window.location.reload()
       } else {
         const errorMessage = data.error || 'Failed to save user settings'
         toast.error(errorMessage)
