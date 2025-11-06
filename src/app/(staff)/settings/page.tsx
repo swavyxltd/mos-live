@@ -272,15 +272,30 @@ export default function SettingsPage() {
         })
       })
       
+      const data = await response.json()
+      
       if (response.ok) {
         toast.success('User settings saved successfully')
-        // Update session
-        await update()
+        // Update session with new user data
+        await update({
+          ...session,
+          user: {
+            ...session?.user,
+            name: data.user?.name || userSettings.name,
+            email: data.user?.email || userSettings.email,
+            phone: data.user?.phone || userSettings.phone
+          }
+        })
+        // Reload the page to ensure all components reflect the new name
+        window.location.reload()
       } else {
-        throw new Error('Failed to save user settings')
+        const errorMessage = data.error || 'Failed to save user settings'
+        toast.error(errorMessage)
+        console.error('Error saving user settings:', errorMessage)
       }
     } catch (error) {
-      toast.error('Failed to save user settings')
+      console.error('Error saving user settings:', error)
+      toast.error('Failed to save user settings. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -603,9 +618,13 @@ export default function SettingsPage() {
                   id="user-email"
                   type="email"
                   value={userSettings.email}
-                  onChange={(e) => handleUserSettingsChange('email', e.target.value)}
+                  disabled
+                  className="bg-gray-50 cursor-not-allowed"
                   placeholder="Enter your email"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Email cannot be changed from profile settings. Contact support if you need to change your email.
+                </p>
               </div>
             </div>
 

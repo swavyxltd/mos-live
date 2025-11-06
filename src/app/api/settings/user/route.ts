@@ -33,11 +33,27 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Update user data (only profile info, no password)
+    // Don't allow email changes - email is tied to authentication
+    // If email needs to be changed, it should be done through a separate verification process
+    if (email && email !== user.email) {
+      return NextResponse.json(
+        { error: 'Email cannot be changed from profile settings. Please contact support if you need to change your email.' },
+        { status: 400 }
+      )
+    }
+
+    // Update user data (only profile info, no password, no email)
     const updateData: any = {
-      name,
-      email,
-      phone
+      name: name || user.name,
+      phone: phone !== undefined ? phone : user.phone
+    }
+    
+    // Only update fields that have values
+    if (!name) {
+      delete updateData.name
+    }
+    if (phone === undefined || phone === null) {
+      delete updateData.phone
     }
 
     const updatedUser = await prisma.user.update({

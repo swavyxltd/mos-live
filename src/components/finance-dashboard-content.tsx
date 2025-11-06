@@ -170,166 +170,9 @@ export function FinanceDashboardContent() {
   }
   
   
-  const recentFinancialActivity = [
-    {
-      action: 'Payment received - £50 from Mohammed Ali',
-      timestamp: '2 hours ago',
-      user: { name: 'System', email: 'system@madrasah.com' },
-      type: 'payment',
-      amount: '£50.00',
-      studentName: 'Ahmed Hassan',
-      class: 'Quran Recitation - Level 1',
-      paymentMethod: 'Bank Transfer'
-    },
-    {
-      action: 'Invoice generated - Aisha Khan (Quran Level 1)',
-      timestamp: '4 hours ago',
-      user: { name: 'Finance System', email: 'finance@madrasah.com' },
-      type: 'invoice',
-      amount: '£50.00',
-      studentName: 'Aisha Khan',
-      class: 'Quran Recitation - Level 1'
-    },
-    {
-      action: 'Overdue payment reminder sent - Fatima Ali',
-      timestamp: '6 hours ago',
-      user: { name: 'Finance System', email: 'finance@madrasah.com' },
-      type: 'reminder',
-      amount: '£100.00', // Combined for 2 children
-      studentName: 'Fatima Ali',
-      class: 'Islamic Studies - Level 2'
-    },
-    {
-      action: 'Cash payment recorded - Yusuf Patel',
-      timestamp: '1 day ago',
-      user: { name: 'Hassan Ali', email: 'hassan@madrasah.com' },
-      type: 'cash_payment',
-      amount: '£25.00',
-      studentName: 'Yusuf Patel',
-      class: 'Arabic Grammar',
-      paymentMethod: 'Cash'
-    },
-    {
-      action: 'Payment received - £50 from Sarah Khan',
-      timestamp: '1 day ago',
-      user: { name: 'System', email: 'system@madrasah.com' },
-      type: 'payment',
-      amount: '£50.00',
-      studentName: 'Aisha Khan',
-      class: 'Quran Recitation - Level 1',
-      paymentMethod: 'Card Payment'
-    },
-    {
-      action: 'Invoice generated - Omar Ahmed (Islamic Studies)',
-      timestamp: '2 days ago',
-      user: { name: 'Finance System', email: 'finance@madrasah.com' },
-      type: 'invoice',
-      amount: '£50.00',
-      studentName: 'Omar Ahmed',
-      class: 'Islamic Studies - Level 2'
-    },
-    {
-      action: 'Payment received - £50 from Fatima Ali',
-      timestamp: '2 days ago',
-      user: { name: 'System', email: 'system@madrasah.com' },
-      type: 'payment',
-      amount: '£50.00',
-      studentName: 'Maryam Ali',
-      class: 'Arabic Grammar',
-      paymentMethod: 'Bank Transfer'
-    },
-    {
-      action: 'Cash payment recorded - Ahmed Patel',
-      timestamp: '3 days ago',
-      user: { name: 'Hassan Ali', email: 'hassan@madrasah.com' },
-      type: 'cash_payment',
-      amount: '£50.00',
-      studentName: 'Zainab Patel',
-      class: 'Islamic Studies - Level 2',
-      paymentMethod: 'Cash'
-    },
-    {
-      action: 'Overdue payment reminder sent - Mohammed Khan',
-      timestamp: '3 days ago',
-      user: { name: 'Finance System', email: 'finance@madrasah.com' },
-      type: 'reminder',
-      amount: '£50.00',
-      studentName: 'Ibrahim Khan',
-      class: 'Quran Recitation - Level 1'
-    },
-    {
-      action: 'Payment received - £50 from Hassan Ali',
-      timestamp: '4 days ago',
-      user: { name: 'System', email: 'system@madrasah.com' },
-      type: 'payment',
-      amount: '£50.00',
-      studentName: 'Hassan Ali',
-      class: 'Quran Recitation - Level 1',
-      paymentMethod: 'Bank Transfer'
-    },
-    {
-      action: 'Invoice generated - Amina Khan (Islamic Studies)',
-      timestamp: '4 days ago',
-      user: { name: 'Finance System', email: 'finance@madrasah.com' },
-      type: 'invoice',
-      amount: '£50.00',
-      studentName: 'Amina Khan',
-      class: 'Islamic Studies - Level 2'
-    },
-    {
-      action: 'Payment received - £50 from Omar Ahmed',
-      timestamp: '5 days ago',
-      user: { name: 'System', email: 'system@madrasah.com' },
-      type: 'payment',
-      amount: '£50.00',
-      studentName: 'Khalid Ahmed',
-      class: 'Arabic Grammar',
-      paymentMethod: 'Card Payment'
-    },
-    {
-      action: 'Cash payment recorded - Priya Patel',
-      timestamp: '5 days ago',
-      user: { name: 'Hassan Ali', email: 'hassan@madrasah.com' },
-      type: 'cash_payment',
-      amount: '£50.00',
-      studentName: 'Layla Patel',
-      class: 'Quran Recitation - Level 1',
-      paymentMethod: 'Cash'
-    },
-    {
-      action: 'Overdue payment reminder sent - Mohammed Ali',
-      timestamp: '6 days ago',
-      user: { name: 'Finance System', email: 'finance@madrasah.com' },
-      type: 'reminder',
-      amount: '£50.00',
-      studentName: 'Ahmed Hassan',
-      class: 'Quran Recitation - Level 1'
-    },
-    {
-      action: 'Payment received - £40 from Sarah Khan',
-      timestamp: '1 week ago',
-      user: { name: 'System', email: 'system@madrasah.com' },
-      type: 'payment',
-      amount: '£50.00',
-      studentName: 'Aisha Khan',
-      class: 'Quran Recitation - Level 1',
-      paymentMethod: 'Bank Transfer'
-    }
-  ]
-  
-  
-  const allRevenueClasses = [
-    { name: 'Quran Recitation - Level 1', revenue: 450, students: 12, avgFee: 37.50 },
-    { name: 'Islamic Studies - Level 2', revenue: 320, students: 8, avgFee: 40.00 },
-    { name: 'Arabic Grammar', revenue: 375, students: 15, avgFee: 25.00 },
-    { name: 'Quran Recitation - Level 2', revenue: 280, students: 7, avgFee: 40.00 },
-    { name: 'Islamic Studies - Level 1', revenue: 240, students: 6, avgFee: 40.00 },
-    { name: 'Arabic Conversation', revenue: 200, students: 10, avgFee: 20.00 },
-    { name: 'Tajweed - Level 1', revenue: 180, students: 9, avgFee: 20.00 },
-    { name: 'Islamic History', revenue: 160, students: 8, avgFee: 20.00 },
-    { name: 'Fiqh - Level 1', revenue: 140, students: 7, avgFee: 20.00 },
-    { name: 'Hadith Studies', revenue: 120, students: 6, avgFee: 20.00 }
-  ]
+  // Empty arrays - will be populated from real data when available
+  const recentFinancialActivity: any[] = []
+  const allRevenueClasses: any[] = []
 
   return (
     <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
@@ -442,38 +285,46 @@ export function FinanceDashboardContent() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {recentFinancialActivity.slice(0, 4).map((activity, index) => (
-              <div key={index} className="flex items-start gap-3">
-                <div className={`w-2 h-2 rounded-full mt-2 ${
-                  activity.type === 'payment' ? 'bg-green-500' :
-                  activity.type === 'invoice' ? 'bg-blue-500' :
-                  activity.type === 'reminder' ? 'bg-orange-500' :
-                  'bg-purple-500'
-                }`} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">{activity.action}</p>
-                  <p className="text-xs text-muted-foreground">{activity.timestamp}</p>
-                </div>
-                <div className="text-sm font-medium text-green-600">
-                  {activity.amount}
-                </div>
+          {recentFinancialActivity.length > 0 ? (
+            <>
+              <div className="space-y-4">
+                {recentFinancialActivity.slice(0, 4).map((activity, index) => (
+                  <div key={index} className="flex items-start gap-3">
+                    <div className={`w-2 h-2 rounded-full mt-2 ${
+                      activity.type === 'payment' ? 'bg-green-500' :
+                      activity.type === 'invoice' ? 'bg-blue-500' :
+                      activity.type === 'reminder' ? 'bg-orange-500' :
+                      'bg-purple-500'
+                    }`} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium">{activity.action}</p>
+                      <p className="text-xs text-muted-foreground">{activity.timestamp}</p>
+                    </div>
+                    <div className="text-sm font-medium text-green-600">
+                      {activity.amount}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                console.log('Show More button clicked')
-                setIsActivityModalOpen(true)
-              }}
-              className="w-full hover:bg-gray-50"
-            >
-              Show More ({recentFinancialActivity.length} total)
-            </Button>
-          </div>
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    console.log('Show More button clicked')
+                    setIsActivityModalOpen(true)
+                  }}
+                  className="w-full hover:bg-gray-50"
+                >
+                  Show More ({recentFinancialActivity.length} total)
+                </Button>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <p className="text-sm">No recent financial activity</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -488,38 +339,44 @@ export function FinanceDashboardContent() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Class</TableHead>
-                    <TableHead>Students</TableHead>
-                    <TableHead>Avg Fee</TableHead>
-                    <TableHead>Monthly Revenue</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {allRevenueClasses.map((classItem, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-medium">{classItem.name}</TableCell>
-                      <TableCell>{classItem.students}</TableCell>
-                      <TableCell>£{classItem.avgFee}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                        <div className="w-16 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-green-500 h-2 rounded-full" 
-                            style={{ width: `${(classItem.revenue / Math.max(...allRevenueClasses.map(c => c.revenue))) * 100}%` }}
-                          />
-                        </div>
-                          <span className="text-sm font-medium">£{classItem.revenue}</span>
-                        </div>
-                      </TableCell>
+            {allRevenueClasses.length > 0 ? (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Class</TableHead>
+                      <TableHead>Students</TableHead>
+                      <TableHead>Avg Fee</TableHead>
+                      <TableHead>Monthly Revenue</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {allRevenueClasses.map((classItem, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">{classItem.name}</TableCell>
+                        <TableCell>{classItem.students}</TableCell>
+                        <TableCell>£{classItem.avgFee}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                          <div className="w-16 bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-green-500 h-2 rounded-full" 
+                              style={{ width: `${(classItem.revenue / Math.max(...allRevenueClasses.map(c => c.revenue))) * 100}%` }}
+                            />
+                          </div>
+                            <span className="text-sm font-medium">£{classItem.revenue}</span>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <p className="text-sm">No revenue classes available</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </Link>
