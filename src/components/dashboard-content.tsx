@@ -1,7 +1,6 @@
 'use client'
 
 import { StatCard } from '@/components/ui/stat-card'
-import { WaveChart } from '@/components/ui/wave-chart'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
@@ -10,6 +9,24 @@ import Link from 'next/link'
 import { QuickAddMenu } from '@/components/quick-add-menu'
 import GenerateReportModal from '@/components/generate-report-modal'
 import { useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
+
+// Lazy load WaveChart to reduce initial bundle size
+const WaveChart = dynamic(() => import('@/components/ui/wave-chart').then(mod => ({ default: mod.WaveChart })), {
+  ssr: false,
+  loading: () => (
+    <Card>
+      <CardHeader>
+        <CardTitle>Attendance Trend</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="h-80 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+        </div>
+      </CardContent>
+    </Card>
+  )
+})
 import { 
   Users, 
   BookOpen, 
