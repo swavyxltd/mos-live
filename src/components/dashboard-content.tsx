@@ -165,114 +165,13 @@ export function DashboardContent() {
     }
   }
   
-  // Use real attendance trend data from API
-  const attendanceData = attendanceTrend.length > 0 
-    ? attendanceTrend 
-    : [
-    { date: '2025-09-05', value: 85 },
-    { date: '2025-09-06', value: 87 },
-    { date: '2025-09-07', value: 89 },
-    { date: '2025-09-08', value: 86 },
-    { date: '2025-09-09', value: 88 },
-    { date: '2025-09-10', value: 91 },
-    { date: '2025-09-11', value: 84 },
-    { date: '2025-09-12', value: 87 },
-    { date: '2025-09-13', value: 89 },
-    { date: '2025-09-14', value: 85 },
-    { date: '2025-09-15', value: 88 },
-    { date: '2025-09-16', value: 90 },
-    { date: '2025-09-17', value: 83 },
-    { date: '2025-09-18', value: 86 },
-    { date: '2025-09-19', value: 88 },
-    { date: '2025-09-20', value: 91 },
-    { date: '2025-09-21', value: 84 },
-    { date: '2025-09-22', value: 87 },
-    { date: '2025-09-23', value: 89 },
-    { date: '2025-09-24', value: 86 },
-    { date: '2025-09-25', value: 88 },
-    { date: '2025-09-26', value: 85 },
-    { date: '2025-09-27', value: 89 },
-    { date: '2025-09-28', value: 87 },
-    { date: '2025-09-29', value: 90 },
-    { date: '2025-09-30', value: 86 },
-    
-    // Last 90 days (extended historical data)
-    { date: '2025-08-01', value: 82 },
-    { date: '2025-08-05', value: 85 },
-    { date: '2025-08-10', value: 88 },
-    { date: '2025-08-15', value: 86 },
-    { date: '2025-08-20', value: 89 },
-    { date: '2025-08-25', value: 87 },
-    { date: '2025-08-30', value: 91 },
-    { date: '2025-07-01', value: 84 },
-    { date: '2025-07-05', value: 88 },
-    { date: '2025-07-10', value: 86 },
-    { date: '2025-07-15', value: 89 },
-    { date: '2025-07-20', value: 87 },
-    { date: '2025-07-25', value: 90 },
-    { date: '2025-07-30', value: 85 },
-    { date: '2025-06-01', value: 88 },
-    { date: '2025-06-05', value: 86 },
-    { date: '2025-06-10', value: 89 },
-    { date: '2025-06-15', value: 87 },
-    { date: '2025-06-20', value: 91 },
-    { date: '2025-06-25', value: 84 },
-    { date: '2025-06-30', value: 88 }
-  ]
+  // Use real attendance trend data from API (no fallback demo data)
+  const attendanceData = attendanceTrend
   
-  const recentActivity = [
-    {
-      action: 'New student enrollment - Aisha Khan',
-      timestamp: '2 hours ago',
-      user: { name: 'Admin', email: 'admin@madrasah.com' },
-      type: 'enrollment'
-    },
-    {
-      action: 'Payment received - £50 from Mohammed Ali',
-      timestamp: '4 hours ago',
-      user: { name: 'System', email: 'system@madrasah.com' },
-      type: 'payment'
-    },
-    {
-      action: 'Class attendance marked - Quran Level 1',
-      timestamp: '6 hours ago',
-      user: { name: 'Moulana Omar', email: 'omar@madrasah.com' },
-      type: 'attendance'
-    },
-    {
-      action: 'New message sent to parents',
-      timestamp: '1 day ago',
-      user: { name: 'Admin', email: 'admin@madrasah.com' },
-      type: 'message'
-    }
-  ]
-  
-  const upcomingEvents = [
-    {
-      title: 'End of Term Exams',
-      date: 'Dec 16, 2024',
-      type: 'exam',
-      description: 'All classes - Main Hall'
-    },
-    {
-      title: 'Parent-Teacher Meeting',
-      date: 'Dec 20, 2024',
-      type: 'meeting',
-      description: 'Individual appointments'
-    },
-    {
-      title: 'Winter Break',
-      date: 'Dec 23, 2024',
-      type: 'holiday',
-      description: 'School closed until Jan 2'
-    }
-  ]
-  
-  const topPerformingClasses = [
-    { name: 'Quran Recitation - Level 1', attendance: 95, students: 12, teacher: 'Moulana Omar' },
-    { name: 'Islamic Studies - Level 2', attendance: 92, students: 8, teacher: 'Apa Aisha' },
-    { name: 'Arabic Grammar', attendance: 88, students: 15, teacher: 'Hassan Ali' }
-  ]
+  // Empty arrays - will be populated from real data when available
+  const recentActivity: any[] = []
+  const upcomingEvents: any[] = []
+  const topPerformingClasses: any[] = []
 
   return (
     <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
@@ -404,22 +303,28 @@ export function DashboardContent() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {recentActivity.map((activity, index) => (
-                  <div key={index} className="flex items-start gap-3">
-                    <div className={`w-2 h-2 rounded-full mt-2 ${
-                      activity.type === 'enrollment' ? 'bg-green-500' :
-                      activity.type === 'payment' ? 'bg-blue-500' :
-                      activity.type === 'attendance' ? 'bg-purple-500' :
-                      'bg-gray-500'
-                    }`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">{activity.action}</p>
-                      <p className="text-xs text-muted-foreground">{activity.timestamp}</p>
+              {recentActivity.length > 0 ? (
+                <div className="space-y-4">
+                  {recentActivity.map((activity, index) => (
+                    <div key={index} className="flex items-start gap-3">
+                      <div className={`w-2 h-2 rounded-full mt-2 ${
+                        activity.type === 'enrollment' ? 'bg-green-500' :
+                        activity.type === 'payment' ? 'bg-blue-500' :
+                        activity.type === 'attendance' ? 'bg-purple-500' :
+                        'bg-gray-500'
+                      }`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">{activity.action}</p>
+                        <p className="text-xs text-muted-foreground">{activity.timestamp}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p className="text-sm">No recent activity</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </Link>
@@ -434,22 +339,28 @@ export function DashboardContent() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {upcomingEvents.map((event, index) => (
-                  <div key={index} className="flex items-start gap-3">
-                    <div className={`w-2 h-2 rounded-full mt-2 ${
-                      event.type === 'exam' ? 'bg-red-500' :
-                      event.type === 'meeting' ? 'bg-blue-500' :
-                      'bg-gray-500'
-                    }`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">{event.title}</p>
-                      <p className="text-xs text-muted-foreground">{event.date}</p>
-                      <p className="text-xs text-muted-foreground">{event.description}</p>
+              {upcomingEvents.length > 0 ? (
+                <div className="space-y-4">
+                  {upcomingEvents.map((event, index) => (
+                    <div key={index} className="flex items-start gap-3">
+                      <div className={`w-2 h-2 rounded-full mt-2 ${
+                        event.type === 'exam' ? 'bg-red-500' :
+                        event.type === 'meeting' ? 'bg-blue-500' :
+                        'bg-gray-500'
+                      }`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">{event.title}</p>
+                        <p className="text-xs text-muted-foreground">{event.date}</p>
+                        <p className="text-xs text-muted-foreground">{event.description}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p className="text-sm">No upcoming events</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </Link>
@@ -471,45 +382,51 @@ export function DashboardContent() {
                 </div>
               </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Class</TableHead>
-                  <TableHead>Teacher</TableHead>
-                  <TableHead>Students</TableHead>
-                  <TableHead>Attendance</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {topPerformingClasses.map((classItem, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="font-medium">{classItem.name}</TableCell>
-                    <TableCell>{classItem.teacher}</TableCell>
-                    <TableCell>{classItem.students}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className="w-16 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-green-500 h-2 rounded-full" 
-                            style={{ width: `${classItem.attendance}%` }}
-                          />
-                        </div>
-                        <span className="text-sm font-medium">{classItem.attendance}%</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className="bg-green-100 text-green-800">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Excellent
-                      </Badge>
-                    </TableCell>
+            {topPerformingClasses.length > 0 ? (
+              <div className="overflow-x-auto">
+                <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Class</TableHead>
+                    <TableHead>Teacher</TableHead>
+                    <TableHead>Students</TableHead>
+                    <TableHead>Attendance</TableHead>
+                    <TableHead>Status</TableHead>
                   </TableRow>
-                ))}
-                </TableBody>
-              </Table>
-            </div>
+                </TableHeader>
+                <TableBody>
+                  {topPerformingClasses.map((classItem, index) => (
+                    <TableRow key={index}>
+                      <TableCell className="font-medium">{classItem.name}</TableCell>
+                      <TableCell>{classItem.teacher}</TableCell>
+                      <TableCell>{classItem.students}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="w-16 bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-green-500 h-2 rounded-full" 
+                              style={{ width: `${classItem.attendance}%` }}
+                            />
+                          </div>
+                          <span className="text-sm font-medium">{classItem.attendance}%</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="bg-green-100 text-green-800">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Excellent
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <p className="text-sm">No classes available</p>
+              </div>
+            )}
             </CardContent>
         </Card>
       </Link>
