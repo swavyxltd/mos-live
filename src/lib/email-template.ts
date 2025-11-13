@@ -130,7 +130,7 @@ export async function generateEmailTemplate({
                             </tr>
                           </table>
                           <p style="margin: 24px 0 0 0; font-size: 11px; color: #9ca3af; text-align: center;">
-                            © ${new Date().getFullYear()} Madrasah OS. All rights reserved.
+                            © Madrasah OS. All rights reserved.
                           </p>
                         </td>
                       </tr>
