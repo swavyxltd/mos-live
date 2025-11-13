@@ -28,14 +28,8 @@ interface StudentRow {
   rowNumber: number
   firstName: string
   lastName: string
-  dateOfBirth?: string
-  gender?: string
-  parentName: string
   parentEmail: string
   parentPhone?: string
-  address?: string
-  allergies?: string
-  medicalNotes?: string
   startMonth?: string
   classId: string
   isValid: boolean
@@ -399,8 +393,6 @@ export function BulkUploadStudentsModal({
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Row</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">First Name</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last Name</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date of Birth</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Parent Name</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Parent Email</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Parent Phone</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Class *</th>
@@ -437,23 +429,6 @@ export function BulkUploadStudentsModal({
                         </td>
                         <td className="px-4 py-3">
                           <Input
-                            type="date"
-                            value={student.dateOfBirth || ''}
-                            onChange={(e) => handleFieldEdit(student.rowNumber, 'dateOfBirth', e.target.value)}
-                            className="w-36 text-sm"
-                            disabled={!student.isValid}
-                          />
-                        </td>
-                        <td className="px-4 py-3">
-                          <Input
-                            value={student.parentName}
-                            onChange={(e) => handleFieldEdit(student.rowNumber, 'parentName', e.target.value)}
-                            className="w-40 text-sm"
-                            disabled={!student.isValid}
-                          />
-                        </td>
-                        <td className="px-4 py-3">
-                          <Input
                             type="email"
                             value={student.parentEmail}
                             onChange={(e) => handleFieldEdit(student.rowNumber, 'parentEmail', e.target.value)}
@@ -467,6 +442,7 @@ export function BulkUploadStudentsModal({
                             onChange={(e) => handleFieldEdit(student.rowNumber, 'parentPhone', e.target.value)}
                             className="w-36 text-sm"
                             disabled={!student.isValid}
+                            placeholder="Optional"
                           />
                         </td>
                         <td className="px-4 py-3">

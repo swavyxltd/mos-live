@@ -8,15 +8,8 @@ import { parse } from 'csv-parse/sync'
 interface CSVRow {
   firstName: string
   lastName: string
-  dateOfBirth?: string
-  gender?: string
-  parentName: string
   parentEmail: string
   parentPhone?: string
-  address?: string
-  allergies?: string
-  medicalNotes?: string
-  startMonth?: string
 }
 
 interface ValidatedRow extends CSVRow {
@@ -115,15 +108,12 @@ export async function POST(request: NextRequest) {
         return validated
       }
 
-      // Required fields validation
+      // Required fields validation (matching single "Add Student" modal)
       if (!row.firstName || !row.firstName.trim()) {
         errors.push('First name is required')
       }
       if (!row.lastName || !row.lastName.trim()) {
         errors.push('Last name is required')
-      }
-      if (!row.parentName || !row.parentName.trim()) {
-        errors.push('Parent name is required')
       }
       if (!row.parentEmail || !row.parentEmail.trim()) {
         errors.push('Parent email is required')
@@ -135,24 +125,7 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Optional field validation
-      if (row.dateOfBirth) {
-        const dobRegex = /^\d{4}-\d{2}-\d{2}$/
-        if (!dobRegex.test(row.dateOfBirth)) {
-          errors.push('Date of birth must be in YYYY-MM-DD format')
-        }
-      }
-
-      if (row.startMonth) {
-        const monthRegex = /^\d{4}-\d{2}$/
-        if (!monthRegex.test(row.startMonth)) {
-          errors.push('Start month must be in YYYY-MM format')
-        }
-      }
-
-      if (row.gender && !['Male', 'Female', 'male', 'female', 'M', 'F', 'm', 'f'].includes(row.gender)) {
-        errors.push('Gender must be Male, Female, M, or F')
-      }
+      // parentPhone is optional
 
       // Check for duplicates (by firstName + lastName + parentEmail)
       const duplicate = existingStudents.find(s => 

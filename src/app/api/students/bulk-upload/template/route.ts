@@ -23,37 +23,23 @@ export async function GET(request: NextRequest) {
     }
 
     // Create CSV template with headers + 100 empty rows + 1 example row
+    // Simplified to match single "Add Student" modal: only firstName, lastName, parentEmail, parentPhone
     const headers = [
       'firstName',
       'lastName',
-      'dateOfBirth',
-      'gender',
-      'parentName',
       'parentEmail',
-      'parentPhone',
-      'address',
-      'allergies',
-      'medicalNotes',
-      'startMonth'
+      'parentPhone'
     ]
 
     // Create CSV content
     let csvContent = headers.join(',') + '\n'
     
     // Add example row (marked with EXAMPLE prefix so it won't be created if not removed)
-    const currentMonth = new Date().toISOString().slice(0, 7) // YYYY-MM
     const exampleRow = [
       'EXAMPLE_DELETE_THIS_ROW',
       'Smith',
-      '2015-05-15',
-      'Male',
-      'John Smith',
       'john.smith@example.com',
-      '+44 20 1234 5678',
-      '123 Example Street, London',
-      'None',
-      '',
-      currentMonth
+      '+44 20 1234 5678'
     ]
     csvContent += exampleRow.join(',') + '\n'
     

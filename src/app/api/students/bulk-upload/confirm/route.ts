@@ -9,14 +9,8 @@ import { sendParentOnboardingEmail } from '@/lib/mail'
 interface StudentData {
   firstName: string
   lastName: string
-  dateOfBirth?: string
-  gender?: string
-  parentName: string
   parentEmail: string
   parentPhone?: string
-  address?: string
-  allergies?: string
-  medicalNotes?: string
   startMonth: string
   classId: string
   rowNumber: number
@@ -99,21 +93,16 @@ export async function POST(request: NextRequest) {
         const result = await prisma.$transaction(async (tx) => {
           // Handle duplicate (update existing)
           if (studentData.isDuplicate && studentData.existingStudentId) {
-            // Update existing student
+            // Update existing student (only firstName and lastName, matching single add modal)
             const updatedStudent = await tx.student.update({
               where: { id: studentData.existingStudentId },
               data: {
                 firstName: studentData.firstName.trim(),
-                lastName: studentData.lastName.trim(),
-                dob: studentData.dateOfBirth ? new Date(studentData.dateOfBirth) : undefined,
-                gender: studentData.gender ? (studentData.gender.toUpperCase().startsWith('M') ? 'MALE' : 'FEMALE') : undefined,
-                address: studentData.address || undefined,
-                allergies: studentData.allergies || undefined,
-                medicalNotes: studentData.medicalNotes || undefined
+                lastName: studentData.lastName.trim()
               }
             })
 
-            // Update or create parent if needed
+            // Find or create parent user (only email initially, parent will provide name/phone during signup)
             let parentUser = await tx.user.findUnique({
               where: { email: studentData.parentEmail.toLowerCase().trim() }
             })
@@ -121,9 +110,8 @@ export async function POST(request: NextRequest) {
             if (!parentUser) {
               parentUser = await tx.user.create({
                 data: {
-                  name: studentData.parentName.trim(),
                   email: studentData.parentEmail.toLowerCase().trim(),
-                  phone: studentData.parentPhone || undefined
+                  phone: studentData.parentPhone || undefined // Optional phone if provided
                 }
               })
 
@@ -135,14 +123,15 @@ export async function POST(request: NextRequest) {
                 }
               })
             } else {
-              // Update parent info
-              await tx.user.update({
-                where: { id: parentUser.id },
-                data: {
-                  name: studentData.parentName.trim(),
-                  phone: studentData.parentPhone || undefined
-                }
-              })
+              // Update parent phone if provided
+              if (studentData.parentPhone) {
+                await tx.user.update({
+                  where: { id: parentUser.id },
+                  data: {
+                    phone: studentData.parentPhone
+                  }
+                })
+              }
             }
 
             // Link student to parent
@@ -173,8 +162,8 @@ export async function POST(request: NextRequest) {
 
             return { student: updatedStudent, parentUser, isUpdate: true }
           } else {
-            // Create new student
-            // Find or create parent user
+            // Create new student (matching single "Add Student" modal flow)
+            // Find or create parent user (only email initially, parent will provide name/phone during signup)
             let parentUser = await tx.user.findUnique({
               where: { email: studentData.parentEmail.toLowerCase().trim() }
             })
@@ -182,9 +171,8 @@ export async function POST(request: NextRequest) {
             if (!parentUser) {
               parentUser = await tx.user.create({
                 data: {
-                  name: studentData.parentName.trim(),
                   email: studentData.parentEmail.toLowerCase().trim(),
-                  phone: studentData.parentPhone || undefined
+                  phone: studentData.parentPhone || undefined // Optional phone if provided
                 }
               })
 
@@ -196,27 +184,23 @@ export async function POST(request: NextRequest) {
                 }
               })
             } else {
-              // Update parent info
-              await tx.user.update({
-                where: { id: parentUser.id },
-                data: {
-                  name: studentData.parentName.trim(),
-                  phone: studentData.parentPhone || undefined
-                }
-              })
+              // Update parent phone if provided
+              if (studentData.parentPhone) {
+                await tx.user.update({
+                  where: { id: parentUser.id },
+                  data: {
+                    phone: studentData.parentPhone
+                  }
+                })
+              }
             }
 
-            // Create student
+            // Create student (only firstName and lastName, matching single add modal)
             const student = await tx.student.create({
               data: {
                 orgId: org.id,
                 firstName: studentData.firstName.trim(),
                 lastName: studentData.lastName.trim(),
-                dob: studentData.dateOfBirth ? new Date(studentData.dateOfBirth) : undefined,
-                gender: studentData.gender ? (studentData.gender.toUpperCase().startsWith('M') ? 'MALE' : 'FEMALE') : undefined,
-                address: studentData.address || undefined,
-                allergies: studentData.allergies || undefined,
-                medicalNotes: studentData.medicalNotes || undefined,
                 primaryParentId: parentUser.id
               }
             })
