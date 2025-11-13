@@ -296,17 +296,23 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
 
       const result = await response.json()
       
+      if (!response.ok) {
+        console.error('Pause API error:', result)
+        toast.error(result.error || result.details || 'Failed to pause account')
+        return
+      }
+      
       if (result.success) {
         toast.success(`Account paused successfully! ${result.affectedUsers} admin/staff accounts have been locked.`)
         setStatusChangeReason('')
         if (onRefresh) onRefresh()
         onClose()
       } else {
-        toast.error(result.error || 'Failed to pause account')
+        toast.error(result.error || result.details || 'Failed to pause account')
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error pausing account:', error)
-      toast.error('Error pausing account. Please try again.')
+      toast.error(`Error pausing account: ${error?.message || 'Please try again.'}`)
     } finally {
       setIsChangingStatus(false)
     }
