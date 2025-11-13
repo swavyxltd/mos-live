@@ -337,47 +337,47 @@ export function BulkUploadStudentsModal({
             </div>
 
             {/* Stats Summary */}
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
               <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-2">
-                    <FileText className="h-5 w-5 text-gray-600" />
+                <CardContent className="p-4 sm:p-5 lg:p-5">
+                  <div className="flex flex-col items-center justify-center text-center space-y-2">
+                    <FileText className="h-6 w-6 text-gray-600" />
                     <div>
-                      <p className="text-xs text-gray-600">Total Rows</p>
-                      <p className="text-lg font-semibold">{stats.total}</p>
+                      <p className="text-xs font-medium text-gray-600 mb-1">Total Rows</p>
+                      <p className="text-2xl font-semibold text-gray-900">{stats.total}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-2">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
+                <CardContent className="p-4 sm:p-5 lg:p-5">
+                  <div className="flex flex-col items-center justify-center text-center space-y-2">
+                    <CheckCircle className="h-6 w-6 text-green-600" />
                     <div>
-                      <p className="text-xs text-gray-600">Valid</p>
-                      <p className="text-lg font-semibold text-green-600">{stats.valid}</p>
+                      <p className="text-xs font-medium text-gray-600 mb-1">Valid</p>
+                      <p className="text-2xl font-semibold text-green-600">{stats.valid}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-2">
-                    <XCircle className="h-5 w-5 text-red-600" />
+                <CardContent className="p-4 sm:p-5 lg:p-5">
+                  <div className="flex flex-col items-center justify-center text-center space-y-2">
+                    <XCircle className="h-6 w-6 text-red-600" />
                     <div>
-                      <p className="text-xs text-gray-600">Invalid</p>
-                      <p className="text-lg font-semibold text-red-600">{stats.invalid}</p>
+                      <p className="text-xs font-medium text-gray-600 mb-1">Invalid</p>
+                      <p className="text-2xl font-semibold text-red-600">{stats.invalid}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-2">
-                    <AlertCircle className="h-5 w-5 text-yellow-600" />
+                <CardContent className="p-4 sm:p-5 lg:p-5">
+                  <div className="flex flex-col items-center justify-center text-center space-y-2">
+                    <AlertCircle className="h-6 w-6 text-yellow-600" />
                     <div>
-                      <p className="text-xs text-gray-600">Duplicates</p>
-                      <p className="text-lg font-semibold text-yellow-600">{stats.duplicates}</p>
+                      <p className="text-xs font-medium text-gray-600 mb-1">Duplicates</p>
+                      <p className="text-2xl font-semibold text-yellow-600">{stats.duplicates}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -396,7 +396,6 @@ export function BulkUploadStudentsModal({
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Parent Email</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Parent Phone</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Class *</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Start Month</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                     </tr>
                   </thead>
@@ -462,15 +461,6 @@ export function BulkUploadStudentsModal({
                               ))}
                             </SelectContent>
                           </Select>
-                        </td>
-                        <td className="px-4 py-3">
-                          <Input
-                            type="month"
-                            value={student.startMonth || new Date().toISOString().slice(0, 7)}
-                            onChange={(e) => handleFieldEdit(student.rowNumber, 'startMonth', e.target.value)}
-                            className="w-32 text-sm"
-                            disabled={!student.isValid}
-                          />
                         </td>
                         <td className="px-4 py-3">
                           {!student.isValid && (
