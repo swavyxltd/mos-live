@@ -75,10 +75,10 @@ export default async function StaffLayout({
     redirect('/auth/signin?error=NoOrganization')
   }
 
-  // Check if organization is suspended - redirect admin/staff to suspended page
+  // Check if organization is suspended (deactivated) - redirect admin/staff to deactivated page
   if (org.status === 'SUSPENDED') {
-    const suspendedUrl = `/auth/account-suspended?org=${encodeURIComponent(org.name)}&reason=${encodeURIComponent(org.suspendedReason || 'Account suspended due to overdue payment')}`
-    redirect(suspendedUrl)
+    const deactivatedUrl = `/auth/account-deactivated?org=${encodeURIComponent(org.name)}&reason=${encodeURIComponent(org.suspendedReason || 'Account deactivated')}`
+    redirect(deactivatedUrl)
   }
 
   // Check if organization is paused - redirect admin/staff to paused page
