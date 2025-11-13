@@ -15,204 +15,223 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get total organizations (excluding demo org)
-    const totalOrgs = await prisma.org.count({
-      where: { 
-        status: 'ACTIVE',
-        slug: { not: 'leicester-islamic-centre' } // Exclude demo org
-      }
-    })
-
-    // Get total students across all orgs (excluding demo org students)
+    // Get demo org ID first (needed for filtering)
     const demoOrg = await prisma.org.findUnique({
       where: { slug: 'leicester-islamic-centre' },
       select: { id: true }
     })
-    
-    const totalStudents = await prisma.student.count({
-      where: { 
-        isArchived: false,
-        ...(demoOrg ? { orgId: { not: demoOrg.id } } : {}) // Exclude demo org students
-      }
-    })
 
-    // Get total users (excluding archived)
-    const totalUsers = await prisma.user.count({
-      where: { isArchived: false }
-    })
+    // Parallelize all count queries
+    const [
+      totalOrgs,
+      totalStudents,
+      totalUsers
+    ] = await Promise.all([
+      prisma.org.count({
+        where: { 
+          status: 'ACTIVE',
+          slug: { not: 'leicester-islamic-centre' } // Exclude demo org
+        }
+      }),
+      prisma.student.count({
+        where: { 
+          isArchived: false,
+          ...(demoOrg ? { orgId: { not: demoOrg.id } } : {}) // Exclude demo org students
+        }
+      }),
+      prisma.user.count({
+        where: { isArchived: false }
+      })
+    ])
 
-    // Get all organizations with stats (excluding demo org)
+    // Get all organizations with stats (excluding demo org) - can run in parallel with revenue queries
     const orgs = await prisma.org.findMany({
-      where: { 
-        status: 'ACTIVE',
-        slug: { not: 'leicester-islamic-centre' } // Exclude demo org
-      },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        createdAt: true,
-        _count: {
-          select: {
-            students: { where: { isArchived: false } },
-            classes: { where: { isArchived: false } },
-            memberships: true,
-            invoices: true
+        where: { 
+          status: 'ACTIVE',
+          slug: { not: 'leicester-islamic-centre' } // Exclude demo org
+        },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          createdAt: true,
+          _count: {
+            select: {
+              students: { where: { isArchived: false } },
+              classes: { where: { isArchived: false } },
+              memberships: true,
+              invoices: true
+            }
           }
         }
-      }
-    })
+      })
+    ])
 
     // Calculate MRR (Monthly Recurring Revenue) - sum of all active students * £1
     const mrr = totalStudents * 1
     const arr = mrr * 12
 
-    // Get revenue data from invoices
+    // Get revenue data from invoices using database aggregation
     const now = new Date()
     const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
     const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
 
-    const lastMonthInvoices = await prisma.invoice.findMany({
-      where: {
-        status: 'PAID',
-        paidAt: {
-          gte: lastMonth,
-          lt: thisMonth
-        }
-      },
-      select: { amountP: true }
-    })
+    // Use database aggregation for revenue calculations (much faster)
+    const [lastMonthRevenueResult, thisMonthRevenueResult] = await Promise.all([
+      prisma.invoice.aggregate({
+        where: {
+          status: 'PAID',
+          paidAt: {
+            gte: lastMonth,
+            lt: thisMonth
+          }
+        },
+        _sum: { amountP: true }
+      }),
+      prisma.invoice.aggregate({
+        where: {
+          status: 'PAID',
+          paidAt: {
+            gte: thisMonth
+          }
+        },
+        _sum: { amountP: true }
+      })
+    ])
 
-    const thisMonthInvoices = await prisma.invoice.findMany({
-      where: {
-        status: 'PAID',
-        paidAt: {
-          gte: thisMonth
-        }
-      },
-      select: { amountP: true }
-    })
-
-    const lastMonthRevenue = lastMonthInvoices.reduce((sum, inv) => sum + Number(inv.amountP || 0) / 100, 0)
-    const thisMonthRevenue = thisMonthInvoices.reduce((sum, inv) => sum + Number(inv.amountP || 0) / 100, 0)
+    const lastMonthRevenue = Number(lastMonthRevenueResult._sum.amountP || 0) / 100
+    const thisMonthRevenue = Number(thisMonthRevenueResult._sum.amountP || 0) / 100
     const revenueGrowth = lastMonthRevenue > 0 
       ? ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 
       : 0
 
-    // Get overdue invoices
-    const overdueCount = await prisma.invoice.count({
-      where: {
-        status: { in: ['OVERDUE', 'PENDING'] },
-        dueDate: { lt: now }
-      }
-    })
-
-    // Calculate payment success rate (last 30 days)
+    // Parallelize all remaining count queries
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-    const recentInvoices = await prisma.invoice.findMany({
-      where: {
-        createdAt: { gte: thirtyDaysAgo }
-      },
-      select: { status: true }
-    })
+    const [
+      overdueCount,
+      totalRecent,
+      paidRecent,
+      newOrgsThisMonth,
+      churnedOrgs
+    ] = await Promise.all([
+      prisma.invoice.count({
+        where: {
+          status: { in: ['OVERDUE', 'PENDING'] },
+          dueDate: { lt: now }
+        }
+      }),
+      prisma.invoice.count({
+        where: {
+          createdAt: { gte: thirtyDaysAgo }
+        }
+      }),
+      prisma.invoice.count({
+        where: {
+          createdAt: { gte: thirtyDaysAgo },
+          status: 'PAID'
+        }
+      }),
+      prisma.org.count({
+        where: {
+          status: 'ACTIVE',
+          createdAt: { gte: thisMonth },
+          slug: { not: 'leicester-islamic-centre' } // Exclude demo org
+        }
+      }),
+      prisma.org.count({
+        where: {
+          status: { not: 'ACTIVE' },
+          updatedAt: { gte: thisMonth }
+        }
+      })
+    ])
     
-    const totalRecent = recentInvoices.length
-    const paidRecent = recentInvoices.filter(inv => inv.status === 'PAID').length
     const paymentSuccessRate = totalRecent > 0 ? (paidRecent / totalRecent) * 100 : 100
-
-    // Get new orgs this month (excluding demo org)
-    const newOrgsThisMonth = await prisma.org.count({
-      where: {
-        status: 'ACTIVE',
-        createdAt: { gte: thisMonth },
-        slug: { not: 'leicester-islamic-centre' } // Exclude demo org
-      }
-    })
-
-    // Calculate churn rate (orgs that became inactive this month)
-    const churnedOrgs = await prisma.org.count({
-      where: {
-        status: { not: 'ACTIVE' },
-        updatedAt: { gte: thisMonth }
-      }
-    })
     const churnRate = totalOrgs > 0 ? (churnedOrgs / totalOrgs) * 100 : 0
 
     // Calculate average revenue per org
     const avgRevenuePerOrg = totalOrgs > 0 ? mrr / totalOrgs : 0
 
-    // Get monthly revenue for last 12 months
-    const monthlyRevenue = []
+    // Get monthly revenue for last 12 months - PARALLELIZED for speed
+    const monthlyRevenuePromises = []
     for (let i = 11; i >= 0; i--) {
       const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1)
       const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0)
       
-      const monthInvoices = await prisma.invoice.findMany({
-        where: {
-          status: 'PAID',
-          paidAt: {
-            gte: monthStart,
-            lte: monthEnd
-          }
-        },
-        select: { amountP: true }
-      })
-      
-      const revenue = monthInvoices.reduce((sum, inv) => sum + Number(inv.amountP || 0) / 100, 0)
-      const monthStudents = await prisma.student.count({
-        where: {
-          createdAt: { lte: monthEnd },
-          isArchived: false,
-          ...(demoOrg ? { orgId: { not: demoOrg.id } } : {}) // Exclude demo org students
-        }
-      })
-      
-      monthlyRevenue.push({
-        month: monthStart.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }),
-        revenue,
-        students: monthStudents
-      })
+      monthlyRevenuePromises.push(
+        Promise.all([
+          // Use database aggregation instead of fetching all invoices
+          prisma.invoice.aggregate({
+            where: {
+              status: 'PAID',
+              paidAt: {
+                gte: monthStart,
+                lte: monthEnd
+              }
+            },
+            _sum: { amountP: true }
+          }),
+          prisma.student.count({
+            where: {
+              createdAt: { lte: monthEnd },
+              isArchived: false,
+              ...(demoOrg ? { orgId: { not: demoOrg.id } } : {}) // Exclude demo org students
+            }
+          })
+        ]).then(([revenueResult, monthStudents]) => ({
+          month: monthStart.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }),
+          revenue: Number(revenueResult._sum.amountP || 0) / 100,
+          students: monthStudents
+        }))
+      )
     }
+    
+    const monthlyRevenue = await Promise.all(monthlyRevenuePromises)
 
-    // Get top performing organizations (by student count)
+    // Get top performing organizations (by student count) - optimized with parallel aggregations
+    const top5Orgs = orgs
+      .sort((a, b) => b._count.students - a._count.students)
+      .slice(0, 5)
+    
     const topOrgs = await Promise.all(
-      orgs
-        .sort((a, b) => b._count.students - a._count.students)
-        .slice(0, 5)
-        .map(async (org) => {
-          const orgInvoices = await prisma.invoice.findMany({
+      top5Orgs.map(async (org) => {
+        const prevMonthStart = new Date(lastMonth.getFullYear(), lastMonth.getMonth() - 1, 1)
+        
+        // Use database aggregations instead of fetching all invoices
+        const [orgRevenueResult, prevOrgRevenueResult] = await Promise.all([
+          prisma.invoice.aggregate({
             where: {
               orgId: org.id,
               status: 'PAID',
               paidAt: { gte: lastMonth }
             },
-            select: { amountP: true }
-          })
-          
-          const orgRevenue = orgInvoices.reduce((sum, inv) => sum + Number(inv.amountP || 0) / 100, 0)
-          const prevOrgRevenue = await prisma.invoice.findMany({
+            _sum: { amountP: true }
+          }),
+          prisma.invoice.aggregate({
             where: {
               orgId: org.id,
               status: 'PAID',
               paidAt: {
-                gte: new Date(lastMonth.getFullYear(), lastMonth.getMonth() - 1, 1),
+                gte: prevMonthStart,
                 lt: lastMonth
               }
             },
-            select: { amountP: true }
+            _sum: { amountP: true }
           })
-          
-          const prevRevenue = prevOrgRevenue.reduce((sum, inv) => sum + Number(inv.amountP || 0) / 100, 0)
-          const growth = prevRevenue > 0 ? ((orgRevenue - prevRevenue) / prevRevenue) * 100 : 0
-          
-          return {
-            name: org.name,
-            students: org._count.students,
-            revenue: orgRevenue,
-            growth,
-            status: 'active'
-          }
-        })
+        ])
+        
+        const orgRevenue = Number(orgRevenueResult._sum.amountP || 0) / 100
+        const prevRevenue = Number(prevOrgRevenueResult._sum.amountP || 0) / 100
+        const growth = prevRevenue > 0 ? ((orgRevenue - prevRevenue) / prevRevenue) * 100 : 0
+        
+        return {
+          name: org.name,
+          students: org._count.students,
+          revenue: orgRevenue,
+          growth,
+          status: 'active'
+        }
+      })
     )
 
     // Get recent activity (payments and orgs)
