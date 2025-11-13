@@ -24,6 +24,18 @@ const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
       neutral: 'text-gray-600 bg-gray-50'
     }
 
+    // Split title in the middle for mobile (2 lines)
+    const splitTitle = (text: string): { firstLine: string; secondLine: string } => {
+      const words = text.split(' ')
+      if (words.length <= 1) return { firstLine: text, secondLine: '' }
+      const midPoint = Math.ceil(words.length / 2)
+      const firstLine = words.slice(0, midPoint).join(' ')
+      const secondLine = words.slice(midPoint).join(' ')
+      return { firstLine, secondLine }
+    }
+
+    const titleParts = splitTitle(title)
+
     return (
       <Card 
         ref={ref} 
@@ -38,7 +50,12 @@ const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
         <CardContent className="p-3 sm:p-4 h-full flex flex-col justify-center">
           <div className="flex items-start justify-between">
             <div className="space-y-1 flex-1 min-w-0">
-              <p className="text-xs sm:text-sm text-[var(--muted-foreground)] whitespace-nowrap overflow-hidden text-ellipsis">{title}</p>
+              {/* Mobile: 2 lines, Desktop: 1 line */}
+              <div className="md:hidden">
+                <p className="text-xs text-[var(--muted-foreground)] leading-tight">{titleParts.firstLine}</p>
+                {titleParts.secondLine && <p className="text-xs text-[var(--muted-foreground)] leading-tight">{titleParts.secondLine}</p>}
+              </div>
+              <p className="hidden md:block text-xs sm:text-sm text-[var(--muted-foreground)] whitespace-nowrap overflow-hidden text-ellipsis">{title}</p>
               <p className="text-2xl sm:text-3xl font-semibold text-[var(--foreground)] whitespace-nowrap overflow-hidden text-ellipsis">{value}</p>
               {description && (
                 <p className="text-xs text-[var(--muted-foreground)] whitespace-nowrap overflow-hidden text-ellipsis">{description}</p>

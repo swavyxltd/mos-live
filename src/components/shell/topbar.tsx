@@ -32,7 +32,11 @@ export function Topbar({ title, user, userRole }: TopbarProps) {
       {/* Left side - Greeting */}
       <div className="flex items-center space-x-4">
         <div>
-          <h1 className="text-base sm:text-xl font-semibold text-[var(--foreground)] whitespace-nowrap sm:whitespace-normal">
+          {/* Mobile: 2 lines, Desktop: 1 line */}
+          <h1 className="md:hidden text-base font-semibold text-[var(--foreground)] leading-tight">
+            Assalamu'alaikum,<br />{firstName}
+          </h1>
+          <h1 className="hidden md:block text-base sm:text-xl font-semibold text-[var(--foreground)] whitespace-nowrap sm:whitespace-normal">
             Assalamu'alaikum, {firstName}
           </h1>
         </div>
