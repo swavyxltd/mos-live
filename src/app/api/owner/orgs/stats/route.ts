@@ -16,8 +16,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Get all organizations with detailed stats (including city field)
+    // Check for ACTIVE status or null (for backward compatibility with orgs created before status field)
     const orgs = await prisma.org.findMany({
-      where: { status: 'ACTIVE' },
+      where: { 
+        OR: [
+          { status: 'ACTIVE' },
+          { status: null }
+        ]
+      },
       select: {
         id: true,
         name: true,
@@ -37,6 +43,8 @@ export async function GET(request: NextRequest) {
       },
       orderBy: { createdAt: 'desc' }
     })
+
+    console.log(`📊 Found ${orgs.length} organizations in database`)
 
     // Get admin user for each org and calculate stats
     const orgsWithStats = await Promise.all(
@@ -124,9 +132,11 @@ export async function GET(request: NextRequest) {
       })
     )
 
+    console.log(`✅ Returning ${orgsWithStats.length} organizations`)
     return NextResponse.json(orgsWithStats)
   } catch (error: any) {
-    console.error('Error fetching org stats:', error)
+    console.error('❌ Error fetching org stats:', error)
+    console.error('Error stack:', error.stack)
     return NextResponse.json(
       { error: 'Failed to fetch organization stats', details: error.message },
       { status: 500 }
