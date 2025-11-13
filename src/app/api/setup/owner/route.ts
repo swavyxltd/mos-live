@@ -43,14 +43,13 @@ export async function POST(request: NextRequest) {
         name: owner.name,
         isSuperAdmin: owner.isSuperAdmin,
       },
-      loginInstructions: {
-        email: ownerEmail,
-        password: 'demo123',
-        note: 'Use these credentials to log in at /auth/signin',
-      },
+      note: 'Owner account created. Password must be set via password reset or invitation system.',
     })
   } catch (error: any) {
-    console.error('Setup error:', error)
+    // Log error server-side only (not to console in production)
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Setup error:', error)
+    }
     return NextResponse.json(
       {
         error: 'Failed to setup owner account',

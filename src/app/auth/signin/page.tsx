@@ -51,23 +51,50 @@ export default function SignInPage() {
     const password = formData.get('password') as string
     
     try {
-      const result = await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
-        callbackUrl: callbackUrl
+      // First, verify password via custom API route
+      const response = await fetch('/api/auth/signin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
       })
-      
-      if (result?.error) {
-        setError('Invalid email or password')
-      } else if (result?.ok) {
-        // Get session to check user role and redirect appropriately
-        const session = await getSession()
-        if ((session?.user as any)?.roleHints) {
-          const redirectUrl = getPostLoginRedirect((session.user as any).roleHints)
-          window.location.href = redirectUrl
-        } else {
-          window.location.href = '/auth/signin'
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || 'Invalid email or password')
+        setIsLoading(false)
+        return
+      }
+
+      // If 2FA is required, redirect to verification page
+      if (data.requiresTwoFactor && data.pendingUserId) {
+        // Store pending user ID in sessionStorage for 2FA page
+        sessionStorage.setItem('pendingUserId', data.pendingUserId)
+        sessionStorage.setItem('pendingEmail', email)
+        window.location.href = `/auth/verify-2fa?callbackUrl=${encodeURIComponent(callbackUrl)}`
+        return
+      }
+
+      // No 2FA needed - complete signin with NextAuth
+      if (data.success && data.userId) {
+        const result = await signIn('credentials', {
+          email,
+          password,
+          redirect: false,
+          callbackUrl: callbackUrl
+        })
+
+        if (result?.error) {
+          setError('An error occurred during sign in')
+        } else if (result?.ok) {
+          // Get session to check user role and redirect appropriately
+          const session = await getSession()
+          if ((session?.user as any)?.roleHints) {
+            const redirectUrl = getPostLoginRedirect((session.user as any).roleHints)
+            window.location.href = redirectUrl
+          } else {
+            window.location.href = '/auth/signin'
+          }
         }
       }
     } catch (error) {

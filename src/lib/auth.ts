@@ -3,6 +3,7 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 import { PrismaAdapter } from '@auth/prisma-adapter'
 import { prisma } from './prisma'
 import bcrypt from 'bcryptjs'
+import { checkEmailRateLimit } from './rate-limit'
 // import { Role } from '@prisma/client'
 
 // Helper function to get user role hints
@@ -52,7 +53,10 @@ async function getUserRoleHints(userId: string) {
       isParent
     }
   } catch (error) {
-    console.error('Error getting user role hints:', error)
+    // Log error server-side only (not to console in production)
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error getting user role hints:', error)
+    }
     // Return default role hints on error to allow authentication
     // Layouts will handle blocking if needed
     return {
@@ -76,7 +80,7 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+        if (!credentials?.email) {
           return null
         }
 
@@ -84,32 +88,114 @@ export const authOptions: NextAuthOptions = {
         try {
           const user = await prisma.user.findUnique({
             where: {
-              email: credentials.email
+              email: credentials.email.toLowerCase()
             }
           })
 
           if (!user) {
-            console.log(`User not found: ${credentials.email}`)
+            // Don't reveal if user exists to prevent enumeration
             return null
           }
 
-          // Check password if stored, otherwise accept demo123 for backward compatibility
-          if (user.password) {
-            // User has a password stored, verify it
-            const isValidPassword = await bcrypt.compare(credentials.password, user.password)
-            if (!isValidPassword) {
-              console.log(`Invalid password for user: ${credentials.email}`)
-              return null
-            }
-          } else {
-            // No password stored, accept demo123 for backward compatibility
-            if (credentials.password !== 'demo123') {
-              console.log(`Invalid password for user: ${credentials.email} (no password stored)`)
-              return null
-            }
+          // Check if account is locked
+          if (user.lockedUntil && user.lockedUntil > new Date()) {
+            // Account is locked
+            return null
           }
+
+          // Check if this is a post-2FA signin (password is the signin token)
+          if (credentials.password && credentials.password.length === 12 && /^\d{12}$/.test(credentials.password)) {
+            // This is a signin token after 2FA verification
+            if (user.twoFactorCode === credentials.password && 
+                user.twoFactorCodeExpiry && 
+                user.twoFactorCodeExpiry > new Date()) {
+              // Token is valid - clear it and create session
+              await prisma.user.update({
+                where: { id: user.id },
+                data: {
+                  twoFactorCode: null,
+                  twoFactorCodeExpiry: null,
+                  failedLoginAttempts: 0,
+                  lockedUntil: null,
+                  lastFailedLoginAttempt: null
+                }
+              })
+
+              return {
+                id: user.id,
+                email: user.email,
+                name: user.name,
+                image: user.image,
+                isSuperAdmin: user.isSuperAdmin,
+                staffSubrole: user.staffSubrole,
+              }
+            }
+            // Invalid or expired token
+            return null
+          }
+
+          // Regular password authentication
+          if (!credentials.password) {
+            return null
+          }
+
+          // Check rate limit by email
+          const emailRateLimit = checkEmailRateLimit(credentials.email)
+          if (!emailRateLimit.allowed) {
+            // Rate limit exceeded - don't reveal this to prevent enumeration
+            return null
+          }
+
+          // SECURITY: Require password for all users - no fallback passwords
+          if (!user.password) {
+            // User has no password set - account is disabled for security
+            return null
+          }
+
+          // Verify password
+          const isValidPassword = await bcrypt.compare(credentials.password, user.password)
           
-          console.log(`Successfully authenticated user: ${credentials.email}`)
+          if (!isValidPassword) {
+            // Increment failed login attempts
+            const newFailedAttempts = (user.failedLoginAttempts || 0) + 1
+            const lockoutDuration = 30 * 60 * 1000 // 30 minutes
+            const shouldLockAccount = newFailedAttempts >= 5
+
+            await prisma.user.update({
+              where: { id: user.id },
+              data: {
+                failedLoginAttempts: newFailedAttempts,
+                lastFailedLoginAttempt: new Date(),
+                ...(shouldLockAccount && {
+                  lockedUntil: new Date(Date.now() + lockoutDuration)
+                })
+              }
+            })
+
+            // Don't reveal if password was wrong to prevent enumeration
+            return null
+          }
+
+          // Password is valid - but check if 2FA is enabled
+          // If 2FA is enabled, we should not create session here
+          // The custom signin API will handle 2FA flow
+          // For now, we'll allow it if 2FA is disabled
+          if (user.twoFactorEnabled) {
+            // 2FA is enabled - don't create session here
+            // The custom signin API will handle the 2FA flow
+            return null
+          }
+
+          // Successful login - reset failed attempts and unlock account
+          await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              failedLoginAttempts: 0,
+              lockedUntil: null,
+              lastFailedLoginAttempt: null
+            }
+          })
+
           return {
             id: user.id,
             email: user.email,
@@ -119,8 +205,10 @@ export const authOptions: NextAuthOptions = {
             staffSubrole: user.staffSubrole,
           }
         } catch (error: any) {
-          console.error('Database error during authentication:', error?.message || error)
-          console.error('Error stack:', error?.stack)
+          // Log error server-side only (not to console in production)
+          if (process.env.NODE_ENV === 'development') {
+            console.error('Database error during authentication:', error?.message || error)
+          }
           // If database connection fails, don't fall back - return null to show error
           return null
         }
@@ -130,7 +218,8 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   session: {
-    strategy: 'jwt'
+    strategy: 'jwt',
+    maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -145,7 +234,10 @@ export const authOptions: NextAuthOptions = {
         try {
           token.roleHints = await getUserRoleHints(userId)
         } catch (error) {
-          console.error('Error getting role hints in JWT callback:', error)
+          // Log error server-side only (not to console in production)
+          if (process.env.NODE_ENV === 'development') {
+            console.error('Error getting role hints in JWT callback:', error)
+          }
           // Set default role hints on error to allow authentication
           token.roleHints = {
             isOwner: false,
