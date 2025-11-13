@@ -90,16 +90,17 @@ export async function POST(request: NextRequest) {
     for (const recipient of recipients) {
       try {
         if (channel === 'EMAIL' && recipient.email) {
+          const { generateEmailTemplate } = await import('@/lib/email-template')
+          const html = await generateEmailTemplate({
+            title,
+            description: body,
+            footerText: 'Best regards, The Madrasah Team'
+          })
+          
           await sendEmail({
             to: recipient.email,
             subject: title,
-            html: `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                <h2>${title}</h2>
-                <p>${body}</p>
-                <p>Best regards,<br>The Madrasah Team</p>
-              </div>
-            `,
+            html,
             text: `${title}\n\n${body}\n\nBest regards,\nThe Madrasah Team`
           })
           successCount++
