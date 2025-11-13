@@ -24,10 +24,14 @@ const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
       neutral: 'text-gray-600 bg-gray-50'
     }
 
-    // Split title in the middle for mobile (2 lines)
+    // Split title in the middle for mobile (2 lines) - ALWAYS split
     const splitTitle = (text: string): { firstLine: string; secondLine: string } => {
       const words = text.split(' ')
-      if (words.length <= 1) return { firstLine: text, secondLine: '' }
+      if (words.length <= 1) {
+        // If only one word, split it in the middle
+        const midPoint = Math.ceil(text.length / 2)
+        return { firstLine: text.slice(0, midPoint), secondLine: text.slice(midPoint) }
+      }
       const midPoint = Math.ceil(words.length / 2)
       const firstLine = words.slice(0, midPoint).join(' ')
       const secondLine = words.slice(midPoint).join(' ')
@@ -50,10 +54,10 @@ const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
         <CardContent className="p-3 sm:p-4 h-full flex flex-col justify-center">
           <div className="flex items-start justify-between">
             <div className="space-y-1 flex-1 min-w-0">
-              {/* Mobile: 2 lines, Desktop: 1 line */}
+              {/* Mobile: ALWAYS 2 lines, Desktop: 1 line */}
               <div className="md:hidden">
                 <p className="text-xs text-[var(--muted-foreground)] leading-tight">{titleParts.firstLine}</p>
-                {titleParts.secondLine && <p className="text-xs text-[var(--muted-foreground)] leading-tight">{titleParts.secondLine}</p>}
+                <p className="text-xs text-[var(--muted-foreground)] leading-tight">{titleParts.secondLine || '\u00A0'}</p>
               </div>
               <p className="hidden md:block text-xs sm:text-sm text-[var(--muted-foreground)] whitespace-nowrap overflow-hidden text-ellipsis">{title}</p>
               <p className="text-2xl sm:text-3xl font-semibold text-[var(--foreground)] whitespace-nowrap overflow-hidden text-ellipsis">{value}</p>
