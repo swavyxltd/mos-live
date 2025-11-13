@@ -25,10 +25,10 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Check if subscription is actually past_due or suspended
-    const isOverdue = billing.subscriptionStatus === 'past_due' || org.status === 'SUSPENDED'
+    // Check if subscription is actually past_due, suspended, or paused
+    const isOverdue = billing.subscriptionStatus === 'past_due' || org.status === 'SUSPENDED' || org.status === 'PAUSED'
     
-    if (!isOverdue && billing.subscriptionStatus === 'active') {
+    if (!isOverdue && billing.subscriptionStatus === 'active' && org.status === 'ACTIVE') {
       return NextResponse.json({ 
         error: 'Subscription is not overdue. No payment needed.' 
       }, { status: 400 })
@@ -82,28 +82,30 @@ export async function POST(request: NextRequest) {
           }
         })
 
-        // Update org status if it was suspended
-        if (org.status === 'SUSPENDED') {
-          await prisma.org.update({
-            where: { id: org.id },
-            data: {
-              status: 'ACTIVE',
-              suspendedAt: null,
-              suspendedReason: null,
-              paymentFailureCount: 0,
-              lastPaymentDate: new Date()
-            }
-          })
-        } else {
-          // Just update payment date
-          await prisma.org.update({
-            where: { id: org.id },
-            data: {
-              lastPaymentDate: new Date(),
-              paymentFailureCount: 0
-            }
-          })
-        }
+      // Update org status if it was suspended or paused
+      if (org.status === 'SUSPENDED' || org.status === 'PAUSED') {
+        await prisma.org.update({
+          where: { id: org.id },
+          data: {
+            status: 'ACTIVE',
+            suspendedAt: null,
+            suspendedReason: null,
+            pausedAt: null,
+            pausedReason: null,
+            paymentFailureCount: 0,
+            lastPaymentDate: new Date()
+          }
+        })
+      } else {
+        // Just update payment date
+        await prisma.org.update({
+          where: { id: org.id },
+          data: {
+            lastPaymentDate: new Date(),
+            paymentFailureCount: 0
+          }
+        })
+      }
 
         // Create audit log
         await prisma.auditLog.create({

@@ -1,15 +1,28 @@
 'use client'
 export const dynamic = 'force-dynamic'
 
-import { Suspense } from 'react'
+import { Suspense, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Pause, Mail, AlertCircle } from 'lucide-react'
+import { Pause, Mail, AlertCircle, CreditCard } from 'lucide-react'
+import { PlatformOverduePaymentModal } from '@/components/platform-overdue-payment-modal'
 
 function AccountPausedContent() {
   const searchParams = useSearchParams()
   const orgName = searchParams.get('org') || 'your organization'
   const reason = searchParams.get('reason') || 'No reason provided'
+  const orgId = searchParams.get('orgId')
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+
+  const handlePayNow = () => {
+    setShowPaymentModal(true)
+  }
+
+  const handlePaymentSuccess = () => {
+    setShowPaymentModal(false)
+    // Redirect to dashboard after successful payment
+    window.location.href = '/dashboard'
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
@@ -82,8 +95,15 @@ function AccountPausedContent() {
               </div>
             </div>
 
-            {/* Action Button */}
-            <div className="pt-2">
+            {/* Action Buttons */}
+            <div className="pt-2 space-y-2">
+              <Button 
+                className="w-full bg-blue-600 hover:bg-blue-700"
+                onClick={handlePayNow}
+              >
+                <CreditCard className="h-4 w-4 mr-2" />
+                Pay Now
+              </Button>
               <Button 
                 variant="outline" 
                 className="w-full"
@@ -95,6 +115,13 @@ function AccountPausedContent() {
           </div>
         </div>
       </div>
+
+      <PlatformOverduePaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        onPaymentSuccess={handlePaymentSuccess}
+        orgId={orgId || undefined}
+      />
     </div>
   )
 }

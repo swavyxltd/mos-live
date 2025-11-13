@@ -107,19 +107,21 @@ async function handlePaymentIntentSucceeded(paymentIntent: any) {
         })
       }
 
-      // Update org status if it was suspended
+      // Update org status if it was suspended or paused
       const org = await prisma.org.findUnique({
         where: { id: metadata.orgId },
         select: { status: true }
       })
 
-      if (org?.status === 'SUSPENDED') {
+      if (org?.status === 'SUSPENDED' || org?.status === 'PAUSED') {
         await prisma.org.update({
           where: { id: metadata.orgId },
           data: {
             status: 'ACTIVE',
             suspendedAt: null,
             suspendedReason: null,
+            pausedAt: null,
+            pausedReason: null,
             paymentFailureCount: 0,
             lastPaymentDate: new Date()
           }

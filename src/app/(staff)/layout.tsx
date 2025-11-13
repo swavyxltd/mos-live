@@ -83,7 +83,7 @@ export default async function StaffLayout({
 
   // Check if organization is paused - redirect admin/staff to paused page
   if (org.status === 'PAUSED') {
-    const pausedUrl = `/auth/account-paused?org=${encodeURIComponent(org.name)}&reason=${encodeURIComponent(org.pausedReason || 'Account paused')}`
+    const pausedUrl = `/auth/account-paused?org=${encodeURIComponent(org.name)}&reason=${encodeURIComponent(org.pausedReason || 'Account paused')}&orgId=${encodeURIComponent(org.id)}`
     redirect(pausedUrl)
   }
   
