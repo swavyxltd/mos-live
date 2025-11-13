@@ -23,6 +23,7 @@ export function GlobalSearch() {
   const [isOpen, setIsOpen] = React.useState(false)
   const [isLoading, setIsLoading] = React.useState(false)
   const [showResults, setShowResults] = React.useState(false)
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = React.useState(false)
 
   const searchTimeoutRef = React.useRef<NodeJS.Timeout>()
 
@@ -71,19 +72,21 @@ export function GlobalSearch() {
         setIsOpen(false)
         setShowResults(false)
         setQuery('')
+        setIsMobileSearchOpen(false)
       }
     }
 
-    if (isOpen) {
+    if (isOpen || isMobileSearchOpen) {
       document.addEventListener('mousedown', handleClickOutside)
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [isOpen])
+  }, [isOpen, isMobileSearchOpen])
 
   const handleClear = () => {
     setQuery('')
     setResults([])
     setShowResults(false)
+    setIsMobileSearchOpen(false)
   }
 
   const handleResultClick = () => {
@@ -106,8 +109,19 @@ export function GlobalSearch() {
   }
 
   return (
-    <div className="relative w-full max-w-2xl search-container">
-      <div className="relative">
+    <div className="relative search-container">
+      {/* Mobile: Search Icon Button */}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => setIsMobileSearchOpen(true)}
+        className="md:hidden h-10 w-10 hover:bg-gray-100 flex-shrink-0"
+      >
+        <Search className="h-5 w-5" />
+      </Button>
+
+      {/* Desktop: Always visible search bar */}
+      <div className="hidden md:block relative w-full max-w-2xl">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           value={query}
@@ -128,9 +142,50 @@ export function GlobalSearch() {
         )}
       </div>
 
-      {/* Search Results Dropdown */}
-      {isOpen && showResults && (
-        <div className="absolute top-full left-0 right-0 mt-1 z-20">
+      {/* Mobile: Search bar overlay (shown when icon is clicked) */}
+      {isMobileSearchOpen && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="md:hidden fixed inset-0 bg-black/50 z-40"
+            onClick={() => {
+              setIsMobileSearchOpen(false)
+              setQuery('')
+              setShowResults(false)
+            }}
+          />
+          {/* Search bar */}
+          <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-[var(--background)] border-b border-[var(--border)] p-4">
+            <div className="relative max-w-2xl mx-auto">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={query}
+                onChange={handleInputChange}
+                onFocus={() => setIsOpen(true)}
+                placeholder="Search..."
+                className="pl-10 pr-10 w-full rounded-[var(--radius-md)] border-[var(--border)] bg-[var(--background)]"
+                autoFocus
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setIsMobileSearchOpen(false)
+                  setQuery('')
+                  setShowResults(false)
+                }}
+                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Search Results Dropdown - Desktop */}
+      {isOpen && showResults && !isMobileSearchOpen && (
+        <div className="hidden md:block absolute top-full left-0 right-0 mt-1 z-20">
           <Card className="max-h-96 overflow-y-auto">
             <CardContent className="p-0">
               {isLoading ? (
@@ -171,6 +226,53 @@ export function GlobalSearch() {
               ) : null}
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {/* Search Results Dropdown - Mobile */}
+      {isMobileSearchOpen && isOpen && showResults && (
+        <div className="md:hidden fixed top-[73px] left-0 right-0 z-50 max-h-[calc(100vh-73px)] overflow-y-auto bg-[var(--background)] border-b border-[var(--border)]">
+          <div className="max-w-2xl mx-auto">
+            {isLoading ? (
+              <div className="p-4 text-center text-muted-foreground">
+                Searching...
+              </div>
+            ) : results.length > 0 ? (
+              <div className="py-2">
+                {results.map((result, index) => (
+                  <Link
+                    key={`${result.type}-${result.id}-${index}`}
+                    href={result.url}
+                    onClick={() => {
+                      handleResultClick()
+                      setIsMobileSearchOpen(false)
+                    }}
+                    className="flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors border-b border-[var(--border)] last:border-b-0"
+                  >
+                    <span className="text-lg">{result.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm truncate">
+                        {result.title}
+                      </div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        {result.subtitle}
+                      </div>
+                    </div>
+                    <Badge 
+                      variant="secondary" 
+                      className={`text-xs ${getTypeColor(result.type)}`}
+                    >
+                      {result.type}
+                    </Badge>
+                  </Link>
+                ))}
+              </div>
+            ) : query.length >= 2 ? (
+              <div className="p-4 text-center text-muted-foreground">
+                No results found for "{query}"
+              </div>
+            ) : null}
+          </div>
         </div>
       )}
 
