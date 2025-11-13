@@ -215,7 +215,7 @@ function Verify2FAContent() {
   }
 
   return (
-    <div className="w-full max-w-[440px]">
+    <div className="w-full max-w-lg">
       {/* Logo above card */}
       <div className="mb-6 flex justify-center">
         <img 
@@ -225,92 +225,97 @@ function Verify2FAContent() {
         />
       </div>
       
-      {/* White card with soft shadow */}
-      <div className="rounded-2xl bg-white shadow-[0_8px_30px_rgba(0,0,0,0.08)] p-8">
+      {/* White card matching payment modal style */}
+      <div className="bg-white border border-gray-200 rounded-xl shadow-md overflow-hidden">
         {/* Header */}
-        <div className="mb-6 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-100 rounded-full mb-4">
-            <Shield className="w-8 h-8 text-purple-600" />
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Shield className="h-5 w-5 text-gray-700" />
+            </div>
+            <h2 className="text-xl font-semibold text-gray-900">
+              Verify Your Identity
+            </h2>
           </div>
-          <h1 className="text-2xl font-semibold text-neutral-900 mb-2">
-            Verify Your Identity
-          </h1>
-          <p className="text-sm text-neutral-600">
+          <p className="text-sm text-gray-600">
             We've sent a 6-digit verification code to
           </p>
           {email && (
-            <p className="text-sm font-medium text-neutral-900 mt-1 flex items-center justify-center gap-2">
-              <Mail className="w-4 h-4" />
+            <p className="text-sm font-medium text-gray-900 mt-2 flex items-center gap-2">
+              <Mail className="h-4 w-4 text-gray-500" />
               {email}
             </p>
           )}
         </div>
 
-        {/* Error message */}
-        {error && (
-          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
-            {error}
-          </div>
-        )}
+        {/* Content */}
+        <div className="p-6 space-y-6">
+          {/* Error message */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
 
-        {/* Code input form */}
-        <form onSubmit={handleVerify} className="space-y-6">
-          {/* Code inputs */}
-          <div className="flex justify-center gap-3">
-            {code.map((digit, index) => (
-              <input
-                key={index}
-                ref={(el) => (inputRefs.current[index] = el)}
-                type="text"
-                inputMode="numeric"
-                maxLength={1}
-                value={digit}
-                onChange={(e) => handleCodeChange(index, e.target.value)}
-                onKeyDown={(e) => handleKeyDown(index, e)}
-                onPaste={index === 0 ? handlePaste : undefined}
-                className="w-12 h-14 text-center text-2xl font-semibold border-2 border-neutral-200 rounded-xl focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-colors"
-                disabled={isLoading}
-                autoFocus={index === 0}
-              />
-            ))}
-          </div>
+          {/* Code input form */}
+          <form onSubmit={handleVerify} className="space-y-6">
+            {/* Code inputs */}
+            <div className="flex justify-center gap-3">
+              {code.map((digit, index) => (
+                <input
+                  key={index}
+                  ref={(el) => (inputRefs.current[index] = el)}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handleCodeChange(index, e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(index, e)}
+                  onPaste={index === 0 ? handlePaste : undefined}
+                  className="w-12 h-14 text-center text-2xl font-semibold border-2 border-gray-200 rounded-lg focus:outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100 transition-colors"
+                  disabled={isLoading}
+                  autoFocus={index === 0}
+                />
+              ))}
+            </div>
 
-          {/* Submit button */}
-          <button
-            type="submit"
-            disabled={isLoading || code.join('').length !== 6}
-            className="w-full h-11 bg-neutral-900 text-white font-medium rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? 'Verifying...' : 'Verify Code'}
-          </button>
-
-          {/* Resend code */}
-          <div className="text-center">
+            {/* Submit button */}
             <button
-              type="button"
-              onClick={handleResendCode}
-              disabled={isResending}
-              className="text-sm text-purple-600 hover:text-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              type="submit"
+              disabled={isLoading || code.join('').length !== 6}
+              className="w-full h-11 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isResending ? 'Sending...' : "Didn't receive a code? Resend"}
+              {isLoading ? 'Verifying...' : 'Verify Code'}
             </button>
-          </div>
 
-          {/* Back to signin */}
-          <div className="text-center pt-4 border-t border-neutral-200">
-            <button
-              type="button"
-              onClick={() => {
-                sessionStorage.removeItem('pendingUserId')
-                sessionStorage.removeItem('pendingEmail')
-                router.push('/auth/signin')
-              }}
-              className="text-sm text-neutral-600 hover:text-neutral-900"
-            >
-              ← Back to sign in
-            </button>
-          </div>
-        </form>
+            {/* Resend code */}
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={handleResendCode}
+                disabled={isResending}
+                className="text-sm text-green-600 hover:text-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isResending ? 'Sending...' : "Didn't receive a code? Resend"}
+              </button>
+            </div>
+
+            {/* Back to signin */}
+            <div className="text-center pt-4 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={() => {
+                  sessionStorage.removeItem('pendingUserId')
+                  sessionStorage.removeItem('pendingEmail')
+                  router.push('/auth/signin')
+                }}
+                className="text-sm text-gray-600 hover:text-gray-900"
+              >
+                ← Back to sign in
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   )
@@ -319,7 +324,7 @@ function Verify2FAContent() {
 export default function Verify2FAPage() {
   return (
     <Suspense fallback={
-      <div className="w-full max-w-[440px]">
+      <div className="w-full max-w-lg">
         <div className="mb-6 flex justify-center">
           <img 
             src="/logo.png" 
@@ -327,12 +332,12 @@ export default function Verify2FAPage() {
             className="w-[198px] h-auto"
           />
         </div>
-        <div className="rounded-2xl bg-white shadow-[0_8px_30px_rgba(0,0,0,0.08)] p-8">
+        <div className="bg-white border border-gray-200 rounded-xl shadow-md overflow-hidden p-8">
           <div className="text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-100 rounded-full mb-4 animate-pulse">
-              <Shield className="w-8 h-8 text-purple-600" />
+            <div className="inline-flex items-center justify-center w-10 h-10 bg-gray-100 rounded-lg mb-4 animate-pulse">
+              <Shield className="h-5 w-5 text-gray-700" />
             </div>
-            <p className="text-neutral-600">Loading verification page...</p>
+            <p className="text-gray-600">Loading verification page...</p>
           </div>
         </div>
       </div>
