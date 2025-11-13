@@ -97,10 +97,11 @@ const parentNavigation = [
 
 export function Sidebar({ user: initialUser, org, userRole, staffSubrole }: SidebarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   
   // Use session data if available (fresh from client), otherwise fall back to initial user prop
-  const user = session?.user ? {
+  // Always prioritize session data when it's loaded to ensure we get the latest from database
+  const user = (session?.user && status === 'authenticated') ? {
     id: session.user.id || initialUser.id,
     name: session.user.name || initialUser.name,
     email: session.user.email || initialUser.email,

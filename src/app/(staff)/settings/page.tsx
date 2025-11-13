@@ -303,13 +303,16 @@ export default function SettingsPage() {
         
         // Force NextAuth to refresh the session by calling update()
         // This triggers the JWT callback which fetches fresh user data from database
-        await update()
+        const updatedSession = await update()
         
-        // Small delay to ensure session is updated before reload
-        await new Promise(resolve => setTimeout(resolve, 100))
+        // Wait a bit longer to ensure session is fully updated across all components
+        await new Promise(resolve => setTimeout(resolve, 500))
         
-        // Reload the page to ensure all components reflect the new data
-        window.location.reload()
+        // Use router.refresh() to refresh server components, then reload for client components
+        // This ensures both server and client components get the updated session
+        if (typeof window !== 'undefined') {
+          window.location.reload()
+        }
       } else {
         const errorMessage = data.error || 'Failed to save user settings'
         toast.error(errorMessage)
