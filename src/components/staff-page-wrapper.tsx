@@ -91,7 +91,7 @@ export function StaffPageWrapper({ initialTeachers }: StaffPageWrapperProps) {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-6 rounded-lg shadow">
           <div className="flex items-center">
             <div className="flex-shrink-0">

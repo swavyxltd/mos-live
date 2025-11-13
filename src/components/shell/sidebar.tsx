@@ -151,11 +151,10 @@ export function Sidebar({ user, org, userRole, staffSubrole }: SidebarProps) {
       {/* Mobile menu button */}
       <div className="sm:hidden fixed top-0 left-0 right-0 z-50 bg-[var(--sidebar)] border-b border-[var(--sidebar-border)] px-4 py-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <MadrasahLogo showText={false} textSize="sm" className="mr-3" />
-            <div>
-              <h1 className="text-sm font-semibold text-[var(--sidebar-foreground)]">Madrasah OS</h1>
-              <p className="text-xs text-[var(--muted-foreground)]">{org?.name || 'Madrasah OS'}</p>
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-base font-semibold text-[var(--sidebar-foreground)] truncate">Madrasah OS</h1>
+              <p className="text-sm text-[var(--muted-foreground)] truncate">{org?.name || 'Madrasah OS'}</p>
             </div>
           </div>
           <Button

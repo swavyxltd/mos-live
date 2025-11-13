@@ -263,33 +263,35 @@ export default function OwnerUsersPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 w-full overflow-x-hidden">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-[var(--foreground)]">User Management</h1>
-          <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-[var(--foreground)] break-words">User Management</h1>
+          <p className="mt-1 text-sm text-[var(--muted-foreground)] break-words">
             Manage all users across your platform and monitor user activity
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
+        <div className="flex flex-wrap gap-2 shrink-0">
+          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing} className="whitespace-nowrap">
             <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-            {refreshing ? 'Refreshing...' : 'Refresh'}
+            <span className="hidden sm:inline">{refreshing ? 'Refreshing...' : 'Refresh'}</span>
+            <span className="sm:hidden">{refreshing ? '...' : 'Refresh'}</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={handleExport}>
-            <Download className="h-4 w-4 mr-2" />
-            Export
+          <Button variant="outline" size="sm" onClick={handleExport} className="whitespace-nowrap">
+            <Download className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Export</span>
           </Button>
-          <Button size="sm" onClick={() => router.push('/owner/users/create')}>
-            <UserPlus className="h-4 w-4 mr-2" />
-            Add User
+          <Button size="sm" onClick={() => router.push('/owner/users/create')} className="whitespace-nowrap">
+            <UserPlus className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Add User</span>
+            <span className="sm:hidden">Add</span>
           </Button>
         </div>
       </div>
 
       {/* User Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -352,19 +354,19 @@ export default function OwnerUsersPage() {
         <CardContent>
           <div className="space-y-4">
             {/* Search Bar */}
-            <div className="flex gap-4">
-              <div className="flex-1">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1 min-w-0">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
                     placeholder="Search users by name, email, or organization..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 w-full"
                   />
                 </div>
               </div>
-              <Button variant="outline" onClick={clearFilters}>
+              <Button variant="outline" onClick={clearFilters} className="whitespace-nowrap shrink-0">
                 <X className="h-4 w-4 mr-2" />
                 Clear Filters
               </Button>
@@ -436,14 +438,14 @@ export default function OwnerUsersPage() {
             </div>
 
             {/* Results Summary */}
-            <div className="flex items-center justify-between pt-2 border-t border-gray-200">
-              <div className="text-sm text-gray-600">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-2 border-t border-gray-200">
+              <div className="text-sm text-gray-600 break-words">
                 Showing {filteredUsers.length} of {userData?.allUsers?.length || 0} users
                 {(searchTerm || roleFilter !== 'all' || statusFilter !== 'all' || orgFilter !== 'all' || dateFilter !== 'all') && (
                   <span className="ml-2 text-blue-600">(filtered)</span>
                 )}
               </div>
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-gray-500 whitespace-nowrap">
                 Last updated: {new Date().toLocaleString()}
               </div>
             </div>
@@ -451,88 +453,86 @@ export default function OwnerUsersPage() {
         </CardContent>
       </Card>
 
-      {/* Recent Users and Role Distribution */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Filtered Users */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Users</CardTitle>
-            <CardDescription>
-              {filteredUsers.length === (userData?.allUsers?.length || 0)
-                ? 'All users in the platform' 
-                : `Filtered results (${filteredUsers.length} of ${userData?.allUsers?.length || 0})`
-              }
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {filteredUsers.length > 0 ? (
-                filteredUsers.map((user) => (
-                  <div key={user.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                        <span className="text-sm font-medium text-gray-600">
-                          {user.name.split(' ').map(n => n[0]).join('')}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="font-medium">{user.name}</p>
-                        <p className="text-sm text-gray-500">{user.email}</p>
-                        <p className="text-xs text-gray-400">{user.orgName}</p>
-                      </div>
+      {/* Users List */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Users</CardTitle>
+          <CardDescription>
+            {filteredUsers.length === (userData?.allUsers?.length || 0)
+              ? 'All users in the platform' 
+              : `Filtered results (${filteredUsers.length} of ${userData?.allUsers?.length || 0})`
+            }
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {filteredUsers.length > 0 ? (
+              filteredUsers.map((user) => (
+                <div key={user.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors w-full min-w-0">
+                  <div className="flex items-center space-x-3 min-w-0 flex-1">
+                    <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center shrink-0">
+                      <span className="text-sm font-medium text-gray-600">
+                        {user.name.split(' ').map(n => n[0]).join('')}
+                      </span>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge variant={getRoleBadgeVariant(user.role)} className="flex items-center space-x-1">
-                        {getRoleIcon(user.role)}
-                        <span>{user.role}</span>
-                      </Badge>
-                      {getStatusBadge(user.status)}
-                      <div className="flex space-x-1">
-                        <Button variant="ghost" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium truncate">{user.name}</p>
+                      <p className="text-sm text-gray-500 truncate">{user.email}</p>
+                      <p className="text-xs text-gray-400 truncate">{user.orgName}</p>
                     </div>
                   </div>
-                ))
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                  <p className="text-lg font-medium">No users found</p>
-                  <p className="text-sm">Try adjusting your search or filter criteria</p>
+                  <div className="flex items-center flex-wrap gap-2 shrink-0 sm:flex-nowrap">
+                    <Badge variant={getRoleBadgeVariant(user.role)} className="flex items-center space-x-1 whitespace-nowrap">
+                      {getRoleIcon(user.role)}
+                      <span className="hidden sm:inline">{user.role}</span>
+                      <span className="sm:hidden">{user.role.substring(0, 3)}</span>
+                    </Badge>
+                    {getStatusBadge(user.status)}
+                    <div className="flex space-x-1">
+                      <Button variant="ghost" size="sm" className="shrink-0">
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" className="shrink-0">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+              ))
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p className="text-lg font-medium">No users found</p>
+                <p className="text-sm">Try adjusting your search or filter criteria</p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
-        {/* Role Distribution */}
-        <Card>
-          <CardHeader>
-            <CardTitle>User Role Distribution</CardTitle>
-            <CardDescription>Breakdown of users by role type</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {(userData?.roleDistribution || []).map((role) => (
-                <div key={role.role} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-3 h-3 rounded-full bg-blue-500" />
-                    <span className="text-sm font-medium">{role.role}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-500">{role.count} users</span>
-                    <Badge variant="outline">{role.percentage}%</Badge>
-                  </div>
+      {/* Role Distribution */}
+      <Card>
+        <CardHeader>
+          <CardTitle>User Role Distribution</CardTitle>
+          <CardDescription>Breakdown of users by role type</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {(userData?.roleDistribution || []).map((role) => (
+              <div key={role.role} className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-3 h-3 rounded-full bg-blue-500" />
+                  <span className="text-sm font-medium">{role.role}</span>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-500">{role.count} users</span>
+                  <Badge variant="outline">{role.percentage}%</Badge>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* User Activity and Top Organizations */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

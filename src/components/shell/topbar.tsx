@@ -32,11 +32,14 @@ export function Topbar({ title, user, userRole }: TopbarProps) {
       {/* Left side - Greeting */}
       <div className="flex items-center space-x-4">
         <div>
-          <h1 className="text-xl font-semibold text-[var(--foreground)]">
+          <h1 className="text-base sm:text-xl font-semibold text-[var(--foreground)] whitespace-nowrap sm:whitespace-normal">
             Assalamu'alaikum, {firstName}
           </h1>
         </div>
       </div>
+
+      {/* Spacer to increase gap - mobile only */}
+      <div className="flex-1 min-w-[2rem] sm:hidden"></div>
 
       {/* Right side - Search and Dark Mode */}
       <div className="flex items-center space-x-4">

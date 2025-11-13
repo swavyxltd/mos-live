@@ -196,7 +196,7 @@ export function FinanceDashboardContent() {
       </div>
 
       {/* Financial Metrics Grid - Moved to top */}
-      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr">
+      <div className="grid gap-3 sm:gap-4 lg:gap-6 grid-cols-2 lg:grid-cols-4 auto-rows-fr">
         <Link href="/students" className="block">
           <StatCard
             title="Total Students"

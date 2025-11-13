@@ -113,7 +113,7 @@ export function GlobalSearch() {
           value={query}
           onChange={handleInputChange}
           onFocus={() => setIsOpen(true)}
-          placeholder="Search across the entire app..."
+          placeholder="Search..."
           className="pl-10 pr-10 w-full rounded-[var(--radius-md)] border-[var(--border)] bg-[var(--background)]"
         />
         {query && (

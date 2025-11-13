@@ -82,10 +82,28 @@
   --sidebar-ring: oklch(0.4390 0 0);
 }
 
+* {
+  box-sizing: border-box;
+}
+
+html {
+  overflow-x: hidden;
+  width: 100%;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+}
+
+/* Prevent horizontal overflow on all containers */
+body > * {
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 /* Ensure clickable elements show pointer cursor */
@@ -96,4 +114,38 @@ a, button, [role="button"], [data-clickable="true"] {
 /* Ensure links inside buttons also show pointer cursor */
 a button {
   cursor: pointer;
+}
+
+/* Global responsive text wrapping */
+p, span, div, h1, h2, h3, h4, h5, h6 {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Prevent overflow on flex containers - use min-w-0 utility class instead */
+
+/* Ensure inputs and form elements don't overflow */
+input, textarea, select {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Prevent table overflow */
+table {
+  width: 100%;
+  table-layout: auto;
+}
+
+/* Ensure cards and containers are responsive */
+[class*="card"], [class*="Card"] {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Mobile-specific improvements */
+@media (max-width: 640px) {
+  /* Better spacing for mobile - reduced from default */
+  .space-y-6 > * + * {
+    margin-top: 1.25rem; /* 20px instead of 24px */
+  }
 }

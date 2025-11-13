@@ -157,7 +157,7 @@ export default async function ParentDashboardPage() {
   const upcomingEventsCount = upcomingEvents.filter(e => e.date >= new Date()).length
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-[var(--foreground)]">Welcome back, {session.user.name?.split(' ')[0]}!</h1>
           <p className="mt-1 text-sm text-[var(--muted-foreground)]">
@@ -166,7 +166,7 @@ export default async function ParentDashboardPage() {
         </div>
 
         {/* Parent-specific Stat Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
           <StatCard
             title="My Children"
             value={totalChildren}

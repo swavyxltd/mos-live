@@ -1,5 +1,6 @@
 import React from 'react'
 import Image from 'next/image'
+import { cn } from '@/lib/utils'
 
 interface MadrasahLogoProps {
   className?: string
@@ -16,23 +17,23 @@ export function MadrasahLogo({ className = '', showText = true, textSize = 'md',
   }
 
   const logoSizeClasses = {
-    sm: 'w-32 h-6',
-    md: 'w-48 h-10',
-    lg: 'w-64 h-12',
-    'lg-sm': 'w-56 h-12',
-    xl: 'w-72 h-15'
+    sm: 'sm:w-32 sm:h-6',
+    md: 'sm:w-48 sm:h-10',
+    lg: 'sm:w-64 sm:h-12',
+    'lg-sm': 'sm:w-56 sm:h-12',
+    xl: 'sm:w-72 sm:h-15'
   }
 
   return (
     <div className={`flex flex-col items-center ${className}`}>
       {/* Logo Icon - Using your PNG image */}
-      <div className="flex items-center justify-start mb-2">
+      <div className="flex items-center justify-start mb-2 w-full">
         <Image 
           src="/madrasah-logo.png" 
           alt="Madrasah OS Logo" 
           width={size === 'sm' ? 128 : size === 'md' ? 192 : size === 'lg' ? 256 : size === 'lg-sm' ? 224 : 288}
           height={size === 'sm' ? 24 : size === 'md' ? 40 : size === 'lg' ? 48 : size === 'lg-sm' ? 48 : 60}
-          className={`${logoSizeClasses[size]} object-contain`}
+          className={cn('w-full object-contain max-w-full h-auto', logoSizeClasses[size])}
           priority
         />
       </div>

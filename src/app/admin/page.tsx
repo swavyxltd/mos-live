@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { Page } from '@/components/shell/page'
 
 export default async function AdminPage() {
   const session = await getServerSession(authOptions)
@@ -26,18 +27,23 @@ export default async function AdminPage() {
   })
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Admin Backend</h1>
-          <p className="text-gray-600 mt-2">Manage all users and accounts</p>
+    <Page
+      user={session.user}
+      userRole="OWNER"
+      title="Admin Backend"
+      breadcrumbs={[{ label: 'Admin' }]}
+    >
+      <div className="space-y-4 sm:space-y-6 w-full overflow-x-hidden">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[var(--foreground)] break-words">Admin Backend</h1>
+          <p className="mt-1 text-sm text-[var(--muted-foreground)] break-words">Manage all users and accounts</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-semibold">All Users ({users.length})</h2>
+        <div className="bg-white rounded-lg shadow overflow-hidden w-full min-w-0">
+          <div className="px-4 sm:px-5 lg:px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg sm:text-xl font-semibold break-words">All Users ({users.length})</h2>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto w-full">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
@@ -96,8 +102,8 @@ export default async function AdminPage() {
           </div>
         </div>
 
-        <div className="mt-8 bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
+        <div className="mt-4 sm:mt-6 lg:mt-8 bg-white rounded-lg shadow p-4 sm:p-5 lg:p-6 w-full min-w-0">
+          <h2 className="text-lg sm:text-xl font-semibold mb-4 break-words">Quick Actions</h2>
           <div className="space-y-2">
             <a
               href="/owner/users/create"
@@ -114,7 +120,7 @@ export default async function AdminPage() {
           </div>
         </div>
       </div>
-    </div>
+    </Page>
   )
 }
 

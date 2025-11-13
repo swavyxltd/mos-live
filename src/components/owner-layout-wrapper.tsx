@@ -10,7 +10,9 @@ interface OwnerLayoutWrapperProps {
 export function OwnerLayoutWrapper({ children, userRole }: OwnerLayoutWrapperProps) {
   return (
     <PaymentSetupGate userRole={userRole}>
-      {children}
+      <div className="w-full min-w-0">
+        {children}
+      </div>
     </PaymentSetupGate>
   )
 }

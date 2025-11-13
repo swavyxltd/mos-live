@@ -35,7 +35,7 @@ const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
         onClick={onClick}
         {...props}
       >
-        <CardContent className="p-3 sm:p-4 h-full flex flex-col justify-between">
+        <CardContent className="p-3 sm:p-4 h-full flex flex-col justify-center">
           <div className="flex items-start justify-between">
             <div className="space-y-1 flex-1 min-w-0">
               <p className="text-xs sm:text-sm text-[var(--muted-foreground)] whitespace-nowrap overflow-hidden text-ellipsis">{title}</p>

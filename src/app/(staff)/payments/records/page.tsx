@@ -357,69 +357,115 @@ export default function PaymentRecordsPage() {
               <p className="text-muted-foreground">No payment records found</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Month</TableHead>
-                    <TableHead>Student</TableHead>
-                    <TableHead>Class</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Method</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Paid Date</TableHead>
-                    <TableHead>Reference</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredRecords.map((record) => (
-                    <TableRow key={record.id}>
-                      <TableCell className="font-medium">{record.month}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                          {record.student.firstName} {record.student.lastName}
+            <>
+              {/* Mobile View - Card Layout */}
+              <div className="block md:hidden space-y-3">
+                {filteredRecords.map((record) => (
+                  <Card key={record.id}>
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-[var(--foreground)] truncate">
+                            {record.student.firstName} {record.student.lastName}
+                          </h3>
+                          <p className="text-lg font-bold text-[var(--foreground)] mt-1">
+                            £{(record.amountP / 100).toFixed(2)}
+                          </p>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <BookOpen className="h-4 w-4 text-muted-foreground" />
-                          {record.class.name}
+                        <div className="flex-shrink-0">
+                          {getStatusBadge(record.status)}
                         </div>
-                      </TableCell>
-                      <TableCell className="font-medium">£{(record.amountP / 100).toFixed(2)}</TableCell>
-                      <TableCell>{getMethodLabel(record.method)}</TableCell>
-                      <TableCell>{getStatusBadge(record.status)}</TableCell>
-                      <TableCell>
-                        {record.paidAt ? format(new Date(record.paidAt), 'dd MMM yyyy') : '-'}
-                      </TableCell>
-                      <TableCell className="font-mono text-sm">{record.reference || '-'}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
+                      </div>
+                      <div className="flex gap-2 pt-2 border-t">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openEditModal(record)}
+                          className="flex-1"
+                        >
+                          Edit
+                        </Button>
+                        {record.status === 'PENDING' && 
+                         (record.method === 'CASH' || record.method === 'BANK_TRANSFER') && (
                           <Button
                             size="sm"
-                            variant="outline"
-                            onClick={() => openEditModal(record)}
+                            onClick={() => handleMarkPaid(record)}
+                            className="flex-1"
                           >
-                            Edit
+                            Mark Paid
                           </Button>
-                          {record.status === 'PENDING' && 
-                           (record.method === 'CASH' || record.method === 'BANK_TRANSFER') && (
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Desktop View - Table */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Month</TableHead>
+                      <TableHead>Student</TableHead>
+                      <TableHead>Class</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Method</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Paid Date</TableHead>
+                      <TableHead>Reference</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredRecords.map((record) => (
+                      <TableRow key={record.id}>
+                        <TableCell className="font-medium">{record.month}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            {record.student.firstName} {record.student.lastName}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <BookOpen className="h-4 w-4 text-muted-foreground" />
+                            {record.class.name}
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-medium">£{(record.amountP / 100).toFixed(2)}</TableCell>
+                        <TableCell>{getMethodLabel(record.method)}</TableCell>
+                        <TableCell>{getStatusBadge(record.status)}</TableCell>
+                        <TableCell>
+                          {record.paidAt ? format(new Date(record.paidAt), 'dd MMM yyyy') : '-'}
+                        </TableCell>
+                        <TableCell className="font-mono text-sm">{record.reference || '-'}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
                             <Button
                               size="sm"
-                              onClick={() => handleMarkPaid(record)}
+                              variant="outline"
+                              onClick={() => openEditModal(record)}
                             >
-                              Mark Paid
+                              Edit
                             </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                            {record.status === 'PENDING' && 
+                             (record.method === 'CASH' || record.method === 'BANK_TRANSFER') && (
+                              <Button
+                                size="sm"
+                                onClick={() => handleMarkPaid(record)}
+                              >
+                                Mark Paid
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

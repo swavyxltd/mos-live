@@ -211,19 +211,19 @@ export default function OwnerOverviewPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-[var(--foreground)]">Madrasah OS Dashboard</h1>
-          <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-[var(--foreground)] break-words">Madrasah OS Dashboard</h1>
+          <p className="mt-1 text-sm text-[var(--muted-foreground)] break-words">
             Complete overview of your platform performance and business metrics
           </p>
           <p className="text-xs text-gray-500 mt-1">
             Last updated: {lastUpdated.toLocaleTimeString()}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 shrink-0">
           <Button 
             variant="outline" 
             size="sm" 
@@ -249,7 +249,7 @@ export default function OwnerOverviewPage() {
       </div>
 
       {/* Key Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         {/* MRR */}
         <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={handleViewRevenue}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -308,7 +308,7 @@ export default function OwnerOverviewPage() {
       </div>
 
       {/* Secondary Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={handleViewRevenue}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Payment Success Rate</CardTitle>

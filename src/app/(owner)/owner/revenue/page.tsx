@@ -189,16 +189,16 @@ export default function OwnerRevenuePage() {
   return (
     <>
       <ToastContainer toasts={toasts} onClose={removeToast} />
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-[var(--foreground)]">Revenue Management</h1>
-          <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl sm:text-3xl font-bold text-[var(--foreground)] break-words">Revenue Management</h1>
+          <p className="mt-1 text-sm text-[var(--muted-foreground)] break-words">
             Monitor and manage your platform's revenue streams and payment processing
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 shrink-0">
           <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
             <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
             {refreshing ? 'Refreshing...' : 'Refresh'}
@@ -211,7 +211,7 @@ export default function OwnerRevenuePage() {
       </div>
 
       {/* Key Revenue Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Monthly Recurring Revenue</CardTitle>
