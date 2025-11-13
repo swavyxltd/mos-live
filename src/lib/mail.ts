@@ -377,15 +377,98 @@ export async function sendParentOnboardingEmail({
     safeSetupUrl = protocolDomain + cleanPath
   }
   
+  const content = `
+    <!-- Welcome Message -->
+    <p style="margin: 0 0 16px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">
+      We're delighted to welcome you and <strong>${studentName}</strong> to <strong>${orgName}</strong>!
+    </p>
+    
+    <p style="margin: 0 0 24px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">
+      Your child's madrasah is now using <strong>Madrasah OS</strong> to enhance their Islamic education experience. Inshallah, this platform will help us work together to support your child's journey in learning the Quran and Islamic knowledge.
+    </p>
+    
+    <!-- Button - Moved Higher -->
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 32px 0;">
+      <tr>
+        <td align="center" style="padding: 0;">
+          <a href="${safeSetupUrl.replace(/&/g, '&amp;')}" style="display: inline-block; background-color: #111827; color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+            Complete Account Setup
+          </a>
+        </td>
+      </tr>
+    </table>
+    
+    <!-- Introduction Section -->
+    <div style="margin: 32px 0; padding: 24px; background-color: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
+      <h2 style="margin: 0 0 12px 0; font-size: 18px; font-weight: 600; color: #111827; text-align: center;">
+        What is Madrasah OS?
+      </h2>
+      <p style="margin: 0; font-size: 15px; color: #374151; line-height: 1.6; text-align: center;">
+        Madrasah OS is a comprehensive platform designed specifically for Islamic education. It helps parents stay connected with their child's learning journey, making it easier to track progress, manage payments, and communicate with teachers—all in one place.
+      </p>
+    </div>
+    
+    <!-- Features Grid (3x2) -->
+    <div style="margin: 32px 0;">
+      <h2 style="margin: 0 0 20px 0; font-size: 18px; font-weight: 600; color: #111827; text-align: center;">
+        How We Support Your Child's Education
+      </h2>
+      
+      <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+        <!-- Row 1 -->
+        <tr>
+          <td style="padding: 16px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center; width: 33.33%;">
+            <div style="font-size: 24px; margin-bottom: 8px;">📚</div>
+            <h3 style="margin: 0 0 6px 0; font-size: 14px; font-weight: 600; color: #111827;">Track Progress</h3>
+            <p style="margin: 0; font-size: 12px; color: #6b7280; line-height: 1.4;">Monitor your child's academic progress and achievements</p>
+          </td>
+          <td style="width: 8px;"></td>
+          <td style="padding: 16px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center; width: 33.33%;">
+            <div style="font-size: 24px; margin-bottom: 8px;">💬</div>
+            <h3 style="margin: 0 0 6px 0; font-size: 14px; font-weight: 600; color: #111827;">Stay Connected</h3>
+            <p style="margin: 0; font-size: 12px; color: #6b7280; line-height: 1.4;">Direct communication with teachers and staff</p>
+          </td>
+          <td style="width: 8px;"></td>
+          <td style="padding: 16px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center; width: 33.33%;">
+            <div style="font-size: 24px; margin-bottom: 8px;">📅</div>
+            <h3 style="margin: 0 0 6px 0; font-size: 14px; font-weight: 600; color: #111827;">View Schedule</h3>
+            <p style="margin: 0; font-size: 12px; color: #6b7280; line-height: 1.4;">See class timings and important dates</p>
+          </td>
+        </tr>
+        <tr style="height: 8px;"><td colspan="5"></td></tr>
+        <!-- Row 2 -->
+        <tr>
+          <td style="padding: 16px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center; width: 33.33%;">
+            <div style="font-size: 24px; margin-bottom: 8px;">💰</div>
+            <h3 style="margin: 0 0 6px 0; font-size: 14px; font-weight: 600; color: #111827;">Easy Payments</h3>
+            <p style="margin: 0; font-size: 12px; color: #6b7280; line-height: 1.4;">Pay fees securely online anytime</p>
+          </td>
+          <td style="width: 8px;"></td>
+          <td style="padding: 16px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center; width: 33.33%;">
+            <div style="font-size: 24px; margin-bottom: 8px;">✅</div>
+            <h3 style="margin: 0 0 6px 0; font-size: 14px; font-weight: 600; color: #111827;">Attendance</h3>
+            <p style="margin: 0; font-size: 12px; color: #6b7280; line-height: 1.4;">Real-time attendance tracking</p>
+          </td>
+          <td style="width: 8px;"></td>
+          <td style="padding: 16px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center; width: 33.33%;">
+            <div style="font-size: 24px; margin-bottom: 8px;">📊</div>
+            <h3 style="margin: 0 0 6px 0; font-size: 14px; font-weight: 600; color: #111827;">Reports</h3>
+            <p style="margin: 0; font-size: 12px; color: #6b7280; line-height: 1.4;">Access detailed progress reports</p>
+          </td>
+        </tr>
+      </table>
+    </div>
+    
+    <!-- Closing Message -->
+    <p style="margin: 32px 0 0 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">
+      Jazakallahu Khairan for entrusting us with your child's Islamic education. We're here to support you every step of the way, inshallah.
+    </p>
+  `
+  
   const html = await generateEmailTemplate({
-    title: `Welcome to ${orgName}`,
-    description: [
-      'Assalamu alaikum!',
-      `We're excited to welcome you and <strong>${studentName}</strong> to <strong>${orgName}</strong>. Madrasah OS is a comprehensive platform designed to help you stay connected with your child's education, track their progress, manage payments, and communicate with teachers.`,
-      "We're here to make managing your child's madrasah experience as simple and convenient as possible. Click below to complete your account setup and get started."
-    ],
-    buttonText: 'Complete Account Setup',
-    buttonUrl: safeSetupUrl,
+    title: 'Assalamu alaikum!',
+    description: '',
+    content,
     footerText: `This link will expire in 7 days. If you have any questions, please contact ${orgName} directly.`
   })
   
@@ -393,7 +476,7 @@ export async function sendParentOnboardingEmail({
     to,
     subject: `Complete your ${orgName} account setup`,
     html,
-    text: `Welcome to ${orgName}\n\nAssalamu alaikum! We're excited to welcome you and ${studentName} to ${orgName}. Madrasah OS is a comprehensive platform designed to help you stay connected with your child's education.\n\nComplete your account setup: ${safeSetupUrl}\n\nThis link will expire in 7 days.`
+    text: `Assalamu alaikum!\n\nWe're delighted to welcome you and ${studentName} to ${orgName}!\n\nYour child's madrasah is now using Madrasah OS to enhance their Islamic education experience. Inshallah, this platform will help us work together to support your child's journey in learning the Quran and Islamic knowledge.\n\nComplete your account setup: ${safeSetupUrl}\n\nWhat is Madrasah OS?\n\nMadrasah OS is a comprehensive platform designed specifically for Islamic education. It helps parents stay connected with their child's learning journey, making it easier to track progress, manage payments, and communicate with teachers—all in one place.\n\nHow We Support Your Child's Education:\n\n• Track Progress - Monitor your child's academic progress and achievements\n• Stay Connected - Direct communication with teachers and staff\n• View Schedule - See class timings and important dates\n• Easy Payments - Pay fees securely online anytime\n• Attendance - Real-time attendance tracking\n• Reports - Access detailed progress reports\n\nJazakallahu Khairan for entrusting us with your child's Islamic education. We're here to support you every step of the way, inshallah.\n\nThis link will expire in 7 days.`
   })
 }
 
