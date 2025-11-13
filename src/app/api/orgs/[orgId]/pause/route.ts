@@ -78,8 +78,19 @@ export async function POST(
     console.error('Error details:', {
       message: error?.message,
       stack: error?.stack,
-      name: error?.name
+      name: error?.name,
+      code: error?.code,
+      meta: error?.meta
     })
+    
+    // Check if it's a Prisma field error
+    if (error?.code === 'P2002' || error?.message?.includes('Unknown column') || error?.message?.includes('column') || error?.message?.includes('does not exist')) {
+      return NextResponse.json({ 
+        error: 'Database schema error. Please run migrations to add pausedAt and pausedReason fields.',
+        details: process.env.NODE_ENV === 'development' ? error?.message : undefined
+      }, { status: 500 })
+    }
+    
     return NextResponse.json({ 
       error: 'Failed to pause organization',
       details: process.env.NODE_ENV === 'development' ? error?.message : undefined
