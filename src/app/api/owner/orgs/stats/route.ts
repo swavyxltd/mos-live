@@ -25,14 +25,8 @@ export async function GET(request: NextRequest) {
     console.log('✅ Authorized, fetching organizations...')
 
     // Get all organizations with detailed stats (including city field)
-    // Include ACTIVE status or null status (for backward compatibility)
+    // Get all organizations (status filter removed to include all, including those with null status)
     const orgs = await prisma.org.findMany({
-      where: { 
-        OR: [
-          { status: 'ACTIVE' },
-          { status: { equals: null } }
-        ]
-      },
       select: {
         id: true,
         name: true,
