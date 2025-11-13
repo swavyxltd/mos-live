@@ -86,13 +86,13 @@ export async function POST(
       }
     }
 
-    // Update organization status to SUSPENDED
+    // Update organization status to DEACTIVATED
     const updatedOrg = await prisma.org.update({
       where: { id: orgId },
       data: {
-        status: 'SUSPENDED',
-        suspendedAt: new Date(),
-        suspendedReason: reason || 'Account suspended by platform administrator'
+        status: 'DEACTIVATED',
+        deactivatedAt: new Date(),
+        deactivatedReason: reason || 'Account deactivated by platform administrator'
       },
       include: {
         memberships: {
@@ -117,12 +117,12 @@ export async function POST(
       data: {
         orgId: orgId,
         actorUserId: session.user.id,
-        action: 'ORG_SUSPENDED',
+        action: 'ORG_DEACTIVATED',
         targetType: 'ORG',
         targetId: orgId,
         data: JSON.stringify({
           orgName: updatedOrg.name,
-          reason: reason || 'Account suspended by platform administrator',
+          reason: reason || 'Account deactivated by platform administrator',
           subscriptionCanceled,
           affectedUsers: updatedOrg.memberships.map(m => ({
             userId: m.user.id,
@@ -135,8 +135,8 @@ export async function POST(
     })
 
     const message = subscriptionCanceled
-      ? `Organization ${updatedOrg.name} has been suspended and billing has been stopped`
-      : `Organization ${updatedOrg.name} has been suspended`
+      ? `Organization ${updatedOrg.name} has been deactivated and billing has been stopped`
+      : `Organization ${updatedOrg.name} has been deactivated`
 
     return NextResponse.json({ 
       success: true, 
@@ -146,7 +146,7 @@ export async function POST(
     })
 
   } catch (error) {
-    console.error('Error suspending organization:', error)
-    return NextResponse.json({ error: 'Failed to suspend organization' }, { status: 500 })
+    console.error('Error deactivating organization:', error)
+    return NextResponse.json({ error: 'Failed to deactivate organization' }, { status: 500 })
   }
 }

@@ -24,8 +24,8 @@ export async function POST(
       where: { id: orgId },
       data: {
         status: 'ACTIVE',
-        suspendedAt: null,
-        suspendedReason: null,
+        deactivatedAt: null,
+        deactivatedReason: null,
         pausedAt: null,
         pausedReason: null,
         paymentFailureCount: 0

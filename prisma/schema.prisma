@@ -91,9 +91,9 @@ model Org {
   updatedAt DateTime @updatedAt
 
   // Account Status Management
-  status                  String    @default("ACTIVE") // ACTIVE, SUSPENDED, PAUSED
-  suspendedAt             DateTime?
-  suspendedReason         String?
+  status                  String    @default("ACTIVE") // ACTIVE, DEACTIVATED, PAUSED
+  deactivatedAt           DateTime?
+  deactivatedReason       String?
   pausedAt                DateTime?
   pausedReason            String?
   lastPaymentDate         DateTime?

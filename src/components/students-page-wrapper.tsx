@@ -31,7 +31,7 @@ interface Student {
   allergies: string
   medicalNotes: string
   enrollmentDate: Date
-  status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'GRADUATED'
+  status: 'ACTIVE' | 'INACTIVE' | 'DEACTIVATED' | 'GRADUATED'
   isArchived: boolean
   archivedAt?: Date
   orgId: string

@@ -73,7 +73,7 @@ interface Student {
   phone?: string
   dateOfBirth: Date
   grade: string
-  status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'GRADUATED'
+  status: 'ACTIVE' | 'INACTIVE' | 'DEACTIVATED' | 'GRADUATED'
   attendanceRate: number
   parentName: string
   parentEmail: string
@@ -225,7 +225,7 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
         return 'bg-green-100 text-green-800'
       case 'INACTIVE':
         return 'bg-gray-100 text-gray-800'
-      case 'SUSPENDED':
+      case 'DEACTIVATED':
         return 'bg-red-100 text-red-800'
       case 'GRADUATED':
         return 'bg-blue-100 text-blue-800'
@@ -644,7 +644,7 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
                           <select id="new-student-status" className="w-full p-2 border border-gray-300 rounded-md">
                             <option value="ACTIVE">Active</option>
                             <option value="INACTIVE">Inactive</option>
-                            <option value="SUSPENDED">Suspended</option>
+                            <option value="DEACTIVATED">Deactivated</option>
                             <option value="GRADUATED">Graduated</option>
                           </select>
                         </div>
@@ -709,7 +709,7 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
                             <select id={`student-status-${student.id}`} defaultValue={student.status} className="w-full p-2 border border-gray-300 rounded-md">
                               <option value="ACTIVE">Active</option>
                               <option value="INACTIVE">Inactive</option>
-                              <option value="SUSPENDED">Suspended</option>
+                              <option value="DEACTIVATED">Deactivated</option>
                               <option value="GRADUATED">Graduated</option>
                             </select>
                           </div>
@@ -1029,7 +1029,7 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
                     <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-2">
                       <AlertTriangle className="h-6 w-6 text-red-600" />
                     </div>
-                    <h3 className="font-medium text-red-900">Suspended</h3>
+                    <h3 className="font-medium text-red-900">Deactivated</h3>
                     <p className="text-sm text-red-600">Permanently locked</p>
                   </div>
                 </div>

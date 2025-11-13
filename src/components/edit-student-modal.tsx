@@ -24,7 +24,7 @@ interface Student {
   emergencyContact: string
   allergies: string
   medicalNotes: string
-  status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'GRADUATED'
+  status: 'ACTIVE' | 'INACTIVE' | 'DEACTIVATED' | 'GRADUATED'
   isArchived: boolean
   archivedAt?: string
 }
@@ -56,7 +56,7 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
     emergencyContact: '',
     allergies: 'None',
     medicalNotes: '',
-    status: 'ACTIVE' as 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'GRADUATED',
+    status: 'ACTIVE' as 'ACTIVE' | 'INACTIVE' | 'DEACTIVATED' | 'GRADUATED',
     selectedClasses: [] as string[]
   })
 
@@ -275,7 +275,7 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
                     <SelectContent>
                       <SelectItem value="ACTIVE">Active</SelectItem>
                       <SelectItem value="INACTIVE">Inactive</SelectItem>
-                      <SelectItem value="SUSPENDED">Suspended</SelectItem>
+                      <SelectItem value="DEACTIVATED">Deactivated</SelectItem>
                       <SelectItem value="GRADUATED">Graduated</SelectItem>
                     </SelectContent>
                   </Select>

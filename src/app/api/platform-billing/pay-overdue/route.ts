@@ -25,8 +25,8 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Check if subscription is actually past_due, suspended, or paused
-    const isOverdue = billing.subscriptionStatus === 'past_due' || org.status === 'SUSPENDED' || org.status === 'PAUSED'
+    // Check if subscription is actually past_due, deactivated, or paused
+    const isOverdue = billing.subscriptionStatus === 'past_due' || org.status === 'DEACTIVATED' || org.status === 'PAUSED'
     
     if (!isOverdue && billing.subscriptionStatus === 'active' && org.status === 'ACTIVE') {
       return NextResponse.json({ 
@@ -82,14 +82,14 @@ export async function POST(request: NextRequest) {
           }
         })
 
-      // Update org status if it was suspended or paused
-      if (org.status === 'SUSPENDED' || org.status === 'PAUSED') {
+      // Update org status if it was deactivated or paused
+      if (org.status === 'DEACTIVATED' || org.status === 'PAUSED') {
         await prisma.org.update({
           where: { id: org.id },
           data: {
             status: 'ACTIVE',
-            suspendedAt: null,
-            suspendedReason: null,
+            deactivatedAt: null,
+            deactivatedReason: null,
             pausedAt: null,
             pausedReason: null,
             paymentFailureCount: 0,

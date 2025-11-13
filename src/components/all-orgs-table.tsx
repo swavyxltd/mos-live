@@ -11,6 +11,7 @@ interface OrgWithStats {
   name: string
   slug: string
   timezone?: string
+  status?: string // Organization status: ACTIVE, PAUSED, DEACTIVATED, etc.
   createdAt: Date
   updatedAt?: Date
   owner: {
@@ -164,15 +165,45 @@ export function AllOrgsTable({ orgs, onRefresh }: AllOrgsTableProps) {
                       {formatCurrency(org.totalRevenue)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {org.platformBilling ? (
-                        <Badge variant="secondary" className="bg-green-100 text-green-800">
-                          Active
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                          Setup Required
-                        </Badge>
-                      )}
+                      {(() => {
+                        // Show organization status if available, otherwise check platform billing
+                        if (org.status === 'PAUSED') {
+                          return (
+                            <Badge variant="secondary" className="bg-orange-100 text-orange-800">
+                              Paused
+                            </Badge>
+                          )
+                        }
+                        if (org.status === 'DEACTIVATED') {
+                          return (
+                            <Badge variant="secondary" className="bg-red-100 text-red-800">
+                              Deactivated
+                            </Badge>
+                          )
+                        }
+                        if (org.status === 'ACTIVE' || !org.status) {
+                          // Default to checking platform billing if status is ACTIVE or not set
+                          if (org.platformBilling) {
+                            return (
+                              <Badge variant="secondary" className="bg-green-100 text-green-800">
+                                Active
+                              </Badge>
+                            )
+                          } else {
+                            return (
+                              <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                                Setup Required
+                              </Badge>
+                            )
+                          }
+                        }
+                        // Fallback for any other status
+                        return (
+                          <Badge variant="secondary" className="bg-gray-100 text-gray-800">
+                            {org.status}
+                          </Badge>
+                        )
+                      })()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {formatDate(org.createdAt)}

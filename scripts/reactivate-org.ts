@@ -26,23 +26,23 @@ async function main() {
   console.log(`   User ID: ${user.id}`)
   console.log(`   Organizations: ${user.memberships.length}`)
 
-  // Find suspended organizations
-  const suspendedOrgs = user.memberships.filter(m => m.org.status === 'SUSPENDED')
-  
-  if (suspendedOrgs.length === 0) {
-    console.log('✅ No suspended organizations found for this user')
+  // Find deactivated organizations
+  const deactivatedOrgs = user.memberships.filter(m => m.org.status === 'DEACTIVATED')
+
+  if (deactivatedOrgs.length === 0) {
+    console.log('✅ No deactivated organizations found for this user')
     process.exit(0)
   }
 
-  console.log(`\n⚠️  Found ${suspendedOrgs.length} suspended organization(s):`)
+  console.log(`\n⚠️  Found ${deactivatedOrgs.length} deactivated organization(s):`)
   
-  for (const membership of suspendedOrgs) {
+  for (const membership of deactivatedOrgs) {
     const org = membership.org
     console.log(`\n   Organization: ${org.name}`)
     console.log(`   ID: ${org.id}`)
     console.log(`   Status: ${org.status}`)
-    console.log(`   Suspended At: ${org.suspendedAt?.toISOString() || 'N/A'}`)
-    console.log(`   Reason: ${org.suspendedReason || 'N/A'}`)
+    console.log(`   Deactivated At: ${org.deactivatedAt?.toISOString() || 'N/A'}`)
+    console.log(`   Reason: ${org.deactivatedReason || 'N/A'}`)
     
     // Reactivate the organization
     console.log(`\n   🔄 Reactivating organization...`)
@@ -51,8 +51,8 @@ async function main() {
       where: { id: org.id },
       data: {
         status: 'ACTIVE',
-        suspendedAt: null,
-        suspendedReason: null,
+        deactivatedAt: null,
+        deactivatedReason: null,
         pausedAt: null,
         pausedReason: null,
         paymentFailureCount: 0
@@ -78,7 +78,7 @@ async function main() {
     })
   }
 
-  console.log('\n✅ All suspended organizations have been reactivated!')
+  console.log('\n✅ All deactivated organizations have been reactivated!')
 }
 
 main()

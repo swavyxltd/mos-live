@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     // Find organizations with:
     // 1. Subscription status is 'past_due' OR has billing anniversary that passed grace period
-    // 2. Status is ACTIVE (not already suspended)
+    // 2. Status is ACTIVE (not already deactivated)
     // 3. Has a billing anniversary date
     // 4. Auto-suspend is enabled
     const overdueOrgs = await prisma.platformOrgBilling.findMany({
@@ -64,8 +64,8 @@ export async function POST(request: NextRequest) {
             id: true,
             name: true,
             status: true,
-            suspendedAt: true,
-            suspendedReason: true
+            deactivatedAt: true,
+            deactivatedReason: true
           }
         }
       }
@@ -75,8 +75,8 @@ export async function POST(request: NextRequest) {
 
     for (const billing of overdueOrgs) {
       try {
-        // Skip if already suspended
-        if (billing.org.status === 'SUSPENDED') {
+        // Skip if already deactivated
+        if (billing.org.status === 'DEACTIVATED') {
           continue
         }
 
@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
             daysOverdue = Math.floor((today.getTime() - anniversaryDate.getTime()) / (1000 * 60 * 60 * 24))
           }
           
-          // If past_due and grace period exceeded, suspend
+          // If past_due and grace period exceeded, deactivate
           shouldSuspend = daysOverdue > gracePeriodDays
         } else if (billing.billingAnniversaryDate) {
           // Calculate based on billing anniversary date
@@ -124,13 +124,13 @@ export async function POST(request: NextRequest) {
 
         // Check if grace period has been exceeded
         if (shouldSuspend) {
-          // Suspend the organization
+          // Deactivate the organization
           await prisma.org.update({
             where: { id: billing.orgId },
             data: {
-              status: 'SUSPENDED',
-              suspendedAt: new Date(),
-              suspendedReason: `Account automatically suspended due to overdue payment. Payment was ${daysOverdue} days overdue (grace period: ${gracePeriodDays} days). Last billed: ${lastBilledDate?.toLocaleDateString() || 'Never'}.`
+              status: 'DEACTIVATED',
+              deactivatedAt: new Date(),
+              deactivatedReason: `Account automatically deactivated due to overdue payment. Payment was ${daysOverdue} days overdue (grace period: ${gracePeriodDays} days). Last billed: ${lastBilledDate?.toLocaleDateString() || 'Never'}.`
             }
           })
 
@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
           await prisma.auditLog.create({
             data: {
               orgId: billing.orgId,
-              action: 'ORG_AUTO_SUSPENDED_OVERDUE',
+              action: 'ORG_AUTO_DEACTIVATED_OVERDUE',
               targetType: 'ORG',
               targetId: billing.orgId,
               data: JSON.stringify({
@@ -163,7 +163,7 @@ export async function POST(request: NextRequest) {
             orgId: billing.orgId,
             orgName: billing.org.name,
             daysOverdue,
-            status: 'suspended'
+            status: 'deactivated'
           })
         }
       } catch (error) {
@@ -181,7 +181,7 @@ export async function POST(request: NextRequest) {
       success: true,
       gracePeriodDays,
       checked: overdueOrgs.length,
-      suspended: results.filter(r => r.status === 'suspended').length,
+      deactivated: results.filter(r => r.status === 'deactivated').length,
       results
     })
   } catch (error) {

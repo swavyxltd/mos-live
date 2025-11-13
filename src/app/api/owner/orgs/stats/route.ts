@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
 
     console.log('✅ Authorized, fetching organizations...')
 
-    // Get all organizations with detailed stats (including city field)
+    // Get all organizations with detailed stats (including city field and status)
     // Get all organizations (status filter removed to include all, including those with null status)
     const orgs = await prisma.org.findMany({
       select: {
@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
         slug: true,
         city: true,
         timezone: true,
+        status: true, // Include status field
         createdAt: true,
         updatedAt: true,
         _count: {
@@ -115,6 +116,7 @@ export async function GET(request: NextRequest) {
           slug: org.slug,
           city: org.city,
           timezone: org.timezone,
+          status: org.status, // Include status in response
           createdAt: org.createdAt,
           updatedAt: org.updatedAt,
           _count: {

@@ -490,7 +490,7 @@ export default function OwnerSettingsPage() {
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
                   <p className="text-sm text-blue-800">
                     <strong>Automatic Suspension:</strong> If an organization's payment is overdue by this many days 
-                    (billing anniversary + grace period), their account will be automatically suspended.
+                    (billing anniversary + grace period), their account will be automatically deactivated.
                   </p>
                 </div>
               </div>

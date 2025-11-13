@@ -35,6 +35,7 @@ interface OrgWithStats {
   name: string
   slug: string
   timezone?: string
+  status?: string // Organization status: ACTIVE, PAUSED, DEACTIVATED, etc.
   createdAt: Date
   updatedAt?: Date
   owner: {
@@ -219,9 +220,9 @@ export function OrganizationDetailModal({ isOpen, onClose, organization, onRefre
             <p className="text-sm text-gray-500">{organization.slug}</p>
           </div>
           <div className="flex items-center space-x-2">
-            <Badge className={getStatusColor(organization.platformBilling?.status || 'SETUP_REQUIRED')}>
-              {getStatusIcon(organization.platformBilling?.status || 'SETUP_REQUIRED')}
-              {organization.platformBilling?.status || 'Setup Required'}
+            <Badge className={getStatusColor(organization.status || (organization.platformBilling ? 'ACTIVE' : 'SETUP_REQUIRED'))}>
+              {getStatusIcon(organization.status || (organization.platformBilling ? 'ACTIVE' : 'SETUP_REQUIRED'))}
+              {getStatusLabel(organization.status || (organization.platformBilling ? 'ACTIVE' : 'SETUP_REQUIRED'))}
             </Badge>
             <Button variant="outline" size="sm" onClick={handleSettingsClick}>
               <Settings className="h-4 w-4 mr-2" />

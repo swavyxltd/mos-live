@@ -45,14 +45,14 @@ export class OrganizationStatusManager {
       const newFailureCount = org.paymentFailureCount + 1
       
       // Determine action based on failure count and current status
-      let action: 'none' | 'pause' | 'suspend' = 'none'
+      let action: 'none' | 'pause' | 'deactivate' = 'none'
       let reason = ''
 
       if (org.status === 'ACTIVE') {
         if (newFailureCount >= 3) {
-          // 3+ failures: Suspend account
-          action = 'suspend'
-          reason = `Account suspended due to ${newFailureCount} consecutive payment failures. Last failure: ${data.failureReason}`
+          // 3+ failures: Deactivate account
+          action = 'deactivate'
+          reason = `Account deactivated due to ${newFailureCount} consecutive payment failures. Last failure: ${data.failureReason}`
         } else if (newFailureCount >= 2) {
           // 2 failures: Pause account
           action = 'pause'
@@ -70,10 +70,10 @@ export class OrganizationStatusManager {
         updateData.status = 'PAUSED'
         updateData.pausedAt = new Date()
         updateData.pausedReason = reason
-      } else if (action === 'suspend') {
-        updateData.status = 'SUSPENDED'
-        updateData.suspendedAt = new Date()
-        updateData.suspendedReason = reason
+      } else if (action === 'deactivate') {
+        updateData.status = 'DEACTIVATED'
+        updateData.deactivatedAt = new Date()
+        updateData.deactivatedReason = reason
       }
 
       const updatedOrg = await prisma.org.update({
@@ -85,7 +85,7 @@ export class OrganizationStatusManager {
       if (action !== 'none') {
         await prisma.auditLog.create({
           data: {
-            action: action === 'pause' ? 'ORG_AUTO_PAUSED' : 'ORG_AUTO_SUSPENDED',
+            action: action === 'pause' ? 'ORG_AUTO_PAUSED' : 'ORG_AUTO_DEACTIVATED',
             entityType: 'ORG',
             entityId: data.orgId,
             userId: 'system', // System action
@@ -165,9 +165,9 @@ export class OrganizationStatusManager {
   }
 
   /**
-   * Check if organization should be automatically suspended based on payment history
+   * Check if organization should be automatically deactivated based on payment history
    */
-  static async checkAutoSuspendConditions(orgId: string) {
+  static async checkAutoDeactivateConditions(orgId: string) {
     try {
       const org = await prisma.org.findUnique({
         where: { id: orgId },
@@ -185,7 +185,7 @@ export class OrganizationStatusManager {
       })
 
       if (!org || !org.autoSuspendEnabled) {
-        return { shouldSuspend: false, reason: 'Auto-suspend disabled or org not found' }
+        return { shouldDeactivate: false, reason: 'Auto-deactivate disabled or org not found' }
       }
 
       // Check for consecutive failures
@@ -194,17 +194,17 @@ export class OrganizationStatusManager {
 
       if (failureCount >= 3) {
         return {
-          shouldSuspend: true,
+          shouldDeactivate: true,
           reason: `3+ payment failures in the last 30 days (${failureCount} total)`,
           failureCount
         }
       }
 
-      return { shouldSuspend: false, reason: `Only ${failureCount} failures (need 3+)` }
+      return { shouldDeactivate: false, reason: `Only ${failureCount} failures (need 3+)` }
 
     } catch (error) {
-      console.error('Error checking auto-suspend conditions:', error)
-      return { shouldSuspend: false, reason: 'Error checking conditions' }
+      console.error('Error checking auto-deactivate conditions:', error)
+      return { shouldDeactivate: false, reason: 'Error checking conditions' }
     }
   }
 }
