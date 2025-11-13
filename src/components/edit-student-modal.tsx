@@ -78,7 +78,9 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
         allergies: student.allergies || 'None',
         medicalNotes: student.medicalNotes || '',
         status: student.status || 'ACTIVE',
-        selectedClasses: [] // TODO: Get from student's current classes
+        selectedClasses: (student.classes && Array.isArray(student.classes)) 
+          ? student.classes.map((cls: any) => cls.id || cls).filter(Boolean)
+          : []
       })
     }
   }, [student])
@@ -122,20 +124,40 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
         archivedAt: student?.archivedAt
       }
 
-      // TODO: Make API call to update student
-      // const response = await fetch(`/api/students/${student?.id}`, {
-      //   method: 'PUT',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(updatedStudentData)
-      // })
+      // Determine API endpoint based on whether we're in owner portal
+      const isOwnerPortal = window.location.pathname.startsWith('/owner/')
+      const apiEndpoint = isOwnerPortal 
+        ? `/api/owner/students/${student?.id}`
+        : `/api/students/${student?.id}`
 
-      // if (!response.ok) {
-      //   throw new Error('Failed to update student')
-      // }
+      const response = await fetch(apiEndpoint, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          dateOfBirth: formData.dateOfBirth,
+          allergies: formData.allergies,
+          medicalNotes: formData.medicalNotes,
+          parentName: formData.parentName,
+          parentEmail: formData.parentEmail,
+          parentPhone: formData.parentPhone,
+          selectedClasses: formData.selectedClasses
+        })
+      })
 
-      // For now, just call the onSave callback
-      onSave(updatedStudentData)
-      toast.success('Student updated successfully!')
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Failed to update student' }))
+        throw new Error(errorData.error || 'Failed to update student')
+      }
+
+      const updatedStudent = await response.json()
+      
+      // Call the onSave callback with updated data
+      onSave({
+        ...updatedStudentData,
+        ...updatedStudent
+      })
       onClose()
     } catch (error: any) {
       console.error('Error updating student:', error)

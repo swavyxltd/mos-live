@@ -1,9 +1,12 @@
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { SplitTitle } from '@/components/ui/split-title'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { toast } from 'sonner'
 import { 
   Activity, 
   Server,
@@ -24,140 +27,48 @@ import {
   Users
 } from 'lucide-react'
 
-export default async function OwnerSystemHealthPage() {
-  const session = await getServerSession(authOptions)
-  
-  if (!session?.user?.id) {
+export default function OwnerSystemHealthPage() {
+  const { data: session, status } = useSession()
+  const [systemHealth, setSystemHealth] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+
+  const fetchSystemHealth = async () => {
+    try {
+      setRefreshing(true)
+      const response = await fetch('/api/owner/system-health')
+      if (response.ok) {
+        const data = await response.json()
+        setSystemHealth(data)
+      } else {
+        console.error('Failed to fetch system health:', response.statusText)
+        toast.error('Failed to load system health data')
+      }
+    } catch (error) {
+      console.error('Error fetching system health:', error)
+      toast.error('Failed to load system health data')
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }
+
+  useEffect(() => {
+    if (status === 'loading') return
+    if (!session?.user?.id) return
+    fetchSystemHealth()
+    
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(fetchSystemHealth, 30000)
+    return () => clearInterval(interval)
+  }, [status, session])
+
+  if (status === 'loading' || loading || !systemHealth) {
     return <div>Loading...</div>
   }
 
-  // System health data
-  const systemHealth = {
-    // Overall status
-    overallStatus: {
-      status: 'healthy',
-      uptime: 99.9,
-      responseTime: 145,
-      errorRate: 0.02,
-      lastIncident: '2024-11-15T14:30:00Z'
-    },
-    
-    // Service status
-    services: [
-      {
-        name: 'Web Application',
-        status: 'operational',
-        responseTime: 120,
-        uptime: 99.95,
-        lastCheck: '2024-12-06T10:30:00Z'
-      },
-      {
-        name: 'Database',
-        status: 'operational',
-        responseTime: 45,
-        uptime: 99.98,
-        lastCheck: '2024-12-06T10:30:00Z'
-      },
-      {
-        name: 'Payment Processing',
-        status: 'operational',
-        responseTime: 280,
-        uptime: 99.92,
-        lastCheck: '2024-12-06T10:30:00Z'
-      },
-      {
-        name: 'Email Service',
-        status: 'operational',
-        responseTime: 180,
-        uptime: 99.88,
-        lastCheck: '2024-12-06T10:30:00Z'
-      },
-      {
-        name: 'File Storage',
-        status: 'operational',
-        responseTime: 95,
-        uptime: 99.97,
-        lastCheck: '2024-12-06T10:30:00Z'
-      },
-      {
-        name: 'Authentication',
-        status: 'operational',
-        responseTime: 65,
-        uptime: 99.99,
-        lastCheck: '2024-12-06T10:30:00Z'
-      }
-    ],
-    
-    // Performance metrics
-    performance: {
-      averageResponseTime: 145,
-      p95ResponseTime: 320,
-      p99ResponseTime: 850,
-      requestsPerMinute: 1250,
-      concurrentUsers: 89,
-      databaseConnections: 45,
-      memoryUsage: 68.5,
-      cpuUsage: 42.3,
-      diskUsage: 34.7
-    },
-    
-    // Recent incidents
-    recentIncidents: [
-      {
-        id: 'inc-001',
-        title: 'Database connection timeout',
-        severity: 'minor',
-        status: 'resolved',
-        startTime: '2024-11-15T14:30:00Z',
-        endTime: '2024-11-15T14:45:00Z',
-        duration: '15 minutes',
-        affectedServices: ['Database', 'Web Application'],
-        description: 'Temporary database connection issues causing slow response times'
-      },
-      {
-        id: 'inc-002',
-        title: 'Payment processing delays',
-        severity: 'major',
-        status: 'resolved',
-        startTime: '2024-11-10T09:15:00Z',
-        endTime: '2024-11-10T10:30:00Z',
-        duration: '1 hour 15 minutes',
-        affectedServices: ['Payment Processing'],
-        description: 'Stripe API rate limiting causing payment processing delays'
-      },
-      {
-        id: 'inc-003',
-        title: 'Email delivery issues',
-        severity: 'minor',
-        status: 'resolved',
-        startTime: '2024-11-05T16:20:00Z',
-        endTime: '2024-11-05T16:35:00Z',
-        duration: '15 minutes',
-        affectedServices: ['Email Service'],
-        description: 'Temporary email delivery delays due to provider maintenance'
-      }
-    ],
-    
-    // Security metrics
-    security: {
-      failedLoginAttempts: 12,
-      blockedIPs: 3,
-      securityAlerts: 1,
-      lastSecurityScan: '2024-12-05T02:00:00Z',
-      sslCertificateExpiry: '2025-06-15T00:00:00Z',
-      firewallStatus: 'active'
-    },
-    
-    // Infrastructure
-    infrastructure: {
-      servers: 3,
-      databases: 2,
-      cdnNodes: 5,
-      backupStatus: 'healthy',
-      lastBackup: '2024-12-06T03:00:00Z',
-      storageUsed: '2.3 TB',
-      bandwidthUsage: '145 GB/day'
-    }
+  if (!session?.user?.id) {
+    return <div>Please sign in to access this page.</div>
   }
 
   const getStatusBadge = (status: string) => {
@@ -199,24 +110,57 @@ export default async function OwnerSystemHealthPage() {
     }
   }
 
+  const getOverallStatusColor = (status: string) => {
+    switch (status) {
+      case 'healthy':
+        return 'text-green-600'
+      case 'degraded':
+        return 'text-yellow-600'
+      case 'unhealthy':
+        return 'text-red-600'
+      default:
+        return 'text-gray-600'
+    }
+  }
+
+  const handleExport = () => {
+    const dataStr = JSON.stringify(systemHealth, null, 2)
+    const dataBlob = new Blob([dataStr], { type: 'application/json' })
+    const url = URL.createObjectURL(dataBlob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `system-health-${new Date().toISOString().split('T')[0]}.json`
+    link.click()
+    URL.revokeObjectURL(url)
+    toast.success('System health report exported')
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 w-full overflow-x-hidden">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-[var(--foreground)] break-words">System Health</h1>
-          <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+          <p className="mt-1 text-sm text-[var(--muted-foreground)] break-words">
             Monitor platform performance, uptime, and system reliability
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
+        <div className="flex flex-wrap gap-2 shrink-0">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={fetchSystemHealth}
+            disabled={refreshing}
+            className="whitespace-nowrap"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">{refreshing ? 'Refreshing...' : 'Refresh'}</span>
+            <span className="sm:hidden">{refreshing ? '...' : 'Refresh'}</span>
           </Button>
-          <Button size="sm">
-            <Download className="h-4 w-4 mr-2" />
-            Export Report
+          <Button size="sm" onClick={handleExport} className="whitespace-nowrap">
+            <Download className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Export Report</span>
+            <span className="sm:hidden">Export</span>
           </Button>
         </div>
       </div>
@@ -226,10 +170,12 @@ export default async function OwnerSystemHealthPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <SplitTitle title="Overall Status" />
-            <Activity className="h-4 w-4 text-green-600 flex-shrink-0" />
+            <Activity className={`h-4 w-4 flex-shrink-0 ${getOverallStatusColor(systemHealth.overallStatus.status)}`} />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">Healthy</div>
+            <div className={`text-2xl font-bold ${getOverallStatusColor(systemHealth.overallStatus.status)} capitalize`}>
+              {systemHealth.overallStatus.status}
+            </div>
             <p className="text-xs text-muted-foreground">
               All systems operational
             </p>
@@ -242,7 +188,7 @@ export default async function OwnerSystemHealthPage() {
             <Server className="h-4 w-4 text-blue-600 flex-shrink-0" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{systemHealth.overallStatus.uptime}%</div>
+            <div className="text-2xl font-bold">{systemHealth.overallStatus.uptime.toFixed(2)}%</div>
             <p className="text-xs text-muted-foreground">
               Last 30 days
             </p>
@@ -255,7 +201,7 @@ export default async function OwnerSystemHealthPage() {
             <Zap className="h-4 w-4 text-purple-600 flex-shrink-0" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{systemHealth.overallStatus.responseTime}ms</div>
+            <div className="text-2xl font-bold">{Math.round(systemHealth.overallStatus.responseTime)}ms</div>
             <p className="text-xs text-muted-foreground">
               Average response time
             </p>
@@ -268,7 +214,7 @@ export default async function OwnerSystemHealthPage() {
             <AlertTriangle className="h-4 w-4 text-orange-600 flex-shrink-0" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{systemHealth.overallStatus.errorRate}%</div>
+            <div className="text-2xl font-bold">{systemHealth.overallStatus.errorRate.toFixed(2)}%</div>
             <p className="text-xs text-muted-foreground">
               Last 24 hours
             </p>
@@ -284,7 +230,7 @@ export default async function OwnerSystemHealthPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {systemHealth.services.map((service, index) => (
+            {systemHealth.services.map((service: any, index: number) => (
               <div key={index} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                 <div className="flex items-center space-x-3">
                   {getStatusIcon(service.status)}
@@ -297,11 +243,11 @@ export default async function OwnerSystemHealthPage() {
                 </div>
                 <div className="flex items-center space-x-4">
                   <div className="text-right">
-                    <p className="text-sm font-medium">{service.responseTime}ms</p>
+                    <p className="text-sm font-medium">{Math.round(service.responseTime)}ms</p>
                     <p className="text-xs text-gray-500">Response time</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-medium">{service.uptime}%</p>
+                    <p className="text-sm font-medium">{service.uptime.toFixed(2)}%</p>
                     <p className="text-xs text-gray-500">Uptime</p>
                   </div>
                   {getStatusBadge(service.status)}
@@ -327,7 +273,7 @@ export default async function OwnerSystemHealthPage() {
                   <Zap className="h-4 w-4 text-blue-600" />
                   <span className="text-sm font-medium">Avg Response Time</span>
                 </div>
-                <Badge variant="outline">{systemHealth.performance.averageResponseTime}ms</Badge>
+                <Badge variant="outline">{Math.round(systemHealth.performance.averageResponseTime)}ms</Badge>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
@@ -355,14 +301,14 @@ export default async function OwnerSystemHealthPage() {
                   <Cpu className="h-4 w-4 text-red-600" />
                   <span className="text-sm font-medium">CPU Usage</span>
                 </div>
-                <Badge variant="outline">{systemHealth.performance.cpuUsage}%</Badge>
+                <Badge variant="outline">{systemHealth.performance.cpuUsage.toFixed(1)}%</Badge>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <HardDrive className="h-4 w-4 text-gray-600" />
                   <span className="text-sm font-medium">Memory Usage</span>
                 </div>
-                <Badge variant="outline">{systemHealth.performance.memoryUsage}%</Badge>
+                <Badge variant="outline">{systemHealth.performance.memoryUsage.toFixed(1)}%</Badge>
               </div>
             </div>
           </CardContent>
@@ -426,38 +372,99 @@ export default async function OwnerSystemHealthPage() {
       </div>
 
       {/* Recent Incidents */}
+      {systemHealth.recentIncidents && systemHealth.recentIncidents.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Incidents</CardTitle>
+            <CardDescription>System incidents and outages from the past 30 days</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {systemHealth.recentIncidents.map((incident: any) => (
+                <div key={incident.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3">
+                      <div>
+                        <p className="font-medium">{incident.title}</p>
+                        <p className="text-sm text-gray-500">{incident.description}</p>
+                      </div>
+                      {getSeverityBadge(incident.severity)}
+                      <Badge variant={incident.status === 'resolved' ? 'outline' : 'secondary'}>
+                        {incident.status}
+                      </Badge>
+                    </div>
+                    <div className="mt-2 flex items-center space-x-4 text-sm text-gray-500">
+                      <span>Duration: {incident.duration}</span>
+                      <span>Services: {incident.affectedServices.join(', ')}</span>
+                      <span>Started: {new Date(incident.startTime).toLocaleString()}</span>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    <Eye className="h-4 w-4 mr-2" />
+                    Details
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Infrastructure */}
       <Card>
         <CardHeader>
-          <CardTitle>Recent Incidents</CardTitle>
-          <CardDescription>System incidents and outages from the past 30 days</CardDescription>
+          <CardTitle>Infrastructure</CardTitle>
+          <CardDescription>Platform infrastructure and resources</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {systemHealth.recentIncidents.map((incident) => (
-              <div key={incident.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3">
-                    <div>
-                      <p className="font-medium">{incident.title}</p>
-                      <p className="text-sm text-gray-500">{incident.description}</p>
-                    </div>
-                    {getSeverityBadge(incident.severity)}
-                    <Badge variant={incident.status === 'resolved' ? 'outline' : 'secondary'}>
-                      {incident.status}
-                    </Badge>
-                  </div>
-                  <div className="mt-2 flex items-center space-x-4 text-sm text-gray-500">
-                    <span>Duration: {incident.duration}</span>
-                    <span>Services: {incident.affectedServices.join(', ')}</span>
-                    <span>Started: {new Date(incident.startTime).toLocaleString()}</span>
-                  </div>
-                </div>
-                <Button variant="outline" size="sm">
-                  <Eye className="h-4 w-4 mr-2" />
-                  Details
-                </Button>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <Server className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium">Servers</span>
               </div>
-            ))}
+              <Badge variant="outline">{systemHealth.infrastructure.servers}</Badge>
+            </div>
+            <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <Database className="h-4 w-4 text-orange-600" />
+                <span className="text-sm font-medium">Databases</span>
+              </div>
+              <Badge variant="outline">{systemHealth.infrastructure.databases}</Badge>
+            </div>
+            <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <Globe className="h-4 w-4 text-green-600" />
+                <span className="text-sm font-medium">CDN Nodes</span>
+              </div>
+              <Badge variant="outline">{systemHealth.infrastructure.cdnNodes}</Badge>
+            </div>
+            <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <HardDrive className="h-4 w-4 text-purple-600" />
+                <span className="text-sm font-medium">Storage Used</span>
+              </div>
+              <Badge variant="outline">{systemHealth.infrastructure.storageUsed}</Badge>
+            </div>
+            <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <Wifi className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium">Bandwidth</span>
+              </div>
+              <Badge variant="outline">{systemHealth.infrastructure.bandwidthUsage}</Badge>
+            </div>
+            <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <span className="text-sm font-medium">Backup Status</span>
+              </div>
+              <Badge variant="outline" className="text-green-600">
+                {systemHealth.infrastructure.backupStatus}
+              </Badge>
+            </div>
+          </div>
+          <div className="mt-4 text-sm text-gray-500">
+            Last backup: {new Date(systemHealth.infrastructure.lastBackup).toLocaleString()}
           </div>
         </CardContent>
       </Card>
