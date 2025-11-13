@@ -237,29 +237,34 @@ export const authOptions: NextAuthOptions = {
         // Always fetch fresh user data from database to ensure profile changes are reflected
         // This is especially important when trigger === 'update' (when update() is called)
         // But we also do it on every JWT refresh to keep data current
-        try {
-          const dbUser = await prisma.user.findUnique({
-            where: { id: userId },
-            select: {
-              name: true,
-              email: true,
-              image: true,
-              isSuperAdmin: true,
-              staffSubrole: true
+        // When trigger is 'update', we MUST fetch fresh data to reflect profile changes
+        const shouldFetchFreshData = trigger === 'update' || !token.name
+        
+        if (shouldFetchFreshData) {
+          try {
+            const dbUser = await prisma.user.findUnique({
+              where: { id: userId },
+              select: {
+                name: true,
+                email: true,
+                image: true,
+                isSuperAdmin: true,
+                staffSubrole: true
+              }
+            })
+            
+            if (dbUser) {
+              token.name = dbUser.name
+              token.email = dbUser.email
+              token.image = dbUser.image
+              token.isSuperAdmin = dbUser.isSuperAdmin
+              token.staffSubrole = dbUser.staffSubrole
             }
-          })
-          
-          if (dbUser) {
-            token.name = dbUser.name
-            token.email = dbUser.email
-            token.image = dbUser.image
-            token.isSuperAdmin = dbUser.isSuperAdmin
-            token.staffSubrole = dbUser.staffSubrole
-          }
-        } catch (error) {
-          // Log error server-side only (not to console in production)
-          if (process.env.NODE_ENV === 'development') {
-            console.error('Error fetching user data in JWT callback:', error)
+          } catch (error) {
+            // Log error server-side only (not to console in production)
+            if (process.env.NODE_ENV === 'development') {
+              console.error('Error fetching user data in JWT callback:', error)
+            }
           }
         }
 
