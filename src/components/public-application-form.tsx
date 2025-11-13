@@ -213,6 +213,37 @@ export function PublicApplicationForm({ org, classes }: PublicApplicationFormPro
           <div className="text-center">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">{org.name}</h1>
             <p className="text-lg text-gray-600 font-medium">Student Application Form</p>
+            {/* Public Contact Information */}
+            {(org as any).publicPhone || (org as any).publicEmail || (org as any).addressLine1 ? (
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-gray-600">
+                  {(org as any).publicPhone && (
+                    <div className="flex items-center gap-1">
+                      <Phone className="h-4 w-4" />
+                      <span>{(org as any).publicPhone}</span>
+                    </div>
+                  )}
+                  {(org as any).publicEmail && (
+                    <div className="flex items-center gap-1">
+                      <Mail className="h-4 w-4" />
+                      <span>{(org as any).publicEmail}</span>
+                    </div>
+                  )}
+                  {((org as any).addressLine1 || (org as any).postcode || (org as any).city) && (
+                    <div className="flex items-center gap-1">
+                      <MapPin className="h-4 w-4" />
+                      <span>
+                        {[
+                          (org as any).addressLine1,
+                          (org as any).city,
+                          (org as any).postcode
+                        ].filter(Boolean).join(', ')}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>

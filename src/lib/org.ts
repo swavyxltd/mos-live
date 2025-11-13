@@ -90,8 +90,13 @@ export async function getActiveOrg(userId?: string) {
         paymentFailureCount: true,
         autoSuspendEnabled: true,
         address: true,
+        addressLine1: true,
+        postcode: true,
+        city: true,
         phone: true,
+        publicPhone: true,
         email: true,
+        publicEmail: true,
         officeHours: true,
         stripeEnabled: true,
         stripePublishableKey: true,
@@ -142,6 +147,23 @@ export async function getUserRoleInOrg(userId: string, orgId: string): Promise<R
 
 export async function getOrgBySlug(slug: string) {
   return prisma.org.findUnique({
-    where: { slug }
+    where: { slug },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      address: true,
+      addressLine1: true,
+      postcode: true,
+      city: true,
+      phone: true,
+      publicPhone: true,
+      email: true,
+      publicEmail: true,
+      officeHours: true,
+      timezone: true,
+      settings: true,
+      status: true
+    }
   })
 }

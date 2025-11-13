@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation'
 import React, { useState, Suspense, useEffect } from 'react'
 import { Mail, Lock, User, MapPin, Phone, Globe } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { GooglePlacesAutocomplete } from '@/components/google-places-autocomplete'
 
 function SignUpForm() {
   const searchParams = useSearchParams()
@@ -13,6 +14,7 @@ function SignUpForm() {
   
   const token = searchParams.get('token')
   const [orgName, setOrgName] = useState('')
+  const [isNewOrgSetup, setIsNewOrgSetup] = useState(false)
   const [isLoadingInvitation, setIsLoadingInvitation] = useState(true)
   
   // Fetch invitation details
@@ -30,6 +32,8 @@ function SignUpForm() {
           setError(data.error)
         } else {
           setOrgName(data.orgName || '')
+          // Check if this is a new org setup (ADMIN role invitation)
+          setIsNewOrgSetup(data.role === 'ADMIN' && !data.acceptedAt)
         }
       })
       .catch(err => {
@@ -49,11 +53,18 @@ function SignUpForm() {
     phone: '',
     // Org details (for new org setup)
     orgAddress: '',
+    orgAddressLine1: '',
+    orgPostcode: '',
+    orgCity: '',
     orgPhone: '',
+    orgPublicPhone: '',
     orgEmail: '',
+    orgPublicEmail: '',
     orgWebsite: '',
     timezone: 'Europe/London'
   })
+  
+  // isNewOrgSetup is now set from the invitation API response
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
@@ -72,6 +83,16 @@ function SignUpForm() {
       setError('Password must be at least 8 characters')
       setIsLoading(false)
       return
+    }
+
+    // Validate required org fields for new org setup
+    if (isNewOrgSetup) {
+      if (!formData.orgAddressLine1 || !formData.orgPostcode || !formData.orgCity || 
+          !formData.orgPhone || !formData.orgPublicPhone || !formData.orgEmail || !formData.orgPublicEmail) {
+        setError('Please fill in all required organization details')
+        setIsLoading(false)
+        return
+      }
     }
 
     try {
@@ -276,61 +297,166 @@ function SignUpForm() {
             </div>
           </div>
 
-          {/* Org Details - Only show if setting up new org */}
-          {!orgName && (
-            <div className="space-y-4 pt-4">
-              <h2 className="text-lg font-medium text-neutral-900">Organization Details</h2>
+          {/* Org Details - Only show if setting up new org - REQUIRED */}
+          {isNewOrgSetup && (
+            <div className="space-y-4 pt-4 border-t border-neutral-200">
+              <h2 className="text-lg font-medium text-neutral-900">Organization Details *</h2>
+              <p className="text-sm text-neutral-600">All fields below are required for new organization setup</p>
               
-              {/* Address */}
+              {/* Address Line 1 with Google Places Autocomplete */}
               <div>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-3 w-5 h-5 text-neutral-400" />
-                  <textarea
-                    id="orgAddress"
-                    name="orgAddress"
-                    value={formData.orgAddress}
-                    onChange={(e) => setFormData({ ...formData, orgAddress: e.target.value })}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-neutral-200/70 bg-white text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors resize-none"
-                    placeholder="Address"
-                    rows={2}
+                <label htmlFor="orgAddressLine1" className="block text-sm font-medium text-neutral-700 mb-1">
+                  Address Line 1 *
+                </label>
+                <GooglePlacesAutocomplete
+                  id="orgAddressLine1"
+                  name="orgAddressLine1"
+                  value={formData.orgAddressLine1}
+                  onChange={(value) => setFormData({ ...formData, orgAddressLine1: value })}
+                  onPlaceSelect={(place) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      orgAddressLine1: place.addressLine1,
+                      orgAddress: place.fullAddress,
+                      postcode: place.postcode,
+                      city: place.city
+                    }))
+                  }}
+                  placeholder="Start typing your address..."
+                  required={isNewOrgSetup}
+                />
+                <p className="text-xs text-neutral-500 mt-1">Start typing and select from suggestions</p>
+              </div>
+
+              {/* Postcode and City */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="orgPostcode" className="block text-sm font-medium text-neutral-700 mb-1">
+                    Postcode *
+                  </label>
+                  <input
+                    id="orgPostcode"
+                    name="orgPostcode"
+                    type="text"
+                    required={isNewOrgSetup}
+                    value={formData.orgPostcode}
+                    onChange={(e) => setFormData({ ...formData, orgPostcode: e.target.value.toUpperCase() })}
+                    className="w-full px-4 h-11 rounded-xl border border-neutral-200/70 bg-white text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
+                    placeholder="SW1A 1AA"
+                    autoComplete="postal-code"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="orgCity" className="block text-sm font-medium text-neutral-700 mb-1">
+                    City *
+                  </label>
+                  <input
+                    id="orgCity"
+                    name="orgCity"
+                    type="text"
+                    required={isNewOrgSetup}
+                    value={formData.orgCity}
+                    onChange={(e) => setFormData({ ...formData, orgCity: e.target.value })}
+                    className="w-full px-4 h-11 rounded-xl border border-neutral-200/70 bg-white text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
+                    placeholder="London"
+                    autoComplete="address-level2"
                   />
                 </div>
               </div>
 
-              {/* Org Phone & Email */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
-                    <input
-                      id="orgPhone"
-                      name="orgPhone"
-                      type="tel"
-                      value={formData.orgPhone}
-                      onChange={(e) => setFormData({ ...formData, orgPhone: e.target.value })}
-                      className="w-full pl-10 pr-4 h-11 rounded-xl border border-neutral-200/70 bg-white text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
-                      placeholder="Phone"
-                    />
-                  </div>
+              {/* Contact Phone (Internal/OS) */}
+              <div>
+                <label htmlFor="orgPhone" className="block text-sm font-medium text-neutral-700 mb-1">
+                  Contact Phone (Internal) *
+                </label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
+                  <input
+                    id="orgPhone"
+                    name="orgPhone"
+                    type="tel"
+                    required={isNewOrgSetup}
+                    value={formData.orgPhone}
+                    onChange={(e) => setFormData({ ...formData, orgPhone: e.target.value })}
+                    className="w-full pl-10 pr-4 h-11 rounded-xl border border-neutral-200/70 bg-white text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
+                    placeholder="+44 20 1234 5678"
+                    autoComplete="tel"
+                  />
                 </div>
-                <div>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
-                    <input
-                      id="orgEmail"
-                      name="orgEmail"
-                      type="email"
-                      value={formData.orgEmail}
-                      onChange={(e) => setFormData({ ...formData, orgEmail: e.target.value })}
-                      className="w-full pl-10 pr-4 h-11 rounded-xl border border-neutral-200/70 bg-white text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
-                      placeholder="Email"
-                    />
-                  </div>
-                </div>
+                <p className="text-xs text-neutral-500 mt-1">For Madrasah OS to contact you</p>
               </div>
 
-              {/* Website */}
+              {/* Public Phone */}
               <div>
+                <label htmlFor="orgPublicPhone" className="block text-sm font-medium text-neutral-700 mb-1">
+                  Public Phone (For Parents) *
+                </label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
+                  <input
+                    id="orgPublicPhone"
+                    name="orgPublicPhone"
+                    type="tel"
+                    required={isNewOrgSetup}
+                    value={formData.orgPublicPhone}
+                    onChange={(e) => setFormData({ ...formData, orgPublicPhone: e.target.value })}
+                    className="w-full pl-10 pr-4 h-11 rounded-xl border border-neutral-200/70 bg-white text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
+                    placeholder="+44 20 1234 5678"
+                    autoComplete="tel"
+                  />
+                </div>
+                <p className="text-xs text-neutral-500 mt-1">This will be visible to parents on the application form</p>
+              </div>
+
+              {/* Contact Email (Internal/OS) */}
+              <div>
+                <label htmlFor="orgEmail" className="block text-sm font-medium text-neutral-700 mb-1">
+                  Contact Email (Internal) *
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
+                  <input
+                    id="orgEmail"
+                    name="orgEmail"
+                    type="email"
+                    required={isNewOrgSetup}
+                    value={formData.orgEmail}
+                    onChange={(e) => setFormData({ ...formData, orgEmail: e.target.value })}
+                    className="w-full pl-10 pr-4 h-11 rounded-xl border border-neutral-200/70 bg-white text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
+                    placeholder="admin@madrasah.org"
+                    autoComplete="email"
+                  />
+                </div>
+                <p className="text-xs text-neutral-500 mt-1">For Madrasah OS to contact you</p>
+              </div>
+
+              {/* Public Email */}
+              <div>
+                <label htmlFor="orgPublicEmail" className="block text-sm font-medium text-neutral-700 mb-1">
+                  Public Email (For Parents) *
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
+                  <input
+                    id="orgPublicEmail"
+                    name="orgPublicEmail"
+                    type="email"
+                    required={isNewOrgSetup}
+                    value={formData.orgPublicEmail}
+                    onChange={(e) => setFormData({ ...formData, orgPublicEmail: e.target.value })}
+                    className="w-full pl-10 pr-4 h-11 rounded-xl border border-neutral-200/70 bg-white text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
+                    placeholder="info@madrasah.org"
+                    autoComplete="email"
+                  />
+                </div>
+                <p className="text-xs text-neutral-500 mt-1">This will be visible to parents on the application form</p>
+              </div>
+
+              {/* Website (Optional) */}
+              <div>
+                <label htmlFor="orgWebsite" className="block text-sm font-medium text-neutral-700 mb-1">
+                  Website (Optional)
+                </label>
                 <div className="relative">
                   <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
                   <input
@@ -340,7 +466,8 @@ function SignUpForm() {
                     value={formData.orgWebsite}
                     onChange={(e) => setFormData({ ...formData, orgWebsite: e.target.value })}
                     className="w-full pl-10 pr-4 h-11 rounded-xl border border-neutral-200/70 bg-white text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
-                    placeholder="Website (optional)"
+                    placeholder="https://www.madrasah.org"
+                    autoComplete="url"
                   />
                 </div>
               </div>

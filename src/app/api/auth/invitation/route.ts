@@ -74,7 +74,8 @@ export async function GET(request: NextRequest) {
       orgName: invitation.org.name,
       orgSlug: invitation.org.slug,
       email: invitation.email,
-      role: invitation.role
+      role: invitation.role,
+      acceptedAt: invitation.acceptedAt
     })
   } catch (error: any) {
     console.error('❌ Error fetching invitation:', error)

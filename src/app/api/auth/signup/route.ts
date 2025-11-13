@@ -15,8 +15,13 @@ export async function POST(request: NextRequest) {
       phone,
       // Org details (for new org setup)
       orgAddress,
+      orgAddressLine1,
+      orgPostcode,
+      orgCity,
       orgPhone,
+      orgPublicPhone,
       orgEmail,
+      orgPublicEmail,
       orgWebsite,
       timezone
     } = body
@@ -114,12 +119,22 @@ export async function POST(request: NextRequest) {
 
       // Update org details if this is a new org setup
       if (isNewOrgSetup) {
+        // Validate required fields for new org setup
+        if (!orgAddressLine1 || !orgPostcode || !orgCity || !orgPhone || !orgPublicPhone || !orgEmail || !orgPublicEmail) {
+          throw new Error('All organization details are required: address line 1, postcode, city, contact phone, public phone, contact email, and public email')
+        }
+        
         await tx.org.update({
           where: { id: invitation.orgId },
           data: {
-            address: orgAddress || undefined,
-            phone: orgPhone || undefined,
-            email: orgEmail || undefined,
+            address: orgAddress || undefined, // Legacy field
+            addressLine1: orgAddressLine1,
+            postcode: orgPostcode,
+            city: orgCity,
+            phone: orgPhone,
+            publicPhone: orgPublicPhone,
+            email: orgEmail,
+            publicEmail: orgPublicEmail,
             website: orgWebsite || undefined,
             timezone: timezone || 'Europe/London'
           }

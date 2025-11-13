@@ -25,8 +25,13 @@ interface OrganizationSettings {
   timezone: string
   lateThreshold: number
   address: string
+  addressLine1: string
+  postcode: string
+  city: string
   phone: string
+  publicPhone: string
   email: string
+  publicEmail: string
   officeHours: string
 }
 
@@ -60,8 +65,13 @@ export default function SettingsPage() {
     timezone: 'Europe/London',
     lateThreshold: 15,
     address: '',
+    addressLine1: '',
+    postcode: '',
+    city: '',
     phone: '',
+    publicPhone: '',
     email: '',
+    publicEmail: '',
     officeHours: ''
   })
   const [userSettings, setUserSettings] = useState<UserSettings>({
@@ -141,8 +151,13 @@ export default function SettingsPage() {
           timezone: data.timezone || 'Europe/London',
           lateThreshold: data.lateThreshold || 15,
           address: data.address || '',
+          addressLine1: data.addressLine1 || '',
+          postcode: data.postcode || '',
+          city: data.city || '',
           phone: data.phone || '',
+          publicPhone: data.publicPhone || '',
           email: data.email || '',
+          publicEmail: data.publicEmail || '',
           officeHours: data.officeHours || ''
         })
       }
@@ -543,37 +558,103 @@ export default function SettingsPage() {
                   placeholder="Enter late threshold"
                 />
               </div>
+            </div>
+
+            {/* Address Fields */}
+            <div className="space-y-4 border-t pt-4">
+              <h3 className="text-lg font-semibold">Address Information</h3>
               <div>
-                <Label htmlFor="phone">Phone Number</Label>
+                <Label htmlFor="addressLine1">Address Line 1</Label>
                 <Input
-                  id="phone"
-                  type="tel"
-                  value={orgSettings.phone}
-                  onChange={(e) => handleOrgSettingsChange('phone', e.target.value)}
-                  placeholder="Enter phone number"
+                  id="addressLine1"
+                  value={orgSettings.addressLine1}
+                  onChange={(e) => handleOrgSettingsChange('addressLine1', e.target.value)}
+                  placeholder="Enter first line of address"
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="postcode">Postcode</Label>
+                  <Input
+                    id="postcode"
+                    value={orgSettings.postcode}
+                    onChange={(e) => handleOrgSettingsChange('postcode', e.target.value.toUpperCase())}
+                    placeholder="SW1A 1AA"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="city">City</Label>
+                  <Input
+                    id="city"
+                    value={orgSettings.city}
+                    onChange={(e) => handleOrgSettingsChange('city', e.target.value)}
+                    placeholder="London"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="address">Full Address (Legacy)</Label>
+                <Textarea
+                  id="address"
+                  value={orgSettings.address}
+                  onChange={(e) => handleOrgSettingsChange('address', e.target.value)}
+                  placeholder="Enter full address (optional, for backward compatibility)"
+                  rows={2}
                 />
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="address">Address</Label>
-              <Textarea
-                id="address"
-                value={orgSettings.address}
-                onChange={(e) => handleOrgSettingsChange('address', e.target.value)}
-                placeholder="Enter organization address"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="email">Contact Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={orgSettings.email}
-                onChange={(e) => handleOrgSettingsChange('email', e.target.value)}
-                placeholder="Enter contact email"
-              />
+            {/* Contact Information */}
+            <div className="space-y-4 border-t pt-4">
+              <h3 className="text-lg font-semibold">Contact Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="phone">Contact Phone (Internal/OS) *</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={orgSettings.phone}
+                    onChange={(e) => handleOrgSettingsChange('phone', e.target.value)}
+                    placeholder="+44 20 1234 5678"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">For Madrasah OS to contact you</p>
+                </div>
+                <div>
+                  <Label htmlFor="publicPhone">Public Phone (For Parents) *</Label>
+                  <Input
+                    id="publicPhone"
+                    type="tel"
+                    value={orgSettings.publicPhone}
+                    onChange={(e) => handleOrgSettingsChange('publicPhone', e.target.value)}
+                    placeholder="+44 20 1234 5678"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Visible on application form</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="email">Contact Email (Internal/OS) *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={orgSettings.email}
+                    onChange={(e) => handleOrgSettingsChange('email', e.target.value)}
+                    placeholder="admin@madrasah.org"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">For Madrasah OS to contact you</p>
+                </div>
+                <div>
+                  <Label htmlFor="publicEmail">Public Email (For Parents) *</Label>
+                  <Input
+                    id="publicEmail"
+                    type="email"
+                    value={orgSettings.publicEmail}
+                    onChange={(e) => handleOrgSettingsChange('publicEmail', e.target.value)}
+                    placeholder="info@madrasah.org"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Visible on application form</p>
+                </div>
+              </div>
             </div>
 
             <div>

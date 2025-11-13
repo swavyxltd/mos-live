@@ -101,9 +101,14 @@ model Org {
   autoSuspendEnabled      Boolean   @default(true)
 
   // Contact Information
-  address     String?
-  phone       String?
-  email       String?
+  address     String?  // Full address (legacy, kept for backward compatibility)
+  addressLine1 String? // First line of address
+  postcode    String?  // Postcode
+  city        String?  // City
+  phone       String?  // Internal/OS contact number
+  publicPhone String?  // Public contact number (for parents)
+  email       String?  // Internal/OS email
+  publicEmail String?  // Public email (for parents)
   officeHours String?
 
   // Payment Settings

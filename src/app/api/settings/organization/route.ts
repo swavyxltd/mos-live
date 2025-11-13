@@ -19,18 +19,69 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, timezone, lateThreshold, address, phone, email, officeHours } = body
+    const { 
+      name, 
+      timezone, 
+      lateThreshold, 
+      address, 
+      addressLine1,
+      postcode,
+      city,
+      phone, 
+      publicPhone,
+      email, 
+      publicEmail,
+      officeHours,
+      slug // Allow manual slug update
+    } = body
+
+    // If name changed, update slug automatically (unless slug is explicitly provided)
+    let newSlug = slug || org.slug
+    if (name && name !== org.name && !slug) {
+      // Generate slug from new name
+      const baseSlug = name.toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+      
+      // Check if slug already exists
+      let finalSlug = baseSlug
+      let counter = 1
+      while (true) {
+        const existingOrg = await prisma.org.findUnique({
+          where: { slug: finalSlug },
+          select: { id: true }
+        })
+        
+        // If slug doesn't exist or belongs to current org, use it
+        if (!existingOrg || existingOrg.id === org.id) {
+          break
+        }
+        
+        // Otherwise, append counter
+        finalSlug = `${baseSlug}-${counter}`
+        counter++
+      }
+      
+      newSlug = finalSlug
+    }
 
     // Update organization settings
     const updatedOrg = await prisma.org.update({
       where: { id: org.id },
       data: {
         name,
+        slug: newSlug,
         timezone,
-        address,
-        phone,
-        email,
-        officeHours,
+        address: address || undefined, // Keep legacy address for backward compatibility
+        addressLine1: addressLine1 || undefined,
+        postcode: postcode || undefined,
+        city: city || undefined,
+        phone: phone || undefined,
+        publicPhone: publicPhone || undefined,
+        email: email || undefined,
+        publicEmail: publicEmail || undefined,
+        officeHours: officeHours || undefined,
         settings: JSON.stringify({
           lateThreshold
         })
@@ -67,11 +118,17 @@ export async function GET() {
 
     return NextResponse.json({
       name: org.name,
+      slug: org.slug,
       timezone: org.timezone,
       lateThreshold: settings.lateThreshold || 15,
       address: org.address || '',
+      addressLine1: (org as any).addressLine1 || '',
+      postcode: (org as any).postcode || '',
+      city: (org as any).city || '',
       phone: org.phone || '',
+      publicPhone: (org as any).publicPhone || '',
       email: org.email || '',
+      publicEmail: (org as any).publicEmail || '',
       officeHours: org.officeHours || ''
     })
   } catch (error) {
