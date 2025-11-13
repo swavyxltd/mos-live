@@ -169,7 +169,7 @@ export function AllOrgsTable({ orgs, onRefresh }: AllOrgsTableProps) {
                         // Show organization status if available, otherwise check platform billing
                         if (org.status === 'PAUSED') {
                           return (
-                            <Badge variant="secondary" className="bg-orange-100 text-orange-800">
+                            <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
                               Paused
                             </Badge>
                           )

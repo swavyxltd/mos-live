@@ -190,7 +190,7 @@ export function OrganizationDetailModal({ isOpen, onClose, organization, onRefre
       case 'ACTIVE':
         return 'bg-green-100 text-green-800'
       case 'PAUSED':
-        return 'bg-orange-100 text-orange-800'
+        return 'bg-yellow-100 text-yellow-800'
       case 'DEACTIVATED':
         return 'bg-red-100 text-red-800'
       case 'PAST_DUE':
