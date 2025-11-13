@@ -118,17 +118,17 @@ export default function SignInPage() {
       {/* White card matching 2FA verification page style */}
       <div className="bg-white border border-gray-200 rounded-xl shadow-md overflow-hidden">
         {/* Header */}
-        <div className="p-4 sm:p-6 border-b border-gray-200">
+        <div className="p-4 sm:p-6">
           <div className="flex items-center justify-center gap-3 mb-3">
             <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
               <LogIn className="h-5 w-5 text-gray-700" />
             </div>
             <h2 className="text-lg sm:text-xl font-semibold text-gray-900 text-center">
-              Sign in with email
+              Assalamu alaykum
             </h2>
           </div>
           <p className="text-sm text-gray-600 text-center">
-            Access your Madrasah OS dashboard.
+            Login to your Madrasah account
           </p>
         </div>
 
@@ -152,32 +152,44 @@ export default function SignInPage() {
           <form onSubmit={handleCredentialsSignIn} className="space-y-6">
             {/* Email input */}
             <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-900 mb-2">
+                Email
+              </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   id="email"
                   name="email"
                   type="email"
                   autoComplete="email"
                   required
-                  className="w-full pl-10 pr-4 h-11 rounded-lg border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100 transition-colors"
-                  placeholder="Email"
+                  className="w-full px-4 h-11 rounded-lg border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100 transition-colors"
+                  placeholder="m@example.com"
                 />
               </div>
             </div>
 
             {/* Password input */}
             <div>
+              <div className="flex items-center justify-between mb-2">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-900">
+                  Password
+                </label>
+                <a
+                  href="/auth/forgot-password"
+                  className="text-sm text-gray-900 hover:text-gray-700 transition-colors"
+                >
+                  Forgot your password?
+                </a>
+              </div>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   id="password"
                   name="password"
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
                   required
-                  className="w-full pl-10 pr-12 h-11 rounded-lg border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100 transition-colors"
-                  placeholder="Password"
+                  className="w-full px-4 pr-12 h-11 rounded-lg border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100 transition-colors"
+                  placeholder=""
                 />
                 <button
                   type="button"
@@ -196,14 +208,6 @@ export default function SignInPage() {
                   )}
                 </button>
               </div>
-              <div className="mt-2 text-right">
-                <a
-                  href="/auth/forgot-password"
-                  className="text-sm text-green-600 hover:text-green-700 transition-colors"
-                >
-                  Forgot password?
-                </a>
-              </div>
             </div>
 
             {/* Submit button */}
@@ -212,7 +216,7 @@ export default function SignInPage() {
               disabled={isLoading}
               className="w-full h-11 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? 'Signing in...' : 'Get Started'}
+              {isLoading ? 'Signing in...' : 'Login'}
             </button>
           </form>
         </div>
