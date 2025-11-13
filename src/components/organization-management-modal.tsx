@@ -1140,6 +1140,22 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
 
                     <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                       <div>
+                        <h3 className="font-medium">Deactivate Account</h3>
+                        <p className="text-sm text-gray-600">Permanently disable organization and lock all accounts</p>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        className="text-red-600 border-red-200 hover:bg-red-50"
+                        onClick={handleDeactivateAccount}
+                        disabled={isChangingStatus}
+                      >
+                        <X className="h-4 w-4 mr-2" />
+                        {isChangingStatus ? 'Deactivating...' : 'Deactivate'}
+                      </Button>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                      <div>
                         <h3 className="font-medium">Reactivate Account</h3>
                         <p className="text-sm text-gray-600">Restore full access to all accounts</p>
                       </div>
