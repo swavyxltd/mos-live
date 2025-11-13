@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { orgId: string } }
+  { params }: { params: Promise<{ orgId: string }> | { orgId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -15,7 +15,9 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { orgId } = params
+    // Handle Next.js 15 async params
+    const resolvedParams = await Promise.resolve(params)
+    const { orgId } = resolvedParams
 
     // Update organization status to ACTIVE
     const updatedOrg = await prisma.org.update({

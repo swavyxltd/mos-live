@@ -7,7 +7,7 @@ import { cancelStripeSubscription } from '@/lib/stripe'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { orgId: string } }
+  { params }: { params: Promise<{ orgId: string }> | { orgId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -17,7 +17,9 @@ export async function POST(
     }
 
     const { reason } = await request.json()
-    const { orgId } = params
+    // Handle Next.js 15 async params
+    const resolvedParams = await Promise.resolve(params)
+    const { orgId } = resolvedParams
 
     // Get organization with billing info
     const org = await prisma.org.findUnique({
