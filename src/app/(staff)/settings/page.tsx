@@ -58,6 +58,7 @@ interface BillingRecord {
 
 export default function SettingsPage() {
   const { data: session, update, status } = useSession()
+  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [loadingOrgSettings, setLoadingOrgSettings] = useState(true)
   const [orgSettings, setOrgSettings] = useState<OrganizationSettings>({
@@ -305,13 +306,15 @@ export default function SettingsPage() {
         // This triggers the JWT callback which fetches fresh user data from database
         await update()
         
+        // Refresh server components (layouts, etc.) which use getServerSession
+        router.refresh()
+        
         // Give the session time to update - the JWT callback fetches from DB
-        // We need to wait for the client-side session to refresh
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        // We need to wait for both server and client components to refresh
+        await new Promise(resolve => setTimeout(resolve, 500))
         
         // Force a hard reload to ensure all components get the fresh session
-        // This is necessary because server components use getServerSession which
-        // reads from the JWT token, and client components use useSession
+        // This ensures both server components (getServerSession) and client components (useSession) are updated
         if (typeof window !== 'undefined') {
           window.location.reload()
         }
