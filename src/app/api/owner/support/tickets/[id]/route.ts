@@ -100,32 +100,29 @@ export async function PATCH(
           'CLOSED': 'Your support ticket has been resolved and closed.'
         }
 
+        const { generateEmailTemplate } = await import('@/lib/email-template')
+        const content = `
+          <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-top: 16px;">
+            <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280; font-weight: 500;">Subject:</p>
+            <p style="margin: 0 0 12px 0; font-size: 16px; color: #111827; font-weight: 600;">${ticket.subject}</p>
+            <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280; font-weight: 500;">Status:</p>
+            <p style="margin: 0 0 12px 0; font-size: 16px; color: #111827; font-weight: 600;">${status.replace('_', ' ')}</p>
+            <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280; font-weight: 500;">Organization:</p>
+            <p style="margin: 0; font-size: 16px; color: #111827; font-weight: 600;">${ticket.org?.name || 'N/A'}</p>
+          </div>
+        `
+        
+        const html = await generateEmailTemplate({
+          title: 'Support Ticket Status Update',
+          description: `Hello ${ticket.createdBy.name || 'there'},<br><br>${statusMessages[status as keyof typeof statusMessages]}`,
+          content,
+          footerText: 'You can view the full conversation and any responses by logging into your account.'
+        })
+        
         await sendEmail({
           to: ticket.createdBy.email,
           subject: `Support ticket status update: ${ticket.subject}`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #333;">Support Ticket Status Update</h2>
-              <p>Hello ${ticket.createdBy.name || 'there'},</p>
-              <p>${statusMessages[status as keyof typeof statusMessages]}</p>
-              
-              <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0;">
-                <h3 style="margin-top: 0;">Ticket Details:</h3>
-                <p><strong>Subject:</strong> ${ticket.subject}</p>
-                <p><strong>Status:</strong> ${status.replace('_', ' ')}</p>
-                <p><strong>Organization:</strong> ${ticket.org?.name}</p>
-              </div>
-              
-              <p>You can view the full conversation and any responses by logging into your account.</p>
-              
-              <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-                <p style="color: #666; font-size: 14px;">
-                  Best regards,<br>
-                  Madrasah OS Support Team
-                </p>
-              </div>
-            </div>
-          `
+          html
         })
       } catch (emailError) {
         console.error('Error sending email notification:', emailError)

@@ -81,30 +81,31 @@ export async function POST(
     // Send email notification to the ticket creator
     if (ticket.createdBy?.email) {
       try {
+        const { generateEmailTemplate } = await import('@/lib/email-template')
+        const content = `
+          <div style="margin-bottom: 16px;">
+            <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280; font-weight: 500;">Ticket:</p>
+            <p style="margin: 0 0 16px 0; font-size: 16px; color: #111827; font-weight: 600;">${ticket.subject}</p>
+          </div>
+          <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-top: 16px;">
+            <p style="margin: 0; font-size: 14px; color: #6b7280; font-weight: 500; margin-bottom: 8px;">Our Response:</p>
+            <div style="font-size: 15px; color: #374151; line-height: 1.6; white-space: pre-wrap;">
+              ${responseBody}
+            </div>
+          </div>
+        `
+        
+        const html = await generateEmailTemplate({
+          title: 'Support Ticket Response',
+          description: `Hello ${ticket.createdBy.name || 'there'},<br><br>We have responded to your support ticket.`,
+          content,
+          footerText: 'You can view the full conversation and respond by logging into your account.'
+        })
+        
         await sendEmail({
           to: ticket.createdBy.email,
           subject: `Response to your support ticket: ${ticket.subject}`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #333;">Support Ticket Response</h2>
-              <p>Hello ${ticket.createdBy.name || 'there'},</p>
-              <p>We have responded to your support ticket: <strong>${ticket.subject}</strong></p>
-              
-              <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0;">
-                <h3 style="margin-top: 0;">Our Response:</h3>
-                <p style="white-space: pre-wrap;">${responseBody}</p>
-              </div>
-              
-              <p>You can view the full conversation and respond by logging into your account.</p>
-              
-              <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-                <p style="color: #666; font-size: 14px;">
-                  Best regards,<br>
-                  Madrasah OS Support Team
-                </p>
-              </div>
-            </div>
-          `
+          html
         })
       } catch (emailError) {
         console.error('Error sending email notification:', emailError)
