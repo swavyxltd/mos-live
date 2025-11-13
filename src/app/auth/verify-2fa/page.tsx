@@ -215,7 +215,7 @@ function Verify2FAContent() {
   }
 
   return (
-    <div className="w-full max-w-lg">
+    <div className="w-full max-w-lg mx-auto px-4">
       {/* Logo above card */}
       <div className="mb-6 flex justify-center">
         <img 
@@ -228,20 +228,20 @@ function Verify2FAContent() {
       {/* White card matching payment modal style */}
       <div className="bg-white border border-gray-200 rounded-xl shadow-md overflow-hidden">
         {/* Header */}
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center gap-3 mb-3">
+        <div className="p-4 sm:p-6 border-b border-gray-200">
+          <div className="flex items-center justify-center gap-3 mb-3">
             <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
               <Shield className="h-5 w-5 text-gray-700" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 text-center">
               Verify Your Identity
             </h2>
           </div>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 text-center">
             We've sent a 6-digit verification code to
           </p>
           {email && (
-            <p className="text-sm font-medium text-gray-900 mt-2 flex items-center gap-2">
+            <p className="text-sm font-medium text-gray-900 mt-2 flex items-center justify-center gap-2">
               <Mail className="h-4 w-4 text-gray-500" />
               {email}
             </p>
@@ -249,10 +249,10 @@ function Verify2FAContent() {
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+        <div className="p-4 sm:p-6 space-y-6">
           {/* Error message */}
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm text-center">
               {error}
             </div>
           )}
@@ -260,7 +260,7 @@ function Verify2FAContent() {
           {/* Code input form */}
           <form onSubmit={handleVerify} className="space-y-6">
             {/* Code inputs */}
-            <div className="flex justify-center gap-3">
+            <div className="flex justify-center gap-2 sm:gap-3">
               {code.map((digit, index) => (
                 <input
                   key={index}
@@ -272,7 +272,7 @@ function Verify2FAContent() {
                   onChange={(e) => handleCodeChange(index, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(index, e)}
                   onPaste={index === 0 ? handlePaste : undefined}
-                  className="w-12 h-14 text-center text-2xl font-semibold border-2 border-gray-200 rounded-lg focus:outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100 transition-colors"
+                  className="w-10 h-12 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-semibold border-2 border-gray-200 rounded-lg focus:outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100 transition-colors"
                   disabled={isLoading}
                   autoFocus={index === 0}
                 />
@@ -324,7 +324,7 @@ function Verify2FAContent() {
 export default function Verify2FAPage() {
   return (
     <Suspense fallback={
-      <div className="w-full max-w-lg">
+      <div className="w-full max-w-lg mx-auto px-4">
         <div className="mb-6 flex justify-center">
           <img 
             src="/logo.png" 
@@ -332,7 +332,7 @@ export default function Verify2FAPage() {
             className="w-[198px] h-auto"
           />
         </div>
-        <div className="bg-white border border-gray-200 rounded-xl shadow-md overflow-hidden p-8">
+        <div className="bg-white border border-gray-200 rounded-xl shadow-md overflow-hidden p-4 sm:p-8">
           <div className="text-center">
             <div className="inline-flex items-center justify-center w-10 h-10 bg-gray-100 rounded-lg mb-4 animate-pulse">
               <Shield className="h-5 w-5 text-gray-700" />
