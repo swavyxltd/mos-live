@@ -113,9 +113,6 @@ export function LoginForm({
                 <Button type="submit" disabled={isLoading} className="w-full">
                   {isLoading ? 'Signing in...' : 'Login'}
                 </Button>
-                <p className="text-sm text-center text-gray-600">
-                  Don&apos;t have an account? <a href="/auth/signup" className="underline-offset-4 hover:underline text-gray-900">Sign up</a>
-                </p>
               </div>
             </div>
           </form>
