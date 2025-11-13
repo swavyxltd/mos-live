@@ -1,65 +1,100 @@
 'use client'
 export const dynamic = 'force-dynamic'
 
+import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Pause, Mail, Phone } from 'lucide-react'
+import { Pause, Mail, Phone, AlertCircle } from 'lucide-react'
 
-export default function AccountPausedPage() {
+function AccountPausedContent() {
   const searchParams = useSearchParams()
   const orgName = searchParams.get('org') || 'your organization'
   const reason = searchParams.get('reason') || 'No reason provided'
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <Card className="border-orange-200">
-          <CardHeader className="text-center">
-            <div className="mx-auto w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-4">
-              <Pause className="h-8 w-8 text-orange-600" />
+      <div className="w-full max-w-lg">
+        <div className="bg-white border border-gray-200 rounded-xl shadow-md overflow-hidden">
+          {/* Header */}
+          <div className="p-6 border-b border-gray-200">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Pause className="h-5 w-5 text-gray-700" />
+                  </div>
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Account Paused
+                  </h2>
+                </div>
+                <p className="text-sm text-gray-600">
+                  Your organization account has been temporarily paused
+                </p>
+              </div>
             </div>
-            <CardTitle className="text-2xl text-orange-900">Account Paused</CardTitle>
-            <CardDescription className="text-orange-700">
-              Your organization account has been temporarily paused
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
+          </div>
+
+          {/* Content */}
+          <div className="p-6 space-y-6">
+            {/* Organization Info */}
             <div className="text-center">
-              <p className="text-gray-600 mb-2">
-                <strong>{orgName}</strong> account has been paused.
+              <p className="text-gray-900 font-medium mb-1">
+                <strong>{orgName}</strong> account has been paused
               </p>
-              <p className="text-sm text-gray-500 mb-4">
+              <p className="text-sm text-gray-500">
                 Reason: {reason}
               </p>
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h3 className="font-medium text-blue-800 mb-2">What does this mean?</h3>
-              <ul className="text-sm text-blue-700 space-y-1">
-                <li>• All admin, staff, and teacher accounts are temporarily locked</li>
-                <li>• You cannot access the organization dashboard</li>
-                <li>• Students and parents can still access their accounts</li>
-                <li>• This is usually due to payment issues</li>
-                <li>• Contact support to resolve and reactivate</li>
-              </ul>
-            </div>
-
-            <div className="space-y-3">
-              <h3 className="font-medium text-gray-900">Need help?</h3>
-              <div className="space-y-2">
-                <div className="flex items-center space-x-3 text-sm text-gray-600">
-                  <Mail className="h-4 w-4" />
-                  <span>Email: support@madrasah-os.com</span>
-                </div>
-                <div className="flex items-center space-x-3 text-sm text-gray-600">
-                  <Phone className="h-4 w-4" />
-                  <span>Phone: +44 20 1234 5678</span>
+            {/* What does this mean */}
+            <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+              <div className="flex items-start gap-3 mb-3">
+                <AlertCircle className="h-5 w-5 text-gray-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-1">What does this mean?</h3>
+                  <ul className="text-sm text-gray-700 space-y-1.5 mt-2">
+                    <li className="flex items-start gap-2">
+                      <span className="text-gray-400 mt-1.5">•</span>
+                      <span>All admin, staff, and teacher accounts are temporarily locked</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-gray-400 mt-1.5">•</span>
+                      <span>You cannot access the organization dashboard</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-gray-400 mt-1.5">•</span>
+                      <span>Students and parents can still access their accounts</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-gray-400 mt-1.5">•</span>
+                      <span>This is usually due to billing issues</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-gray-400 mt-1.5">•</span>
+                      <span>Contact support to resolve and reactivate</span>
+                    </li>
+                  </ul>
                 </div>
               </div>
             </div>
 
-            <div className="pt-4">
+            {/* Contact Information */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-gray-900">Need help?</h3>
+              <div className="space-y-2">
+                <div className="flex items-center gap-3 text-sm text-gray-600">
+                  <Mail className="h-4 w-4 text-gray-500" />
+                  <span>support@madrasah.io</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm text-gray-600">
+                  <Phone className="h-4 w-4 text-gray-500" />
+                  <span>+44 20 1234 5678</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Button */}
+            <div className="pt-2">
               <Button 
                 variant="outline" 
                 className="w-full"
@@ -68,9 +103,21 @@ export default function AccountPausedPage() {
                 Return to Sign In
               </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
+  )
+}
+
+export default function AccountPausedPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-600">Loading...</div>
+      </div>
+    }>
+      <AccountPausedContent />
+    </Suspense>
   )
 }
