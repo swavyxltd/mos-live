@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useSession } from 'next-auth/react'
 import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -17,8 +18,17 @@ interface TopbarProps {
   userRole?: string
 }
 
-export function Topbar({ title, user, userRole }: TopbarProps) {
+export function Topbar({ title, user: initialUser, userRole }: TopbarProps) {
+  const { data: session } = useSession()
   const [isDarkMode, setIsDarkMode] = React.useState(false)
+  
+  // Use session data if available (fresh from client), otherwise fall back to initial user prop
+  const user = session?.user ? {
+    name: session.user.name || initialUser?.name,
+    email: session.user.email || initialUser?.email,
+    image: session.user.image || initialUser?.image
+  } : initialUser
+  
   const firstName = user?.name?.split(' ')[0] || 'User'
 
   const toggleDarkMode = () => {
