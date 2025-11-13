@@ -25,8 +25,11 @@ export async function sendTwoFactorCode(email: string, code: string, userName?: 
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Your Verification Code</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
       </head>
-      <body style="margin: 0; padding: 0; background-color: #f9fafb; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+      <body style="margin: 0; padding: 0; background-color: #f9fafb; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
         <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; padding: 60px 20px;">
           <tr>
             <td align="center">
@@ -53,7 +56,7 @@ export async function sendTwoFactorCode(email: string, code: string, userName?: 
                       <tr>
                         <td align="center" style="padding: 0 0 32px 0;">
                           <div style="background: #f9fafb; border: 2px dashed #d1d5db; border-radius: 12px; padding: 32px 24px; text-align: center; max-width: 400px; margin: 0 auto;">
-                            <div style="font-size: 42px; font-weight: 700; letter-spacing: 12px; color: #111827; font-family: 'Courier New', monospace; line-height: 1.2;">
+                            <div style="font-size: 42px; font-weight: 700; letter-spacing: 12px; color: #111827; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.2;">
                               ${code}
                             </div>
                           </div>
