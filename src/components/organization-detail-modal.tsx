@@ -64,7 +64,7 @@ interface OrganizationDetailModalProps {
   onRefresh?: () => void
 }
 
-export function OrganizationDetailModal({ isOpen, onClose, organization }: OrganizationDetailModalProps) {
+export function OrganizationDetailModal({ isOpen, onClose, organization, onRefresh }: OrganizationDetailModalProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'students' | 'teachers' | 'billing' | 'activity'>('overview')
   const [isManagementModalOpen, setIsManagementModalOpen] = useState(false)
   const [managementModalInitialTab, setManagementModalInitialTab] = useState<'overview' | 'students' | 'teachers' | 'settings'>('overview')
