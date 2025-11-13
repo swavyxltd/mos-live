@@ -14,6 +14,15 @@ function AccountPausedContent() {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-lg">
+        {/* Logo above card */}
+        <div className="mb-6 flex justify-center">
+          <img 
+            src="/logo.png" 
+            alt="Madrasah OS" 
+            className="w-[198px] h-auto"
+          />
+        </div>
+        
         <div className="bg-white border border-gray-200 rounded-xl shadow-md overflow-hidden">
           {/* Header */}
           <div className="p-6 border-b border-gray-200">
