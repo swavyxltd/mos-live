@@ -81,7 +81,7 @@ export function PaymentRequiredModal({ isOpen, onClose, action, userRole }: Paym
         }}
       >
         <div className="w-full max-w-lg my-8">
-          <div className="bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden">
+          <div className="bg-white border border-gray-200 rounded-xl shadow-md overflow-hidden">
             {/* Header */}
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-start justify-between gap-4">
