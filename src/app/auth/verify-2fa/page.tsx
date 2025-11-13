@@ -2,11 +2,11 @@
 
 import { signIn, getSession } from 'next-auth/react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, Suspense } from 'react'
 import { Mail, Shield } from 'lucide-react'
 import { getPostLoginRedirect } from '@/lib/auth'
 
-export default function Verify2FAPage() {
+function Verify2FAContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [code, setCode] = useState(['', '', '', '', '', ''])
@@ -313,6 +313,32 @@ export default function Verify2FAPage() {
         </form>
       </div>
     </div>
+  )
+}
+
+export default function Verify2FAPage() {
+  return (
+    <Suspense fallback={
+      <div className="w-full max-w-[440px]">
+        <div className="mb-6 flex justify-center">
+          <img 
+            src="/logo.png" 
+            alt="Madrasah OS" 
+            className="w-[198px] h-auto"
+          />
+        </div>
+        <div className="rounded-2xl bg-white shadow-[0_8px_30px_rgba(0,0,0,0.08)] p-8">
+          <div className="text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-100 rounded-full mb-4 animate-pulse">
+              <Shield className="w-8 h-8 text-purple-600" />
+            </div>
+            <p className="text-neutral-600">Loading verification page...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <Verify2FAContent />
+    </Suspense>
   )
 }
 
