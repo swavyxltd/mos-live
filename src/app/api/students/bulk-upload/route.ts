@@ -108,6 +108,13 @@ export async function POST(request: NextRequest) {
         errors: []
       }
 
+      // Skip example rows (marked with EXAMPLE prefix)
+      if (row.firstName && row.firstName.trim().toUpperCase().startsWith('EXAMPLE')) {
+        validated.isValid = false
+        validated.errors = ['This is an example row - please delete it before uploading']
+        return validated
+      }
+
       // Required fields validation
       if (!row.firstName || !row.firstName.trim()) {
         errors.push('First name is required')

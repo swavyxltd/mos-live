@@ -107,25 +107,29 @@ export function StudentsPageWrapper({ initialStudents, classes }: StudentsPageWr
           </Button>
           
           <RestrictedAction action="add-student">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Student
-                  <ChevronDown className="h-4 w-4 ml-2" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem onClick={() => setIsAddModalOpen(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Single Student
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setIsBulkUploadModalOpen(true)}>
-                  <Users className="h-4 w-4 mr-2" />
-                  Bulk Add Students
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex">
+              <Button onClick={() => setIsAddModalOpen(true)} className="rounded-r-none">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Student
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="default" size="default" className="px-2 border-l border-white/20 rounded-l-none">
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem onClick={() => setIsAddModalOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Single Student
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setIsBulkUploadModalOpen(true)}>
+                    <Users className="h-4 w-4 mr-2" />
+                    Bulk Add Students
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </RestrictedAction>
         </div>
       </div>

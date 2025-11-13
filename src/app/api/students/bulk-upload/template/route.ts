@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Create CSV template with headers only (empty template)
+    // Create CSV template with headers + 100 empty rows + 1 example row
     const headers = [
       'firstName',
       'lastName',
@@ -37,7 +37,30 @@ export async function GET(request: NextRequest) {
       'startMonth'
     ]
 
-    const csvContent = headers.join(',') + '\n'
+    // Create CSV content
+    let csvContent = headers.join(',') + '\n'
+    
+    // Add example row (marked with EXAMPLE prefix so it won't be created if not removed)
+    const currentMonth = new Date().toISOString().slice(0, 7) // YYYY-MM
+    const exampleRow = [
+      'EXAMPLE_DELETE_THIS_ROW',
+      'Smith',
+      '2015-05-15',
+      'Male',
+      'John Smith',
+      'john.smith@example.com',
+      '+44 20 1234 5678',
+      '123 Example Street, London',
+      'None',
+      '',
+      currentMonth
+    ]
+    csvContent += exampleRow.join(',') + '\n'
+    
+    // Add 100 empty rows
+    for (let i = 0; i < 100; i++) {
+      csvContent += ','.repeat(headers.length - 1) + '\n'
+    }
 
     // Return CSV file
     return new NextResponse(csvContent, {
