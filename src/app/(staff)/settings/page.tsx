@@ -305,15 +305,17 @@ export default function SettingsPage() {
         // Force NextAuth to refresh the session by calling update()
         // This triggers the JWT callback with trigger='update' which fetches fresh user data from database
         // The update() function should return a promise that resolves when the session is updated
-        const updateResult = await update()
+        await update()
+        
+        // Wait a moment for the JWT callback to complete and update the token
+        await new Promise(resolve => setTimeout(resolve, 300))
         
         // Refresh server components (layouts, etc.) which use getServerSession
         // This ensures server components get the updated session from the JWT token
         router.refresh()
         
-        // Wait for the session to propagate - the JWT callback fetches from DB when trigger='update'
-        // We need to give it time for the token to be updated and the session to refresh
-        await new Promise(resolve => setTimeout(resolve, 800))
+        // Wait a bit more for router.refresh() to complete
+        await new Promise(resolve => setTimeout(resolve, 200))
         
         // Force a hard reload to ensure all components get the fresh session
         // This ensures both server components (getServerSession) and client components (useSession) are updated
