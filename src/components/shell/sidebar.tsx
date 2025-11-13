@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { signOut } from 'next-auth/react'
+import { signOut, useSession } from 'next-auth/react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -95,8 +95,18 @@ const parentNavigation = [
   { name: 'Support', href: '/parent/support', icon: HelpCircle },
 ]
 
-export function Sidebar({ user, org, userRole, staffSubrole }: SidebarProps) {
+export function Sidebar({ user: initialUser, org, userRole, staffSubrole }: SidebarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
+  const { data: session } = useSession()
+  
+  // Use session data if available (fresh from client), otherwise fall back to initial user prop
+  const user = session?.user ? {
+    id: session.user.id || initialUser.id,
+    name: session.user.name || initialUser.name,
+    email: session.user.email || initialUser.email,
+    image: session.user.image || initialUser.image,
+    isSuperAdmin: session.user.isSuperAdmin ?? initialUser.isSuperAdmin
+  } : initialUser
   const [isDarkMode, setIsDarkMode] = React.useState(false)
   const pathname = usePathname()
 

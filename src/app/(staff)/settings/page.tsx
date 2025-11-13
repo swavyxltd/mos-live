@@ -305,6 +305,9 @@ export default function SettingsPage() {
         // This triggers the JWT callback which fetches fresh user data from database
         await update()
         
+        // Small delay to ensure session is updated before reload
+        await new Promise(resolve => setTimeout(resolve, 100))
+        
         // Reload the page to ensure all components reflect the new data
         window.location.reload()
       } else {
