@@ -35,14 +35,29 @@ export async function PUT(request: NextRequest) {
       slug // Allow manual slug update
     } = body
 
-    // If name changed, update slug automatically (unless slug is explicitly provided)
+    // If name or city changed, update slug automatically (unless slug is explicitly provided)
     let newSlug = slug || org.slug
-    if (name && name !== org.name && !slug) {
-      // Generate slug from new name
-      const baseSlug = name.toLowerCase()
+    const currentCity = (org as any).city || ''
+    const shouldUpdateSlug = (name && name !== org.name) || (city && city !== currentCity)
+    
+    if (shouldUpdateSlug && !slug) {
+      // Generate slug from name and city
+      const nameSlug = name.toLowerCase()
         .trim()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '')
+      
+      const citySlug = city 
+        ? city.toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '')
+        : ''
+      
+      // Combine name and city
+      const baseSlug = citySlug 
+        ? `${nameSlug}-${citySlug}`
+        : nameSlug
       
       // Check if slug already exists
       let finalSlug = baseSlug
@@ -59,7 +74,9 @@ export async function PUT(request: NextRequest) {
         }
         
         // Otherwise, append counter
-        finalSlug = `${baseSlug}-${counter}`
+        finalSlug = citySlug 
+          ? `${nameSlug}-${citySlug}-${counter}`
+          : `${nameSlug}-${counter}`
         counter++
       }
       

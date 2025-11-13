@@ -58,13 +58,54 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, slug, timezone, description, address, phone, email, website, adminEmail } = body
+    const { name, slug, timezone, description, address, addressLine1, postcode, city, phone, email, website, adminEmail } = body
 
-    if (!name || !slug) {
+    if (!name) {
       return NextResponse.json(
-        { error: 'Name and slug are required' },
+        { error: 'Name is required' },
         { status: 400 }
       )
+    }
+
+    // Generate slug from name and city if not provided
+    let finalSlug = slug
+    if (!finalSlug) {
+      const nameSlug = name.toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+      
+      const citySlug = city 
+        ? city.toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '')
+        : ''
+      
+      // Combine name and city
+      finalSlug = citySlug 
+        ? `${nameSlug}-${citySlug}`
+        : nameSlug
+      
+      // Check if slug already exists and append counter if needed
+      let counter = 1
+      let checkSlug = finalSlug
+      while (true) {
+        const existingOrg = await prisma.org.findUnique({
+          where: { slug: checkSlug },
+          select: { id: true }
+        })
+        
+        if (!existingOrg) {
+          finalSlug = checkSlug
+          break
+        }
+        
+        checkSlug = citySlug 
+          ? `${nameSlug}-${citySlug}-${counter}`
+          : `${nameSlug}-${counter}`
+        counter++
+      }
     }
 
     if (!adminEmail) {
@@ -78,12 +119,15 @@ export async function POST(request: NextRequest) {
     const org = await prisma.org.create({
       data: {
         name,
-        slug,
+        slug: finalSlug,
         timezone: timezone || 'Europe/London',
         settings: JSON.stringify({ lateThreshold: 15 }),
         status: 'ACTIVE',
         // Optional fields (only include if they exist in schema)
         address: address || undefined,
+        addressLine1: addressLine1 || undefined,
+        postcode: postcode || undefined,
+        city: city || undefined,
         phone: phone || undefined,
         email: email || undefined
         // Note: description and website are not in the Org schema

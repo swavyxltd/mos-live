@@ -19,6 +19,9 @@ export function AddOrganisationForm({ onSuccess, onCancel }: AddOrganisationForm
     timezone: 'Europe/London',
     description: '',
     address: '',
+    addressLine1: '',
+    postcode: '',
+    city: '',
     phone: '',
     email: '',
     website: '',
@@ -33,10 +36,33 @@ export function AddOrganisationForm({ onSuccess, onCancel }: AddOrganisationForm
     setError('')
 
     // Validate required fields
-    if (!formData.name || !formData.slug || !formData.adminEmail) {
-      setError('Please fill in all required fields (Name, Slug, and Admin Email)')
+    if (!formData.name || !formData.adminEmail) {
+      setError('Please fill in all required fields (Name and Admin Email)')
       setIsLoading(false)
       return
+    }
+    
+    // Auto-generate slug if not provided
+    if (!formData.slug) {
+      const nameSlug = formData.name
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .trim()
+      
+      const citySlug = formData.city
+        ? formData.city
+            .toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, '')
+            .replace(/\s+/g, '-')
+            .replace(/-+/g, '-')
+            .trim()
+        : ''
+      
+      formData.slug = citySlug 
+        ? `${nameSlug}-${citySlug}`
+        : nameSlug
     }
 
     try {
@@ -97,14 +123,28 @@ export function AddOrganisationForm({ onSuccess, onCancel }: AddOrganisationForm
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
     
-    // Auto-generate slug from name
-    if (field === 'name') {
-      const slug = value
+    // Auto-generate slug from name and city
+    if (field === 'name' || field === 'city') {
+      const nameSlug = formData.name
         .toLowerCase()
         .replace(/[^a-z0-9\s-]/g, '')
         .replace(/\s+/g, '-')
         .replace(/-+/g, '-')
         .trim()
+      
+      const citySlug = formData.city
+        ? formData.city
+            .toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, '')
+            .replace(/\s+/g, '-')
+            .replace(/-+/g, '-')
+            .trim()
+        : ''
+      
+      const slug = citySlug 
+        ? `${nameSlug}-${citySlug}`
+        : nameSlug
+      
       setFormData(prev => ({ ...prev, slug }))
     }
   }
@@ -172,12 +212,45 @@ export function AddOrganisationForm({ onSuccess, onCancel }: AddOrganisationForm
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="address">Address</Label>
+        <Label htmlFor="addressLine1">Address Line 1</Label>
+        <Input
+          id="addressLine1"
+          value={formData.addressLine1}
+          onChange={(e) => handleInputChange('addressLine1', e.target.value)}
+          placeholder="First line of address..."
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="postcode">Postcode</Label>
+          <Input
+            id="postcode"
+            value={formData.postcode}
+            onChange={(e) => handleInputChange('postcode', e.target.value.toUpperCase())}
+            placeholder="SW1A 1AA"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="city">City *</Label>
+          <Input
+            id="city"
+            value={formData.city}
+            onChange={(e) => handleInputChange('city', e.target.value)}
+            placeholder="London"
+            required
+          />
+          <p className="text-xs text-gray-500">Required for slug generation</p>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="address">Full Address (Legacy - Optional)</Label>
         <Textarea
           id="address"
           value={formData.address}
           onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-          placeholder="Full address..."
+          placeholder="Full address (optional, for backward compatibility)..."
           rows={2}
         />
       </div>
