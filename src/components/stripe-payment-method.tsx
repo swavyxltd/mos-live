@@ -9,8 +9,7 @@ import {
   useElements
 } from '@stripe/react-stripe-js'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { CreditCard, Loader2, Check } from 'lucide-react'
+import { CreditCard, Loader2, CheckCircle, X, Shield } from 'lucide-react'
 import { toast } from 'sonner'
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_51RDI2iF1U7vapCCJ7iKQ4ZQV4xm6cAjx9VLf99E4EiszwmxKbEGVwx6ftk4850CvQhFe28knRarrhsSrcfHyjeSl00iHcE5fTW')
@@ -28,6 +27,7 @@ function PaymentMethodForm({ onSuccess, onCancel, clientSecret: propClientSecret
   const [loading, setLoading] = useState(false)
   const [clientSecret, setClientSecret] = useState<string>(propClientSecret || '')
   const [initializing, setInitializing] = useState(!propClientSecret)
+  const [success, setSuccess] = useState(false)
 
   useEffect(() => {
     // If client secret is provided, skip fetching
@@ -94,25 +94,46 @@ function PaymentMethodForm({ onSuccess, onCancel, clientSecret: propClientSecret
       toast.error(error.message || 'Failed to save payment method')
       setLoading(false)
     } else if (setupIntent && setupIntent.payment_method) {
-      toast.success('Payment method saved successfully!')
-      onSuccess?.(setupIntent.payment_method as string)
+      setSuccess(true)
+      // Wait a moment to show success screen, then call onSuccess
+      setTimeout(() => {
+        onSuccess?.(setupIntent.payment_method as string)
+      }, 2000)
     }
   }
 
   if (initializing) {
     return (
       <div className="space-y-6">
-        <div className="p-8 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50/50">
+        <div className="border border-gray-200 rounded-lg p-8 bg-gray-50">
           <div className="flex flex-col items-center justify-center py-4">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-3" />
-            <h3 className="text-lg font-medium text-gray-900 mb-1">Setting up secure payment</h3>
-            <p className="text-sm text-gray-600">Please wait while we prepare your payment form...</p>
+            <Loader2 className="h-8 w-8 animate-spin text-gray-600 mb-3" />
+            <h3 className="text-sm font-medium text-gray-900 mb-1">Setting up secure payment</h3>
+            <p className="text-xs text-gray-600">Please wait while we prepare your payment form...</p>
           </div>
         </div>
         <div className="flex gap-3">
-          <Button type="button" variant="outline" onClick={onCancel} className="flex-1 h-11">
+          <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
             Cancel
           </Button>
+        </div>
+      </div>
+    )
+  }
+
+  if (success) {
+    return (
+      <div className="space-y-6">
+        <div className="border border-gray-200 rounded-lg p-8 bg-gray-50">
+          <div className="flex flex-col items-center justify-center py-4">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+              <CheckCircle className="h-8 w-8 text-gray-700" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Payment Method Added</h3>
+            <p className="text-sm text-gray-600 text-center">
+              Your payment method has been successfully added. You can now use all features.
+            </p>
+          </div>
         </div>
       </div>
     )
@@ -121,23 +142,23 @@ function PaymentMethodForm({ onSuccess, onCancel, clientSecret: propClientSecret
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-3">
-        <label className="text-sm font-medium text-gray-700">
+        <label className="text-sm font-medium text-gray-900">
           Card Information
         </label>
-        <div className="p-4 border-2 border-gray-200 rounded-xl bg-white hover:border-gray-300 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 transition-all duration-200">
+        <div className="p-4 border border-gray-200 rounded-lg bg-white hover:border-gray-300 focus-within:border-gray-400 focus-within:ring-1 focus-within:ring-gray-200 transition-all duration-200">
           <CardElement
             options={{
               style: {
                 base: {
                   fontSize: '16px',
-                  color: '#374151',
+                  color: '#111827',
                   fontFamily: 'system-ui, -apple-system, sans-serif',
                   '::placeholder': {
                     color: '#9CA3AF',
                   },
                 },
                 invalid: {
-                  color: '#EF4444',
+                  color: '#DC2626',
                 },
               },
             }}
@@ -148,16 +169,12 @@ function PaymentMethodForm({ onSuccess, onCancel, clientSecret: propClientSecret
         </p>
       </div>
       
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
         <div className="flex items-start gap-3">
-          <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-            <svg className="w-3 h-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-            </svg>
-          </div>
+          <Shield className="h-5 w-5 text-gray-600 flex-shrink-0 mt-0.5" />
           <div>
-            <h4 className="text-sm font-medium text-blue-900 mb-1">Secure & Encrypted</h4>
-            <p className="text-xs text-blue-700">
+            <h4 className="text-sm font-semibold text-gray-900 mb-1">Secure & Encrypted</h4>
+            <p className="text-xs text-gray-600">
               Your payment information is processed securely by Stripe and never stored on our servers.
             </p>
           </div>
@@ -168,7 +185,7 @@ function PaymentMethodForm({ onSuccess, onCancel, clientSecret: propClientSecret
         <Button 
           type="submit" 
           disabled={!stripe || loading || !clientSecret} 
-          className="flex-1 h-11 bg-blue-600 hover:bg-blue-700 text-white font-medium"
+          className="flex-1"
         >
           {loading ? (
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -181,7 +198,6 @@ function PaymentMethodForm({ onSuccess, onCancel, clientSecret: propClientSecret
           type="button" 
           variant="outline" 
           onClick={onCancel}
-          className="h-11 px-6"
         >
           Cancel
         </Button>
@@ -193,27 +209,42 @@ function PaymentMethodForm({ onSuccess, onCancel, clientSecret: propClientSecret
 export function StripePaymentMethodModal({ onSuccess, onCancel, clientSecret, isPlatformBilling = true }: StripePaymentMethodProps) {
   return (
     <div 
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onCancel?.()
         }
       }}
     >
-      <div className="w-full max-w-lg my-8 animate-in fade-in-0 zoom-in-95 duration-200">
-        <Card className="shadow-2xl border-0 bg-white">
-          <CardHeader className="text-center pb-6">
-            <div className="mx-auto w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-              <CreditCard className="h-6 w-6 text-blue-600" />
+      <div className="w-full max-w-lg my-8">
+        <div className="bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden">
+          {/* Header */}
+          <div className="p-6 border-b border-gray-200">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <CreditCard className="h-5 w-5 text-gray-700" />
+                  </div>
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Add Payment Method
+                  </h2>
+                </div>
+                <p className="text-sm text-gray-600">
+                  Securely add a payment method for automatic billing of £1 per student monthly
+                </p>
+              </div>
+              <button
+                onClick={onCancel}
+                className="p-1 rounded-md hover:bg-gray-100 transition-colors flex-shrink-0"
+              >
+                <X className="h-4 w-4 text-gray-500" />
+              </button>
             </div>
-            <CardTitle className="text-2xl font-semibold text-gray-900">
-              Add Payment Method
-            </CardTitle>
-            <CardDescription className="text-gray-600 text-base">
-              Securely add a payment method for automatic billing of £1 per student monthly
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="px-6 pb-6">
+          </div>
+
+          {/* Content */}
+          <div className="p-6">
             <Elements stripe={stripePromise}>
               <PaymentMethodForm 
                 onSuccess={onSuccess} 
@@ -222,8 +253,8 @@ export function StripePaymentMethodModal({ onSuccess, onCancel, clientSecret, is
                 isPlatformBilling={isPlatformBilling}
               />
             </Elements>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   )
