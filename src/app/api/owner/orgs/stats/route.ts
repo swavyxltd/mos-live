@@ -7,13 +7,22 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
+    console.log('🔐 Session check:', {
+      hasSession: !!session,
+      hasUserId: !!session?.user?.id,
+      isSuperAdmin: session?.user?.isSuperAdmin
+    })
+    
     // Only allow super admins (owners)
     if (!session?.user?.id || !session.user.isSuperAdmin) {
+      console.log('❌ Unauthorized access attempt')
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
+
+    console.log('✅ Authorized, fetching organizations...')
 
     // Get all organizations with detailed stats (including city field)
     // Check for ACTIVE status or null (for backward compatibility with orgs created before status field)
