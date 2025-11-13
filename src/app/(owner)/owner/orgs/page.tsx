@@ -130,7 +130,7 @@ export default function OwnerOrgsPage() {
           )}
         </div>
 
-        <AllOrgsTable orgs={filteredOrgs} />
+        <AllOrgsTable orgs={filteredOrgs} onRefresh={fetchOrgs} />
       </div>
 
       <Modal

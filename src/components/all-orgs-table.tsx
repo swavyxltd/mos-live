@@ -35,9 +35,10 @@ interface OrgWithStats {
 
 interface AllOrgsTableProps {
   orgs: OrgWithStats[]
+  onRefresh?: () => void
 }
 
-export function AllOrgsTable({ orgs }: AllOrgsTableProps) {
+export function AllOrgsTable({ orgs, onRefresh }: AllOrgsTableProps) {
   const [selectedOrg, setSelectedOrg] = useState<OrgWithStats | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
@@ -219,6 +220,7 @@ export function AllOrgsTable({ orgs }: AllOrgsTableProps) {
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         organization={selectedOrg}
+        onRefresh={onRefresh}
       />
     </>
   )

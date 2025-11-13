@@ -100,9 +100,10 @@ interface OrganizationManagementModalProps {
   onClose: () => void
   organization: OrgWithStats | null
   initialTab?: 'overview' | 'students' | 'teachers' | 'settings' | 'account'
+  onRefresh?: () => void
 }
 
-export function OrganizationManagementModal({ isOpen, onClose, organization, initialTab = 'overview' }: OrganizationManagementModalProps) {
+export function OrganizationManagementModal({ isOpen, onClose, organization, initialTab = 'overview', onRefresh }: OrganizationManagementModalProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'students' | 'teachers' | 'settings' | 'account'>(initialTab)
   const [isEditingOrg, setIsEditingOrg] = useState(false)
   const [isEditingStudent, setIsEditingStudent] = useState<string | null>(null)
@@ -296,15 +297,16 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
       const result = await response.json()
       
       if (result.success) {
-        alert(`✅ Account Paused Successfully!\n\n${result.message}\n\n${result.affectedUsers} admin/staff accounts have been locked.`)
+        toast.success(`Account paused successfully! ${result.affectedUsers} admin/staff accounts have been locked.`)
         setStatusChangeReason('')
-        onClose() // Close modal to refresh data
+        if (onRefresh) onRefresh()
+        onClose()
       } else {
-        alert(`❌ Failed to pause account: ${result.error}`)
+        toast.error(result.error || 'Failed to pause account')
       }
     } catch (error) {
       console.error('Error pausing account:', error)
-      alert('❌ Error pausing account. Please try again.')
+      toast.error('Error pausing account. Please try again.')
     } finally {
       setIsChangingStatus(false)
     }
@@ -331,15 +333,16 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
       const result = await response.json()
       
       if (result.success) {
-        alert(`🚨 Account Suspended Successfully!\n\n${result.message}\n\n${result.affectedUsers} admin/staff accounts have been permanently locked.`)
+        toast.success(`Account suspended successfully! ${result.affectedUsers} admin/staff accounts have been permanently locked.`)
         setStatusChangeReason('')
-        onClose() // Close modal to refresh data
+        if (onRefresh) onRefresh()
+        onClose()
       } else {
-        alert(`❌ Failed to suspend account: ${result.error}`)
+        toast.error(result.error || 'Failed to suspend account')
       }
     } catch (error) {
       console.error('Error suspending account:', error)
-      alert('❌ Error suspending account. Please try again.')
+      toast.error('Error suspending account. Please try again.')
     } finally {
       setIsChangingStatus(false)
     }
@@ -363,15 +366,53 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
       const result = await response.json()
       
       if (result.success) {
-        alert(`✅ Account Reactivated Successfully!\n\n${result.message}\n\n${result.affectedUsers} admin/staff accounts have been restored.`)
+        toast.success(`Account reactivated successfully! ${result.affectedUsers} admin/staff accounts have been restored.`)
         setStatusChangeReason('')
-        onClose() // Close modal to refresh data
+        if (onRefresh) onRefresh()
+        onClose()
       } else {
-        alert(`❌ Failed to reactivate account: ${result.error}`)
+        toast.error(result.error || 'Failed to reactivate account')
       }
     } catch (error) {
       console.error('Error reactivating account:', error)
-      alert('❌ Error reactivating account. Please try again.')
+      toast.error('Error reactivating account. Please try again.')
+    } finally {
+      setIsChangingStatus(false)
+    }
+  }
+
+  const handleDeactivateAccount = async () => {
+    if (!organization) return
+    
+    const confirmed = confirm(`⚠️ Are you sure you want to DEACTIVATE this organization?\n\nThis will permanently disable the organization and lock all accounts.\n\nThis action requires manual review to reverse.`)
+    if (!confirmed) return
+    
+    setIsChangingStatus(true)
+    try {
+      // Deactivate is the same as suspend - permanently disable
+      const response = await fetch(`/api/orgs/${organization.id}/suspend`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          reason: statusChangeReason || 'Account deactivated by platform administrator'
+        }),
+      })
+
+      const result = await response.json()
+      
+      if (result.success) {
+        toast.success(`Account deactivated successfully! ${result.affectedUsers} admin/staff accounts have been permanently locked.`)
+        setStatusChangeReason('')
+        if (onRefresh) onRefresh()
+        onClose()
+      } else {
+        toast.error(result.error || 'Failed to deactivate account')
+      }
+    } catch (error) {
+      console.error('Error deactivating account:', error)
+      toast.error('Error deactivating account. Please try again.')
     } finally {
       setIsChangingStatus(false)
     }

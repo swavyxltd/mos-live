@@ -61,6 +61,7 @@ interface OrganizationDetailModalProps {
   isOpen: boolean
   onClose: () => void
   organization: OrgWithStats | null
+  onRefresh?: () => void
 }
 
 export function OrganizationDetailModal({ isOpen, onClose, organization }: OrganizationDetailModalProps) {
@@ -578,6 +579,7 @@ export function OrganizationDetailModal({ isOpen, onClose, organization }: Organ
       onClose={handleCloseManagementModal}
       organization={organization}
       initialTab={managementModalInitialTab}
+      onRefresh={onRefresh}
     />
   </>
   )
