@@ -2,9 +2,16 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Plus, Users, Calendar, Heart, AlertTriangle, Archive, ArchiveRestore } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Plus, Users, Calendar, Heart, AlertTriangle, Archive, ArchiveRestore, ChevronDown } from 'lucide-react'
 import { StudentsPageClient } from '@/components/students-page-client'
 import { AddStudentModal } from '@/components/add-student-modal'
+import { BulkUploadStudentsModal } from '@/components/bulk-upload-students-modal'
 import { RestrictedAction } from '@/components/restricted-action'
 
 interface Student {
@@ -49,6 +56,7 @@ interface StudentsPageWrapperProps {
 export function StudentsPageWrapper({ initialStudents, classes }: StudentsPageWrapperProps) {
   const [students, setStudents] = useState<Student[]>(initialStudents)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false)
   const [showArchived, setShowArchived] = useState(false)
 
   const handleAddStudent = async (studentData: any) => {
@@ -97,11 +105,27 @@ export function StudentsPageWrapper({ initialStudents, classes }: StudentsPageWr
               </>
             )}
           </Button>
-          <RestrictedAction action="add-student" onClick={() => setIsAddModalOpen(true)}>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Student
-            </Button>
+          
+          <RestrictedAction action="add-student">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Student
+                  <ChevronDown className="h-4 w-4 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={() => setIsAddModalOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Single Student
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setIsBulkUploadModalOpen(true)}>
+                  <Users className="h-4 w-4 mr-2" />
+                  Bulk Add Students
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </RestrictedAction>
         </div>
       </div>
@@ -184,6 +208,14 @@ export function StudentsPageWrapper({ initialStudents, classes }: StudentsPageWr
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onSave={handleAddStudent}
+        classes={classes}
+      />
+
+      {/* Bulk Upload Students Modal */}
+      <BulkUploadStudentsModal
+        isOpen={isBulkUploadModalOpen}
+        onClose={() => setIsBulkUploadModalOpen(false)}
+        onSuccess={handleAddStudent}
         classes={classes}
       />
 

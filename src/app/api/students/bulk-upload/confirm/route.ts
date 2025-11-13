@@ -1,0 +1,318 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { getActiveOrg } from '@/lib/org'
+import { prisma } from '@/lib/prisma'
+import crypto from 'crypto'
+import { sendParentOnboardingEmail } from '@/lib/mail'
+
+interface StudentData {
+  firstName: string
+  lastName: string
+  dateOfBirth?: string
+  gender?: string
+  parentName: string
+  parentEmail: string
+  parentPhone?: string
+  address?: string
+  allergies?: string
+  medicalNotes?: string
+  startMonth: string
+  classId: string
+  rowNumber: number
+  isDuplicate?: boolean
+  existingStudentId?: string
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const org = await getActiveOrg()
+    if (!org) {
+      return NextResponse.json(
+        { error: 'Organization not found' },
+        { status: 404 }
+      )
+    }
+
+    const body = await request.json()
+    const { students }: { students: StudentData[] } = body
+
+    if (!students || !Array.isArray(students) || students.length === 0) {
+      return NextResponse.json(
+        { error: 'No students provided' },
+        { status: 400 }
+      )
+    }
+
+    // Validate all students have classId
+    const studentsWithoutClass = students.filter(s => !s.classId)
+    if (studentsWithoutClass.length > 0) {
+      return NextResponse.json(
+        { error: `Students in rows ${studentsWithoutClass.map(s => s.rowNumber).join(', ')} do not have a class selected` },
+        { status: 400 }
+      )
+    }
+
+    const results = {
+      created: [] as any[],
+      updated: [] as any[],
+      errors: [] as { rowNumber: number; error: string }[],
+      invitationsSent: 0
+    }
+
+    const baseUrl = process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'https://app.madrasah.io'
+
+    // Process each student
+    for (const studentData of students) {
+      try {
+        // Get class to get monthly fee
+        const classRecord = await prisma.class.findFirst({
+          where: { id: studentData.classId, orgId: org.id, isArchived: false }
+        })
+
+        if (!classRecord) {
+          results.errors.push({
+            rowNumber: studentData.rowNumber,
+            error: 'Class not found'
+          })
+          continue
+        }
+
+        if (!classRecord.monthlyFeeP) {
+          results.errors.push({
+            rowNumber: studentData.rowNumber,
+            error: 'Class does not have a monthly fee set'
+          })
+          continue
+        }
+
+        // Use transaction for each student
+        const result = await prisma.$transaction(async (tx) => {
+          // Handle duplicate (update existing)
+          if (studentData.isDuplicate && studentData.existingStudentId) {
+            // Update existing student
+            const updatedStudent = await tx.student.update({
+              where: { id: studentData.existingStudentId },
+              data: {
+                firstName: studentData.firstName.trim(),
+                lastName: studentData.lastName.trim(),
+                dob: studentData.dateOfBirth ? new Date(studentData.dateOfBirth) : undefined,
+                gender: studentData.gender ? (studentData.gender.toUpperCase().startsWith('M') ? 'MALE' : 'FEMALE') : undefined,
+                address: studentData.address || undefined,
+                allergies: studentData.allergies || undefined,
+                medicalNotes: studentData.medicalNotes || undefined
+              }
+            })
+
+            // Update or create parent if needed
+            let parentUser = await tx.user.findUnique({
+              where: { email: studentData.parentEmail.toLowerCase().trim() }
+            })
+
+            if (!parentUser) {
+              parentUser = await tx.user.create({
+                data: {
+                  name: studentData.parentName.trim(),
+                  email: studentData.parentEmail.toLowerCase().trim(),
+                  phone: studentData.parentPhone || undefined
+                }
+              })
+
+              await tx.userOrgMembership.create({
+                data: {
+                  userId: parentUser.id,
+                  orgId: org.id,
+                  role: 'PARENT'
+                }
+              })
+            } else {
+              // Update parent info
+              await tx.user.update({
+                where: { id: parentUser.id },
+                data: {
+                  name: studentData.parentName.trim(),
+                  phone: studentData.parentPhone || undefined
+                }
+              })
+            }
+
+            // Link student to parent
+            await tx.student.update({
+              where: { id: studentData.existingStudentId },
+              data: {
+                primaryParentId: parentUser.id
+              }
+            })
+
+            // Check if student is already enrolled in class
+            const existingEnrollment = await tx.studentClass.findFirst({
+              where: {
+                studentId: studentData.existingStudentId,
+                classId: studentData.classId
+              }
+            })
+
+            if (!existingEnrollment) {
+              await tx.studentClass.create({
+                data: {
+                  orgId: org.id,
+                  studentId: studentData.existingStudentId,
+                  classId: studentData.classId
+                }
+              })
+            }
+
+            return { student: updatedStudent, parentUser, isUpdate: true }
+          } else {
+            // Create new student
+            // Find or create parent user
+            let parentUser = await tx.user.findUnique({
+              where: { email: studentData.parentEmail.toLowerCase().trim() }
+            })
+
+            if (!parentUser) {
+              parentUser = await tx.user.create({
+                data: {
+                  name: studentData.parentName.trim(),
+                  email: studentData.parentEmail.toLowerCase().trim(),
+                  phone: studentData.parentPhone || undefined
+                }
+              })
+
+              await tx.userOrgMembership.create({
+                data: {
+                  userId: parentUser.id,
+                  orgId: org.id,
+                  role: 'PARENT'
+                }
+              })
+            } else {
+              // Update parent info
+              await tx.user.update({
+                where: { id: parentUser.id },
+                data: {
+                  name: studentData.parentName.trim(),
+                  phone: studentData.parentPhone || undefined
+                }
+              })
+            }
+
+            // Create student
+            const student = await tx.student.create({
+              data: {
+                orgId: org.id,
+                firstName: studentData.firstName.trim(),
+                lastName: studentData.lastName.trim(),
+                dob: studentData.dateOfBirth ? new Date(studentData.dateOfBirth) : undefined,
+                gender: studentData.gender ? (studentData.gender.toUpperCase().startsWith('M') ? 'MALE' : 'FEMALE') : undefined,
+                address: studentData.address || undefined,
+                allergies: studentData.allergies || undefined,
+                medicalNotes: studentData.medicalNotes || undefined,
+                primaryParentId: parentUser.id
+              }
+            })
+
+            // Enroll in class
+            await tx.studentClass.create({
+              data: {
+                orgId: org.id,
+                studentId: student.id,
+                classId: studentData.classId
+              }
+            })
+
+            // Create parent invitation
+            const token = crypto.randomBytes(32).toString('hex')
+            const expiresAt = new Date()
+            expiresAt.setDate(expiresAt.getDate() + 7) // 7 days
+
+            const invitation = await tx.parentInvitation.create({
+              data: {
+                orgId: org.id,
+                studentId: student.id,
+                parentEmail: studentData.parentEmail.toLowerCase().trim(),
+                token,
+                expiresAt
+              }
+            })
+
+            // Create payment record for start month
+            await tx.monthlyPaymentRecord.create({
+              data: {
+                orgId: org.id,
+                studentId: student.id,
+                classId: studentData.classId,
+                month: studentData.startMonth,
+                amountP: classRecord.monthlyFeeP,
+                status: 'PENDING'
+              }
+            })
+
+            // Send parent onboarding email
+            const setupUrl = `${baseUrl.replace(/\/$/, '')}/auth/parent-setup?token=${token}`
+            try {
+              await sendParentOnboardingEmail({
+                to: studentData.parentEmail,
+                orgName: org.name,
+                studentName: `${studentData.firstName} ${studentData.lastName}`,
+                setupUrl
+              })
+            } catch (emailError) {
+              console.error('Failed to send parent onboarding email:', emailError)
+              // Don't fail the transaction if email fails
+            }
+
+            return { student, parentUser, invitation, isUpdate: false }
+          }
+        })
+
+        if (result.isUpdate) {
+          results.updated.push({
+            rowNumber: studentData.rowNumber,
+            studentName: `${studentData.firstName} ${studentData.lastName}`
+          })
+        } else {
+          results.created.push({
+            rowNumber: studentData.rowNumber,
+            studentName: `${studentData.firstName} ${studentData.lastName}`,
+            studentId: result.student.id
+          })
+          results.invitationsSent++
+        }
+      } catch (error: any) {
+        results.errors.push({
+          rowNumber: studentData.rowNumber,
+          error: error.message || 'Failed to create student'
+        })
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      results,
+      summary: {
+        total: students.length,
+        created: results.created.length,
+        updated: results.updated.length,
+        errors: results.errors.length,
+        invitationsSent: results.invitationsSent
+      }
+    })
+  } catch (error: any) {
+    console.error('Error confirming bulk upload:', error)
+    return NextResponse.json(
+      { error: 'Failed to create students', details: error.message },
+      { status: 500 }
+    )
+  }
+}
+
