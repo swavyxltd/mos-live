@@ -217,7 +217,7 @@ export default function OwnerOverviewPage() {
         <div className="min-w-0 flex-1">
           <h1 className="text-2xl sm:text-3xl font-bold text-[var(--foreground)] break-words">Madrasah OS Dashboard</h1>
           <p className="mt-1 text-sm text-[var(--muted-foreground)] break-words">
-            Complete overview of your platform performance and business metrics
+            Complete overview of our platform performance and business metrics
           </p>
           <p className="text-xs text-gray-500 mt-1">
             Last updated: {lastUpdated.toLocaleTimeString()}

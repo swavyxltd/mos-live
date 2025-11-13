@@ -28,7 +28,7 @@ export function Topbar({ title, user, userRole }: TopbarProps) {
   }
 
   return (
-    <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border)] bg-[var(--background)]">
+    <div className="hidden md:flex items-center justify-between px-6 py-4 border-b border-[var(--border)] bg-[var(--background)]">
       {/* Left side - Greeting */}
       <div className="flex items-center space-x-4">
         <div>

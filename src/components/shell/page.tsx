@@ -34,8 +34,8 @@ export function Page({ children, user, org, userRole, staffSubrole, title, bread
       <Sidebar user={user} org={org} userRole={userRole} staffSubrole={staffSubrole} />
       <div className="sm:pl-64 w-full min-w-0">
         <Topbar title={title} breadcrumbs={breadcrumbs} user={user} userRole={userRole} />
-        <main className="py-4 sm:py-6 w-full min-w-0">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full min-w-0">
+        <main className="pt-0 sm:pt-0 py-4 sm:py-6 w-full min-w-0">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full min-w-0 pt-4 sm:pt-0">
             <MaintenanceNotificationBanner />
             {userRole === 'PARENT' && <OverduePaymentBanner />}
             {(userRole === 'ADMIN' || userRole === 'STAFF') && <PaymentRequiredBanner />}

@@ -11,6 +11,7 @@ import { MadrasahLogo } from '@/components/madrasah-logo'
 import { StaffSubrole } from '@/types/staff-roles'
 import { StaffSubroleBadge } from '@/components/staff-subrole-badge'
 import { useStaffPermissions } from '@/lib/staff-permissions'
+import { GlobalSearch } from '@/components/global-search'
 import { 
   Home, 
   Users, 
@@ -33,7 +34,10 @@ import {
   TrendingUp,
   Activity,
   Shield,
-  HeadphonesIcon
+  HeadphonesIcon,
+  Search,
+  Moon,
+  Sun
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -92,7 +96,13 @@ const parentNavigation = [
 
 export function Sidebar({ user, org, userRole, staffSubrole }: SidebarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
+  const [isDarkMode, setIsDarkMode] = React.useState(false)
   const pathname = usePathname()
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode)
+    document.documentElement.classList.toggle('dark')
+  }
   
   const isOwner = user.isSuperAdmin || userRole === 'OWNER'
   const isParent = userRole === 'PARENT'
@@ -157,15 +167,38 @@ export function Sidebar({ user, org, userRole, staffSubrole }: SidebarProps) {
               <p className="text-sm text-[var(--muted-foreground)] truncate">{org?.name || 'Madrasah OS'}</p>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </Button>
+          <div className="flex items-center gap-2">
+            {/* Search Icon - Mobile only */}
+            {userRole !== 'PARENT' && (
+              <div className="flex-shrink-0">
+                <GlobalSearch />
+              </div>
+            )}
+            {/* Dark Mode Toggle - Mobile only */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleDarkMode}
+              className="h-10 w-10 hover:bg-gray-100 flex-shrink-0"
+            >
+              {isDarkMode ? (
+                <Sun className="h-5 w-5" />
+              ) : (
+                <Moon className="h-5 w-5" />
+              )}
+            </Button>
+            {/* Hamburger Menu */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="flex-shrink-0"
+            >
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </Button>
+          </div>
         </div>
       </div>
 
