@@ -49,11 +49,12 @@ export async function POST(
     // Log the action
     await prisma.auditLog.create({
       data: {
+        orgId: orgId,
+        actorUserId: session.user.id,
         action: 'ORG_PAUSED',
-        entityType: 'ORG',
-        entityId: orgId,
-        userId: session.user.id,
-        details: {
+        targetType: 'ORG',
+        targetId: orgId,
+        data: JSON.stringify({
           orgName: updatedOrg.name,
           reason: reason || 'Account paused by platform administrator',
           affectedUsers: updatedOrg.memberships.map(m => ({
@@ -62,7 +63,7 @@ export async function POST(
             userEmail: m.user.email,
             role: m.role
           }))
-        }
+        })
       }
     })
 
