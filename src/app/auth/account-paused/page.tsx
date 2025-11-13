@@ -24,26 +24,15 @@ function AccountPausedContent() {
         </div>
         
         <div className="bg-white border border-gray-200 rounded-xl shadow-md overflow-hidden">
-          {/* Header */}
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center flex-shrink-0 border border-red-100">
-                    <Pause className="h-5 w-5 text-red-600" />
-                  </div>
-                  <h2 className="text-xl font-semibold text-gray-900">
-                    Account Paused
-                  </h2>
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Content */}
           <div className="p-6 space-y-6">
             {/* Organization Info */}
             <div className="text-center">
+              <div className="flex justify-center mb-3">
+                <div className="w-8 h-8 bg-red-50 rounded-lg flex items-center justify-center border border-red-100">
+                  <Pause className="h-4 w-4 text-red-600" />
+                </div>
+              </div>
               <p className="text-gray-900 font-medium mb-1">
                 <strong>{orgName}</strong> account has been temporarily paused
               </p>
