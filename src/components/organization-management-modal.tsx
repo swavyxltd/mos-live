@@ -312,41 +312,6 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
     }
   }
 
-  const handleSuspendAccount = async () => {
-    if (!organization) return
-    
-    const confirmed = confirm(`⚠️ Are you sure you want to SUSPEND this organization?\n\nThis will permanently lock ALL admin, staff, and teacher accounts.\n\nThis action requires manual review to reverse.`)
-    if (!confirmed) return
-    
-    setIsChangingStatus(true)
-    try {
-      const response = await fetch(`/api/orgs/${organization.id}/suspend`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          reason: statusChangeReason || 'Account suspended due to policy violations'
-        }),
-      })
-
-      const result = await response.json()
-      
-      if (result.success) {
-        toast.success(`Account suspended successfully! ${result.affectedUsers} admin/staff accounts have been permanently locked.`)
-        setStatusChangeReason('')
-        if (onRefresh) onRefresh()
-        onClose()
-      } else {
-        toast.error(result.error || 'Failed to suspend account')
-      }
-    } catch (error) {
-      console.error('Error suspending account:', error)
-      toast.error('Error suspending account. Please try again.')
-    } finally {
-      setIsChangingStatus(false)
-    }
-  }
 
   const handleReactivateAccount = async () => {
     if (!organization) return
@@ -1109,7 +1074,7 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
                     <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                       <div>
                         <h3 className="font-medium">Pause Account</h3>
-                        <p className="text-sm text-gray-600">Temporarily lock all admin, staff, and teacher accounts</p>
+                        <p className="text-sm text-gray-600">Temporarily lock all admin, staff, and teacher accounts. Use for billing issues like non-payment. Billing will continue.</p>
                       </div>
                       <Button 
                         variant="outline" 
@@ -1124,24 +1089,8 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
 
                     <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                       <div>
-                        <h3 className="font-medium">Suspend Account</h3>
-                        <p className="text-sm text-gray-600">Permanently lock all admin, staff, and teacher accounts</p>
-                      </div>
-                      <Button 
-                        variant="outline" 
-                        className="text-red-600 border-red-200 hover:bg-red-50"
-                        onClick={handleSuspendAccount}
-                        disabled={isChangingStatus}
-                      >
-                        <AlertTriangle className="h-4 w-4 mr-2" />
-                        {isChangingStatus ? 'Suspending...' : 'Suspend'}
-                      </Button>
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                      <div>
                         <h3 className="font-medium">Deactivate Account</h3>
-                        <p className="text-sm text-gray-600">Permanently disable organization and lock all accounts</p>
+                        <p className="text-sm text-gray-600">Permanently disable organization, cancel billing, and lock all accounts. Use when organization has requested account deletion.</p>
                       </div>
                       <Button 
                         variant="outline" 
@@ -1176,10 +1125,11 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                   <h3 className="font-medium text-yellow-800 mb-2">⚠️ Important</h3>
                   <ul className="text-sm text-yellow-700 space-y-1">
-                    <li>• Pausing or suspending will lock ALL admin, staff, and teacher accounts</li>
+                    <li>• <strong>Pause:</strong> Temporarily locks accounts due to billing issues. Billing continues.</li>
+                    <li>• <strong>Deactivate:</strong> Permanently disables organization and cancels all billing. Use when organization requests account deletion.</li>
+                    <li>• Pausing or deactivating will lock ALL admin, staff, and teacher accounts</li>
                     <li>• Students and parents will still have access to their accounts</li>
                     <li>• You can reactivate the account at any time</li>
-                    <li>• Suspended accounts require manual review to reactivate</li>
                   </ul>
                 </div>
               </CardContent>
