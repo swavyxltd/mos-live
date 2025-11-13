@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { requireRole, requireOrg } from '@/lib/roles'
 import { prisma } from '@/lib/prisma'
+import { checkPaymentMethod } from '@/lib/payment-check'
 
 const bulkAttendanceSchema = z.object({
   classId: z.string(),
@@ -20,6 +21,15 @@ export async function POST(request: NextRequest) {
     
     const orgId = await requireOrg(request)
     if (orgId instanceof NextResponse) return orgId
+
+    // Check payment method
+    const hasPaymentMethod = await checkPaymentMethod()
+    if (!hasPaymentMethod) {
+      return NextResponse.json(
+        { error: 'Payment method required. Please set up a payment method to track attendance.' },
+        { status: 402 }
+      )
+    }
     
     const body = await request.json()
     const { classId, date, attendance } = bulkAttendanceSchema.parse(body)

@@ -3,9 +3,7 @@ import { authOptions } from '@/lib/auth'
 import { getActiveOrg } from '@/lib/org'
 import { prisma } from '@/lib/prisma'
 import { ClassesList } from '@/components/classes-list'
-import { Button } from '@/components/ui/button'
-import { Plus } from 'lucide-react'
-import Link from 'next/link'
+import { ClassesPageClient } from '@/components/classes-page-client'
 
 export default async function ClassesPage() {
   const session = await getServerSession(authOptions)
@@ -60,24 +58,5 @@ export default async function ClassesPage() {
     orderBy: { createdAt: 'desc' }
   })
 
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Classes</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Manage your classes and student enrollments.
-          </p>
-        </div>
-        <Link href="/classes/new">
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            New Class
-          </Button>
-        </Link>
-      </div>
-
-      <ClassesList classes={classes} />
-    </div>
-  )
+  return <ClassesPageClient classes={classes} />
 }

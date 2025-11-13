@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { getActiveOrg } from '@/lib/org'
+import { checkPaymentMethod } from '@/lib/payment-check'
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,6 +15,15 @@ export async function POST(request: NextRequest) {
     const org = await getActiveOrg()
     if (!org) {
       return NextResponse.json({ error: 'No organization found' }, { status: 404 })
+    }
+
+    // Check payment method
+    const hasPaymentMethod = await checkPaymentMethod()
+    if (!hasPaymentMethod) {
+      return NextResponse.json(
+        { error: 'Payment method required. Please set up a payment method to generate reports.' },
+        { status: 402 }
+      )
     }
 
     // Parse request body for month and year

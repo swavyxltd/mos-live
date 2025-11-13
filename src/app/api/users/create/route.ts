@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { checkPaymentMethod } from '@/lib/payment-check'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 import { sendStaffInvitation } from '@/lib/mail'
@@ -20,6 +21,17 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     const { email, name, password, phone, isSuperAdmin, orgId, role, sendInvitation } = body
+
+    // Only check payment for non-owner accounts (staff/teachers)
+    if (!isSuperAdmin && (role === 'STAFF' || role === 'ADMIN')) {
+      const hasPaymentMethod = await checkPaymentMethod()
+      if (!hasPaymentMethod) {
+        return NextResponse.json(
+          { error: 'Payment method required. Please set up a payment method to add teachers.' },
+          { status: 402 }
+        )
+      }
+    }
 
     if (!email || !name) {
       return NextResponse.json(

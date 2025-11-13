@@ -123,10 +123,12 @@ export function StudentsPageWrapper({ initialStudents, classes }: StudentsPageWr
                   <Plus className="h-4 w-4 mr-2" />
                   Add Single Student
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setIsBulkUploadModalOpen(true)} className="cursor-pointer">
-                  <Users className="h-4 w-4 mr-2" />
-                  Bulk Add Students
-                </DropdownMenuItem>
+                <RestrictedAction action="add-student">
+                  <DropdownMenuItem onClick={() => setIsBulkUploadModalOpen(true)} className="cursor-pointer">
+                    <Users className="h-4 w-4 mr-2" />
+                    Bulk Add Students
+                  </DropdownMenuItem>
+                </RestrictedAction>
               </DropdownMenuContent>
               </DropdownMenu>
             </div>

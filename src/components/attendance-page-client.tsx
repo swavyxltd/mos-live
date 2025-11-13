@@ -7,6 +7,7 @@ import { DetailedClassAttendance } from '@/components/detailed-class-attendance'
 import { StudentDetailModal } from '@/components/student-detail-modal'
 import { AttendanceWeekFilter } from '@/components/attendance-week-filter'
 import { getAttendanceDataForWeek } from '@/lib/attendance-data'
+import { RestrictedAction } from '@/components/restricted-action'
 
 interface Student {
   id: string
@@ -116,7 +117,9 @@ export function AttendancePageClient({ attendanceData }: AttendancePageClientPro
             Track and manage student attendance.
           </p>
         </div>
-        <AttendanceMarking />
+        <RestrictedAction action="attendance">
+          <AttendanceMarking />
+        </RestrictedAction>
       </div>
 
       {/* Week Filter */}

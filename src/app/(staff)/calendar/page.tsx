@@ -11,6 +11,7 @@ import { EventDetailModal } from '@/components/event-detail-modal'
 import { CalendarFilters } from '@/components/calendar-filters'
 import { isDemoMode } from '@/lib/demo-mode'
 import { Plus, Download, Calendar, Clock, MapPin, Users } from 'lucide-react'
+import { RestrictedAction } from '@/components/restricted-action'
 
 export default function CalendarPage() {
   const { data: session, status } = useSession()
@@ -173,7 +174,9 @@ export default function CalendarPage() {
           </p>
         </div>
         <div className="flex space-x-3">
-          <AddEventModal onEventAdded={handleEventAdded} />
+          <RestrictedAction action="schedule">
+            <AddEventModal onEventAdded={handleEventAdded} />
+          </RestrictedAction>
           <Button variant="outline">
             <Download className="h-4 w-4 mr-2" />
             Download ICS

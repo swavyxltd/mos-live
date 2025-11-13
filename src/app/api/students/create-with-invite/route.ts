@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireRole, requireOrg } from '@/lib/roles'
 import { prisma } from '@/lib/prisma'
 import { sendParentOnboardingEmail } from '@/lib/mail'
+import { checkPaymentMethod } from '@/lib/payment-check'
 import crypto from 'crypto'
 
 export async function POST(request: NextRequest) {
@@ -12,6 +13,15 @@ export async function POST(request: NextRequest) {
 
     const orgId = await requireOrg(request)
     if (orgId instanceof NextResponse) return orgId
+
+    // Check payment method
+    const hasPaymentMethod = await checkPaymentMethod()
+    if (!hasPaymentMethod) {
+      return NextResponse.json(
+        { error: 'Payment method required. Please set up a payment method to add students.' },
+        { status: 402 }
+      )
+    }
 
     const body = await request.json()
     const { firstName, lastName, parentEmail, classId, startMonth, status = 'ACTIVE' } = body

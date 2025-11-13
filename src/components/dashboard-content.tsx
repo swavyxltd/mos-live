@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { QuickAddMenu } from '@/components/quick-add-menu'
 import GenerateReportModal from '@/components/generate-report-modal'
+import { RestrictedAction } from '@/components/restricted-action'
 import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 
@@ -183,15 +184,17 @@ export function DashboardContent() {
             </div>
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
           <QuickAddMenu />
-          <Button 
-            variant="outline" 
-            size="sm"
-            className="px-3 sm:px-4 py-2 text-sm hover:bg-gray-50 hover:scale-105 transition-all duration-200"
-            onClick={() => setIsReportModalOpen(true)}
-          >
-            <FileText className="h-4 w-4 mr-2" />
-            Generate Report
-          </Button>
+          <RestrictedAction action="reports">
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="px-3 sm:px-4 py-2 text-sm hover:bg-gray-50 hover:scale-105 transition-all duration-200"
+              onClick={() => setIsReportModalOpen(true)}
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              Generate Report
+            </Button>
+          </RestrictedAction>
         </div>
       </div>
 

@@ -6,6 +6,7 @@ import { Plus, UserCheck, Shield, GraduationCap, User } from 'lucide-react'
 import { TeachersList } from '@/components/teachers-list'
 import { EditTeacherModal } from '@/components/edit-teacher-modal'
 import { AddTeacherModal } from '@/components/add-teacher-modal'
+import { RestrictedAction } from '@/components/restricted-action'
 
 interface Teacher {
   id: string
@@ -84,10 +85,12 @@ export function StaffPageWrapper({ initialTeachers }: StaffPageWrapperProps) {
             Manage staff members and their login credentials.
           </p>
         </div>
-        <Button onClick={() => setIsAddModalOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Staff Member
-        </Button>
+        <RestrictedAction action="add-teacher">
+          <Button onClick={() => setIsAddModalOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Staff Member
+          </Button>
+        </RestrictedAction>
       </div>
 
       {/* Stats Cards */}
