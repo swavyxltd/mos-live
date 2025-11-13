@@ -57,7 +57,7 @@ interface BillingRecord {
 }
 
 export default function SettingsPage() {
-  const { data: session, update } = useSession()
+  const { data: session, update, status } = useSession()
   const [loading, setLoading] = useState(false)
   const [loadingOrgSettings, setLoadingOrgSettings] = useState(true)
   const [orgSettings, setOrgSettings] = useState<OrganizationSettings>({
@@ -303,13 +303,15 @@ export default function SettingsPage() {
         
         // Force NextAuth to refresh the session by calling update()
         // This triggers the JWT callback which fetches fresh user data from database
-        const updatedSession = await update()
+        await update()
         
-        // Wait a bit longer to ensure session is fully updated across all components
-        await new Promise(resolve => setTimeout(resolve, 500))
+        // Give the session time to update - the JWT callback fetches from DB
+        // We need to wait for the client-side session to refresh
+        await new Promise(resolve => setTimeout(resolve, 1000))
         
-        // Use router.refresh() to refresh server components, then reload for client components
-        // This ensures both server and client components get the updated session
+        // Force a hard reload to ensure all components get the fresh session
+        // This is necessary because server components use getServerSession which
+        // reads from the JWT token, and client components use useSession
         if (typeof window !== 'undefined') {
           window.location.reload()
         }
