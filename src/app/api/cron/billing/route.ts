@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
     const tomorrowDay = tomorrow.getDate()
 
     // Find all orgs with billing anniversary tomorrow
+    // Only bill ACTIVE organizations (skip SUSPENDED/PAUSED)
     const orgsToBill = await prisma.platformOrgBilling.findMany({
       where: {
         billingAnniversaryDate: tomorrowDay,
@@ -38,13 +39,17 @@ export async function POST(request: NextRequest) {
         },
         defaultPaymentMethodId: {
           not: null
+        },
+        org: {
+          status: 'ACTIVE' // Only bill active organizations
         }
       },
       include: {
         org: {
           select: {
             id: true,
-            name: true
+            name: true,
+            status: true
           }
         }
       }
@@ -119,13 +124,17 @@ export async function GET(request: NextRequest) {
       },
       defaultPaymentMethodId: {
         not: null
+      },
+      org: {
+        status: 'ACTIVE' // Only bill active organizations
       }
     },
     include: {
       org: {
         select: {
           id: true,
-          name: true
+          name: true,
+          status: true
         }
       }
     }
