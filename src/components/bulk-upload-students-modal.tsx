@@ -336,56 +336,8 @@ export function BulkUploadStudentsModal({
               </Button>
             </div>
 
-            {/* Stats Summary */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <FileText className="h-8 w-8 text-gray-600" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-500">Total Rows</p>
-                    <p className="text-2xl font-semibold text-gray-900">{stats.total}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <CheckCircle className="h-8 w-8 text-green-600" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-500">Valid</p>
-                    <p className="text-2xl font-semibold text-gray-900">{stats.valid}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <XCircle className="h-8 w-8 text-red-600" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-500">Invalid</p>
-                    <p className="text-2xl font-semibold text-gray-900">{stats.invalid}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <AlertCircle className="h-8 w-8 text-yellow-600" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-500">Duplicates</p>
-                    <p className="text-2xl font-semibold text-gray-900">{stats.duplicates}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             {/* Students Table */}
-            <div className="border rounded-lg overflow-hidden">
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
               <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50 sticky top-0">
