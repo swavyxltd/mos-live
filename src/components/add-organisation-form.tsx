@@ -121,32 +121,34 @@ export function AddOrganisationForm({ onSuccess, onCancel }: AddOrganisationForm
   }
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-    
-    // Auto-generate slug from name and city
-    if (field === 'name' || field === 'city') {
-      const nameSlug = formData.name
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-')
-        .trim()
+    setFormData(prev => {
+      const updated = { ...prev, [field]: value }
       
-      const citySlug = formData.city
-        ? formData.city
-            .toLowerCase()
-            .replace(/[^a-z0-9\s-]/g, '')
-            .replace(/\s+/g, '-')
-            .replace(/-+/g, '-')
-            .trim()
-        : ''
+      // Auto-generate slug from name and city
+      if (field === 'name' || field === 'city') {
+        const nameSlug = updated.name
+          .toLowerCase()
+          .replace(/[^a-z0-9\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .replace(/-+/g, '-')
+          .trim()
+        
+        const citySlug = updated.city
+          ? updated.city
+              .toLowerCase()
+              .replace(/[^a-z0-9\s-]/g, '')
+              .replace(/\s+/g, '-')
+              .replace(/-+/g, '-')
+              .trim()
+          : ''
+        
+        updated.slug = citySlug 
+          ? `${nameSlug}-${citySlug}`
+          : nameSlug
+      }
       
-      const slug = citySlug 
-        ? `${nameSlug}-${citySlug}`
-        : nameSlug
-      
-      setFormData(prev => ({ ...prev, slug }))
-    }
+      return updated
+    })
   }
 
   return (
