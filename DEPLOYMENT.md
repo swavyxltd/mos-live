@@ -72,6 +72,12 @@ WHATSAPP_EMBEDDED_REDIRECT_URL=https://your-app.vercel.app/integrations/whatsapp
 WHATSAPP_VERIFY_TOKEN=[Generate a random token]
 ```
 
+### Google Places (Optional - for address autocomplete)
+```
+NEXT_PUBLIC_GOOGLE_PLACES_API_KEY=[Your Google Places API key]
+```
+**Note:** If not provided, the address input will work as a regular text field (graceful fallback).
+
 ### Optional (for development/testing)
 ```
 WHATSAPP_DEV_ACCESS_TOKEN=[Optional]

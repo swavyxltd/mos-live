@@ -191,6 +191,12 @@ WHATSAPP_DEV_PHONE_NUMBER_ID=your-dev-phone-id
 WHATSAPP_DEV_WABA_ID=your-dev-waba-id
 ```
 
+### Google Places (Optional - for address autocomplete)
+```env
+NEXT_PUBLIC_GOOGLE_PLACES_API_KEY=your-google-places-api-key
+```
+**Note:** If not provided, the address input will work as a regular text field (graceful fallback).
+
 ## API Endpoints
 
 ### Core APIs
