@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { cancelStripeSubscription } from '@/lib/stripe'
 
 export async function POST(
   request: NextRequest,
@@ -17,6 +18,70 @@ export async function POST(
 
     const { reason } = await request.json()
     const { orgId } = params
+
+    // Get organization with billing info
+    const org = await prisma.org.findUnique({
+      where: { id: orgId },
+      include: {
+        platformBilling: true,
+        memberships: {
+          where: {
+            role: { in: ['ADMIN', 'STAFF'] }
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
+          }
+        }
+      }
+    })
+
+    if (!org) {
+      return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
+    }
+
+    // Cancel Stripe subscription if it exists
+    let subscriptionCanceled = false
+    if (org.platformBilling?.stripeSubscriptionId) {
+      try {
+        await cancelStripeSubscription(org.platformBilling.stripeSubscriptionId)
+        subscriptionCanceled = true
+
+        // Update billing record to mark subscription as canceled
+        await prisma.platformOrgBilling.update({
+          where: { orgId },
+          data: {
+            subscriptionStatus: 'canceled',
+            stripeSubscriptionId: null,
+            stripeSubscriptionItemId: null
+          }
+        })
+
+        // Log subscription cancellation
+        await prisma.auditLog.create({
+          data: {
+            action: 'PLATFORM_SUBSCRIPTION_CANCELED',
+            entityType: 'PlatformOrgBilling',
+            entityId: org.platformBilling.id,
+            userId: session.user.id,
+            details: {
+              orgName: org.name,
+              subscriptionId: org.platformBilling.stripeSubscriptionId,
+              reason: 'Organization deactivated - subscription canceled'
+            }
+          }
+        })
+      } catch (error: any) {
+        console.error('Error canceling subscription:', error)
+        // Continue with suspension even if subscription cancellation fails
+        // Log the error but don't block the deactivation
+      }
+    }
 
     // Update organization status to SUSPENDED
     const updatedOrg = await prisma.org.update({
@@ -54,6 +119,7 @@ export async function POST(
         details: {
           orgName: updatedOrg.name,
           reason: reason || 'Account suspended by platform administrator',
+          subscriptionCanceled,
           affectedUsers: updatedOrg.memberships.map(m => ({
             userId: m.user.id,
             userName: m.user.name,
@@ -64,10 +130,15 @@ export async function POST(
       }
     })
 
+    const message = subscriptionCanceled
+      ? `Organization ${updatedOrg.name} has been suspended and billing has been stopped`
+      : `Organization ${updatedOrg.name} has been suspended`
+
     return NextResponse.json({ 
       success: true, 
-      message: `Organization ${updatedOrg.name} has been suspended`,
-      affectedUsers: updatedOrg.memberships.length
+      message,
+      affectedUsers: updatedOrg.memberships.length,
+      subscriptionCanceled
     })
 
   } catch (error) {
