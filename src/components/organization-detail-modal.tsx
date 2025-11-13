@@ -519,8 +519,8 @@ export function OrganizationDetailModal({ isOpen, onClose, organization, onRefre
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">Status</span>
-                      <Badge className={getStatusColor(organization.platformBilling.status)}>
-                        {organization.platformBilling.status}
+                      <Badge className={getStatusColor(organization.status || (organization.platformBilling ? 'ACTIVE' : 'SETUP_REQUIRED'))}>
+                        {getStatusLabel(organization.status || (organization.platformBilling ? 'ACTIVE' : 'SETUP_REQUIRED'))}
                       </Badge>
                     </div>
                     {organization.platformBilling.currentPeriodEnd && (
