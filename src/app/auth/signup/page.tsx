@@ -4,7 +4,6 @@ import { useSearchParams } from 'next/navigation'
 import React, { useState, Suspense, useEffect } from 'react'
 import { Mail, Lock, User, MapPin, Phone, Globe } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { GooglePlacesAutocomplete } from '@/components/google-places-autocomplete'
 
 function SignUpForm() {
   const searchParams = useSearchParams()
@@ -303,29 +302,21 @@ function SignUpForm() {
               <h2 className="text-lg font-medium text-neutral-900">Organization Details *</h2>
               <p className="text-sm text-neutral-600">All fields below are required for new organization setup</p>
               
-              {/* Address Line 1 with Google Places Autocomplete */}
+              {/* Address Line 1 */}
               <div>
                 <label htmlFor="orgAddressLine1" className="block text-sm font-medium text-neutral-700 mb-1">
                   Address Line 1 *
                 </label>
-                <GooglePlacesAutocomplete
+                <input
                   id="orgAddressLine1"
                   name="orgAddressLine1"
+                  type="text"
                   value={formData.orgAddressLine1}
-                  onChange={(value) => setFormData({ ...formData, orgAddressLine1: value })}
-                  onPlaceSelect={(place) => {
-                    setFormData(prev => ({
-                      ...prev,
-                      orgAddressLine1: place.addressLine1,
-                      orgAddress: place.fullAddress,
-                      postcode: place.postcode,
-                      city: place.city
-                    }))
-                  }}
-                  placeholder="Start typing your address..."
+                  onChange={(e) => setFormData({ ...formData, orgAddressLine1: e.target.value })}
+                  placeholder="First line of address..."
                   required={isNewOrgSetup}
+                  className="w-full px-4 py-2.5 rounded-xl border border-neutral-200/70 bg-white text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
                 />
-                <p className="text-xs text-neutral-500 mt-1">Start typing and select from suggestions</p>
               </div>
 
               {/* Postcode and City */}
