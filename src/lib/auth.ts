@@ -133,45 +133,19 @@ export const authOptions: NextAuthOptions = {
     strategy: 'jwt'
   },
   callbacks: {
-    async jwt({ token, user, trigger }) {
-      // On initial sign in, set user data from authorize function
+    async jwt({ token, user }) {
       if (user) {
         token.isSuperAdmin = user.isSuperAdmin
         token.staffSubrole = user.staffSubrole
         token.sub = user.id
-        token.name = user.name
-        token.email = user.email
-        token.image = user.image
       }
 
       const userId = user?.id ?? token.sub
       if (userId) {
-        // Fetch fresh user data from database on each JWT refresh/update
-        // This ensures name/email changes are reflected immediately
         try {
-          const dbUser = await prisma.user.findUnique({
-            where: { id: userId },
-            select: {
-              name: true,
-              email: true,
-              image: true,
-              isSuperAdmin: true,
-              staffSubrole: true
-            }
-          })
-
-          if (dbUser) {
-            // Update token with latest user data from database
-            token.name = dbUser.name
-            token.email = dbUser.email
-            token.image = dbUser.image
-            token.isSuperAdmin = dbUser.isSuperAdmin
-            token.staffSubrole = dbUser.staffSubrole
-          }
-
           token.roleHints = await getUserRoleHints(userId)
         } catch (error) {
-          console.error('Error getting user data in JWT callback:', error)
+          console.error('Error getting role hints in JWT callback:', error)
           // Set default role hints on error to allow authentication
           token.roleHints = {
             isOwner: false,
@@ -187,9 +161,6 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (token) {
         session.user.id = token.sub!
-        session.user.name = token.name as string | null
-        session.user.email = token.email as string | null
-        session.user.image = token.image as string | null
         session.user.isSuperAdmin = (token.isSuperAdmin as boolean) ?? false
         session.user.staffSubrole = token.staffSubrole as string
         session.user.roleHints = token.roleHints as {
