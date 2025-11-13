@@ -222,15 +222,48 @@ export const authOptions: NextAuthOptions = {
     maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.isSuperAdmin = user.isSuperAdmin
         token.staffSubrole = user.staffSubrole
         token.sub = user.id
+        token.name = user.name
+        token.email = user.email
+        token.image = user.image
       }
 
       const userId = user?.id ?? token.sub
       if (userId) {
+        // Fetch fresh user data from database when session is updated
+        // This ensures profile changes (name, email, image) are reflected immediately
+        if (trigger === 'update' || !token.name) {
+          try {
+            const dbUser = await prisma.user.findUnique({
+              where: { id: userId },
+              select: {
+                name: true,
+                email: true,
+                image: true,
+                isSuperAdmin: true,
+                staffSubrole: true
+              }
+            })
+            
+            if (dbUser) {
+              token.name = dbUser.name
+              token.email = dbUser.email
+              token.image = dbUser.image
+              token.isSuperAdmin = dbUser.isSuperAdmin
+              token.staffSubrole = dbUser.staffSubrole
+            }
+          } catch (error) {
+            // Log error server-side only (not to console in production)
+            if (process.env.NODE_ENV === 'development') {
+              console.error('Error fetching user data in JWT callback:', error)
+            }
+          }
+        }
+
         try {
           token.roleHints = await getUserRoleHints(userId)
         } catch (error) {
@@ -253,6 +286,9 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (token) {
         session.user.id = token.sub!
+        session.user.name = token.name as string | null | undefined
+        session.user.email = token.email as string | null | undefined
+        session.user.image = token.image as string | null | undefined
         session.user.isSuperAdmin = (token.isSuperAdmin as boolean) ?? false
         session.user.staffSubrole = token.staffSubrole as string
         session.user.roleHints = token.roleHints as {
