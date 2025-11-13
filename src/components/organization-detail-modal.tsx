@@ -189,6 +189,10 @@ export function OrganizationDetailModal({ isOpen, onClose, organization, onRefre
     switch (status) {
       case 'ACTIVE':
         return 'bg-green-100 text-green-800'
+      case 'PAUSED':
+        return 'bg-orange-100 text-orange-800'
+      case 'DEACTIVATED':
+        return 'bg-red-100 text-red-800'
       case 'PAST_DUE':
         return 'bg-red-100 text-red-800'
       case 'CANCELED':
@@ -202,10 +206,31 @@ export function OrganizationDetailModal({ isOpen, onClose, organization, onRefre
     switch (status) {
       case 'ACTIVE':
         return <CheckCircle className="h-4 w-4" />
+      case 'PAUSED':
+        return <Clock className="h-4 w-4" />
+      case 'DEACTIVATED':
+        return <AlertTriangle className="h-4 w-4" />
       case 'PAST_DUE':
         return <AlertTriangle className="h-4 w-4" />
       default:
         return <Clock className="h-4 w-4" />
+    }
+  }
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'ACTIVE':
+        return 'Active'
+      case 'PAUSED':
+        return 'Paused'
+      case 'DEACTIVATED':
+        return 'Deactivated'
+      case 'PAST_DUE':
+        return 'Past Due'
+      case 'CANCELED':
+        return 'Canceled'
+      default:
+        return 'Setup Required'
     }
   }
 
