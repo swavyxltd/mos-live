@@ -337,51 +337,51 @@ export function BulkUploadStudentsModal({
             </div>
 
             {/* Stats Summary */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-              <Card>
-                <CardContent className="p-4 sm:p-5 lg:p-5">
-                  <div className="flex flex-col items-center justify-center text-center space-y-2">
-                    <FileText className="h-6 w-6 text-gray-600" />
-                    <div>
-                      <p className="text-xs font-medium text-gray-600 mb-1">Total Rows</p>
-                      <p className="text-2xl font-semibold text-gray-900">{stats.total}</p>
-                    </div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <FileText className="h-8 w-8 text-gray-600" />
                   </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4 sm:p-5 lg:p-5">
-                  <div className="flex flex-col items-center justify-center text-center space-y-2">
-                    <CheckCircle className="h-6 w-6 text-green-600" />
-                    <div>
-                      <p className="text-xs font-medium text-gray-600 mb-1">Valid</p>
-                      <p className="text-2xl font-semibold text-green-600">{stats.valid}</p>
-                    </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-500">Total Rows</p>
+                    <p className="text-2xl font-semibold text-gray-900">{stats.total}</p>
                   </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4 sm:p-5 lg:p-5">
-                  <div className="flex flex-col items-center justify-center text-center space-y-2">
-                    <XCircle className="h-6 w-6 text-red-600" />
-                    <div>
-                      <p className="text-xs font-medium text-gray-600 mb-1">Invalid</p>
-                      <p className="text-2xl font-semibold text-red-600">{stats.invalid}</p>
-                    </div>
+                </div>
+              </div>
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <CheckCircle className="h-8 w-8 text-green-600" />
                   </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4 sm:p-5 lg:p-5">
-                  <div className="flex flex-col items-center justify-center text-center space-y-2">
-                    <AlertCircle className="h-6 w-6 text-yellow-600" />
-                    <div>
-                      <p className="text-xs font-medium text-gray-600 mb-1">Duplicates</p>
-                      <p className="text-2xl font-semibold text-yellow-600">{stats.duplicates}</p>
-                    </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-500">Valid</p>
+                    <p className="text-2xl font-semibold text-gray-900">{stats.valid}</p>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <XCircle className="h-8 w-8 text-red-600" />
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-500">Invalid</p>
+                    <p className="text-2xl font-semibold text-gray-900">{stats.invalid}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white p-6 rounded-lg shadow">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <AlertCircle className="h-8 w-8 text-yellow-600" />
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-500">Duplicates</p>
+                    <p className="text-2xl font-semibold text-gray-900">{stats.duplicates}</p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Students Table */}

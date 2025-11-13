@@ -118,16 +118,16 @@ export function StudentsPageWrapper({ initialStudents, classes }: StudentsPageWr
                     <ChevronDown className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem onClick={() => setIsAddModalOpen(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Single Student
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setIsBulkUploadModalOpen(true)}>
-                    <Users className="h-4 w-4 mr-2" />
-                    Bulk Add Students
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
+              <DropdownMenuContent align="end" className="w-56 bg-white border border-gray-200 shadow-lg">
+                <DropdownMenuItem onClick={() => setIsAddModalOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Single Student
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setIsBulkUploadModalOpen(true)}>
+                  <Users className="h-4 w-4 mr-2" />
+                  Bulk Add Students
+                </DropdownMenuItem>
+              </DropdownMenuContent>
               </DropdownMenu>
             </div>
           </RestrictedAction>
