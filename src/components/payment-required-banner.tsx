@@ -92,21 +92,22 @@ export function PaymentRequiredBanner() {
 
   return (
     <>
-      <div className="bg-orange-50 border-l-4 border-orange-400 p-4 mb-6 rounded-r-lg shadow-sm">
-        <div className="flex items-start justify-between">
+      <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6 shadow-sm">
+        <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3 flex-1">
-            <AlertCircle className="h-5 w-5 text-orange-600 mt-0.5 flex-shrink-0" />
+            <div className="w-8 h-8 bg-red-50 rounded-lg flex items-center justify-center flex-shrink-0">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+            </div>
             <div className="flex-1">
-              <h3 className="text-sm font-semibold text-orange-900 mb-1">
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">
                 Payment Method Required
               </h3>
-              <p className="text-sm text-orange-800 mb-3">
+              <p className="text-sm text-gray-600 mb-3">
                 You need to add a payment method before you can add students, staff, classes, or any other data to your madrasah. 
                 Add your card details to get started.
               </p>
               <Button
                 onClick={() => setShowPaymentModal(true)}
-                className="bg-orange-600 hover:bg-orange-700 text-white"
                 size="sm"
               >
                 <CreditCard className="h-4 w-4 mr-2" />
@@ -116,10 +117,10 @@ export function PaymentRequiredBanner() {
           </div>
           <button
             onClick={() => setDismissed(true)}
-            className="text-orange-600 hover:text-orange-800 ml-4 flex-shrink-0"
+            className="p-1 rounded-md hover:bg-gray-100 transition-colors flex-shrink-0"
             aria-label="Dismiss banner"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4 text-gray-500" />
           </button>
         </div>
       </div>
