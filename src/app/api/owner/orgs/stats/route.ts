@@ -15,13 +15,14 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get all organizations with detailed stats
+    // Get all organizations with detailed stats (including city field)
     const orgs = await prisma.org.findMany({
       where: { status: 'ACTIVE' },
       select: {
         id: true,
         name: true,
         slug: true,
+        city: true,
         timezone: true,
         createdAt: true,
         updatedAt: true,
@@ -101,7 +102,7 @@ export async function GET(request: NextRequest) {
           id: org.id,
           name: org.name,
           slug: org.slug,
-          city: null, // City field doesn't exist in schema
+          city: org.city,
           timezone: org.timezone,
           createdAt: org.createdAt,
           updatedAt: org.updatedAt,
