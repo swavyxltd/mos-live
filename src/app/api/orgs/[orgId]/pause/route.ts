@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { orgId: string } }
+  { params }: { params: Promise<{ orgId: string }> | { orgId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -16,7 +16,9 @@ export async function POST(
     }
 
     const { reason } = await request.json()
-    const { orgId } = params
+    // Handle Next.js 15 async params
+    const resolvedParams = await Promise.resolve(params)
+    const { orgId } = resolvedParams
 
     // Update organization status to PAUSED
     const updatedOrg = await prisma.org.update({
@@ -70,8 +72,16 @@ export async function POST(
       affectedUsers: updatedOrg.memberships.length
     })
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error pausing organization:', error)
-    return NextResponse.json({ error: 'Failed to pause organization' }, { status: 500 })
+    console.error('Error details:', {
+      message: error?.message,
+      stack: error?.stack,
+      name: error?.name
+    })
+    return NextResponse.json({ 
+      error: 'Failed to pause organization',
+      details: process.env.NODE_ENV === 'development' ? error?.message : undefined
+    }, { status: 500 })
   }
 }
