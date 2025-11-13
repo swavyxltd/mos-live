@@ -28,7 +28,7 @@ import {
   Bell,
   ExternalLink
 } from 'lucide-react'
-import { OwnerRevenueChart } from '@/components/owner-revenue-chart'
+import { WaveChart } from '@/components/ui/wave-chart'
 
 interface DashboardData {
   totalOrgs: number
@@ -61,6 +61,12 @@ export default function OwnerOverviewPage() {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
+  const [systemHealth, setSystemHealth] = useState<{
+    uptime: number
+    responseTime: number
+    errorRate: number
+    activeUsers: number
+  } | null>(null)
   
   if (status === 'loading') {
     return <div>Loading...</div>
@@ -73,6 +79,7 @@ export default function OwnerOverviewPage() {
 
   // Load initial data
   useEffect(() => {
+    // Fetch dashboard data
     fetch('/api/owner/dashboard')
       .then(res => {
         if (!res.ok) {
@@ -116,6 +123,23 @@ export default function OwnerOverviewPage() {
           }
         })
       })
+    
+    // Fetch live system health data
+    fetch('/api/owner/system-health')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.overallStatus) {
+          setSystemHealth({
+            uptime: data.overallStatus.uptime || 0,
+            responseTime: data.overallStatus.responseTime || 0,
+            errorRate: data.overallStatus.errorRate || 0,
+            activeUsers: data.performance?.concurrentUsers || 0
+          })
+        }
+      })
+      .catch(err => {
+        console.error('Error fetching system health:', err)
+      })
   }, [])
 
   // Auto-refresh every 30 seconds
@@ -130,6 +154,23 @@ export default function OwnerOverviewPage() {
         .catch(err => {
           console.error('Error refreshing dashboard data:', err)
         })
+      
+      // Refresh system health
+      fetch('/api/owner/system-health')
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.overallStatus) {
+            setSystemHealth({
+              uptime: data.overallStatus.uptime || 0,
+              responseTime: data.overallStatus.responseTime || 0,
+              errorRate: data.overallStatus.errorRate || 0,
+              activeUsers: data.performance?.concurrentUsers || 0
+            })
+          }
+        })
+        .catch(err => {
+          console.error('Error refreshing system health:', err)
+        })
     }, 30000)
 
     return () => clearInterval(interval)
@@ -143,6 +184,18 @@ export default function OwnerOverviewPage() {
       const data = await res.json()
       setDashboardData(data)
       setLastUpdated(new Date())
+      
+      // Also refresh system health
+      const healthRes = await fetch('/api/owner/system-health')
+      const healthData = await healthRes.json()
+      if (healthData && healthData.overallStatus) {
+        setSystemHealth({
+          uptime: healthData.overallStatus.uptime || 0,
+          responseTime: healthData.overallStatus.responseTime || 0,
+          errorRate: healthData.overallStatus.errorRate || 0,
+          activeUsers: healthData.performance?.concurrentUsers || 0
+        })
+      }
     } catch (err) {
       console.error('Error refreshing dashboard data:', err)
     } finally {
@@ -163,7 +216,7 @@ export default function OwnerOverviewPage() {
     
     const csvData = [
       ['Metric', 'Value'],
-      ['Total Organizations', dashboardData.totalOrgs ?? 0],
+      ['Total Organisations', dashboardData.totalOrgs ?? 0],
       ['Total Students', dashboardData.totalStudents ?? 0],
       ['Monthly Recurring Revenue', `£${(dashboardData.mrr ?? 0).toLocaleString()}`],
       ['Annual Recurring Revenue', `£${(dashboardData.arr ?? 0).toLocaleString()}`],
@@ -278,9 +331,9 @@ export default function OwnerOverviewPage() {
               {/* Mobile: 2 lines, Desktop: 1 line */}
               <div className="md:hidden">
                 <CardTitle className="text-sm font-medium leading-tight">Total</CardTitle>
-                <CardTitle className="text-sm font-medium leading-tight">Organizations</CardTitle>
+                <CardTitle className="text-sm font-medium leading-tight">Organisations</CardTitle>
               </div>
-              <CardTitle className="hidden md:block text-sm font-medium">Total Organizations</CardTitle>
+              <CardTitle className="hidden md:block text-sm font-medium">Total Organisations</CardTitle>
             </div>
             <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
@@ -413,15 +466,32 @@ export default function OwnerOverviewPage() {
       {/* Charts and Tables Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Revenue Trend Chart */}
-        {dashboardData && (
-          <OwnerRevenueChart data={dashboardData.monthlyRevenue} />
+        {dashboardData && dashboardData.monthlyRevenue && (
+          <WaveChart
+            title="Revenue Trend"
+            subtitle="Monthly recurring revenue growth over time"
+            data={dashboardData.monthlyRevenue.map(item => ({
+              date: item.month,
+              value: item.revenue
+            }))}
+            filterOptions={[
+              { label: 'Last 12 months', value: '12m', active: true },
+              { label: 'Last 6 months', value: '6m' },
+              { label: 'Last 3 months', value: '3m' }
+            ]}
+            valueFormatter={(value) => `£${value.toLocaleString()}`}
+            yAxisFormatter={(value) => `£${(value / 1000).toFixed(0)}k`}
+            tooltipFormatter={(value) => `£${value.toLocaleString()}`}
+            tooltipLabel="Revenue"
+            domain="auto"
+          />
         )}
 
-        {/* Top Organizations */}
+        {/* Top Organisations */}
         <Card>
           <CardHeader>
-            <CardTitle>Top Performing Organizations</CardTitle>
-            <CardDescription>Organizations by student count and revenue</CardDescription>
+            <CardTitle>Top Performing Organisations</CardTitle>
+            <CardDescription>Organisations by student count and revenue</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -498,28 +568,36 @@ export default function OwnerOverviewPage() {
                   <Activity className="h-4 w-4 text-green-600" />
                   <span className="text-sm font-medium">Uptime</span>
                 </div>
-                <Badge variant="outline" className="text-green-600">{dashboardData.systemHealth.uptime}%</Badge>
+                <Badge variant="outline" className="text-green-600">
+                  {systemHealth?.uptime?.toFixed(1) || dashboardData?.systemHealth?.uptime || 0}%
+                </Badge>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Clock className="h-4 w-4 text-blue-600" />
                   <span className="text-sm font-medium">Response Time</span>
                 </div>
-                <Badge variant="outline">{dashboardData.systemHealth.responseTime}ms</Badge>
+                <Badge variant="outline">
+                  {systemHealth?.responseTime || dashboardData?.systemHealth?.responseTime || 0}ms
+                </Badge>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <XCircle className="h-4 w-4 text-orange-600" />
                   <span className="text-sm font-medium">Error Rate</span>
                 </div>
-                <Badge variant="outline">{dashboardData.systemHealth.errorRate}%</Badge>
+                <Badge variant="outline">
+                  {systemHealth?.errorRate?.toFixed(2) || dashboardData?.systemHealth?.errorRate || 0}%
+                </Badge>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <UserCheck className="h-4 w-4 text-purple-600" />
                   <span className="text-sm font-medium">Active Users</span>
                 </div>
-                <Badge variant="outline">{dashboardData.systemHealth.activeUsers}</Badge>
+                <Badge variant="outline">
+                  {systemHealth?.activeUsers || dashboardData?.systemHealth?.activeUsers || 0}
+                </Badge>
               </div>
             </div>
           </CardContent>

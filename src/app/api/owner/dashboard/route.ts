@@ -15,14 +15,25 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get total organizations
+    // Get total organizations (excluding demo org)
     const totalOrgs = await prisma.org.count({
-      where: { status: 'ACTIVE' }
+      where: { 
+        status: 'ACTIVE',
+        slug: { not: 'leicester-islamic-centre' } // Exclude demo org
+      }
     })
 
-    // Get total students across all orgs
+    // Get total students across all orgs (excluding demo org students)
+    const demoOrg = await prisma.org.findUnique({
+      where: { slug: 'leicester-islamic-centre' },
+      select: { id: true }
+    })
+    
     const totalStudents = await prisma.student.count({
-      where: { isArchived: false }
+      where: { 
+        isArchived: false,
+        ...(demoOrg ? { orgId: { not: demoOrg.id } } : {}) // Exclude demo org students
+      }
     })
 
     // Get total users (excluding archived)
@@ -30,9 +41,12 @@ export async function GET(request: NextRequest) {
       where: { isArchived: false }
     })
 
-    // Get all organizations with stats
+    // Get all organizations with stats (excluding demo org)
     const orgs = await prisma.org.findMany({
-      where: { status: 'ACTIVE' },
+      where: { 
+        status: 'ACTIVE',
+        slug: { not: 'leicester-islamic-centre' } // Exclude demo org
+      },
       select: {
         id: true,
         name: true,
@@ -106,11 +120,12 @@ export async function GET(request: NextRequest) {
     const paidRecent = recentInvoices.filter(inv => inv.status === 'PAID').length
     const paymentSuccessRate = totalRecent > 0 ? (paidRecent / totalRecent) * 100 : 100
 
-    // Get new orgs this month
+    // Get new orgs this month (excluding demo org)
     const newOrgsThisMonth = await prisma.org.count({
       where: {
         status: 'ACTIVE',
-        createdAt: { gte: thisMonth }
+        createdAt: { gte: thisMonth },
+        slug: { not: 'leicester-islamic-centre' } // Exclude demo org
       }
     })
 
@@ -147,7 +162,8 @@ export async function GET(request: NextRequest) {
       const monthStudents = await prisma.student.count({
         where: {
           createdAt: { lte: monthEnd },
-          isArchived: false
+          isArchived: false,
+          ...(demoOrg ? { orgId: { not: demoOrg.id } } : {}) // Exclude demo org students
         }
       })
       
@@ -248,7 +264,8 @@ export async function GET(request: NextRequest) {
       return aHours - bHours
     }).slice(0, 5)
 
-    // System health (mock data for now)
+    // System health - fetch from system health API
+    // We'll fetch this on the client side to get live data
     const systemHealth = {
       uptime: 99.9,
       responseTime: 150,

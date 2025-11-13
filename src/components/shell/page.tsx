@@ -40,7 +40,7 @@ export function Page({ children, user, org, userRole, staffSubrole, title, bread
             {userRole === 'PARENT' && <OverduePaymentBanner />}
             {(userRole === 'ADMIN' || userRole === 'STAFF') && <PaymentRequiredBanner />}
             <div className="w-full min-w-0">
-              {children}
+            {children}
             </div>
           </div>
         </main>

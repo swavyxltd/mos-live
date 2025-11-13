@@ -13,6 +13,11 @@ interface WaveChartProps {
   className?: string
   filterOptions?: Array<{ label: string; value: string; active?: boolean }>
   onFilterChange?: (value: string) => void
+  valueFormatter?: (value: number) => string
+  yAxisFormatter?: (value: number) => string
+  tooltipFormatter?: (value: number) => string
+  tooltipLabel?: string
+  domain?: [number, number] | 'auto'
 }
 
 export function WaveChart({ 
@@ -25,7 +30,12 @@ export function WaveChart({
     { label: 'Last 30 days', value: '30d' },
     { label: 'Last 7 days', value: '7d' }
   ],
-  onFilterChange 
+  onFilterChange,
+  valueFormatter = (value: number) => `${value}%`,
+  yAxisFormatter = (value: number) => `${value}%`,
+  tooltipFormatter = (value: number) => `${value}%`,
+  tooltipLabel = 'Attendance',
+  domain = [0, 100]
 }: WaveChartProps) {
   const [activeFilter, setActiveFilter] = React.useState(
     filterOptions.find(f => f.active)?.value || filterOptions[0]?.value
@@ -41,14 +51,45 @@ export function WaveChart({
     const now = new Date()
     
     const filteredData = data.filter(item => {
-      const itemDate = new Date(item.date)
+      // Try to parse date - could be "Jan 2024" format or ISO date
+      let itemDate: Date
+      try {
+        itemDate = new Date(item.date)
+        // If date parsing fails or results in invalid date, try parsing as month string
+        if (isNaN(itemDate.getTime())) {
+          // Try parsing "Jan 2024" format
+          const parts = item.date.split(' ')
+          if (parts.length === 2) {
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+            const monthIndex = monthNames.indexOf(parts[0])
+            const year = parseInt(parts[1])
+            if (monthIndex !== -1 && !isNaN(year)) {
+              itemDate = new Date(year, monthIndex, 1)
+            } else {
+              return true // Include if we can't parse
+            }
+          } else {
+            return true // Include if we can't parse
+          }
+        }
+      } catch {
+        return true // Include if parsing fails
+      }
+      
       const daysDiff = Math.floor((now.getTime() - itemDate.getTime()) / (1000 * 60 * 60 * 24))
+      const monthsDiff = Math.floor(daysDiff / 30)
       
       switch (activeFilter) {
         case '7d':
           return daysDiff <= 7
         case '30d':
           return daysDiff <= 30
+        case '3m':
+          return monthsDiff <= 3
+        case '6m':
+          return monthsDiff <= 6
+        case '12m':
+          return monthsDiff <= 12
         case '90d':
           return daysDiff <= 90
         default:
@@ -116,8 +157,8 @@ export function WaveChart({
                 axisLine={false}
                 tickLine={false}
                 tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }}
-                domain={[0, 100]}
-                tickFormatter={(value) => `${value}%`}
+                domain={domain === 'auto' ? undefined : domain}
+                tickFormatter={yAxisFormatter}
               />
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <Tooltip 
@@ -127,7 +168,7 @@ export function WaveChart({
                   borderRadius: 'var(--radius-md)',
                   color: 'var(--foreground)'
                 }}
-                formatter={(value: any) => [`${value}%`, 'Attendance']}
+                formatter={(value: any) => [tooltipFormatter(value as number), tooltipLabel]}
                 labelFormatter={(label) => `Date: ${label}`}
               />
               <Area
