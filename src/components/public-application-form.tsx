@@ -100,6 +100,11 @@ export function PublicApplicationForm({ org, classes }: PublicApplicationFormPro
       return
     }
     
+    if (!guardianAddress.trim()) {
+      alert('Please enter the guardian\'s address.')
+      return
+    }
+    
     // Validate children
     const validChildren = children.filter(child => child.firstName.trim() && child.lastName.trim())
     if (validChildren.length === 0) {
@@ -158,7 +163,7 @@ export function PublicApplicationForm({ org, classes }: PublicApplicationFormPro
           guardianName,
           guardianPhone,
           guardianEmail,
-          guardianAddress: guardianAddress || undefined,
+          guardianAddress: guardianAddress,
           children: children.filter(child => child.firstName && child.lastName),
           preferredClass: preferredClass || undefined,
           preferredTerm: preferredTerm || undefined,
@@ -208,7 +213,9 @@ export function PublicApplicationForm({ org, classes }: PublicApplicationFormPro
       <div className="bg-white shadow-sm">
         <div className="max-w-4xl mx-auto px-6 py-8">
           <div className="flex items-center justify-center mb-6">
-            <MadrasahLogo showText={false} size="lg-sm" />
+            <div className="scale-50 origin-center">
+              <MadrasahLogo showText={false} size="lg-sm" />
+            </div>
           </div>
           <div className="text-center">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">{org.name}</h1>
@@ -300,11 +307,12 @@ export function PublicApplicationForm({ org, classes }: PublicApplicationFormPro
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
                   <MapPin className="h-4 w-4 mr-1" />
-                  Address (Optional)
+                  Address *
                 </label>
                 <Input
                   value={guardianAddress}
                   onChange={(e) => setGuardianAddress(e.target.value)}
+                  required
                   placeholder="Enter your address"
                 />
               </div>
