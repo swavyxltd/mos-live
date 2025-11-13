@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { SplitTitle } from '@/components/ui/split-title'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { AnalyticsRevenueChart } from '@/components/analytics-revenue-chart'
@@ -56,7 +57,7 @@ export default async function OwnerAnalyticsPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-[var(--foreground)]">Analytics Dashboard</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[var(--foreground)] break-words">Analytics Dashboard</h1>
           <p className="mt-1 text-sm text-[var(--muted-foreground)]">
             Deep insights into your platform performance and growth metrics
           </p>
@@ -77,8 +78,8 @@ export default async function OwnerAnalyticsPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">MRR Growth</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-600" />
+            <SplitTitle title="MRR Growth" />
+            <TrendingUp className="h-4 w-4 text-green-600 flex-shrink-0" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">+{analyticsData.revenue.growth}%</div>
@@ -90,8 +91,8 @@ export default async function OwnerAnalyticsPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Customer Acquisition</CardTitle>
-            <Users className="h-4 w-4 text-blue-600" />
+            <SplitTitle title="Customer Acquisition" />
+            <Users className="h-4 w-4 text-blue-600 flex-shrink-0" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">+{analyticsData.growth.newOrgsThisMonth}</div>
@@ -103,8 +104,8 @@ export default async function OwnerAnalyticsPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Retention Rate</CardTitle>
-            <Activity className="h-4 w-4 text-green-600" />
+            <SplitTitle title="Retention Rate" />
+            <Activity className="h-4 w-4 text-green-600 flex-shrink-0" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{analyticsData.growth.retentionRate}%</div>
@@ -116,8 +117,8 @@ export default async function OwnerAnalyticsPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">ARPU</CardTitle>
-            <DollarSign className="h-4 w-4 text-purple-600" />
+            <SplitTitle title="ARPU" />
+            <DollarSign className="h-4 w-4 text-purple-600 flex-shrink-0" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">£{analyticsData.revenue.averageRevenuePerUser}</div>

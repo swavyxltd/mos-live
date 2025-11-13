@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { SplitTitle } from '@/components/ui/split-title'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -149,7 +150,7 @@ export default async function OwnerSupportPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-[var(--foreground)]">Support Center</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[var(--foreground)] break-words">Support Center</h1>
           <p className="mt-1 text-sm text-[var(--muted-foreground)]">
             Manage customer support tickets and monitor team performance
           </p>
@@ -170,8 +171,8 @@ export default async function OwnerSupportPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Tickets</CardTitle>
-            <MessageSquare className="h-4 w-4 text-blue-600" />
+            <SplitTitle title="Total Tickets" />
+            <MessageSquare className="h-4 w-4 text-blue-600 flex-shrink-0" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{supportData.stats.totalTickets}</div>
@@ -183,8 +184,8 @@ export default async function OwnerSupportPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Open Tickets</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-red-600" />
+            <SplitTitle title="Open Tickets" />
+            <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{supportData.stats.openTickets}</div>
@@ -196,8 +197,8 @@ export default async function OwnerSupportPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Response Time</CardTitle>
-            <Clock className="h-4 w-4 text-purple-600" />
+            <SplitTitle title="Avg Response Time" />
+            <Clock className="h-4 w-4 text-purple-600 flex-shrink-0" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{supportData.stats.averageResponseTime}h</div>
@@ -209,8 +210,8 @@ export default async function OwnerSupportPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Customer Satisfaction</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-600" />
+            <SplitTitle title="Customer Satisfaction" />
+            <TrendingUp className="h-4 w-4 text-green-600 flex-shrink-0" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{supportData.stats.customerSatisfaction}/5</div>

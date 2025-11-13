@@ -442,7 +442,7 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[var(--foreground)] break-words">Settings</h1>
           <p className="mt-1 text-sm text-gray-500">
             {isFinanceOfficer 
               ? "View organization settings and manage your subscription payments."

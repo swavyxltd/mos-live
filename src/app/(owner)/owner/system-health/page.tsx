@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { SplitTitle } from '@/components/ui/split-title'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { 
@@ -203,7 +204,7 @@ export default async function OwnerSystemHealthPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-[var(--foreground)]">System Health</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[var(--foreground)] break-words">System Health</h1>
           <p className="mt-1 text-sm text-[var(--muted-foreground)]">
             Monitor platform performance, uptime, and system reliability
           </p>
@@ -224,8 +225,8 @@ export default async function OwnerSystemHealthPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Overall Status</CardTitle>
-            <Activity className="h-4 w-4 text-green-600" />
+            <SplitTitle title="Overall Status" />
+            <Activity className="h-4 w-4 text-green-600 flex-shrink-0" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">Healthy</div>
@@ -237,8 +238,8 @@ export default async function OwnerSystemHealthPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Uptime</CardTitle>
-            <Server className="h-4 w-4 text-blue-600" />
+            <SplitTitle title="Uptime" />
+            <Server className="h-4 w-4 text-blue-600 flex-shrink-0" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{systemHealth.overallStatus.uptime}%</div>
@@ -250,8 +251,8 @@ export default async function OwnerSystemHealthPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Response Time</CardTitle>
-            <Zap className="h-4 w-4 text-purple-600" />
+            <SplitTitle title="Response Time" />
+            <Zap className="h-4 w-4 text-purple-600 flex-shrink-0" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{systemHealth.overallStatus.responseTime}ms</div>
@@ -263,8 +264,8 @@ export default async function OwnerSystemHealthPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Error Rate</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-orange-600" />
+            <SplitTitle title="Error Rate" />
+            <AlertTriangle className="h-4 w-4 text-orange-600 flex-shrink-0" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{systemHealth.overallStatus.errorRate}%</div>

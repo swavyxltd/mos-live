@@ -1,4 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { SplitTitle } from '@/components/ui/split-title'
 import { formatCurrency } from '@/lib/utils'
 import { Building2, Users, CreditCard, AlertTriangle } from 'lucide-react'
 
@@ -51,10 +52,8 @@ export function OwnerOverviewStats({
       {stats.map((stat) => (
         <Card key={stat.name}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">
-              {stat.name}
-            </CardTitle>
-            <div className={`p-2 rounded-full ${stat.bgColor}`}>
+            <SplitTitle title={stat.name} />
+            <div className={`p-2 rounded-full ${stat.bgColor} flex-shrink-0`}>
               <stat.icon className={`h-4 w-4 ${stat.color}`} />
             </div>
           </CardHeader>

@@ -345,7 +345,7 @@ export default function PaymentsPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--foreground)]">Payments</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[var(--foreground)] break-words">Payments</h1>
           <p className="mt-1 text-sm text-[var(--muted-foreground)]">
             Track and manage monthly payment records. Stripe payments are automatically marked as paid.
           </p>

@@ -394,7 +394,7 @@ export default function ParentCalendarPage() {
     <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-[var(--foreground)]">Calendar</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-[var(--foreground)] break-words">Calendar</h1>
             <p className="mt-1 text-sm text-[var(--muted-foreground)]">
               View your children's class schedules, holidays, exams, and special events.
             </p>

@@ -75,7 +75,7 @@ export default async function OwnerDunningPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-[var(--foreground)]">Dunning Management</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-[var(--foreground)] break-words">Dunning Management</h1>
         <p className="mt-1 text-sm text-[var(--muted-foreground)]">
           Monitor and manage billing failures across your platform.
         </p>

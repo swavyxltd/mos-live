@@ -145,7 +145,7 @@ export default function OwnerSettingsPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Platform Settings</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[var(--foreground)] break-words">Platform Settings</h1>
           <p className="mt-1 text-sm text-gray-500">
             Manage your Madrasah OS platform settings and preferences.
           </p>

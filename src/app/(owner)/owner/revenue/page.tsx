@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { SplitTitle } from '@/components/ui/split-title'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -214,8 +215,8 @@ export default function OwnerRevenuePage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Monthly Recurring Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-green-600" />
+            <SplitTitle title="Monthly Recurring Revenue" />
+            <DollarSign className="h-4 w-4 text-green-600 flex-shrink-0" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">£{revenueData?.current?.mrr?.toLocaleString() || '0'}</div>
@@ -227,8 +228,8 @@ export default function OwnerRevenuePage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Annual Recurring Revenue</CardTitle>
-            <TrendingUp className="h-4 w-4 text-blue-600" />
+            <SplitTitle title="Annual Recurring Revenue" />
+            <TrendingUp className="h-4 w-4 text-blue-600 flex-shrink-0" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">£{revenueData?.current?.arr?.toLocaleString() || '0'}</div>
@@ -240,8 +241,8 @@ export default function OwnerRevenuePage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Payment Success Rate</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-600" />
+            <SplitTitle title="Payment Success Rate" />
+            <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{revenueData?.paymentStatus?.successRate || 0}%</div>
@@ -253,8 +254,8 @@ export default function OwnerRevenuePage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Failed Payments</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-red-600" />
+            <SplitTitle title="Failed Payments" />
+            <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{revenueData?.current?.failedPayments || 0}</div>

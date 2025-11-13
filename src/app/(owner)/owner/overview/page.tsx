@@ -253,8 +253,15 @@ export default function OwnerOverviewPage() {
         {/* MRR */}
         <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={handleViewRevenue}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Monthly Recurring Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <div className="flex-1 min-w-0">
+              {/* Mobile: 2 lines, Desktop: 1 line */}
+              <div className="md:hidden">
+                <CardTitle className="text-sm font-medium leading-tight">Monthly Recurring</CardTitle>
+                <CardTitle className="text-sm font-medium leading-tight">Revenue</CardTitle>
+              </div>
+              <CardTitle className="hidden md:block text-sm font-medium">Monthly Recurring Revenue</CardTitle>
+            </div>
+            <DollarSign className="h-4 w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">£{(dashboardData.mrr ?? 0).toLocaleString()}</div>
@@ -267,8 +274,15 @@ export default function OwnerOverviewPage() {
         {/* Total Organizations */}
         <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={handleViewOrganizations}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Organizations</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
+            <div className="flex-1 min-w-0">
+              {/* Mobile: 2 lines, Desktop: 1 line */}
+              <div className="md:hidden">
+                <CardTitle className="text-sm font-medium leading-tight">Total</CardTitle>
+                <CardTitle className="text-sm font-medium leading-tight">Organizations</CardTitle>
+              </div>
+              <CardTitle className="hidden md:block text-sm font-medium">Total Organizations</CardTitle>
+            </div>
+            <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{dashboardData.totalOrgs}</div>
@@ -281,8 +295,15 @@ export default function OwnerOverviewPage() {
         {/* Total Students */}
         <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={handleViewUsers}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Students</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <div className="flex-1 min-w-0">
+              {/* Mobile: 2 lines, Desktop: 1 line */}
+              <div className="md:hidden">
+                <CardTitle className="text-sm font-medium leading-tight">Total</CardTitle>
+                <CardTitle className="text-sm font-medium leading-tight">Students</CardTitle>
+              </div>
+              <CardTitle className="hidden md:block text-sm font-medium">Total Students</CardTitle>
+            </div>
+            <Users className="h-4 w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{(dashboardData.totalStudents ?? 0).toLocaleString()}</div>
@@ -295,8 +316,15 @@ export default function OwnerOverviewPage() {
         {/* ARR */}
         <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={handleViewRevenue}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Annual Recurring Revenue</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <div className="flex-1 min-w-0">
+              {/* Mobile: 2 lines, Desktop: 1 line */}
+              <div className="md:hidden">
+                <CardTitle className="text-sm font-medium leading-tight">Annual Recurring</CardTitle>
+                <CardTitle className="text-sm font-medium leading-tight">Revenue</CardTitle>
+              </div>
+              <CardTitle className="hidden md:block text-sm font-medium">Annual Recurring Revenue</CardTitle>
+            </div>
+            <TrendingUp className="h-4 w-4 text-muted-foreground flex-shrink-0" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">£{(dashboardData.arr ?? 0).toLocaleString()}</div>
@@ -311,8 +339,15 @@ export default function OwnerOverviewPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={handleViewRevenue}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Payment Success Rate</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-600" />
+            <div className="flex-1 min-w-0">
+              {/* Mobile: 2 lines, Desktop: 1 line */}
+              <div className="md:hidden">
+                <CardTitle className="text-sm font-medium leading-tight">Payment Success</CardTitle>
+                <CardTitle className="text-sm font-medium leading-tight">Rate</CardTitle>
+              </div>
+              <CardTitle className="hidden md:block text-sm font-medium">Payment Success Rate</CardTitle>
+            </div>
+            <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{dashboardData.paymentSuccessRate}%</div>
@@ -322,7 +357,14 @@ export default function OwnerOverviewPage() {
 
         <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push('/owner/dunning')}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Overdue Accounts</CardTitle>
+            <div className="flex-1 min-w-0">
+              {/* Mobile: 2 lines, Desktop: 1 line */}
+              <div className="md:hidden">
+                <CardTitle className="text-sm font-medium leading-tight">Overdue</CardTitle>
+                <CardTitle className="text-sm font-medium leading-tight">Accounts</CardTitle>
+              </div>
+              <CardTitle className="hidden md:block text-sm font-medium">Overdue Accounts</CardTitle>
+            </div>
             <AlertTriangle className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
@@ -333,7 +375,14 @@ export default function OwnerOverviewPage() {
 
         <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={handleViewAnalytics}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Churn Rate</CardTitle>
+            <div className="flex-1 min-w-0">
+              {/* Mobile: 2 lines, Desktop: 1 line */}
+              <div className="md:hidden">
+                <CardTitle className="text-sm font-medium leading-tight">Churn</CardTitle>
+                <CardTitle className="text-sm font-medium leading-tight">Rate</CardTitle>
+              </div>
+              <CardTitle className="hidden md:block text-sm font-medium">Churn Rate</CardTitle>
+            </div>
             <ArrowDownRight className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
@@ -344,7 +393,14 @@ export default function OwnerOverviewPage() {
 
         <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={handleViewAnalytics}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Revenue per Org</CardTitle>
+            <div className="flex-1 min-w-0">
+              {/* Mobile: 2 lines, Desktop: 1 line */}
+              <div className="md:hidden">
+                <CardTitle className="text-sm font-medium leading-tight">Avg Revenue</CardTitle>
+                <CardTitle className="text-sm font-medium leading-tight">per Org</CardTitle>
+              </div>
+              <CardTitle className="hidden md:block text-sm font-medium">Avg Revenue per Org</CardTitle>
+            </div>
             <BarChart3 className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
