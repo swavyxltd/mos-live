@@ -1063,7 +1063,7 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
                     <Label htmlFor="status-reason">Reason for Status Change (Optional)</Label>
                     <Textarea
                       id="status-reason"
-                      placeholder="Enter reason for pausing, suspending, or reactivating account..."
+                      placeholder="Enter reason for pausing, deactivating, or reactivating account..."
                       value={statusChangeReason}
                       onChange={(e) => setStatusChangeReason(e.target.value)}
                       className="mt-1"
