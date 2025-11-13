@@ -65,7 +65,6 @@ export async function GET(request: NextRequest) {
           }
         }
       })
-    ])
 
     // Calculate MRR (Monthly Recurring Revenue) - sum of all active students * £1
     const mrr = totalStudents * 1
