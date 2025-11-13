@@ -208,7 +208,7 @@ export function BulkUploadStudentsModal({
         body: JSON.stringify({
           students: validStudents.map(s => ({
             ...s,
-            startMonth: s.startMonth || new Date().toISOString().slice(0, 7)
+            startMonth: new Date().toISOString().slice(0, 7) // Always use current month
           }))
         })
       })
