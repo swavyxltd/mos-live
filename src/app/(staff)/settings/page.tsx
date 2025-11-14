@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { Save, Globe, User, CreditCard, Calendar, Loader2, Download, DollarSign, Users, CheckCircle, Eye, FileText, Banknote, AlertTriangle, XCircle, Settings } from 'lucide-react'
+import { Save, Globe, User, CreditCard, Calendar, Loader2, Download, DollarSign, Users, CheckCircle, Eye, FileText, Banknote, AlertTriangle, XCircle, Settings, Shield } from 'lucide-react'
 import { toast } from 'sonner'
 import { StripePaymentMethodModal } from '@/components/stripe-payment-method'
 import { StatCard } from '@/components/ui/stat-card'
@@ -41,6 +41,7 @@ interface UserSettings {
   name: string
   email: string
   phone: string
+  twoFactorEnabled: boolean
 }
 
 interface PaymentSettings {
@@ -80,7 +81,8 @@ export default function SettingsPage() {
   const [userSettings, setUserSettings] = useState<UserSettings>({
     name: '',
     email: '',
-    phone: ''
+    phone: '',
+    twoFactorEnabled: true
   })
   const [isSendingReset, setIsSendingReset] = useState(false)
   const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>({
@@ -107,14 +109,25 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('organization')
 
   useEffect(() => {
-    if (session?.user) {
-      setUserSettings({
-        name: session.user.name || '',
-        email: session.user.email || '',
-        phone: session.user.phone || ''
-      })
-    }
+    fetchUserSettings()
   }, [session])
+
+  const fetchUserSettings = async () => {
+    try {
+      const response = await fetch('/api/settings/user')
+      if (response.ok) {
+        const data = await response.json()
+        setUserSettings({
+          name: data.name || '',
+          email: data.email || '',
+          phone: data.phone || '',
+          twoFactorEnabled: data.twoFactorEnabled !== false // Default to true
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching user settings:', error)
+    }
+  }
 
   // Fetch all settings data
   useEffect(() => {
@@ -241,7 +254,7 @@ export default function SettingsPage() {
     setOrgSettings(prev => ({ ...prev, [field]: value }))
   }
 
-  const handleUserSettingsChange = (field: keyof UserSettings, value: string) => {
+  const handleUserSettingsChange = (field: keyof UserSettings, value: string | boolean) => {
     setUserSettings(prev => ({ ...prev, [field]: value }))
   }
 
@@ -286,7 +299,8 @@ export default function SettingsPage() {
         body: JSON.stringify({
           name: userSettings.name || '',
           email: userSettings.email || '',
-          phone: userSettings.phone || ''
+          phone: userSettings.phone || '',
+          twoFactorEnabled: userSettings.twoFactorEnabled
         })
       })
       
@@ -300,7 +314,8 @@ export default function SettingsPage() {
           setUserSettings({
             name: data.user.name || '',
             email: data.user.email || '',
-            phone: data.user.phone || ''
+            phone: data.user.phone || '',
+            twoFactorEnabled: data.user.twoFactorEnabled !== false
           })
         }
         
@@ -777,27 +792,88 @@ export default function SettingsPage() {
             </div>
 
             <div className="border-t pt-4 mt-4">
-              <div className="space-y-2">
-                <Label>Password</Label>
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-muted-foreground">
-                    To change your password, click the button below to receive a reset link via email.
-                  </p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleRequestPasswordReset}
-                    disabled={isSendingReset || loading}
-                  >
-                    {isSendingReset ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Sending...
-                      </>
-                    ) : (
-                      'Reset Password'
-                    )}
-                  </Button>
+              <div className="space-y-4">
+                {/* Two-Factor Authentication */}
+                <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-gray-100 rounded-full">
+                      <Shield className="h-5 w-5 text-gray-700" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium">Two-Factor Authentication</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Add an extra layer of security to your account
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={userSettings.twoFactorEnabled}
+                    onCheckedChange={async (checked) => {
+                      handleUserSettingsChange('twoFactorEnabled', checked)
+                      // Auto-save when toggled
+                      setLoading(true)
+                      try {
+                        const response = await fetch('/api/settings/user', {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            ...userSettings,
+                            twoFactorEnabled: checked
+                          })
+                        })
+                        
+                        const data = await response.json()
+                        
+                        if (response.ok && data.success) {
+                          toast.success(checked ? 'Two-factor authentication enabled' : 'Two-factor authentication disabled')
+                          if (data.user) {
+                            setUserSettings({
+                              name: data.user.name || '',
+                              email: data.user.email || '',
+                              phone: data.user.phone || '',
+                              twoFactorEnabled: data.user.twoFactorEnabled !== false
+                            })
+                          }
+                        } else {
+                          // Revert on error
+                          handleUserSettingsChange('twoFactorEnabled', !checked)
+                          toast.error('Failed to update 2FA settings')
+                        }
+                      } catch (error) {
+                        // Revert on error
+                        handleUserSettingsChange('twoFactorEnabled', !checked)
+                        toast.error('Failed to update 2FA settings')
+                      } finally {
+                        setLoading(false)
+                      }
+                    }}
+                    disabled={loading}
+                  />
+                </div>
+
+                {/* Password */}
+                <div className="space-y-2">
+                  <Label>Password</Label>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">
+                      To change your password, click the button below to receive a reset link via email.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleRequestPasswordReset}
+                      disabled={isSendingReset || loading}
+                    >
+                      {isSendingReset ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        'Reset Password'
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>

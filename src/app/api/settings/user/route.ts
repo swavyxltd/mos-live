@@ -14,7 +14,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, email, phone } = body
+    const { name, email, phone, twoFactorEnabled } = body
 
     // Get current user
     const user = await prisma.user.findUnique({
@@ -74,6 +74,11 @@ export async function PUT(request: NextRequest) {
       updateData.phone = phone
     }
     
+    // Update 2FA status if provided
+    if (twoFactorEnabled !== undefined) {
+      updateData.twoFactorEnabled = twoFactorEnabled
+    }
+    
     // Only proceed if there's something to update
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json({ 
@@ -84,7 +89,8 @@ export async function PUT(request: NextRequest) {
           email: user.email,
           phone: user.phone,
           image: user.image,
-          isSuperAdmin: user.isSuperAdmin
+          isSuperAdmin: user.isSuperAdmin,
+          twoFactorEnabled: user.twoFactorEnabled
         }
       })
     }
@@ -98,7 +104,8 @@ export async function PUT(request: NextRequest) {
         email: true,
         phone: true,
         image: true,
-        isSuperAdmin: true
+        isSuperAdmin: true,
+        twoFactorEnabled: true
       }
     })
 
@@ -131,7 +138,8 @@ export async function GET() {
         email: true,
         phone: true,
         image: true,
-        isSuperAdmin: true
+        isSuperAdmin: true,
+        twoFactorEnabled: true
       }
     })
 
