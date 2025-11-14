@@ -88,6 +88,7 @@ const ownerNavigation = [
 
 const parentNavigation = [
   { name: 'Dashboard', href: '/parent/dashboard', icon: Home },
+  { name: 'Announcements', href: '/parent/announcements', icon: MessageSquare },
   { name: 'Attendance', href: '/parent/attendance', icon: ClipboardList },
   { name: 'Calendar', href: '/parent/calendar', icon: Calendar },
   { name: 'Payments', href: '/parent/payments', icon: CreditCard },

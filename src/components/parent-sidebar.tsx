@@ -10,7 +10,8 @@ import {
   Calendar, 
   HelpCircle,
   Users,
-  ClipboardList
+  ClipboardList,
+  MessageSquare
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -31,6 +32,7 @@ interface ParentSidebarProps {
 
 const navigation = [
   { name: 'Dashboard', href: '/parent/dashboard', icon: Home },
+  { name: 'Announcements', href: '/parent/announcements', icon: MessageSquare },
   { name: 'Attendance', href: '/parent/attendance', icon: ClipboardList },
   { name: 'Payments', href: '/parent/payments', icon: CreditCard },
   { name: 'Calendar', href: '/parent/calendar', icon: Calendar },

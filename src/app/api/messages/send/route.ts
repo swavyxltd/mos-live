@@ -9,9 +9,10 @@ import { sendEmail } from '@/lib/mail'
 const sendMessageSchema = z.object({
   title: z.string().min(1),
   body: z.string().min(1),
-  audience: z.enum(['ALL', 'BY_CLASS']),
+  audience: z.enum(['ALL', 'BY_CLASS', 'INDIVIDUAL']),
   channel: z.enum(['EMAIL', 'WHATSAPP']),
   classIds: z.array(z.string()).optional(),
+  parentId: z.string().optional(),
   targets: z.record(z.any()).optional()
 })
 
@@ -24,29 +25,17 @@ export async function POST(request: NextRequest) {
     if (orgId instanceof NextResponse) return orgId
     
     const requestBody = await request.json()
-    const { title, body, audience, channel, classIds, targets } = sendMessageSchema.parse(requestBody)
-    
-    // Create message record
-    const message = await prisma.message.create({
-      data: {
-        orgId,
-        title,
-        body,
-        audience,
-        channel,
-        status: 'DRAFT',
-        targets: targets || {}
-      }
-    })
+    const { title, body, audience, channel, classIds, parentId, targets } = sendMessageSchema.parse(requestBody)
     
     // Get recipients based on audience
-    let recipients: Array<{ email?: string; phone?: string; name: string }> = []
+    let recipients: Array<{ email?: string; phone?: string; name: string; id?: string }> = []
+    let audienceDisplayName = ''
     
     if (audience === 'ALL') {
       // Get all parents
       const parents = await prisma.user.findMany({
         where: {
-          memberships: {
+          UserOrgMembership: {
             some: {
               orgId,
               role: 'PARENT'
@@ -54,19 +43,25 @@ export async function POST(request: NextRequest) {
           }
         },
         select: {
+          id: true,
           email: true,
           phone: true,
           name: true
         }
       })
       recipients = parents
-    } else if (audience === 'BY_CLASS' && classIds) {
+      audienceDisplayName = 'All parents'
+    } else if (audience === 'BY_CLASS' && classIds && classIds.length > 0) {
       // Get parents of students in specific classes
+      const class = await prisma.class.findUnique({
+        where: { id: classIds[0] },
+        select: { name: true }
+      })
       const parents = await prisma.user.findMany({
         where: {
-          students: {
+          Student: {
             some: {
-              studentClasses: {
+              StudentClass: {
                 some: {
                   classId: { in: classIds }
                 }
@@ -75,13 +70,59 @@ export async function POST(request: NextRequest) {
           }
         },
         select: {
+          id: true,
           email: true,
           phone: true,
           name: true
         }
       })
       recipients = parents
+      audienceDisplayName = class?.name || 'Specific class'
+    } else if (audience === 'INDIVIDUAL' && parentId) {
+      // Get individual parent
+      const parent = await prisma.user.findUnique({
+        where: { id: parentId },
+        select: {
+          id: true,
+          email: true,
+          phone: true,
+          name: true
+        }
+      })
+      if (parent) {
+        recipients = [parent]
+        audienceDisplayName = parent.name || parent.email || 'Individual parent'
+      }
     }
+    
+    // Get org name for WhatsApp formatting
+    const org = await prisma.org.findUnique({
+      where: { id: orgId },
+      select: { name: true }
+    })
+    
+    // Create message record with dateSent
+    const message = await prisma.message.create({
+      data: {
+        id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        orgId,
+        title,
+        body,
+        audience,
+        channel,
+        status: 'DRAFT',
+        targets: JSON.stringify({
+          ...targets,
+          audienceDisplayName,
+          recipientCount: recipients.length,
+          orgName: org?.name || 'Madrasah',
+          classIds: audience === 'BY_CLASS' ? classIds : undefined,
+          parentId: audience === 'INDIVIDUAL' ? parentId : undefined
+        }),
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    })
     
     // Send messages
     let successCount = 0
@@ -117,16 +158,18 @@ export async function POST(request: NextRequest) {
     // Update message status
     const finalStatus = failureCount === 0 ? 'SENT' : failureCount === recipients.length ? 'FAILED' : 'SENT'
     
+    const targetsData = JSON.parse(message.targets || '{}')
     await prisma.message.update({
       where: { id: message.id },
       data: {
         status: finalStatus,
-        targets: {
-          ...targets,
+        targets: JSON.stringify({
+          ...targetsData,
           recipients: recipients.length,
           successCount,
           failureCount
-        }
+        }),
+        updatedAt: new Date()
       }
     })
     

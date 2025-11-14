@@ -3,21 +3,21 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { SendMessageModal } from './send-message-modal'
-import { Plus, Send, Users, User, BookOpen } from 'lucide-react'
+import { Plus } from 'lucide-react'
+import { formatDate } from '@/lib/utils'
 
-interface MessageData {
+interface Message {
+  id: string
   title: string
-  message: string
-  audience: 'all' | 'class' | 'individual'
-  classId?: string
-  parentId?: string
-  channels: ('email' | 'whatsapp')[]
+  body: string
+  audience: string
+  createdAt: string
+  targets: string | null
 }
 
 export function MessagesPageClient() {
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [messageType, setMessageType] = useState<'all' | 'class' | 'individual'>('all')
-  const [recentMessages, setRecentMessages] = useState<any[]>([])
+  const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -29,43 +29,43 @@ export function MessagesPageClient() {
       const response = await fetch('/api/messages')
       if (response.ok) {
         const data = await response.json()
-        // Transform API data for frontend
-        const transformed = data.map((msg: any) => ({
-          id: msg.id,
-          title: msg.title,
-          audience: msg.audience?.toLowerCase() || 'all',
-          sentAt: formatTimeAgo(new Date(msg.createdAt)),
-          content: msg.body,
-          status: msg.status?.toLowerCase() || 'sent'
-        }))
-        setRecentMessages(transformed)
+        setMessages(data)
       } else {
         console.error('Failed to fetch messages')
-        setRecentMessages([])
+        setMessages([])
       }
     } catch (error) {
       console.error('Error fetching messages:', error)
-      setRecentMessages([])
+      setMessages([])
     } finally {
       setLoading(false)
     }
   }
 
-  const formatTimeAgo = (date: Date): string => {
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffMins = Math.floor(diffMs / 60000)
-    const diffHours = Math.floor(diffMs / 3600000)
-    const diffDays = Math.floor(diffMs / 86400000)
-
-    if (diffMins < 1) return 'Just now'
-    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`
-    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`
-    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`
-    return date.toLocaleDateString()
+  const getAudienceDisplay = (message: Message): string => {
+    try {
+      const targets = message.targets ? JSON.parse(message.targets) : {}
+      if (targets.audienceDisplayName) {
+        return targets.audienceDisplayName
+      }
+    } catch (e) {
+      // Ignore parse errors
+    }
+    
+    // Fallback to audience type
+    switch (message.audience) {
+      case 'ALL':
+        return 'All parents'
+      case 'BY_CLASS':
+        return 'Specific class'
+      case 'INDIVIDUAL':
+        return 'Individual parent'
+      default:
+        return message.audience
+    }
   }
 
-  const handleSendMessage = async (data: MessageData) => {
+  const handleSendMessage = async (data: any) => {
     try {
       const response = await fetch('/api/messages/send', {
         method: 'POST',
@@ -76,15 +76,15 @@ export function MessagesPageClient() {
           title: data.title,
           body: data.message,
           audience: data.audience.toUpperCase(),
-          channel: data.channels[0]?.toUpperCase() || 'EMAIL',
-          classIds: data.classId ? [data.classId] : undefined
+          channel: 'EMAIL',
+          classIds: data.classId ? [data.classId] : undefined,
+          parentId: data.parentId
         })
       })
 
       if (response.ok) {
-        const newMessage = await response.json()
-        // Refresh messages list
-        fetchMessages()
+        await fetchMessages()
+        setIsModalOpen(false)
       } else {
         console.error('Failed to send message')
         alert('Failed to send message. Please try again.')
@@ -92,20 +92,6 @@ export function MessagesPageClient() {
     } catch (error) {
       console.error('Error sending message:', error)
       alert('Error sending message. Please try again.')
-    }
-  }
-
-  const openModal = (type: 'all' | 'class' | 'individual') => {
-    setMessageType(type)
-    setIsModalOpen(true)
-  }
-
-  const getAudienceText = (audience: string) => {
-    switch (audience) {
-      case 'all': return 'all parents'
-      case 'class': return 'specific class'
-      case 'individual': return 'individual parent'
-      default: return audience
     }
   }
 
@@ -118,75 +104,46 @@ export function MessagesPageClient() {
             Send announcements and communicate with parents.
           </p>
         </div>
-        <Button onClick={() => openModal('all')}>
+        <Button onClick={() => setIsModalOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           New Message
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Messages */}
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Messages</h3>
+      {/* Messages List */}
+      <div className="bg-white shadow rounded-lg">
+        <div className="px-4 py-5 sm:p-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Message History</h3>
+          {loading ? (
+            <div className="text-center py-8 text-gray-500">Loading messages...</div>
+          ) : messages.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              No messages have been sent yet.
+            </div>
+          ) : (
             <div className="space-y-4">
-              {recentMessages.map((message) => (
-                <div key={message.id} className="border-l-4 border-blue-400 pl-4">
-                  <div className="text-sm font-medium text-gray-900">{message.title}</div>
-                  <div className="text-sm text-gray-500">
-                    Sent to {getAudienceText(message.audience)} • {message.sentAt}
+              {messages.map((message) => (
+                <div key={message.id} className="border-b border-gray-200 pb-4 last:border-b-0 last:pb-0">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-gray-900">{message.title}</div>
+                      <div className="text-sm text-gray-500 mt-1">
+                        Sent to {getAudienceDisplay(message)} • {formatDate(new Date(message.createdAt))}
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-600 mt-1">{message.content}</div>
                 </div>
               ))}
             </div>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
-            <div className="space-y-3">
-              <Button 
-                className="w-full justify-start" 
-                variant="outline"
-                onClick={() => openModal('all')}
-              >
-                <Users className="h-4 w-4 mr-2" />
-                Send to All Parents
-              </Button>
-              <Button 
-                className="w-full justify-start" 
-                variant="outline"
-                onClick={() => openModal('class')}
-              >
-                <BookOpen className="h-4 w-4 mr-2" />
-                Send to Specific Class
-              </Button>
-              <Button 
-                className="w-full justify-start" 
-                variant="outline"
-                onClick={() => openModal('individual')}
-              >
-                <User className="h-4 w-4 mr-2" />
-                Send to Individual Parent
-              </Button>
-            </div>
-          </div>
+          )}
         </div>
       </div>
 
       <SendMessageModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        messageType={messageType}
         onSend={handleSendMessage}
       />
     </div>
   )
 }
-
-
-
-
