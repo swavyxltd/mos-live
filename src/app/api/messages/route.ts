@@ -5,7 +5,7 @@ import { authOptions } from '@/lib/auth'
 import { getActiveOrg } from '@/lib/org'
 import { prisma } from '@/lib/prisma'
 
-// GET /api/messages - Get all messages for the current org
+// GET /api/messages - Get messages for the current org with pagination
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -18,13 +18,43 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No organization found' }, { status: 404 })
     }
 
+    // Get pagination parameters
+    const searchParams = request.nextUrl.searchParams
+    const page = parseInt(searchParams.get('page') || '1', 10)
+    const limit = parseInt(searchParams.get('limit') || '10', 10)
+    const skip = (page - 1) * limit
+
+    // Get total count
+    const total = await prisma.message.count({
+      where: { orgId: org.id }
+    })
+
+    // Get paginated messages
     const messages = await prisma.message.findMany({
       where: { orgId: org.id },
       orderBy: { createdAt: 'desc' },
-      take: 50 // Limit to recent 50 messages
+      skip,
+      take: limit
     })
 
-    return NextResponse.json(messages)
+    // Serialize dates to ISO strings
+    const serializedMessages = messages.map(msg => ({
+      ...msg,
+      createdAt: msg.createdAt.toISOString(),
+      updatedAt: msg.updatedAt.toISOString()
+    }))
+
+    const totalPages = total > 0 ? Math.ceil(total / limit) : 1
+
+    return NextResponse.json({
+      messages: serializedMessages,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages
+      }
+    })
   } catch (error) {
     console.error('Error fetching messages:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

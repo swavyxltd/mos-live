@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { SendMessageModal } from './send-message-modal'
-import { Plus } from 'lucide-react'
+import { Plus, ChevronLeft, ChevronRight } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
 interface Message {
@@ -16,21 +16,37 @@ interface Message {
   targets: string | null
 }
 
+interface Pagination {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+}
+
 export function MessagesPageClient() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(1)
+  const [pagination, setPagination] = useState<Pagination>({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0
+  })
 
   useEffect(() => {
-    fetchMessages()
-  }, [])
+    fetchMessages(page)
+  }, [page])
 
-  const fetchMessages = async () => {
+  const fetchMessages = async (currentPage: number = 1) => {
+    setLoading(true)
     try {
-      const response = await fetch('/api/messages')
+      const response = await fetch(`/api/messages?page=${currentPage}&limit=10`)
       if (response.ok) {
         const data = await response.json()
-        setMessages(data)
+        setMessages(data.messages || [])
+        setPagination(data.pagination || { page: 1, limit: 10, total: 0, totalPages: 0 })
       } else {
         console.error('Failed to fetch messages')
         setMessages([])
@@ -96,7 +112,7 @@ export function MessagesPageClient() {
       })
 
       if (response.ok) {
-        await fetchMessages()
+        await fetchMessages(page)
         setIsModalOpen(false)
       } else {
         console.error('Failed to send message')
@@ -149,6 +165,38 @@ export function MessagesPageClient() {
               ))}
             </div>
           )}
+
+          {/* Pagination */}
+          {!loading && messages.length > 0 && pagination.totalPages > 1 && (
+            <div className="flex items-center justify-between border-t border-gray-200 pt-4 mt-4">
+              <div className="text-sm text-gray-500">
+                Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} messages
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                <div className="text-sm text-gray-600">
+                  Page {pagination.page} of {pagination.totalPages}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))}
+                  disabled={page === pagination.totalPages}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -156,7 +204,11 @@ export function MessagesPageClient() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSend={handleSendMessage}
-        onMessageSent={fetchMessages}
+        onMessageSent={() => {
+          // Reset to page 1 to see the new message
+          setPage(1)
+          fetchMessages(1)
+        }}
       />
     </div>
   )
