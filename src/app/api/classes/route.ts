@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
         feeDueDay: feeDueDay || null
       },
       include: {
-        teacher: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -105,7 +105,7 @@ export async function GET(request: NextRequest) {
         schedule: true,
         teacherId: true,
         monthlyFeeP: true,
-        teacher: {
+        User: {
           select: {
             id: true,
             name: true,

@@ -19,14 +19,39 @@ const sendMessageSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('[API] POST /api/messages/send - Starting')
+    
     const session = await requireRole(['ADMIN', 'OWNER'])(request)
-    if (session instanceof NextResponse) return session
+    if (session instanceof NextResponse) {
+      console.log('[API] Session check failed')
+      return session
+    }
     
     const orgId = await requireOrg(request)
-    if (orgId instanceof NextResponse) return orgId
+    if (orgId instanceof NextResponse) {
+      console.log('[API] Org check failed')
+      return orgId
+    }
+    
+    console.log('[API] Org ID:', orgId)
     
     const requestBody = await request.json()
-    const { title, body, audience, channel = 'EMAIL', classIds, parentId, targets, saveOnly = false } = sendMessageSchema.parse(requestBody)
+    console.log('[API] Request body:', { ...requestBody, body: requestBody.body?.substring(0, 50) + '...' })
+    
+    // Validate request body
+    let parsedData
+    try {
+      parsedData = sendMessageSchema.parse(requestBody)
+    } catch (validationError: any) {
+      console.error('[API] Validation error:', validationError)
+      return NextResponse.json(
+        { error: 'Validation error', details: validationError.errors },
+        { status: 400 }
+      )
+    }
+    
+    const { title, body, audience, channel = 'EMAIL', classIds, parentId, targets, saveOnly = false } = parsedData
+    console.log('[API] Parsed data:', { title, audience, channel, saveOnly, hasClassIds: !!classIds, hasParentId: !!parentId })
     
     // Get recipients based on audience
     let recipients: Array<{ email?: string; phone?: string; name: string; id?: string }> = []
@@ -102,28 +127,45 @@ export async function POST(request: NextRequest) {
       select: { name: true }
     })
     
-    // Create message record with dateSent
+    // Generate unique message ID
+    const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    
+    // Prepare targets data
+    const targetsData: any = {
+      audienceDisplayName,
+      recipientCount: recipients.length,
+      orgName: org?.name || 'Madrasah'
+    }
+    
+    if (targets && typeof targets === 'object') {
+      Object.assign(targetsData, targets)
+    }
+    
+    if (audience === 'BY_CLASS' && classIds) {
+      targetsData.classIds = classIds
+    }
+    
+    if (audience === 'INDIVIDUAL' && parentId) {
+      targetsData.parentId = parentId
+    }
+    
+    // Create message record
+    console.log('[API] Creating message with ID:', messageId)
     const message = await prisma.message.create({
       data: {
-        id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: messageId,
         orgId,
         title,
         body,
         audience,
         channel,
         status: 'DRAFT',
-        targets: JSON.stringify({
-          ...targets,
-          audienceDisplayName,
-          recipientCount: recipients.length,
-          orgName: org?.name || 'Madrasah',
-          classIds: audience === 'BY_CLASS' ? classIds : undefined,
-          parentId: audience === 'INDIVIDUAL' ? parentId : undefined
-        }),
+        targets: JSON.stringify(targetsData),
         createdAt: new Date(),
         updatedAt: new Date()
       }
     })
+    console.log('[API] Message created successfully:', message.id)
     
     // Send messages (only if not saveOnly)
     let successCount = 0
@@ -208,10 +250,21 @@ export async function POST(request: NextRequest) {
       successCount,
       failureCount
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Send message error:', error)
+    
+    // Return more specific error messages
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Validation error', details: error.errors },
+        { status: 400 }
+      )
+    }
+    
+    // Return the actual error message if available
+    const errorMessage = error?.message || 'Failed to send message'
     return NextResponse.json(
-      { error: 'Failed to send message' },
+      { error: errorMessage },
       { status: 500 }
     )
   }

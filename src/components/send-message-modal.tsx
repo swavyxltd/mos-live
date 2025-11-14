@@ -124,25 +124,45 @@ export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent }: Sen
     // Save message to database (so it appears in parent portal) without sending emails
     setLoading(true)
     try {
+      // Build request body, only including classIds/parentId if needed
+      const requestBody: any = {
+        title: formData.title,
+        body: formData.message,
+        audience: formData.audience.toUpperCase(),
+        channel: 'WHATSAPP',
+        saveOnly: true
+      }
+      
+      if (formData.audience === 'class' && formData.classId) {
+        requestBody.classIds = [formData.classId]
+      }
+      
+      if (formData.audience === 'individual' && formData.parentId) {
+        requestBody.parentId = formData.parentId
+      }
+      
       // Save message to DB without sending emails
       const response = await fetch('/api/messages/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          title: formData.title,
-          body: formData.message,
-          audience: formData.audience.toUpperCase(),
-          channel: 'WHATSAPP',
-          classIds: formData.audience === 'class' ? [formData.classId] : undefined,
-          parentId: formData.audience === 'individual' ? formData.parentId : undefined,
-          saveOnly: true
-        })
+        body: JSON.stringify(requestBody)
       })
       
       if (!response.ok) {
-        throw new Error('Failed to save message')
+        let errorMessage = 'Failed to save message'
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorMessage
+          if (errorData.details) {
+            console.error('Validation details:', errorData.details)
+          }
+        } catch (e) {
+          // If response is not JSON, use status text
+          errorMessage = `Failed to save message (${response.status})`
+        }
+        throw new Error(errorMessage)
       }
       
       // Refresh messages list
@@ -166,9 +186,10 @@ export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent }: Sen
         classId: '',
         parentId: ''
       })
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving message:', error)
-      toast.error('Failed to save message. Please try again.')
+      const errorMessage = error?.message || 'Failed to save message. Please try again.'
+      toast.error(errorMessage)
     } finally {
       setLoading(false)
     }
