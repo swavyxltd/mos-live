@@ -14,6 +14,7 @@ interface SendMessageModalProps {
   isOpen: boolean
   onClose: () => void
   onSend: (data: MessageData) => Promise<void>
+  onMessageSent?: () => void // Callback to refresh messages list
 }
 
 interface MessageData {
@@ -35,7 +36,7 @@ interface Parent {
   email: string
 }
 
-export function SendMessageModal({ isOpen, onClose, onSend }: SendMessageModalProps) {
+export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent }: SendMessageModalProps) {
   const [formData, setFormData] = useState({
     title: '',
     message: '',
@@ -144,6 +145,11 @@ export function SendMessageModal({ isOpen, onClose, onSend }: SendMessageModalPr
         throw new Error('Failed to save message')
       }
       
+      // Refresh messages list
+      if (onMessageSent) {
+        onMessageSent()
+      }
+      
       // Close main modal
       onClose()
       
@@ -191,21 +197,34 @@ export function SendMessageModal({ isOpen, onClose, onSend }: SendMessageModalPr
 
     setLoading(true)
     try {
-      await onSend({
-        title: formData.title,
-        message: formData.message,
-        audience: formData.audience,
-        classId: formData.audience === 'class' ? formData.classId : undefined,
-        parentId: formData.audience === 'individual' ? formData.parentId : undefined
+      // Send via email - explicitly use EMAIL channel and saveOnly=false
+      const response = await fetch('/api/messages/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          title: formData.title,
+          body: formData.message,
+          audience: formData.audience.toUpperCase(),
+          channel: 'EMAIL',
+          classIds: formData.audience === 'class' ? [formData.classId] : undefined,
+          parentId: formData.audience === 'individual' ? formData.parentId : undefined,
+          saveOnly: false
+        })
       })
+      
+      if (!response.ok) {
+        throw new Error('Failed to send email')
+      }
+      
+      // Refresh messages list
+      if (onMessageSent) {
+        onMessageSent()
+      }
       
       // Close main modal
       onClose()
-      
-      // Show WhatsApp message after email is sent
-      const whatsappText = await getWhatsAppMessage()
-      setWhatsAppMessage(whatsappText)
-      setShowWhatsAppModal(true)
       
       // Reset form
       setFormData({
@@ -215,8 +234,11 @@ export function SendMessageModal({ isOpen, onClose, onSend }: SendMessageModalPr
         classId: '',
         parentId: ''
       })
+      
+      toast.success('Email sent successfully!')
     } catch (error) {
-      console.error('Error sending message:', error)
+      console.error('Error sending email:', error)
+      toast.error('Failed to send email. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -326,9 +348,13 @@ export function SendMessageModal({ isOpen, onClose, onSend }: SendMessageModalPr
             <X className="h-4 w-4 mr-2" />
             Cancel
           </Button>
-          <Button type="button" variant="outline" onClick={handleCopyForWhatsApp}>
-            <Copy className="h-4 w-4 mr-2" />
-            Copy For WhatsApp
+          <Button type="button" variant="outline" onClick={handleCopyForWhatsApp} disabled={loading}>
+            {loading ? 'Saving...' : (
+              <>
+                <Copy className="h-4 w-4 mr-2" />
+                Copy For WhatsApp
+              </>
+            )}
           </Button>
           <Button type="button" onClick={handleSendEmail} disabled={loading}>
             {loading ? 'Sending...' : (

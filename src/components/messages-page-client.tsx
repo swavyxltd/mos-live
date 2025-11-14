@@ -11,6 +11,7 @@ interface Message {
   title: string
   body: string
   audience: string
+  channel: string
   createdAt: string
   targets: string | null
 }
@@ -62,6 +63,17 @@ export function MessagesPageClient() {
         return 'Individual parent'
       default:
         return message.audience
+    }
+  }
+
+  const getChannelDisplay = (message: Message): string => {
+    switch (message.channel) {
+      case 'EMAIL':
+        return 'Email'
+      case 'WHATSAPP':
+        return 'WhatsApp'
+      default:
+        return message.channel || 'Email'
     }
   }
 
@@ -129,7 +141,7 @@ export function MessagesPageClient() {
                     <div className="flex-1">
                       <div className="text-sm font-medium text-gray-900">{message.title}</div>
                       <div className="text-sm text-gray-500 mt-1">
-                        Sent to {getAudienceDisplay(message)} • {formatDate(new Date(message.createdAt))}
+                        Sent to {getAudienceDisplay(message)} via {getChannelDisplay(message)} • {formatDate(new Date(message.createdAt))}
                       </div>
                     </div>
                   </div>
@@ -144,6 +156,7 @@ export function MessagesPageClient() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSend={handleSendMessage}
+        onMessageSent={fetchMessages}
       />
     </div>
   )
