@@ -491,7 +491,7 @@ export default function SettingsPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-[var(--foreground)] break-words">Settings</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-[var(--muted-foreground)]">
             {isFinanceOfficer 
               ? "View organization settings and manage your subscription payments."
               : "Manage your organization settings and preferences."
@@ -794,7 +794,7 @@ export default function SettingsPage() {
             <div className="border-t pt-4 mt-4">
               <div className="space-y-4">
                 {/* Two-Factor Authentication */}
-                <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                <div className="flex items-center justify-between p-4 border border-[var(--border)] rounded-lg">
                   <div className="flex items-center space-x-3">
                     <div className="p-2 bg-gray-100 rounded-full">
                       <Shield className="h-5 w-5 text-gray-700" />
@@ -900,15 +900,15 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent>
               {platformBilling?.hasPaymentMethod ? (
-                <div className="bg-white border border-gray-200 rounded-lg p-4 md:p-6">
+                <div className="bg-[var(--card)] border border-[var(--border)] rounded-lg p-4 md:p-6">
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                         <CreditCard className="h-5 w-5 text-gray-700" />
                       </div>
                       <div>
-                        <h3 className="text-sm font-semibold text-gray-900">Payment Method</h3>
-                        <p className="text-sm text-gray-600">
+                        <h3 className="text-sm font-semibold text-[var(--foreground)]">Payment Method</h3>
+                        <p className="text-sm text-[var(--muted-foreground)]">
                           {platformBilling?.paymentMethods && platformBilling.paymentMethods.length > 0 ? (
                             <>•••• {platformBilling.paymentMethods[0].card?.last4 || 'N/A'}</>
                           ) : (
@@ -934,15 +934,15 @@ export default function SettingsPage() {
                   </div>
                 </div>
               ) : (
-                <div className="bg-white border border-gray-200 rounded-lg p-4 md:p-6">
+                <div className="bg-[var(--card)] border border-[var(--border)] rounded-lg p-4 md:p-6">
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                         <CreditCard className="h-5 w-5 text-gray-700" />
                       </div>
                       <div>
-                        <h3 className="text-sm font-semibold text-gray-900">Payment Method Required</h3>
-                        <p className="text-sm text-gray-600">Add a payment method to continue</p>
+                        <h3 className="text-sm font-semibold text-[var(--foreground)]">Payment Method Required</h3>
+                        <p className="text-sm text-[var(--muted-foreground)]">Add a payment method to continue</p>
                       </div>
                     </div>
                     <Button 
@@ -972,41 +972,41 @@ export default function SettingsPage() {
             <CardContent className="space-y-6">
               {/* Subscription Summary */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                <div className="bg-[var(--card)] border border-[var(--border)] rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <Calendar className="h-4 w-4 text-gray-600" />
-                    <h3 className="text-sm font-semibold text-gray-900">Next Payment</h3>
+                    <h3 className="text-sm font-semibold text-[var(--foreground)]">Next Payment</h3>
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Date</span>
-                      <span className="text-sm font-medium text-gray-900">
+                      <span className="text-sm text-[var(--muted-foreground)]">Date</span>
+                      <span className="text-sm font-medium text-[var(--foreground)]">
                         {loadingBilling ? '...' : (getNextPaymentDate() ? getNextPaymentDate()!.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A')}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Amount</span>
-                      <span className="text-sm font-medium text-gray-900">£{loadingBilling ? '...' : studentCount.toFixed(2)}</span>
+                      <span className="text-sm text-[var(--muted-foreground)]">Amount</span>
+                      <span className="text-sm font-medium text-[var(--foreground)]">£{loadingBilling ? '...' : studentCount.toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                <div className="bg-[var(--card)] border border-[var(--border)] rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <Users className="h-4 w-4 text-gray-600" />
-                    <h3 className="text-sm font-semibold text-gray-900">Status</h3>
+                    <h3 className="text-sm font-semibold text-[var(--foreground)]">Status</h3>
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Auto-pay</span>
+                      <span className="text-sm text-[var(--muted-foreground)]">Auto-pay</span>
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                        <span className="text-sm font-medium text-gray-900">Enabled</span>
+                        <span className="text-sm font-medium text-[var(--foreground)]">Enabled</span>
                       </div>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Students</span>
-                      <span className="text-sm font-medium text-gray-900">{loadingBilling ? '...' : studentCount}</span>
+                      <span className="text-sm text-[var(--muted-foreground)]">Students</span>
+                      <span className="text-sm font-medium text-[var(--foreground)]">{loadingBilling ? '...' : studentCount}</span>
                     </div>
                   </div>
                 </div>

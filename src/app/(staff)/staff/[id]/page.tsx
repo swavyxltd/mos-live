@@ -116,7 +116,7 @@ export default async function StaffDetailsPage({ params }: StaffDetailsPageProps
       <div className="space-y-6">
         <div className="flex items-center gap-4">
           <Link href="/staff">
-            <button className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors">
+            <button className="flex items-center gap-2 text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors">
               <ArrowLeft className="h-4 w-4" />
               Back to Staff
             </button>
@@ -124,7 +124,7 @@ export default async function StaffDetailsPage({ params }: StaffDetailsPageProps
         </div>
         <Card>
           <CardContent className="text-center py-12">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Teacher not found</h3>
+            <h3 className="text-lg font-medium text-[var(--foreground)] mb-2">Teacher not found</h3>
             <p className="text-gray-500">The teacher you're looking for doesn't exist.</p>
           </CardContent>
         </Card>
@@ -137,7 +137,7 @@ export default async function StaffDetailsPage({ params }: StaffDetailsPageProps
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link href="/staff">
-            <button className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors">
+            <button className="flex items-center gap-2 text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors">
               <ArrowLeft className="h-4 w-4" />
               Back to Staff
             </button>
@@ -177,7 +177,7 @@ export default async function StaffDetailsPage({ params }: StaffDetailsPageProps
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900">{teacherData.name}</h3>
+                  <h3 className="text-xl font-semibold text-[var(--foreground)]">{teacherData.name}</h3>
                   <div className="flex items-center gap-2 mt-1">
                     <Badge variant={teacherData.isActive ? 'default' : 'secondary'}>
                       {teacherData.isActive ? 'Active' : 'Inactive'}
@@ -249,7 +249,7 @@ export default async function StaffDetailsPage({ params }: StaffDetailsPageProps
               ) : (
                 <div className="text-center py-8">
                   <GraduationCap className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No classes assigned</h3>
+                  <h3 className="text-lg font-medium text-[var(--foreground)] mb-2">No classes assigned</h3>
                   <p className="text-gray-500">This teacher is not assigned to any classes yet.</p>
                 </div>
               )}
@@ -314,7 +314,7 @@ export default async function StaffDetailsPage({ params }: StaffDetailsPageProps
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Member Since</span>
-                <span className="text-sm text-gray-900">
+                <span className="text-sm text-[var(--foreground)]">
                   {teacherData.createdAt.toLocaleDateString()}
                 </span>
               </div>

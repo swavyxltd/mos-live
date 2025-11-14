@@ -115,7 +115,7 @@ export default async function ClassDetailsPage({ params }: ClassDetailsPageProps
       <div className="space-y-6">
         <div className="flex items-center gap-4">
           <Link href="/classes">
-            <button className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors">
+            <button className="flex items-center gap-2 text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors">
               <ArrowLeft className="h-4 w-4" />
               Back to Classes
             </button>
@@ -123,7 +123,7 @@ export default async function ClassDetailsPage({ params }: ClassDetailsPageProps
         </div>
         <Card>
           <CardContent className="text-center py-12">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Class not found</h3>
+            <h3 className="text-lg font-medium text-[var(--foreground)] mb-2">Class not found</h3>
             <p className="text-gray-500">The class you're looking for doesn't exist.</p>
           </CardContent>
         </Card>
@@ -141,7 +141,7 @@ export default async function ClassDetailsPage({ params }: ClassDetailsPageProps
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link href="/classes">
-            <button className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors">
+            <button className="flex items-center gap-2 text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors">
               <ArrowLeft className="h-4 w-4" />
               Back to Classes
             </button>
@@ -173,7 +173,7 @@ export default async function ClassDetailsPage({ params }: ClassDetailsPageProps
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <h3 className="text-xl font-semibold text-gray-900">{classData.name}</h3>
+                <h3 className="text-xl font-semibold text-[var(--foreground)]">{classData.name}</h3>
                 {classData.description && (
                   <p className="text-gray-600 mt-1">{classData.description}</p>
                 )}
@@ -243,7 +243,7 @@ export default async function ClassDetailsPage({ params }: ClassDetailsPageProps
               ) : (
                 <div className="text-center py-8">
                   <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No students enrolled</h3>
+                  <h3 className="text-lg font-medium text-[var(--foreground)] mb-2">No students enrolled</h3>
                   <p className="text-gray-500">Students will appear here once they're enrolled in this class.</p>
                 </div>
               )}
@@ -265,7 +265,7 @@ export default async function ClassDetailsPage({ params }: ClassDetailsPageProps
               {classData.teacher ? (
                 <div className="space-y-3">
                   <div>
-                    <h4 className="font-medium text-gray-900">{classData.teacher.name}</h4>
+                    <h4 className="font-medium text-[var(--foreground)]">{classData.teacher.name}</h4>
                     <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
                       <Mail className="h-4 w-4" />
                       <span>{classData.teacher.email}</span>

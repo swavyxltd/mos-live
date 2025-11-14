@@ -65,7 +65,7 @@ export default async function EditClassPage({ params }: EditClassPageProps) {
       <div className="space-y-6">
         <div className="flex items-center gap-4">
           <Link href="/classes">
-            <button className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors">
+            <button className="flex items-center gap-2 text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors">
               <ArrowLeft className="h-4 w-4" />
               Back to Classes
             </button>
@@ -73,7 +73,7 @@ export default async function EditClassPage({ params }: EditClassPageProps) {
         </div>
         <div className="max-w-4xl">
           <div className="text-center py-12">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Class not found</h3>
+            <h3 className="text-lg font-medium text-[var(--foreground)] mb-2">Class not found</h3>
             <p className="text-gray-500">The class you're trying to edit doesn't exist.</p>
           </div>
         </div>

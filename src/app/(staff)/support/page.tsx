@@ -151,7 +151,7 @@ export default function SupportPage() {
           </div>
           <Button 
             onClick={() => setShowCreateTicket(true)}
-            className="bg-white text-black hover:bg-gray-100"
+            className="bg-[var(--card)] text-[var(--foreground)] hover:bg-[var(--accent)]"
           >
             <Plus className="h-4 w-4 mr-2" />
             New Ticket
@@ -168,8 +168,8 @@ export default function SupportPage() {
                 <BookOpen className="h-6 w-6 text-blue-600" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-gray-900">Documentation</h3>
-                <p className="text-sm text-gray-500">Guides & tutorials</p>
+                <h3 className="font-semibold text-[var(--foreground)]">Documentation</h3>
+                <p className="text-sm text-[var(--muted-foreground)]">Guides & tutorials</p>
               </div>
             </div>
           </Card>
@@ -182,8 +182,8 @@ export default function SupportPage() {
                 <HelpCircle className="h-6 w-6 text-green-600" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-gray-900">FAQ</h3>
-                <p className="text-sm text-gray-500">Common questions</p>
+                <h3 className="font-semibold text-[var(--foreground)]">FAQ</h3>
+                <p className="text-sm text-[var(--muted-foreground)]">Common questions</p>
               </div>
             </div>
           </Card>
@@ -195,8 +195,8 @@ export default function SupportPage() {
               <Video className="h-6 w-6 text-purple-600" />
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-gray-900">Video Tutorials</h3>
-              <p className="text-sm text-gray-500">Step-by-step guides</p>
+              <h3 className="font-semibold text-[var(--foreground)]">Video Tutorials</h3>
+              <p className="text-sm text-[var(--muted-foreground)]">Step-by-step guides</p>
             </div>
           </div>
         </Card>
@@ -210,8 +210,8 @@ export default function SupportPage() {
           <Card className="p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-xl font-semibold text-gray-900">Your Support Tickets</h2>
-                <p className="text-sm text-gray-500 mt-1">Manage and track your support requests</p>
+                <h2 className="text-xl font-semibold text-[var(--foreground)]">Your Support Tickets</h2>
+                <p className="text-sm text-[var(--muted-foreground)] mt-1">Manage and track your support requests</p>
               </div>
               <div className="flex items-center space-x-3">
                 <div className="relative">
@@ -243,8 +243,8 @@ export default function SupportPage() {
                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <MessageSquare className="h-8 w-8 text-gray-400" />
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No tickets found</h3>
-                  <p className="text-gray-500 mb-4">Create your first support ticket to get started</p>
+                  <h3 className="text-lg font-medium text-[var(--foreground)] mb-2">No tickets found</h3>
+                  <p className="text-[var(--muted-foreground)] mb-4">Create your first support ticket to get started</p>
                   <Button onClick={() => setShowCreateTicket(true)}>
                     <Plus className="h-4 w-4 mr-2" />
                     Create Ticket
@@ -256,13 +256,13 @@ export default function SupportPage() {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-2">
-                          <h4 className="font-medium text-gray-900">{ticket.subject}</h4>
+                          <h4 className="font-medium text-[var(--foreground)]">{ticket.subject}</h4>
                           <Badge className={getStatusColor(ticket.status)}>
                             {ticket.status.replace('_', ' ')}
                           </Badge>
                         </div>
-                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">{ticket.body}</p>
-                        <div className="flex items-center space-x-4 text-xs text-gray-500">
+                        <p className="text-sm text-[var(--muted-foreground)] mb-3 line-clamp-2">{ticket.body}</p>
+                        <div className="flex items-center space-x-4 text-xs text-[var(--muted-foreground)]">
                           <span className="flex items-center">
                             <span className="w-2 h-2 bg-gray-400 rounded-full mr-2"></span>
                             By {ticket.createdBy?.name}
@@ -314,14 +314,14 @@ export default function SupportPage() {
         <div className="space-y-6">
           {/* Contact Support */}
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Contact Support</h3>
+            <h3 className="text-lg font-semibold text-[var(--foreground)] mb-4">Contact Support</h3>
             <div className="space-y-4">
-              <div className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+              <div className="flex items-start space-x-3 p-3 bg-[var(--muted)] rounded-lg">
                 <Mail className="h-5 w-5 text-blue-600 mt-1" />
                 <div>
-                  <h4 className="font-medium text-gray-900">Email Support</h4>
-                  <p className="text-sm text-gray-600">support@madrasah.io</p>
-                  <p className="text-xs text-gray-500 mt-1">Response time: 24 hours</p>
+                  <h4 className="font-medium text-[var(--foreground)]">Email Support</h4>
+                  <p className="text-sm text-[var(--muted-foreground)]">support@madrasah.io</p>
+                  <p className="text-xs text-[var(--muted-foreground)] mt-1">Response time: 24 hours</p>
                 </div>
               </div>
             </div>
@@ -329,23 +329,23 @@ export default function SupportPage() {
 
           {/* Quick Stats */}
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Support Stats</h3>
+            <h3 className="text-lg font-semibold text-[var(--foreground)] mb-4">Support Stats</h3>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Open Tickets</span>
+                <span className="text-sm text-[var(--muted-foreground)]">Open Tickets</span>
                 <span className="font-semibold text-green-600">
                   {tickets.filter(t => t.status === 'OPEN').length}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">In Progress</span>
+                <span className="text-sm text-[var(--muted-foreground)]">In Progress</span>
                 <span className="font-semibold text-yellow-600">
                   {tickets.filter(t => t.status === 'IN_PROGRESS').length}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Resolved</span>
-                <span className="font-semibold text-gray-600">
+                <span className="text-sm text-[var(--muted-foreground)]">Resolved</span>
+                <span className="font-semibold text-[var(--muted-foreground)]">
                   {tickets.filter(t => t.status === 'CLOSED').length}
                 </span>
               </div>

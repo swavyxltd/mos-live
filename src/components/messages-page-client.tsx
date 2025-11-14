@@ -128,8 +128,8 @@ export function MessagesPageClient() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-[var(--foreground)]">Messages</h1>
+          <p className="mt-1 text-sm text-[var(--muted-foreground)]">
             Send announcements and communicate with parents.
           </p>
         </div>
@@ -140,23 +140,23 @@ export function MessagesPageClient() {
       </div>
 
       {/* Messages List */}
-      <div className="bg-white shadow rounded-lg">
+      <div className="bg-[var(--card)] shadow rounded-lg border border-[var(--border)]">
         <div className="px-4 py-5 sm:p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Message History</h3>
+          <h3 className="text-lg font-medium text-[var(--foreground)] mb-4">Message History</h3>
           {loading ? (
-            <div className="text-center py-8 text-gray-500">Loading messages...</div>
+            <div className="text-center py-8 text-[var(--muted-foreground)]">Loading messages...</div>
           ) : messages.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-[var(--muted-foreground)]">
               No messages have been sent yet.
             </div>
           ) : (
             <div className="space-y-4">
               {messages.map((message) => (
-                <div key={message.id} className="border-b border-gray-200 pb-4 last:border-b-0 last:pb-0">
+                <div key={message.id} className="border-b border-[var(--border)] pb-4 last:border-b-0 last:pb-0">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-900">{message.title}</div>
-                      <div className="text-sm text-gray-500 mt-1">
+                      <div className="text-sm font-medium text-[var(--foreground)]">{message.title}</div>
+                      <div className="text-sm text-[var(--muted-foreground)] mt-1">
                         Sent to {getAudienceDisplay(message)} via {getChannelDisplay(message)} • {formatDate(new Date(message.createdAt))}
                       </div>
                     </div>
@@ -168,8 +168,8 @@ export function MessagesPageClient() {
 
           {/* Pagination */}
           {!loading && messages.length > 0 && pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-gray-200 pt-4 mt-4">
-              <div className="text-sm text-gray-500">
+            <div className="flex items-center justify-between border-t border-[var(--border)] pt-4 mt-4">
+              <div className="text-sm text-[var(--muted-foreground)]">
                 Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} messages
               </div>
               <div className="flex items-center space-x-2">
@@ -182,7 +182,7 @@ export function MessagesPageClient() {
                   <ChevronLeft className="h-4 w-4" />
                   Previous
                 </Button>
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-[var(--muted-foreground)]">
                   Page {pagination.page} of {pagination.totalPages}
                 </div>
                 <Button

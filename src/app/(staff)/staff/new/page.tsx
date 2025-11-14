@@ -22,7 +22,7 @@ export default async function NewStaffPage() {
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Link href="/staff">
-          <button className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors">
+          <button className="flex items-center gap-2 text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors">
             <ArrowLeft className="h-4 w-4" />
             Back to Staff
           </button>
@@ -30,8 +30,8 @@ export default async function NewStaffPage() {
       </div>
 
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Add New Staff</h1>
-        <p className="mt-1 text-sm text-gray-500">Create a new staff member account with appropriate permissions</p>
+        <h1 className="text-2xl font-bold text-[var(--foreground)]">Add New Staff</h1>
+        <p className="mt-1 text-sm text-[var(--muted-foreground)]">Create a new staff member account with appropriate permissions</p>
       </div>
 
       <div className="max-w-4xl">

@@ -17,7 +17,7 @@ export default async function NewClassPage() {
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Link href="/classes">
-          <button className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors">
+          <button className="flex items-center gap-2 text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors">
             <ArrowLeft className="h-4 w-4" />
             Back to Classes
           </button>
