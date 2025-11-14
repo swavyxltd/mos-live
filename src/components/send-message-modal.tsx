@@ -406,20 +406,20 @@ export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent }: Sen
             <h2 className="text-lg font-semibold text-[var(--foreground)]">WhatsApp Message</h2>
             <button
               onClick={() => setShowWhatsAppModal(false)}
-              className="p-1 rounded-md hover:bg-gray-100 transition-colors"
+              className="p-1 rounded-md hover:bg-[var(--accent)] transition-colors"
             >
-              <X className="h-4 w-4 text-gray-500" />
+              <X className="h-4 w-4 text-[var(--muted-foreground)]" />
             </button>
           </div>
           
           {/* Content */}
           <div className="p-6 overflow-y-auto flex-1">
             <div className="space-y-4">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-[var(--muted-foreground)]">
                 Copy this message and send it via your WhatsApp channel or group:
               </p>
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <pre className="whitespace-pre-wrap text-sm text-gray-900 font-mono">
+              <div className="bg-[var(--muted)] border border-[var(--border)] rounded-lg p-4">
+                <pre className="whitespace-pre-wrap text-sm text-[var(--foreground)] font-mono">
                   {whatsAppMessage}
                 </pre>
               </div>
