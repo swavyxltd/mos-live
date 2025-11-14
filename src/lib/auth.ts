@@ -13,7 +13,7 @@ async function getUserRoleHints(userId: string) {
     const memberships = await prisma.userOrgMembership.findMany({
       where: { userId },
       include: { 
-        org: {
+        Org: {
           select: {
             id: true
           }
@@ -33,7 +33,7 @@ async function getUserRoleHints(userId: string) {
         // Include organizations in role hints
         for (const membership of memberships) {
           // Skip if org is null
-          if (!membership.org) {
+          if (!membership.Org) {
             continue
           }
       

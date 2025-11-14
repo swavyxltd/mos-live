@@ -51,7 +51,7 @@ export default function CalendarPage() {
             location: event.location || '',
             teacher: event.teacher || '',
             description: event.description || '',
-            class: event.class
+            class: event.Class
           }))
           setEvents(transformed)
         } else {

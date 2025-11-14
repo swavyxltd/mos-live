@@ -5,12 +5,13 @@ import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
 import { StatCard } from '@/components/ui/stat-card'
 import { isDemoMode } from '@/lib/demo-mode'
 import { format } from 'date-fns'
 import { 
   CreditCard, 
-  DollarSign, 
+  Coins, 
   TrendingUp,
   Receipt,
   Settings,
@@ -35,6 +36,9 @@ export default function ParentInvoicesPage() {
     cashPaymentEnabled: true,
     bankTransferEnabled: true,
     paymentInstructions: '',
+    bankAccountName: null as string | null,
+    bankSortCode: null as string | null,
+    bankAccountNumber: null as string | null,
     hasStripeConfigured: false
   })
   const [preferredPaymentMethod, setPreferredPaymentMethod] = useState<'CARD' | 'CASH' | 'BANK_TRANSFER' | null>(null)
@@ -395,7 +399,7 @@ export default function ParentInvoicesPage() {
                     className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
                   />
                   <div className="flex items-center">
-                    <DollarSign className="h-4 w-4 mr-2" />
+                    <Coins className="h-4 w-4 mr-2 text-gray-500" strokeWidth={1.5} />
                     <span className="text-sm">Cash (at school office)</span>
                   </div>
                 </label>
@@ -425,6 +429,41 @@ export default function ParentInvoicesPage() {
                 </p>
               </div>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Bank Transfer Details */}
+      {preferredPaymentMethod === 'BANK_TRANSFER' && paymentSettings.bankAccountName && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <TrendingUp className="h-5 w-5 mr-2" />
+              Bank Transfer Details
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label className="text-xs text-gray-500">Account Name</Label>
+                <p className="text-sm font-medium text-gray-900 mt-1">{paymentSettings.bankAccountName}</p>
+              </div>
+              <div>
+                <Label className="text-xs text-gray-500">Sort Code</Label>
+                <p className="text-sm font-medium text-gray-900 mt-1">{paymentSettings.bankSortCode}</p>
+              </div>
+              <div>
+                <Label className="text-xs text-gray-500">Account Number</Label>
+                <p className="text-sm font-medium text-gray-900 mt-1">{paymentSettings.bankAccountNumber}</p>
+              </div>
+            </div>
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-xs font-medium text-blue-900 mb-1">Setting up a Standing Order:</p>
+              <p className="text-xs text-blue-700">
+                You can set up a standing order with your bank using these details to automatically pay your monthly fees. 
+                Contact your bank to set this up, and payments will be made automatically each month on the due date.
+              </p>
+            </div>
           </CardContent>
         </Card>
       )}

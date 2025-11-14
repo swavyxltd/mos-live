@@ -63,13 +63,6 @@ export function FinanceDashboardContent() {
       if (response.ok) {
         const data = await response.json()
         
-        // Calculate additional finance metrics
-        const totalInvoices = data.pendingInvoices + (data.totalStudents || 0)
-        const paidCount = data.totalStudents - data.pendingInvoices
-        const collectionRate = data.totalStudents > 0 
-          ? ((paidCount / data.totalStudents) * 100).toFixed(1)
-          : 0
-
         // Get outstanding invoices total
         const outstandingResponse = await fetch('/api/invoices?status=PENDING')
         let totalOutstanding = 0
@@ -78,15 +71,21 @@ export function FinanceDashboardContent() {
           totalOutstanding = invoices.reduce((sum: number, inv: any) => sum + (Number(inv.amountP || 0) / 100), 0)
         }
 
+        // Calculate collection rate (paid invoices / total invoices)
+        const totalInvoices = (data.paidThisMonth || 0) + (data.pendingInvoices || 0) + (data.overduePayments || 0)
+        const collectionRate = totalInvoices > 0 
+          ? (((data.paidThisMonth || 0) / totalInvoices) * 100)
+          : 0
+
         setStats({
           totalStudents: data.totalStudents || 0,
           monthlyRevenue: data.monthlyRevenue || 0,
           pendingInvoices: data.pendingInvoices || 0,
           overduePayments: data.overduePayments || 0,
-          paidThisMonth: paidCount,
+          paidThisMonth: data.paidThisMonth || 0,
           totalOutstanding,
-          averagePaymentTime: 8.5, // TODO: Calculate from actual payment data
-          collectionRate: Number(collectionRate)
+          averagePaymentTime: data.averagePaymentTime || 0,
+          collectionRate: Number(collectionRate.toFixed(1))
         })
       } else {
         console.error('Failed to fetch finance stats')
@@ -201,9 +200,7 @@ export function FinanceDashboardContent() {
           <StatCard
             title="Total Students"
             value={totalStudents}
-            change={{ value: "+12.5%", type: "positive" }}
             description="Active enrollments"
-            detail="+5 new this month"
             icon={<Users className="h-4 w-4" />}
           />
         </Link>
@@ -211,9 +208,7 @@ export function FinanceDashboardContent() {
           <StatCard
             title="Monthly Revenue"
             value={`£${monthlyRevenue.toLocaleString()}`}
-            change={{ value: "+8.2%", type: "positive" }}
             description="Recurring revenue"
-            detail="MRR growth trend"
             icon={<DollarSign className="h-4 w-4" />}
           />
         </Link>
@@ -221,9 +216,7 @@ export function FinanceDashboardContent() {
           <StatCard
             title="Paid This Month"
             value={paidThisMonth}
-            change={{ value: "+15%", type: "positive" }}
             description="Successful payments"
-            detail="Out of 47 students"
             icon={<CheckCircle className="h-4 w-4" />}
           />
         </Link>
@@ -257,10 +250,8 @@ export function FinanceDashboardContent() {
         <Link href="/payments" className="block">
           <StatCard
             title="Avg Payment Time"
-            value={`${averagePaymentTime} days`}
-            change={{ value: "-2 days", type: "positive" }}
+            value={averagePaymentTime > 0 ? `${averagePaymentTime.toFixed(1)} days` : 'N/A'}
             description="From invoice to payment"
-            detail="Improving trend"
             icon={<TrendingUp className="h-4 w-4" />}
           />
         </Link>
@@ -268,9 +259,7 @@ export function FinanceDashboardContent() {
           <StatCard
             title="Collection Rate"
             value={`${collectionRate}%`}
-            change={{ value: "+3.2%", type: "positive" }}
             description="Payment success rate"
-            detail="Above target of 90%"
             icon={<PieChart className="h-4 w-4" />}
           />
         </Link>

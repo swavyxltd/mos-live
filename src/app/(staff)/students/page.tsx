@@ -21,10 +21,10 @@ export default async function StudentsPage() {
       isArchived: false
     },
     include: {
-      primaryParent: true,
-      studentClasses: {
+      User: true,
+      StudentClass: {
         include: {
-          class: true
+          Class: true
         }
       }
     }
@@ -52,9 +52,9 @@ export default async function StudentsPage() {
       dateOfBirth: student.dateOfBirth,
       age,
       grade: student.grade || '',
-      parentName: student.primaryParent?.name || '',
-      parentEmail: student.primaryParent?.email || '',
-      parentPhone: student.primaryParent?.phone || '',
+      parentName: student.User?.name || '',
+      parentEmail: student.User?.email || '',
+      parentPhone: student.User?.phone || '',
       address: student.address || '',
       emergencyContact: student.emergencyContact || '',
       allergies: student.allergies || 'None',
@@ -66,9 +66,9 @@ export default async function StudentsPage() {
       orgId: student.orgId,
       createdAt: student.createdAt,
       updatedAt: student.updatedAt,
-      classes: student.studentClasses.map(sc => ({
-        id: sc.class.id,
-        name: sc.class.name
+      classes: student.StudentClass.map(sc => ({
+        id: sc.Class.id,
+        name: sc.Class.name
       })),
       attendanceRate: 0, // TODO: Calculate from attendance records
       lastAttendance: new Date() // TODO: Get from attendance records

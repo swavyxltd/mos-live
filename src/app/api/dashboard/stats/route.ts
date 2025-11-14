@@ -179,6 +179,39 @@ export async function GET(request: NextRequest) {
       ? ((monthlyRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
       : monthlyRevenue > 0 ? 100 : 0
 
+    // Calculate paid this month count
+    const paidThisMonth = monthlyInvoices.length
+
+    // Calculate average payment time (from invoice creation to payment)
+    const paidInvoicesWithDates = await prisma.invoice.findMany({
+      where: {
+        orgId: org.id,
+        status: 'PAID',
+        paidAt: { not: null },
+        createdAt: { not: null }
+      },
+      select: {
+        createdAt: true,
+        paidAt: true
+      },
+      take: 100 // Sample last 100 paid invoices
+    })
+
+    let averagePaymentTime = 0
+    if (paidInvoicesWithDates.length > 0) {
+      const paymentTimes = paidInvoicesWithDates
+        .filter(inv => inv.createdAt && inv.paidAt)
+        .map(inv => {
+          const created = new Date(inv.createdAt!)
+          const paid = new Date(inv.paidAt!)
+          return (paid.getTime() - created.getTime()) / (1000 * 60 * 60 * 24) // Convert to days
+        })
+      
+      if (paymentTimes.length > 0) {
+        averagePaymentTime = paymentTimes.reduce((sum, time) => sum + time, 0) / paymentTimes.length
+      }
+    }
+
     // Get attendance trend for last 14 days - optimized single query
     const trendStartDate = new Date(now)
     trendStartDate.setDate(now.getDate() - 13)
@@ -236,7 +269,9 @@ export async function GET(request: NextRequest) {
       pendingInvoices,
       overduePayments,
       pendingApplications,
-      attendanceTrend
+      attendanceTrend,
+      paidThisMonth,
+      averagePaymentTime
     })
 
     // Cache response for 30 seconds to improve performance

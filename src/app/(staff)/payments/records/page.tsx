@@ -17,7 +17,7 @@ import {
   Clock, 
   AlertCircle,
   Loader2,
-  DollarSign,
+  Coins,
   Calendar,
   User,
   BookOpen
@@ -236,8 +236,6 @@ export default function PaymentRecordsPage() {
         return 'Cash'
       case 'BANK_TRANSFER':
         return 'Bank Transfer'
-      case 'STRIPE':
-        return 'Card Payment'
       default:
         return 'Not set'
     }
@@ -316,7 +314,6 @@ export default function PaymentRecordsPage() {
                   <SelectItem value="">All methods</SelectItem>
                   <SelectItem value="CASH">Cash</SelectItem>
                   <SelectItem value="BANK_TRANSFER">Bank Transfer</SelectItem>
-                  <SelectItem value="STRIPE">Card Payment</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -353,7 +350,7 @@ export default function PaymentRecordsPage() {
             </div>
           ) : filteredRecords.length === 0 ? (
             <div className="text-center py-8">
-              <DollarSign className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <Coins className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground">No payment records found</p>
             </div>
           ) : (

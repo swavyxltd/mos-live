@@ -94,7 +94,6 @@ export async function generatePaymentRecordPDF(paymentRecordId: string): Promise
   pdf.setFont(undefined, 'normal')
   const methodLabel = paymentRecord.method === 'CASH' ? 'Cash' 
     : paymentRecord.method === 'BANK_TRANSFER' ? 'Bank Transfer' 
-    : paymentRecord.method === 'STRIPE' ? 'Card Payment' 
     : paymentRecord.method || 'Not specified'
   pdf.text(methodLabel, margin + 40, y)
   y += 8

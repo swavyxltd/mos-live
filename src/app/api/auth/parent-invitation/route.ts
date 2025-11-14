@@ -38,7 +38,10 @@ export async function GET(request: NextRequest) {
             name: true,
             cashPaymentEnabled: true,
             bankTransferEnabled: true,
-            stripeEnabled: true
+            stripeEnabled: true,
+            bankAccountName: true,
+            bankSortCode: true,
+            bankAccountNumber: true
           }
         }
       }
@@ -101,6 +104,11 @@ export async function GET(request: NextRequest) {
         cash: invitation.org.cashPaymentEnabled,
         bankTransfer: invitation.org.bankTransferEnabled,
         stripe: invitation.org.stripeEnabled
+      },
+      bankDetails: {
+        accountName: invitation.org.bankAccountName,
+        sortCode: invitation.org.bankSortCode,
+        accountNumber: invitation.org.bankAccountNumber
       }
     })
   } catch (error: any) {

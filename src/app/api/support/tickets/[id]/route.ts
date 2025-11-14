@@ -27,7 +27,7 @@ export async function GET(
         orgId: org.id
       },
       include: {
-        createdBy: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -88,7 +88,7 @@ export async function PATCH(
       where: { id: params.id },
       data: updateData,
       include: {
-        createdBy: {
+        User: {
           select: {
             id: true,
             name: true,

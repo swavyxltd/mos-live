@@ -10,8 +10,8 @@ import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { 
   CreditCard, 
-  DollarSign, 
-  TrendingUp, 
+  Coins, 
+  Building2, 
   Save, 
   Loader2, 
   CheckCircle, 
@@ -28,6 +28,9 @@ interface PaymentMethodSettings {
   cashPaymentEnabled: boolean
   bankTransferEnabled: boolean
   paymentInstructions: string
+  bankAccountName: string | null
+  bankSortCode: string | null
+  bankAccountNumber: string | null
   hasStripeConfigured: boolean
 }
 
@@ -42,6 +45,9 @@ export function PaymentMethodsTab() {
     cashPaymentEnabled: true,
     bankTransferEnabled: true,
     paymentInstructions: '',
+    bankAccountName: null,
+    bankSortCode: null,
+    bankAccountNumber: null,
     hasStripeConfigured: false
   })
   const [stripeKeys, setStripeKeys] = useState({
@@ -59,7 +65,13 @@ export function PaymentMethodsTab() {
       const response = await fetch('/api/settings/payment-methods')
       if (response.ok) {
         const data = await response.json()
-        setSettings(data)
+        setSettings({
+          ...data,
+          paymentInstructions: data.paymentInstructions || '',
+          bankAccountName: data.bankAccountName || null,
+          bankSortCode: data.bankSortCode || null,
+          bankAccountNumber: data.bankAccountNumber || null
+        })
       } else {
         throw new Error('Failed to fetch payment settings')
       }
@@ -86,7 +98,10 @@ export function PaymentMethodsTab() {
           ...settings,
           stripePublishableKey: stripeKeys.publishableKey,
           stripeSecretKey: stripeKeys.secretKey,
-          stripeWebhookSecret: stripeKeys.webhookSecret
+          stripeWebhookSecret: stripeKeys.webhookSecret,
+          bankAccountName: settings.bankAccountName,
+          bankSortCode: settings.bankSortCode,
+          bankAccountNumber: settings.bankAccountNumber
         })
       })
 
@@ -127,7 +142,7 @@ export function PaymentMethodsTab() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <DollarSign className="h-5 w-5" />
+            <Coins className="h-5 w-5 text-gray-500" strokeWidth={1.5} />
             <span>Available Payment Methods</span>
           </CardTitle>
           <CardDescription>
@@ -135,37 +150,11 @@ export function PaymentMethodsTab() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Automatic Card Payments */}
-          <div className="flex items-center justify-between p-4 border border-[var(--border)] rounded-lg">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-blue-100 rounded-full">
-                <CreditCard className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <h3 className="font-medium">Automatic Card Payments</h3>
-                <p className="text-sm text-[var(--muted-foreground)]">
-                  Parents can set up automatic payments via credit/debit cards
-                </p>
-                {settings.stripeEnabled && (
-                  <div className="flex items-center space-x-1 mt-1">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <span className="text-xs text-green-600">Stripe configured</span>
-                  </div>
-                )}
-              </div>
-            </div>
-            <Switch
-              checked={settings.autoPaymentEnabled}
-              onCheckedChange={(checked) => handleSettingChange('autoPaymentEnabled', checked)}
-              disabled={!hasPermission('manage_payments')}
-            />
-          </div>
-
           {/* Cash Payments */}
           <div className="flex items-center justify-between p-4 border border-[var(--border)] rounded-lg">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-green-100 rounded-full">
-                <DollarSign className="h-5 w-5 text-green-600" />
+              <div className="p-2 bg-gray-100 rounded-full">
+                <Coins className="h-5 w-5 text-gray-500" strokeWidth={1.5} />
               </div>
               <div>
                 <h3 className="font-medium">Cash Payments</h3>
@@ -184,8 +173,8 @@ export function PaymentMethodsTab() {
           {/* Bank Transfer */}
           <div className="flex items-center justify-between p-4 border border-[var(--border)] rounded-lg">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-purple-100 rounded-full">
-                <TrendingUp className="h-5 w-5 text-purple-600" />
+              <div className="p-2 bg-gray-100 rounded-full">
+                <Building2 className="h-5 w-5 text-gray-700" strokeWidth={1.5} />
               </div>
               <div>
                 <h3 className="font-medium">Bank Transfer</h3>
@@ -200,77 +189,87 @@ export function PaymentMethodsTab() {
               disabled={!hasPermission('manage_payments')}
             />
           </div>
+
+          {/* Automatic Card Payments */}
+          <div className="flex items-center justify-between p-4 border border-[var(--border)] rounded-lg opacity-50 pointer-events-none">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-gray-100 rounded-full">
+                <CreditCard className="h-5 w-5 text-gray-400" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-medium text-gray-500">Automatic Card Payments</h3>
+                  <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded">Coming soon</span>
+                </div>
+                <p className="text-sm text-gray-400">
+                  Parents can set up automatic payments via credit/debit cards
+                </p>
+              </div>
+            </div>
+            <Switch
+              checked={false}
+              disabled={true}
+            />
+          </div>
         </CardContent>
       </Card>
 
-      {/* Stripe Configuration */}
-      {settings.autoPaymentEnabled && (
+      {/* Bank Transfer Details */}
+      {settings.bankTransferEnabled && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <CreditCard className="h-5 w-5" />
-              <span>Stripe Configuration</span>
+              <Building2 className="h-5 w-5" />
+              <span>Bank Transfer Details</span>
             </CardTitle>
             <CardDescription>
-              Configure Stripe to enable automatic card payments for parents.
+              Provide your bank account details for parents to make direct transfers. These will be shown to parents who choose bank transfer.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {!settings.hasStripeConfigured && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <div className="flex items-center space-x-2 mb-2">
-                  <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                  <span className="text-sm font-medium text-yellow-900">Stripe Not Configured</span>
-                </div>
-                <p className="text-sm text-yellow-700">
-                  To enable automatic card payments, you need to configure your Stripe account.
-                </p>
-              </div>
-            )}
-
+            <div>
+              <Label htmlFor="bankAccountName">Account Name</Label>
+              <Input
+                id="bankAccountName"
+                placeholder="e.g., Masjid Falah"
+                value={settings.bankAccountName || ''}
+                onChange={(e) => handleSettingChange('bankAccountName', e.target.value)}
+                disabled={!hasPermission('manage_payments')}
+              />
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="stripe-publishable-key">Stripe Publishable Key</Label>
+                <Label htmlFor="bankSortCode">Sort Code</Label>
                 <Input
-                  id="stripe-publishable-key"
-                  placeholder="pk_test_..."
-                  value={stripeKeys.publishableKey}
-                  onChange={(e) => handleStripeKeyChange('publishableKey', e.target.value)}
+                  id="bankSortCode"
+                  placeholder="e.g., 12-34-56"
+                  value={settings.bankSortCode || ''}
+                  onChange={(e) => handleSettingChange('bankSortCode', e.target.value)}
                   disabled={!hasPermission('manage_payments')}
+                  maxLength={8}
                 />
               </div>
               <div>
-                <Label htmlFor="stripe-secret-key">Stripe Secret Key</Label>
+                <Label htmlFor="bankAccountNumber">Account Number</Label>
                 <Input
-                  id="stripe-secret-key"
-                  type="password"
-                  placeholder="sk_test_..."
-                  value={stripeKeys.secretKey}
-                  onChange={(e) => handleStripeKeyChange('secretKey', e.target.value)}
+                  id="bankAccountNumber"
+                  placeholder="e.g., 12345678"
+                  value={settings.bankAccountNumber || ''}
+                  onChange={(e) => handleSettingChange('bankAccountNumber', e.target.value)}
                   disabled={!hasPermission('manage_payments')}
+                  maxLength={10}
                 />
               </div>
             </div>
-
-            <div>
-              <Label htmlFor="stripe-webhook-secret">Stripe Webhook Secret</Label>
-              <Input
-                id="stripe-webhook-secret"
-                type="password"
-                placeholder="whsec_..."
-                value={stripeKeys.webhookSecret}
-                onChange={(e) => handleStripeKeyChange('webhookSecret', e.target.value)}
-                disabled={!hasPermission('manage_payments')}
-              />
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Switch
-                checked={settings.stripeEnabled}
-                onCheckedChange={(checked) => handleSettingChange('stripeEnabled', checked)}
-                disabled={!hasPermission('manage_payments')}
-              />
-              <Label>Enable Stripe Integration</Label>
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <div className="flex items-center space-x-2 mb-2">
+                <Info className="h-4 w-4 text-gray-600" />
+                <span className="text-sm font-medium text-gray-900">Standing Order Instructions</span>
+              </div>
+              <p className="text-sm text-gray-700">
+                Parents can set up a standing order using these details to automate monthly fee payments. 
+                They will see these instructions when they choose bank transfer as their payment method.
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -290,7 +289,7 @@ export function PaymentMethodsTab() {
         <CardContent>
           <Textarea
             placeholder="Enter payment instructions for parents..."
-            value={settings.paymentInstructions}
+            value={settings.paymentInstructions || ''}
             onChange={(e) => handleSettingChange('paymentInstructions', e.target.value)}
             disabled={!hasPermission('manage_payments')}
             rows={4}
@@ -299,13 +298,13 @@ export function PaymentMethodsTab() {
       </Card>
 
       {/* Security Notice */}
-      <Card className="border-blue-200 bg-blue-50">
+      <Card className="border-gray-200 bg-gray-50">
         <CardContent className="p-4">
           <div className="flex items-center space-x-2 mb-2">
-            <Shield className="h-4 w-4 text-blue-600" />
-            <span className="text-sm font-medium text-blue-900">Security Notice</span>
+            <Shield className="h-4 w-4 text-gray-600" />
+            <span className="text-sm font-medium text-gray-900">Security Notice</span>
           </div>
-          <p className="text-sm text-blue-700">
+          <p className="text-sm text-gray-700">
             All payment data is encrypted and processed securely. Stripe keys are stored securely and never exposed to clients.
           </p>
         </CardContent>

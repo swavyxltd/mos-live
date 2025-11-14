@@ -14,19 +14,19 @@ interface Class {
   teacherId: string | null
   monthlyFeeP: number
   createdAt: Date
-  teacher: {
+  User: {
     name: string | null
     email: string
   } | null
-  studentClasses: Array<{
-    student: {
+  StudentClass: Array<{
+    Student: {
       firstName: string
       lastName: string
       isArchived: boolean
     }
   }>
   _count: {
-    studentClasses: number
+    StudentClass: number
   }
 }
 

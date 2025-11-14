@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, description, schedule, teacherId, monthlyFeeP } = body
+    const { name, description, schedule, teacherId, monthlyFeeP, feeDueDay } = body
 
     if (!name || !schedule) {
       return NextResponse.json(
@@ -38,6 +38,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    if (feeDueDay !== undefined && (feeDueDay < 1 || feeDueDay > 31)) {
+      return NextResponse.json(
+        { error: 'Fee due day must be between 1 and 31' },
+        { status: 400 }
+      )
+    }
+
     const classRecord = await prisma.class.create({
       data: {
         orgId,
@@ -45,7 +52,8 @@ export async function POST(request: NextRequest) {
         description: description || null,
         schedule,
         teacherId: teacherId || null,
-        monthlyFeeP: Math.round(monthlyFeeP * 100) // Convert to pence
+        monthlyFeeP: Math.round(monthlyFeeP * 100), // Convert to pence
+        feeDueDay: feeDueDay || null
       },
       include: {
         teacher: {

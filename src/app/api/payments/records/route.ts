@@ -40,14 +40,14 @@ export async function GET(request: NextRequest) {
     const records = await prisma.monthlyPaymentRecord.findMany({
       where,
       include: {
-        student: {
+        Student: {
           select: {
             id: true,
             firstName: true,
             lastName: true
           }
         },
-        class: {
+        Class: {
           select: {
             id: true,
             name: true
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
     })
 
     console.log(`[API] Found ${records.length} payment records for org ${orgId}`)
-    console.log(`[API] Records:`, records.map(r => ({ id: r.id, month: r.month, status: r.status, student: `${r.student.firstName} ${r.student.lastName}` })))
+    console.log(`[API] Records:`, records.map(r => ({ id: r.id, month: r.month, status: r.status, student: `${r.Student.firstName} ${r.Student.lastName}` })))
 
     return NextResponse.json(records)
   } catch (error: any) {
@@ -97,7 +97,7 @@ export async function PATCH(request: NextRequest) {
     if (orgId instanceof NextResponse) return orgId
 
     const body = await request.json()
-    const { id, status, paidAt, notes, reference } = body
+    const { id, status, paidAt, notes, reference, method } = body
 
     if (!id) {
       return NextResponse.json(
@@ -110,9 +110,9 @@ export async function PATCH(request: NextRequest) {
     const currentRecord = await prisma.monthlyPaymentRecord.findUnique({
       where: { id, orgId },
       include: {
-        student: {
+        Student: {
           include: {
-            primaryParent: {
+            User: {
               select: {
                 email: true,
                 name: true
@@ -120,12 +120,12 @@ export async function PATCH(request: NextRequest) {
             }
           }
         },
-        class: {
+        Class: {
           select: {
             name: true
           }
         },
-        org: {
+        Org: {
           select: {
             name: true
           }
@@ -144,26 +144,27 @@ export async function PATCH(request: NextRequest) {
     const isBeingMarkedPaid = status === 'PAID' && wasPending
     const shouldSendEmail = isBeingMarkedPaid && 
       (currentRecord.method === 'CASH' || currentRecord.method === 'BANK_TRANSFER') &&
-      currentRecord.student.primaryParent?.email
+      currentRecord.Student.User?.email
 
     const updateData: any = {}
     if (status) updateData.status = status
     if (paidAt !== undefined) updateData.paidAt = paidAt ? new Date(paidAt) : new Date()
     if (notes !== undefined) updateData.notes = notes
     if (reference !== undefined) updateData.reference = reference
+    if (method !== undefined) updateData.method = method
 
     const record = await prisma.monthlyPaymentRecord.update({
       where: { id, orgId },
       data: updateData,
       include: {
-        student: {
+        Student: {
           select: {
             id: true,
             firstName: true,
             lastName: true
           }
         },
-        class: {
+        Class: {
           select: {
             id: true,
             name: true
@@ -173,20 +174,20 @@ export async function PATCH(request: NextRequest) {
     })
 
     // Send email notification if payment was marked as paid manually (cash/bank transfer)
-    if (shouldSendEmail && currentRecord.student.primaryParent) {
+    if (shouldSendEmail && currentRecord.Student.User) {
       try {
         const { sendPaymentConfirmationEmail } = await import('@/lib/mail')
         await sendPaymentConfirmationEmail({
-          to: currentRecord.student.primaryParent.email,
-          orgName: currentRecord.org.name,
-          studentName: `${currentRecord.student.firstName} ${currentRecord.student.lastName}`,
-          className: currentRecord.class.name,
+          to: currentRecord.Student.User.email,
+          orgName: currentRecord.Org.name,
+          studentName: `${currentRecord.Student.firstName} ${currentRecord.Student.lastName}`,
+          className: currentRecord.Class.name,
           month: currentRecord.month,
           amount: currentRecord.amountP,
           paymentMethod: currentRecord.method || 'Unknown',
           reference: reference || currentRecord.reference
         })
-        console.log(`✅ Payment confirmation email sent to ${currentRecord.student.primaryParent.email}`)
+        console.log(`✅ Payment confirmation email sent to ${currentRecord.Student.User.email}`)
       } catch (emailError) {
         console.error('Error sending payment confirmation email:', emailError)
         // Don't fail the request if email fails

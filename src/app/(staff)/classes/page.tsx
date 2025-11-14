@@ -28,26 +28,26 @@ export default async function ClassesPage() {
       teacherId: true,
       monthlyFeeP: true,
       createdAt: true,
-      teacher: {
+      User: {
         select: { name: true, email: true }
       },
-      studentClasses: {
+      StudentClass: {
         include: {
-          student: {
+          Student: {
             select: { firstName: true, lastName: true, isArchived: true }
           }
         },
         where: {
-          student: {
+          Student: {
             isArchived: false
           }
         }
       },
       _count: {
         select: { 
-          studentClasses: {
+          StudentClass: {
             where: {
-              student: {
+              Student: {
                 isArchived: false
               }
             }

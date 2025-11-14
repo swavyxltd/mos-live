@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { formatDate } from '@/lib/utils'
 import { 
   Users, 
   CheckCircle, 
@@ -60,7 +61,7 @@ export function ClassAttendanceOverview({
                   {classItem.name}
                 </CardTitle>
                 <p className="text-sm text-gray-600 mt-1">
-                  {classItem.date.toLocaleDateString()} • {classItem.teacher}
+                  {formatDate(classItem.date)} • {classItem.teacher}
                 </p>
               </div>
               <ChevronRight className="h-5 w-5 text-gray-400 flex-shrink-0 ml-2" />

@@ -91,10 +91,47 @@ export function DashboardContent() {
         const data = await response.json()
         setStats(data)
       } else {
-        console.error('Failed to fetch dashboard stats')
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        console.error('Failed to fetch dashboard stats:', response.status, errorData)
+        // Set default stats to prevent UI errors
+        setStats({
+          totalStudents: 0,
+          newStudentsThisMonth: 0,
+          studentGrowth: 0,
+          activeClasses: 0,
+          staffMembers: 0,
+          attendanceRate: 0,
+          attendanceGrowth: 0,
+          monthlyRevenue: 0,
+          revenueGrowth: 0,
+          pendingInvoices: 0,
+          overduePayments: 0,
+          pendingApplications: 0,
+          attendanceTrend: [],
+          paidThisMonth: 0,
+          averagePaymentTime: 0
+        })
       }
     } catch (error) {
       console.error('Error fetching dashboard stats:', error)
+      // Set default stats to prevent UI errors
+      setStats({
+        totalStudents: 0,
+        newStudentsThisMonth: 0,
+        studentGrowth: 0,
+        activeClasses: 0,
+        staffMembers: 0,
+        attendanceRate: 0,
+        attendanceGrowth: 0,
+        monthlyRevenue: 0,
+        revenueGrowth: 0,
+        pendingInvoices: 0,
+        overduePayments: 0,
+        pendingApplications: 0,
+        attendanceTrend: [],
+        paidThisMonth: 0,
+        averagePaymentTime: 0
+      })
     } finally {
       setLoading(false)
     }

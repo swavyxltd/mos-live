@@ -21,21 +21,21 @@ export default async function StaffPage() {
       role: { in: ['ADMIN', 'STAFF'] }
     },
     include: {
-      user: true,
-      org: true
+      User: true,
+      Org: true
     }
   })
 
   const teachers = memberships.map(membership => ({
     id: membership.userId,
-    name: membership.user.name || '',
-    email: membership.user.email || '',
-    phone: membership.user.phone || '',
-    username: membership.user.email?.split('@')[0] || '',
-    isActive: !membership.user.isArchived,
+    name: membership.User.name || '',
+    email: membership.User.email || '',
+    phone: membership.User.phone || '',
+    username: membership.User.email?.split('@')[0] || '',
+    isActive: !membership.User.isArchived,
     role: membership.role,
-    createdAt: membership.user.createdAt,
-    updatedAt: membership.user.updatedAt,
+    createdAt: membership.User.createdAt,
+    updatedAt: membership.User.updatedAt,
     classes: [], // TODO: Get classes from database
     _count: {
       classes: 0,

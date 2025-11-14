@@ -541,7 +541,6 @@ export async function sendPaymentConfirmationEmail({
   const amountFormatted = `£${(amount / 100).toFixed(2)}`
   const methodLabel = paymentMethod === 'CASH' ? 'Cash' 
     : paymentMethod === 'BANK_TRANSFER' ? 'Bank Transfer' 
-    : paymentMethod === 'STRIPE' ? 'Card Payment' 
     : paymentMethod
 
   const content = `

@@ -11,18 +11,18 @@ interface Class {
   description: string | null
   schedule: any
   createdAt: Date
-  teacher: {
+  User: {
     name: string | null
     email: string | null
   } | null
-  studentClasses: Array<{
-    student: {
+  StudentClass: Array<{
+    Student: {
       firstName: string
       lastName: string
     }
   }>
   _count: {
-    studentClasses: number
+    StudentClass: number
   }
 }
 
@@ -75,10 +75,10 @@ export function ClassesList({ classes }: ClassesListProps) {
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Teacher */}
-              {cls.teacher && (
+              {cls.User && (
                 <div className="flex items-center text-sm text-gray-600">
                   <Users className="h-4 w-4 mr-2" />
-                  <span>{cls.teacher.name || cls.teacher.email}</span>
+                  <span>{cls.User.name || cls.User.email}</span>
                 </div>
               )}
               
@@ -98,7 +98,7 @@ export function ClassesList({ classes }: ClassesListProps) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center text-sm text-gray-600">
                   <Users className="h-4 w-4 mr-2" />
-                  <span>{cls._count.studentClasses} students</span>
+                  <span>{cls._count.StudentClass} students</span>
                 </div>
                 <div className="flex items-center gap-2">
                   {(cls as any).monthlyFeeP && (
@@ -107,7 +107,7 @@ export function ClassesList({ classes }: ClassesListProps) {
                     </span>
                   )}
                   <Badge variant="secondary">
-                    {cls._count.studentClasses > 0 ? 'Active' : 'Empty'}
+                    {cls._count.StudentClass > 0 ? 'Active' : 'Empty'}
                   </Badge>
                 </div>
               </div>

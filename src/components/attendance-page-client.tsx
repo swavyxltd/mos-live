@@ -6,7 +6,6 @@ import { ClassAttendanceOverview } from '@/components/class-attendance-overview'
 import { DetailedClassAttendance } from '@/components/detailed-class-attendance'
 import { StudentDetailModal } from '@/components/student-detail-modal'
 import { AttendanceWeekFilter } from '@/components/attendance-week-filter'
-import { getAttendanceDataForWeek } from '@/lib/attendance-data'
 import { RestrictedAction } from '@/components/restricted-action'
 
 interface Student {
@@ -45,11 +44,23 @@ export function AttendancePageClient({ attendanceData }: AttendancePageClientPro
   const [currentWeek, setCurrentWeek] = useState(new Date())
   const [filteredData, setFilteredData] = useState(attendanceData)
 
-  // Update filtered data when week changes
+  // Filter data by week
   useEffect(() => {
-    const weekData = getAttendanceDataForWeek(currentWeek)
-    setFilteredData(weekData.classes)
-  }, [currentWeek])
+    const weekStart = new Date(currentWeek)
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1) // Monday
+    weekStart.setHours(0, 0, 0, 0)
+    
+    const weekEnd = new Date(weekStart)
+    weekEnd.setDate(weekEnd.getDate() + 6) // Sunday
+    weekEnd.setHours(23, 59, 59, 999)
+    
+    const filtered = attendanceData.filter(item => {
+      const itemDate = new Date(item.date)
+      return itemDate >= weekStart && itemDate <= weekEnd
+    })
+    
+    setFilteredData(filtered)
+  }, [currentWeek, attendanceData])
 
   const handleClassClick = (classId: string) => {
     setSelectedClassId(classId)
@@ -60,7 +71,7 @@ export function AttendancePageClient({ attendanceData }: AttendancePageClientPro
   }
 
   const handleStudentClick = (studentId: string) => {
-    const classData = attendanceData.find(c => c.id === selectedClassId)
+    const classData = filteredData.find(c => c.id === selectedClassId)
     if (!classData) return
 
     const student = classData.students.find(s => s.id === studentId)
@@ -72,15 +83,10 @@ export function AttendancePageClient({ attendanceData }: AttendancePageClientPro
       name: student.name,
       class: classData.name,
       teacher: classData.teacher,
-      overallAttendance: student.attendancePercentage,
-      weeklyAttendance: student.weeklyAttendance.map(day => ({
-        day: day.day,
-        date: new Date().toLocaleDateString(), // In real app, this would be actual dates
-        status: day.status,
-        time: day.status === 'PRESENT' || day.status === 'LATE' ? '4:00 PM' : undefined
-      })),
-      recentTrend: student.attendancePercentage >= 95 ? 'up' : 
-                  student.attendancePercentage < 86 ? 'down' : 'stable'
+      overallAttendance: student.attendancePercentage || 0,
+      weeklyAttendance: student.weeklyAttendance || [],
+      recentTrend: (student.attendancePercentage || 0) >= 95 ? 'up' : 
+                  (student.attendancePercentage || 0) < 86 ? 'down' : 'stable'
     }
 
     setSelectedStudent(studentDetail)
@@ -98,9 +104,7 @@ export function AttendancePageClient({ attendanceData }: AttendancePageClientPro
   }
 
   const handleDateRangeChange = (startDate: Date, endDate: Date) => {
-    // For demo purposes, we'll use the start date as the week
     setCurrentWeek(startDate)
-    console.log('Date range changed to:', startDate, 'to', endDate)
   }
 
   const selectedClass = selectedClassId 

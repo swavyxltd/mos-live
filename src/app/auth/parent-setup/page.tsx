@@ -3,7 +3,7 @@
 import { useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Mail, Lock, User, Calendar, AlertCircle, CreditCard, DollarSign, TrendingUp, Loader2 } from 'lucide-react'
+import { Mail, Lock, User, Calendar, AlertCircle, CreditCard, Coins, TrendingUp, Loader2 } from 'lucide-react'
 
 interface InvitationData {
   invitation: {
@@ -32,6 +32,11 @@ interface InvitationData {
     cash: boolean
     bankTransfer: boolean
     stripe: boolean
+  }
+  bankDetails: {
+    accountName: string | null
+    sortCode: string | null
+    accountNumber: string | null
   }
 }
 
@@ -203,9 +208,8 @@ function ParentSetupForm() {
   }
 
   const availableMethods = []
-  if (invitationData.paymentMethods.cash) availableMethods.push({ value: 'CASH', label: 'Cash', icon: DollarSign })
+  if (invitationData.paymentMethods.cash) availableMethods.push({ value: 'CASH', label: 'Cash', icon: Coins })
   if (invitationData.paymentMethods.bankTransfer) availableMethods.push({ value: 'BANK_TRANSFER', label: 'Bank Transfer', icon: TrendingUp })
-  if (invitationData.paymentMethods.stripe) availableMethods.push({ value: 'STRIPE', label: 'Card Payment', icon: CreditCard })
 
   return (
     <div className="w-full max-w-[440px]">
@@ -448,7 +452,7 @@ function ParentSetupForm() {
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <Icon className="w-5 h-5 text-neutral-600" />
+                        <Icon className="w-5 h-5 text-neutral-500" strokeWidth={method.value === 'CASH' ? 1.5 : undefined} />
                         <span className="font-medium text-neutral-900">{method.label}</span>
                         {paymentMethod === method.value && (
                           <div className="ml-auto w-5 h-5 rounded-full bg-neutral-900 flex items-center justify-center">
@@ -462,6 +466,38 @@ function ParentSetupForm() {
                   )
                 })}
               </div>
+
+              {/* Bank Transfer Details */}
+              {paymentMethod === 'BANK_TRANSFER' && invitationData.bankDetails && (
+                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h4 className="font-semibold text-blue-900 mb-3">Bank Transfer Details</h4>
+                  {invitationData.bankDetails.accountName && (
+                    <div className="mb-2">
+                      <span className="text-sm font-medium text-blue-800">Account Name:</span>
+                      <span className="text-sm text-blue-900 ml-2">{invitationData.bankDetails.accountName}</span>
+                    </div>
+                  )}
+                  {invitationData.bankDetails.sortCode && (
+                    <div className="mb-2">
+                      <span className="text-sm font-medium text-blue-800">Sort Code:</span>
+                      <span className="text-sm text-blue-900 ml-2">{invitationData.bankDetails.sortCode}</span>
+                    </div>
+                  )}
+                  {invitationData.bankDetails.accountNumber && (
+                    <div className="mb-3">
+                      <span className="text-sm font-medium text-blue-800">Account Number:</span>
+                      <span className="text-sm text-blue-900 ml-2">{invitationData.bankDetails.accountNumber}</span>
+                    </div>
+                  )}
+                  <div className="mt-3 pt-3 border-t border-blue-300">
+                    <p className="text-xs font-medium text-blue-900 mb-1">Setting up a Standing Order:</p>
+                    <p className="text-xs text-blue-700">
+                      You can set up a standing order with your bank using these details to automatically pay your monthly fees. 
+                      Contact your bank to set this up, and payments will be made automatically each month.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex gap-3 pt-4">

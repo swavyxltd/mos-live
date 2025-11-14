@@ -20,7 +20,7 @@ export default async function AttendancePage() {
       orgId: org.id
     },
     include: {
-      student: {
+      Student: {
         select: {
           id: true,
           firstName: true,
@@ -28,10 +28,15 @@ export default async function AttendancePage() {
           isArchived: true
         }
       },
-      class: {
+      Class: {
         select: {
           id: true,
-          name: true
+          name: true,
+          User: {
+            select: {
+              name: true
+            }
+          }
         }
       }
     },
@@ -43,7 +48,7 @@ export default async function AttendancePage() {
 
   // Group attendance by class and date
   const attendanceByClass = attendanceRecords.reduce((acc, record) => {
-    if (record.student.isArchived) return acc
+    if (record.Student.isArchived) return acc
     
     const classId = record.classId || 'no-class'
     const dateKey = record.date.toISOString().split('T')[0]
@@ -53,7 +58,8 @@ export default async function AttendancePage() {
       acc[key] = {
         id: key,
         classId: classId,
-        name: record.class?.name || 'No Class',
+        name: record.Class?.name || 'No Class',
+        teacher: record.Class?.User?.name || 'No Teacher',
         date: record.date,
         totalStudents: 0,
         present: 0,
@@ -73,8 +79,8 @@ export default async function AttendancePage() {
     }
     
     acc[key].students.push({
-      id: record.student.id,
-      name: `${record.student.firstName} ${record.student.lastName}`,
+      id: record.Student.id,
+      name: `${record.Student.firstName} ${record.Student.lastName}`,
       status: record.status,
       time: record.time || undefined
     })

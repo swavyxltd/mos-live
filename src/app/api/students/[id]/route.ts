@@ -17,12 +17,12 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     const student = await prisma.student.findUnique({
       where: { id, orgId },
       include: {
-        primaryParent: true,
-        studentClasses: {
+        User: true,
+        StudentClass: {
           include: {
-            class: {
+            Class: {
               include: {
-                teacher: true
+                User: true
               }
             }
           }
@@ -40,8 +40,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       : 0
 
     // Get primary class (first one or default)
-    const primaryClass = student.studentClasses[0]?.class || null
-    const teacherName = primaryClass?.teacher?.name || 'N/A'
+    const primaryClass = student.StudentClass[0]?.Class || null
+    const teacherName = primaryClass?.User?.name || 'N/A'
 
     // Transform student data
     const transformedStudent = {
@@ -54,9 +54,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       address: '', // Address not in schema - using empty string
       class: primaryClass?.name || 'N/A',
       teacher: teacherName,
-      parentName: student.primaryParent?.name || '',
-      parentEmail: student.primaryParent?.email || '',
-      parentPhone: student.primaryParent?.phone || '',
+      parentName: student.User?.name || '',
+      parentEmail: student.User?.email || '',
+      parentPhone: student.User?.phone || '',
       emergencyContact: '', // Emergency contact not in schema - using empty string
       allergies: student.allergies || 'None',
       medicalNotes: student.medicalNotes || '',
@@ -65,9 +65,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       isArchived: student.isArchived,
       archivedAt: student.archivedAt ? student.archivedAt.toISOString() : null,
       createdAt: student.createdAt.toISOString(),
-      classes: student.studentClasses.map(sc => ({
-        id: sc.class.id,
-        name: sc.class.name
+      classes: student.StudentClass.map(sc => ({
+        id: sc.Class.id,
+        name: sc.Class.name
       })),
       attendanceRate: 0, // TODO: Calculate from attendance records
       lastAttendance: new Date().toISOString() // TODO: Get from attendance records
@@ -116,13 +116,13 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         lastName,
         dob: dateOfBirth ? new Date(dateOfBirth) : null,
         grade,
-        primaryParent: {
+        User: parentName || parentEmail || parentPhone ? {
           update: {
             name: parentName,
             email: parentEmail,
             phone: parentPhone,
           }
-        },
+        } : undefined,
         address,
         emergencyContact,
         allergies,
@@ -131,10 +131,10 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         updatedAt: new Date()
       },
       include: {
-        primaryParent: true,
-        studentClasses: {
+        User: true,
+        StudentClass: {
           include: {
-            class: true
+            Class: true
           }
         }
       }

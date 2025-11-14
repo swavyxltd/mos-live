@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { Save, Globe, User, CreditCard, Calendar, Loader2, Download, DollarSign, Users, CheckCircle, Eye, FileText, Banknote, AlertTriangle, XCircle } from 'lucide-react'
+import { Save, Globe, User, CreditCard, Calendar, Loader2, Download, DollarSign, Users, CheckCircle, Eye, FileText, Banknote, AlertTriangle, XCircle, Settings } from 'lucide-react'
 import { toast } from 'sonner'
 import { StripePaymentMethodModal } from '@/components/stripe-payment-method'
 import { StatCard } from '@/components/ui/stat-card'
@@ -20,6 +20,7 @@ import GenerateReportModal from '@/components/generate-report-modal'
 import { useStaffPermissions } from '@/lib/staff-permissions'
 import { StaffSubrole } from '@/types/staff-roles'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { PaymentMethodsTab } from '@/components/payment-methods-tab'
 
 interface OrganizationSettings {
   name: string
@@ -497,7 +498,43 @@ export default function SettingsPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        {/* Mobile: Dropdown Select */}
+        <div className="md:hidden">
+          <Select value={activeTab} onValueChange={setActiveTab}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a tab" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="organization">
+                <div className="flex items-center gap-2">
+                  <Globe className="h-4 w-4" />
+                  <span>Organization</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="profile">
+                <div className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  <span>Profile</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="payment-methods">
+                <div className="flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  <span>Payment Methods</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="subscription">
+                <div className="flex items-center gap-2">
+                  <Banknote className="h-4 w-4" />
+                  <span>Your Subscription</span>
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Desktop: Tabs */}
+        <TabsList className="hidden md:grid w-full grid-cols-4">
           <TabsTrigger value="organization" className="flex items-center gap-2">
             <Globe className="h-4 w-4" />
             Organization
@@ -506,13 +543,13 @@ export default function SettingsPage() {
             <User className="h-4 w-4" />
             Profile
           </TabsTrigger>
-          <TabsTrigger value="payment" className="flex items-center gap-2">
-            <CreditCard className="h-4 w-4" />
-            Payment
+          <TabsTrigger value="payment-methods" className="flex items-center gap-2">
+            <Settings className="h-4 w-4" />
+            Payment Methods
           </TabsTrigger>
           <TabsTrigger value="subscription" className="flex items-center gap-2">
             <Banknote className="h-4 w-4" />
-            Subscription
+            Your Subscription
           </TabsTrigger>
         </TabsList>
 
@@ -769,99 +806,71 @@ export default function SettingsPage() {
         </Card>
         </TabsContent>
 
-        <TabsContent value="payment" className="space-y-6">
-          {/* Payment Details */}
+        <TabsContent value="payment-methods" className="space-y-6">
+          <PaymentMethodsTab />
+        </TabsContent>
+
+        <TabsContent value="subscription" className="space-y-6">
+          {/* Payment Method Status */}
           <Card>
             <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5" />
-              Payment Details
-            </CardTitle>
-            <CardDescription>
-              Set up automatic payments via Stripe. You'll be charged £1 per active student monthly on your billing anniversary date.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Calendar className="h-5 w-5 text-blue-600" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-blue-900 mb-2">Automatic Billing via Stripe</h3>
-                  <p className="text-sm text-blue-700 mb-3">
-                    You will be automatically charged £1 per active student monthly on your billing anniversary date through Stripe.
-                  </p>
-                  <div className="flex items-center gap-4">
-                    <div className="bg-white/60 rounded-lg px-3 py-2">
-                      <span className="text-xs text-blue-600 font-medium">Current Students</span>
-                      <div className="text-lg font-bold text-blue-900">{loadingBilling ? '...' : studentCount}</div>
-                    </div>
-                    <div className="bg-white/60 rounded-lg px-3 py-2">
-                      <span className="text-xs text-blue-600 font-medium">Monthly Cost</span>
-                      <div className="text-lg font-bold text-blue-900">£{loadingBilling ? '...' : studentCount.toFixed(2)}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Banknote className="h-4 w-4 text-blue-600" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-1">Automatic Monthly Billing</h3>
-                  <p className="text-sm text-gray-600">
-                    Your organization will be automatically charged monthly based on the number of active students (£1 per student per month). 
-                    This is mandatory and cannot be disabled.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {platformBilling?.hasPaymentMethod ? (
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <CreditCard className="h-5 w-5 text-green-600" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Payment Method Setup</h3>
-                    <p className="text-sm text-gray-600 mb-4">
-                      Your payment method is set up and ready for automatic billing. You can update your payment details anytime.
-                    </p>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5" />
+                Payment Method
+              </CardTitle>
+              <CardDescription>
+                Automatic billing: £1 per active student monthly
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {platformBilling?.hasPaymentMethod ? (
+                <div className="bg-white border border-gray-200 rounded-lg p-4 md:p-6">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      <Button 
-                        variant="outline" 
-                        className="flex-1 h-11 bg-white hover:bg-gray-50 border-gray-300 hover:border-gray-400" 
-                        onClick={handleStripePaymentMethod}
-                      >
-                        <CreditCard className="h-4 w-4 mr-2" />
-                        Update Payment Method
-                      </Button>
-                      <div className="flex items-center gap-2 text-sm text-green-700">
+                      <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <CreditCard className="h-5 w-5 text-gray-700" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-900">Payment Method</h3>
+                        <p className="text-sm text-gray-600">
+                          {platformBilling?.paymentMethods && platformBilling.paymentMethods.length > 0 ? (
+                            <>•••• {platformBilling.paymentMethods[0].card?.last4 || 'N/A'}</>
+                          ) : (
+                            'Not set'
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <div className="flex items-center gap-2 text-sm text-gray-700">
                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                         <span className="font-medium">Active</span>
                       </div>
+                      <Button 
+                        variant="outline" 
+                        className="h-10 border-gray-300 hover:bg-gray-50 w-full md:w-auto" 
+                        onClick={handleStripePaymentMethod}
+                      >
+                        <CreditCard className="h-4 w-4 mr-2" />
+                        Update
+                      </Button>
                     </div>
                   </div>
                 </div>
-              </div>
-            ) : (
-              <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl p-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 bg-yellow-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <CreditCard className="h-5 w-5 text-yellow-600" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Payment Method Required</h3>
-                    <p className="text-sm text-gray-600 mb-4">
-                      You need to add a payment method before you can add students or access other features.
-                    </p>
+              ) : (
+                <div className="bg-white border border-gray-200 rounded-lg p-4 md:p-6">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <CreditCard className="h-5 w-5 text-gray-700" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-900">Payment Method Required</h3>
+                        <p className="text-sm text-gray-600">Add a payment method to continue</p>
+                      </div>
+                    </div>
                     <Button 
-                      className="h-11 bg-blue-600 hover:bg-blue-700 text-white" 
+                      className="h-10 bg-gray-900 hover:bg-gray-800 text-white w-full md:w-auto" 
                       onClick={handleStripePaymentMethod}
                     >
                       <CreditCard className="h-4 w-4 mr-2" />
@@ -869,153 +878,63 @@ export default function SettingsPage() {
                     </Button>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </CardContent>
+          </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-gray-200">
-              {/* Next Payment Card */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <Calendar className="h-4 w-4 text-blue-600" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900">Next Payment</h3>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Date</span>
-                    <span className="text-sm font-medium text-gray-900">
-                      {loadingBilling ? '...' : (getNextPaymentDate() ? getNextPaymentDate()!.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : 'N/A')}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Amount</span>
-                    <span className="text-sm font-medium text-gray-900">£{loadingBilling ? '...' : studentCount.toFixed(2)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Students</span>
-                    <span className="text-sm font-medium text-gray-900">{loadingBilling ? '...' : `${studentCount} active`}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Processor</span>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-sm font-medium text-gray-900">Stripe</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Payment Status Card */}
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                    <CreditCard className="h-4 w-4 text-green-600" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900">Payment Status</h3>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Auto-pay</span>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                      <span className="text-sm font-medium text-green-700">
-                        Enabled (Mandatory)
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Method</span>
-                    <div className="flex items-center gap-2">
-                      {platformBilling?.paymentMethods && platformBilling.paymentMethods.length > 0 ? (
-                        <>
-                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                          <span className="text-sm font-medium text-gray-900">
-                            •••• {platformBilling.paymentMethods[0].card?.last4 || 'N/A'}
-                          </span>
-                        </>
-                      ) : (
-                        <span className="text-sm font-medium text-gray-500">Not set</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Last Updated</span>
-                    <span className="text-sm font-medium text-gray-900">
-                      {paymentSettings.lastUpdated ? new Date(paymentSettings.lastUpdated).toLocaleDateString() : 'Never'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Status</span>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-sm font-medium text-green-700">Active</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Security Notice */}
-            <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-              <div className="flex items-start gap-3">
-                <div className="w-5 h-5 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <svg className="w-3 h-3 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-gray-900 mb-1">Secure Payment Processing</h4>
-                  <p className="text-xs text-gray-600">
-                    All payments are processed securely through Stripe. Your payment information is encrypted and never stored on our servers. You can update your payment method at any time.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-          </CardContent>
-        </Card>
-        </TabsContent>
-
-        <TabsContent value="subscription" className="space-y-6">
-          {/* App Subscription Management */}
+          {/* Subscription Details */}
           <Card>
             <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Banknote className="h-5 w-5" />
-              App Subscription Management
-            </CardTitle>
-            <CardDescription>
-              View and manage your Madrasah OS subscription payments and billing history.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Subscription Summary Cards */}
-            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
-              <StatCard
-                title="Current Students"
-                value={studentCount}
-                description="Active enrollments"
-                detail={loadingBilling ? 'Loading...' : `£${studentCount.toFixed(2)} per month`}
-                icon={<Users className="h-4 w-4" />}
-              />
-              
-              <StatCard
-                title="Monthly Cost"
-                value={`£${studentCount.toFixed(2)}`}
-                description="£1 per student"
-                detail={loadingBilling ? 'Loading...' : `${studentCount} active students`}
-                icon={<div className="text-lg font-bold">£</div>}
-              />
-              
-              <StatCard
-                title="Next Payment"
-                value={getNextPaymentDate() ? getNextPaymentDate()!.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'N/A'}
-                description={getNextPaymentDate() ? getNextPaymentDate()!.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' }) : 'No payment date set'}
-                detail={loadingBilling ? 'Loading...' : 'Automatic billing'}
-                icon={<Calendar className="h-4 w-4" />}
-              />
-            </div>
+              <CardTitle className="flex items-center gap-2">
+                <Banknote className="h-5 w-5" />
+                Your Subscription
+              </CardTitle>
+              <CardDescription>
+                View and manage your Madrasah OS subscription payments and billing history.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Subscription Summary */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Calendar className="h-4 w-4 text-gray-600" />
+                    <h3 className="text-sm font-semibold text-gray-900">Next Payment</h3>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Date</span>
+                      <span className="text-sm font-medium text-gray-900">
+                        {loadingBilling ? '...' : (getNextPaymentDate() ? getNextPaymentDate()!.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A')}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Amount</span>
+                      <span className="text-sm font-medium text-gray-900">£{loadingBilling ? '...' : studentCount.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Users className="h-4 w-4 text-gray-600" />
+                    <h3 className="text-sm font-semibold text-gray-900">Status</h3>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Auto-pay</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                        <span className="text-sm font-medium text-gray-900">Enabled</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Students</span>
+                      <span className="text-sm font-medium text-gray-900">{loadingBilling ? '...' : studentCount}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
             {/* Subscription History Table */}
             <div>
@@ -1066,7 +985,7 @@ export default function SettingsPage() {
 
               {billingRecords.length === 0 && (
                 <div className="text-center py-8">
-                  <Banknote className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <Banknote className="h-12 w-12 text-gray-400 mx-auto mb-4" strokeWidth={1.5} />
                   <p className="text-muted-foreground">No subscription payments found</p>
                 </div>
               )}

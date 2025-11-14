@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { 
-  DollarSign, 
+  Coins, 
   CreditCard, 
   TrendingUp, 
   CheckCircle, 
@@ -324,7 +324,7 @@ export function ManualPaymentsTab() {
                   <SelectContent>
                     <SelectItem value="CASH">
                       <div className="flex items-center space-x-2">
-                        <DollarSign className="h-4 w-4" />
+                        <Coins className="h-4 w-4 text-gray-500" strokeWidth={1.5} />
                         <span>Cash</span>
                       </div>
                     </SelectItem>

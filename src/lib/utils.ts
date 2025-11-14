@@ -24,11 +24,12 @@ export function formatDate(date: Date | string | null | undefined): string {
     return 'Invalid Date'
   }
   
-  return new Intl.DateTimeFormat('en-GB', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  }).format(dateObj)
+  // Format as dd/mm/yyyy
+  const day = String(dateObj.getDate()).padStart(2, '0')
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0')
+  const year = dateObj.getFullYear()
+  
+  return `${day}/${month}/${year}`
 }
 
 export function formatDateTime(date: Date | string | null | undefined): string {
@@ -43,13 +44,14 @@ export function formatDateTime(date: Date | string | null | undefined): string {
     return 'Invalid Date'
   }
   
-  return new Intl.DateTimeFormat('en-GB', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(dateObj)
+  // Format as dd/mm/yyyy HH:mm
+  const day = String(dateObj.getDate()).padStart(2, '0')
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0')
+  const year = dateObj.getFullYear()
+  const hours = String(dateObj.getHours()).padStart(2, '0')
+  const minutes = String(dateObj.getMinutes()).padStart(2, '0')
+  
+  return `${day}/${month}/${year} ${hours}:${minutes}`
 }
 
 export function getInitials(name: string): string {

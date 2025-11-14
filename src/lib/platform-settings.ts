@@ -15,11 +15,11 @@ export async function getPlatformSettings() {
   }
 
   try {
-    let settings = await prisma.platformSettings.findFirst()
+    let settings = await prisma.platform_settings.findFirst()
     
     if (!settings) {
       // Create default settings if none exist
-      settings = await prisma.platformSettings.create({
+      settings = await prisma.platform_settings.create({
         data: {}
       })
     }

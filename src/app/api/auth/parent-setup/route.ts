@@ -162,6 +162,19 @@ export async function POST(request: NextRequest) {
         }
       })
 
+      // Update existing pending payment records for this student to use the parent's preferred method
+      await tx.monthlyPaymentRecord.updateMany({
+        where: {
+          orgId: invitation.orgId,
+          studentId: invitation.studentId,
+          status: 'PENDING',
+          method: null
+        },
+        data: {
+          method: paymentMethod
+        }
+      })
+
       // Mark invitation as accepted
       await tx.parentInvitation.update({
         where: { id: invitation.id },

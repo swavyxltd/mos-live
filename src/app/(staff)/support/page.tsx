@@ -71,7 +71,7 @@ export default function SupportPage() {
           role: ticket.role || 'STAFF',
           createdAt: ticket.createdAt,
           updatedAt: ticket.updatedAt,
-          createdBy: ticket.createdBy || {
+          createdBy: ticket.User || {
             id: '',
             name: 'Unknown',
             email: ''

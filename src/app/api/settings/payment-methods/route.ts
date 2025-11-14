@@ -26,6 +26,9 @@ export async function GET() {
       cashPaymentEnabled: org.cashPaymentEnabled,
       bankTransferEnabled: org.bankTransferEnabled,
       paymentInstructions: org.paymentInstructions,
+      bankAccountName: org.bankAccountName,
+      bankSortCode: org.bankSortCode,
+      bankAccountNumber: org.bankAccountNumber,
       hasStripeConfigured: !!(org.stripePublishableKey && org.stripeSecretKey)
     })
   } catch (error) {
@@ -59,7 +62,10 @@ export async function PUT(request: NextRequest) {
       autoPaymentEnabled,
       cashPaymentEnabled,
       bankTransferEnabled,
-      paymentInstructions
+      paymentInstructions,
+      bankAccountName,
+      bankSortCode,
+      bankAccountNumber
     } = body
 
     // Validate that at least one payment method is enabled
@@ -90,6 +96,9 @@ export async function PUT(request: NextRequest) {
         cashPaymentEnabled,
         bankTransferEnabled,
         paymentInstructions,
+        bankAccountName: bankAccountName || null,
+        bankSortCode: bankSortCode || null,
+        bankAccountNumber: bankAccountNumber || null,
         updatedAt: new Date()
       }
     })
@@ -102,6 +111,9 @@ export async function PUT(request: NextRequest) {
         cashPaymentEnabled: updatedOrg.cashPaymentEnabled,
         bankTransferEnabled: updatedOrg.bankTransferEnabled,
         paymentInstructions: updatedOrg.paymentInstructions,
+        bankAccountName: updatedOrg.bankAccountName,
+        bankSortCode: updatedOrg.bankSortCode,
+        bankAccountNumber: updatedOrg.bankAccountNumber,
         hasStripeConfigured: !!(updatedOrg.stripePublishableKey && updatedOrg.stripeSecretKey)
       }
     })

@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     const tickets = await prisma.supportTicket.findMany({
       where: whereClause,
       include: {
-        createdBy: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
         status: 'OPEN'
       },
       include: {
-        createdBy: {
+        User: {
           select: {
             id: true,
             name: true,

@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { 
-  DollarSign, 
+  Coins, 
   CreditCard, 
   TrendingUp, 
   CheckCircle, 
@@ -191,7 +191,7 @@ export default function ManualPaymentsPage() {
   const getPaymentMethodIcon = (method: string) => {
     switch (method) {
       case 'CASH':
-        return <DollarSign className="h-4 w-4" />
+        return <Coins className="h-4 w-4 text-gray-500" strokeWidth={1.5} />
       case 'BANK_TRANSFER':
         return <TrendingUp className="h-4 w-4" />
       default:
@@ -343,7 +343,7 @@ export default function ManualPaymentsPage() {
                   <SelectContent>
                     <SelectItem value="CASH">
                       <div className="flex items-center space-x-2">
-                        <DollarSign className="h-4 w-4" />
+                        <Coins className="h-4 w-4 text-gray-500" strokeWidth={1.5} />
                         <span>Cash</span>
                       </div>
                     </SelectItem>

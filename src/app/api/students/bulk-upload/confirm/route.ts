@@ -229,6 +229,21 @@ export async function POST(request: NextRequest) {
               }
             })
 
+            // Get parent's preferred payment method if parent exists
+            let preferredMethod: string | null = null
+            if (student.primaryParentId) {
+              const billingProfile = await tx.parentBillingProfile.findUnique({
+                where: {
+                  orgId_parentUserId: {
+                    orgId: org.id,
+                    parentUserId: student.primaryParentId
+                  }
+                },
+                select: { preferredPaymentMethod: true }
+              })
+              preferredMethod = billingProfile?.preferredPaymentMethod || null
+            }
+
             // Create payment record for start month
             await tx.monthlyPaymentRecord.create({
               data: {
@@ -237,7 +252,8 @@ export async function POST(request: NextRequest) {
                 classId: studentData.classId,
                 month: studentData.startMonth,
                 amountP: classRecord.monthlyFeeP,
-                status: 'PENDING'
+                status: 'PENDING',
+                method: preferredMethod
               }
             })
 

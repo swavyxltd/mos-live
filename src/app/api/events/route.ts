@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     const events = await prisma.event.findMany({
       where: whereClause,
       include: {
-        class: {
+        Class: {
           select: {
             id: true,
             name: true
