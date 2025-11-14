@@ -65,7 +65,7 @@ export function MessagesPageClient() {
     }
   }
 
-  const handleSendMessage = async (data: any) => {
+  const handleSendMessage = async (data: any, saveOnly: boolean = false) => {
     try {
       const response = await fetch('/api/messages/send', {
         method: 'POST',
@@ -76,9 +76,10 @@ export function MessagesPageClient() {
           title: data.title,
           body: data.message,
           audience: data.audience.toUpperCase(),
-          channel: 'EMAIL',
+          channel: saveOnly ? 'WHATSAPP' : 'EMAIL',
           classIds: data.classId ? [data.classId] : undefined,
-          parentId: data.parentId
+          parentId: data.parentId,
+          saveOnly: saveOnly
         })
       })
 

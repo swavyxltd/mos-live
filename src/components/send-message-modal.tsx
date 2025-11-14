@@ -48,6 +48,8 @@ export function SendMessageModal({ isOpen, onClose, onSend }: SendMessageModalPr
   const [parents, setParents] = useState<Parent[]>([])
   const [loadingClasses, setLoadingClasses] = useState(false)
   const [loadingParents, setLoadingParents] = useState(false)
+  const [showWhatsAppModal, setShowWhatsAppModal] = useState(false)
+  const [whatsAppMessage, setWhatsAppMessage] = useState('')
 
   useEffect(() => {
     if (isOpen) {
@@ -86,12 +88,7 @@ export function SendMessageModal({ isOpen, onClose, onSend }: SendMessageModalPr
     }
   }
 
-  const handleCopyForWhatsApp = async () => {
-    if (!formData.title || !formData.message) {
-      toast.error('Please fill in title and message first')
-      return
-    }
-
+  const getWhatsAppMessage = async (): Promise<string> => {
     // Get org name from API
     let orgName = 'Madrasah'
     try {
@@ -104,10 +101,76 @@ export function SendMessageModal({ isOpen, onClose, onSend }: SendMessageModalPr
       console.error('Error fetching org name:', error)
     }
     
-    const whatsappText = `📢 *Madrasah Announcement*\n\n*${formData.title}*\n\n${formData.message}\n\nJazakAllah Khair\n\n– ${orgName}`
+    return `📢 *Madrasah Announcement*\n\n*${formData.title}*\n\n${formData.message}\n\nJazakAllah Khair\n\n– ${orgName}`
+  }
 
-    navigator.clipboard.writeText(whatsappText)
-    toast.success('Copied for WhatsApp')
+  const handleCopyForWhatsApp = async () => {
+    if (!formData.title || !formData.message) {
+      toast.error('Please fill in title and message first')
+      return
+    }
+
+    if (formData.audience === 'class' && !formData.classId) {
+      toast.error('Please select a class')
+      return
+    }
+
+    if (formData.audience === 'individual' && !formData.parentId) {
+      toast.error('Please select a parent')
+      return
+    }
+
+    // Save message to database (so it appears in parent portal) without sending emails
+    setLoading(true)
+    try {
+      // Save message to DB without sending emails
+      const response = await fetch('/api/messages/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          title: formData.title,
+          body: formData.message,
+          audience: formData.audience.toUpperCase(),
+          channel: 'WHATSAPP',
+          classIds: formData.audience === 'class' ? [formData.classId] : undefined,
+          parentId: formData.audience === 'individual' ? formData.parentId : undefined,
+          saveOnly: true
+        })
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to save message')
+      }
+      
+      // Close main modal
+      onClose()
+      
+      // Show WhatsApp message modal
+      const whatsappText = await getWhatsAppMessage()
+      setWhatsAppMessage(whatsappText)
+      setShowWhatsAppModal(true)
+      
+      // Reset form
+      setFormData({
+        title: '',
+        message: '',
+        audience: 'all',
+        classId: '',
+        parentId: ''
+      })
+    } catch (error) {
+      console.error('Error saving message:', error)
+      toast.error('Failed to save message. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleCopyWhatsAppMessage = () => {
+    navigator.clipboard.writeText(whatsAppMessage)
+    toast.success('Copied to clipboard!')
   }
 
   const handleSendEmail = async () => {
@@ -136,6 +199,14 @@ export function SendMessageModal({ isOpen, onClose, onSend }: SendMessageModalPr
         parentId: formData.audience === 'individual' ? formData.parentId : undefined
       })
       
+      // Close main modal
+      onClose()
+      
+      // Show WhatsApp message after email is sent
+      const whatsappText = await getWhatsAppMessage()
+      setWhatsAppMessage(whatsappText)
+      setShowWhatsAppModal(true)
+      
       // Reset form
       setFormData({
         title: '',
@@ -163,6 +234,7 @@ export function SendMessageModal({ isOpen, onClose, onSend }: SendMessageModalPr
   }
 
   return (
+    <>
     <Modal isOpen={isOpen} onClose={handleCancel} title="New Message">
       <div className="space-y-6">
         <div>
@@ -268,6 +340,56 @@ export function SendMessageModal({ isOpen, onClose, onSend }: SendMessageModalPr
           </Button>
         </div>
       </div>
+
     </Modal>
+
+    {/* WhatsApp Message Modal - Separate modal with higher z-index */}
+    {showWhatsAppModal && (
+      <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        {/* Backdrop */}
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+          onClick={() => setShowWhatsAppModal(false)}
+        />
+        
+        {/* Modal */}
+        <div className="relative bg-white border border-gray-100 rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-gray-100 flex-shrink-0">
+            <h2 className="text-lg font-semibold text-gray-900">WhatsApp Message</h2>
+            <button
+              onClick={() => setShowWhatsAppModal(false)}
+              className="p-1 rounded-md hover:bg-gray-100 transition-colors"
+            >
+              <X className="h-4 w-4 text-gray-500" />
+            </button>
+          </div>
+          
+          {/* Content */}
+          <div className="p-6 overflow-y-auto flex-1">
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">
+                Copy this message and send it via your WhatsApp channel or group:
+              </p>
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <pre className="whitespace-pre-wrap text-sm text-gray-900 font-mono">
+                  {whatsAppMessage}
+                </pre>
+              </div>
+              <div className="flex justify-end space-x-3">
+                <Button type="button" variant="outline" onClick={() => setShowWhatsAppModal(false)}>
+                  Close
+                </Button>
+                <Button type="button" onClick={handleCopyWhatsAppMessage}>
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy Message
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+  </>
   )
 }

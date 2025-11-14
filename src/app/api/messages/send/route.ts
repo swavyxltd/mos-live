@@ -10,10 +10,11 @@ const sendMessageSchema = z.object({
   title: z.string().min(1),
   body: z.string().min(1),
   audience: z.enum(['ALL', 'BY_CLASS', 'INDIVIDUAL']),
-  channel: z.enum(['EMAIL', 'WHATSAPP']),
+  channel: z.enum(['EMAIL', 'WHATSAPP']).optional(),
   classIds: z.array(z.string()).optional(),
   parentId: z.string().optional(),
-  targets: z.record(z.any()).optional()
+  targets: z.record(z.any()).optional(),
+  saveOnly: z.boolean().optional() // If true, save to DB without sending emails
 })
 
 export async function POST(request: NextRequest) {
@@ -25,7 +26,7 @@ export async function POST(request: NextRequest) {
     if (orgId instanceof NextResponse) return orgId
     
     const requestBody = await request.json()
-    const { title, body, audience, channel, classIds, parentId, targets } = sendMessageSchema.parse(requestBody)
+    const { title, body, audience, channel = 'EMAIL', classIds, parentId, targets, saveOnly = false } = sendMessageSchema.parse(requestBody)
     
     // Get recipients based on audience
     let recipients: Array<{ email?: string; phone?: string; name: string; id?: string }> = []
@@ -124,39 +125,46 @@ export async function POST(request: NextRequest) {
       }
     })
     
-    // Send messages
+    // Send messages (only if not saveOnly)
     let successCount = 0
     let failureCount = 0
     
-    for (const recipient of recipients) {
-      try {
-        if (channel === 'EMAIL' && recipient.email) {
-          const { generateEmailTemplate } = await import('@/lib/email-template')
-          const html = await generateEmailTemplate({
-            title,
-            description: body,
-            footerText: 'Best regards, The Madrasah Team'
-          })
-          
-          await sendEmail({
-            to: recipient.email,
-            subject: title,
-            html,
-            text: `${title}\n\n${body}\n\nBest regards,\nThe Madrasah Team`
-          })
-          successCount++
-        } else if (channel === 'WHATSAPP' && recipient.phone) {
-          await whatsapp.sendAnnouncement(recipient.phone, title, body)
-          successCount++
+    if (!saveOnly) {
+      for (const recipient of recipients) {
+        try {
+          if (channel === 'EMAIL' && recipient.email) {
+            const { generateEmailTemplate } = await import('@/lib/email-template')
+            const html = await generateEmailTemplate({
+              title,
+              description: body,
+              footerText: 'Best regards, The Madrasah Team'
+            })
+            
+            await sendEmail({
+              to: recipient.email,
+              subject: title,
+              html,
+              text: `${title}\n\n${body}\n\nBest regards,\nThe Madrasah Team`
+            })
+            successCount++
+          } else if (channel === 'WHATSAPP' && recipient.phone) {
+            // WhatsApp sending is disabled - admin will copy and send manually
+            // Just count as success since message is saved to DB
+            successCount++
+          }
+        } catch (error) {
+          console.error(`Failed to send ${channel} to ${recipient.email || recipient.phone}:`, error)
+          failureCount++
         }
-      } catch (error) {
-        console.error(`Failed to send ${channel} to ${recipient.email || recipient.phone}:`, error)
-        failureCount++
       }
+    } else {
+      // If saveOnly, mark all as success since we're just saving to DB
+      successCount = recipients.length
     }
     
-    // Update message status
-    const finalStatus = failureCount === 0 ? 'SENT' : failureCount === recipients.length ? 'FAILED' : 'SENT'
+    // Always mark as SENT if message is saved to database (so it appears in parent portal)
+    // Even if email delivery fails, the message is still available in the portal
+    const finalStatus = 'SENT'
     
     const targetsData = JSON.parse(message.targets || '{}')
     await prisma.message.update({
@@ -167,7 +175,8 @@ export async function POST(request: NextRequest) {
           ...targetsData,
           recipients: recipients.length,
           successCount,
-          failureCount
+          failureCount,
+          emailDeliveryStatus: failureCount === 0 ? 'success' : failureCount === recipients.length ? 'failed' : 'partial'
         }),
         updatedAt: new Date()
       }
