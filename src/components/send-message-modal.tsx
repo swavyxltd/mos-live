@@ -400,7 +400,7 @@ export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent }: Sen
         />
         
         {/* Modal */}
-        <div className="relative bg-white border border-gray-100 rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+        <div className="relative bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-100 flex-shrink-0">
             <h2 className="text-lg font-semibold text-gray-900">WhatsApp Message</h2>

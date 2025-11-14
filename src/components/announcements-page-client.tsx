@@ -18,14 +18,14 @@ export function AnnouncementsPageClient({ messages }: AnnouncementsPageClientPro
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Announcements</h1>
+        <h1 className="text-2xl font-bold text-[var(--foreground)]">Announcements</h1>
         <p className="mt-1 text-sm text-gray-500">
           Important messages and updates from the madrasah.
         </p>
       </div>
 
       {messages.length === 0 ? (
-        <div className="bg-white shadow rounded-lg">
+        <div className="bg-[var(--card)] shadow rounded-lg border border-[var(--border)]">
           <div className="px-4 py-12 text-center">
             <p className="text-gray-500">No announcements at this time.</p>
           </div>

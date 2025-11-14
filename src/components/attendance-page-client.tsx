@@ -116,7 +116,7 @@ export function AttendancePageClient({ attendanceData }: AttendancePageClientPro
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Attendance</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-[var(--foreground)]">Attendance</h1>
           <p className="mt-1 text-sm text-gray-500">
             Track and manage student attendance.
           </p>

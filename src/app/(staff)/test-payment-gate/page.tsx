@@ -25,7 +25,7 @@ export default function TestPaymentGatePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Payment Gate Test Page</h1>
+        <h1 className="text-2xl font-bold text-[var(--foreground)]">Payment Gate Test Page</h1>
         <p className="text-gray-600 mt-2">
           Test the payment gate system by clicking the buttons below. If payment is not set up, you'll see a modal.
         </p>

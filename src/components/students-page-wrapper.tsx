@@ -83,8 +83,8 @@ export function StudentsPageWrapper({ initialStudents, classes }: StudentsPageWr
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Students</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-[var(--foreground)]">Students</h1>
+          <p className="mt-1 text-sm text-[var(--muted-foreground)]">
             Manage student information and enrollments.
           </p>
         </div>
@@ -138,16 +138,16 @@ export function StudentsPageWrapper({ initialStudents, classes }: StudentsPageWr
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-6 rounded-lg shadow">
+        <div className="bg-[var(--card)] p-6 rounded-lg shadow border border-[var(--border)]">
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <Users className="h-8 w-8 text-blue-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">
+              <p className="text-sm font-medium text-[var(--muted-foreground)]">
                 {showArchived ? 'Archived Students' : 'Total Students'}
               </p>
-              <p className="text-2xl font-semibold text-gray-900">
+              <p className="text-2xl font-semibold text-[var(--foreground)]">
                 {showArchived 
                   ? students.filter(s => s.isArchived).length 
                   : students.filter(s => !s.isArchived).length
@@ -157,42 +157,42 @@ export function StudentsPageWrapper({ initialStudents, classes }: StudentsPageWr
           </div>
         </div>
         
-        <div className="bg-white p-6 rounded-lg shadow">
+        <div className="bg-[var(--card)] p-6 rounded-lg shadow border border-[var(--border)]">
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <Calendar className="h-8 w-8 text-green-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">New This Month</p>
-              <p className="text-2xl font-semibold text-gray-900">
+              <p className="text-sm font-medium text-[var(--muted-foreground)]">New This Month</p>
+              <p className="text-2xl font-semibold text-[var(--foreground)]">
                 {students.filter(s => s.enrollmentDate >= new Date('2024-12-01')).length}
               </p>
             </div>
           </div>
         </div>
         
-        <div className="bg-white p-6 rounded-lg shadow">
+        <div className="bg-[var(--card)] p-6 rounded-lg shadow border border-[var(--border)]">
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <Heart className="h-8 w-8 text-red-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">With Allergies</p>
-              <p className="text-2xl font-semibold text-gray-900">
+              <p className="text-sm font-medium text-[var(--muted-foreground)]">With Allergies</p>
+              <p className="text-2xl font-semibold text-[var(--foreground)]">
                 {students.filter(s => s.allergies && s.allergies !== 'None').length}
               </p>
             </div>
           </div>
         </div>
         
-        <div className="bg-white p-6 rounded-lg shadow">
+        <div className="bg-[var(--card)] p-6 rounded-lg shadow border border-[var(--border)]">
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <AlertTriangle className="h-8 w-8 text-yellow-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-500">Low Attendance</p>
-              <p className="text-2xl font-semibold text-gray-900">
+              <p className="text-sm font-medium text-[var(--muted-foreground)]">Low Attendance</p>
+              <p className="text-2xl font-semibold text-[var(--foreground)]">
                 {students.filter(s => s.attendanceRate < 86).length}
               </p>
             </div>

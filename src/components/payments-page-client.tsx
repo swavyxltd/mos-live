@@ -332,7 +332,7 @@ export function PaymentsPageClient({ classes }: PaymentsPageClientProps) {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
+          <h1 className="text-2xl font-bold text-[var(--foreground)]">Payments</h1>
           <p className="mt-1 text-sm text-gray-500">
             Manage payments for students by class. Click on a class to view payment records.
           </p>
@@ -442,7 +442,7 @@ export function PaymentsPageClient({ classes }: PaymentsPageClientProps) {
           Back to Classes
         </Button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{selectedClass.name}</h1>
+          <h1 className="text-2xl font-bold text-[var(--foreground)]">{selectedClass.name}</h1>
           <p className="mt-1 text-sm text-gray-500">
             {selectedClass.teacher} • {selectedClass.studentCount} students
           </p>

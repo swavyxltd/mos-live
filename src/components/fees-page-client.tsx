@@ -118,7 +118,7 @@ export function FeesPageClient({ classes, summary }: FeesPageClientProps) {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Fees Overview</h1>
+        <h1 className="text-2xl font-bold text-[var(--foreground)]">Fees Overview</h1>
         <p className="mt-1 text-sm text-gray-500">
           Manage fees for all classes in your madrasah. Fees are set when creating classes.
         </p>

@@ -160,7 +160,7 @@ export default function FAQPage() {
           </Button>
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Frequently Asked Questions</h1>
+          <h1 className="text-2xl font-bold text-[var(--foreground)]">Frequently Asked Questions</h1>
           <p className="mt-1 text-sm text-gray-500">
             Find answers to common questions about Madrasah OS
           </p>

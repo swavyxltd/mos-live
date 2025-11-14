@@ -4530,7 +4530,7 @@ Comprehensive financial reporting is essential for effective madrasah financial 
           </Button>
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Documentation</h1>
+          <h1 className="text-2xl font-bold text-[var(--foreground)]">Documentation</h1>
           <p className="mt-1 text-sm text-gray-500">
             Comprehensive guides and tutorials for using Madrasah OS
           </p>
