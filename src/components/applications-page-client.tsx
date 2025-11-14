@@ -224,8 +224,8 @@ export function ApplicationsPageClient({ orgSlug }: ApplicationsPageClientProps)
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Applications</h1>
-            <p className="mt-1 text-sm text-gray-500">
+            <h1 className="text-2xl font-bold text-[var(--foreground)]">Applications</h1>
+            <p className="mt-1 text-sm text-[var(--muted-foreground)]">
               Manage student applications for your madrasah.
             </p>
           </div>
