@@ -227,19 +227,20 @@ export async function POST(request: NextRequest) {
     // Log the action
     await prisma.auditLog.create({
       data: {
+        id: `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         orgId,
         actorUserId: session.user.id,
         action: 'SEND_MESSAGE',
         targetType: 'Message',
         targetId: message.id,
-        data: {
+        data: JSON.stringify({
           title,
           channel,
           audience,
           recipients: recipients.length,
           successCount,
           failureCount
-        }
+        })
       }
     })
     
