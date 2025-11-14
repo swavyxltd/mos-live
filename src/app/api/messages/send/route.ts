@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       audienceDisplayName = 'All parents'
     } else if (audience === 'BY_CLASS' && classIds && classIds.length > 0) {
       // Get parents of students in specific classes
-      const class = await prisma.class.findUnique({
+      const classData = await prisma.class.findUnique({
         where: { id: classIds[0] },
         select: { name: true }
       })
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
         }
       })
       recipients = parents
-      audienceDisplayName = class?.name || 'Specific class'
+      audienceDisplayName = classData?.name || 'Specific class'
     } else if (audience === 'INDIVIDUAL' && parentId) {
       // Get individual parent
       const parent = await prisma.user.findUnique({
