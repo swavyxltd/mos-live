@@ -208,13 +208,13 @@ export async function POST(request: NextRequest) {
     // Even if email delivery fails, the message is still available in the portal
     const finalStatus = 'SENT'
     
-    const targetsData = JSON.parse(message.targets || '{}')
+    const existingTargetsData = JSON.parse(message.targets || '{}')
     await prisma.message.update({
       where: { id: message.id },
       data: {
         status: finalStatus,
         targets: JSON.stringify({
-          ...targetsData,
+          ...existingTargetsData,
           recipients: recipients.length,
           successCount,
           failureCount,
