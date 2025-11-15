@@ -1,4 +1,6 @@
-import React from 'react'
+'use client'
+
+import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 
@@ -10,6 +12,26 @@ interface MadrasahLogoProps {
 }
 
 export function MadrasahLogo({ className = '', showText = true, textSize = 'md', size = 'md' }: MadrasahLogoProps) {
+  const [isDarkMode, setIsDarkMode] = useState(false)
+
+  useEffect(() => {
+    // Check initial dark mode state
+    const checkDarkMode = () => {
+      setIsDarkMode(document.documentElement.classList.contains('dark'))
+    }
+    
+    checkDarkMode()
+
+    // Watch for dark mode changes
+    const observer = new MutationObserver(checkDarkMode)
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    })
+
+    return () => observer.disconnect()
+  }, [])
+
   const textSizeClasses = {
     sm: 'text-xs',
     md: 'text-sm',
@@ -24,12 +46,15 @@ export function MadrasahLogo({ className = '', showText = true, textSize = 'md',
     xl: 'sm:w-72 sm:h-15'
   }
 
+  // Use dark logo when dark mode is active
+  const logoSrc = isDarkMode ? '/logo-dark.png' : '/madrasah-logo.png'
+
   return (
     <div className={`flex flex-col items-center ${className}`}>
       {/* Logo Icon - Using your PNG image */}
       <div className="flex items-center justify-start mb-2 w-full">
         <Image 
-          src="/madrasah-logo.png" 
+          src={logoSrc} 
           alt="Madrasah OS Logo" 
           width={size === 'sm' ? 128 : size === 'md' ? 192 : size === 'lg' ? 256 : size === 'lg-sm' ? 224 : 288}
           height={size === 'sm' ? 24 : size === 'md' ? 40 : size === 'lg' ? 48 : size === 'lg-sm' ? 48 : 60}
@@ -40,7 +65,7 @@ export function MadrasahLogo({ className = '', showText = true, textSize = 'md',
       
       {/* Text */}
       {showText && (
-        <div className={`text-center ${textSizeClasses[textSize]} font-semibold text-gray-900`}>
+        <div className={`text-center ${textSizeClasses[textSize]} font-semibold text-[var(--foreground)]`}>
           Madrasah OS
         </div>
       )}
