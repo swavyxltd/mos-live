@@ -7,6 +7,7 @@ import { TeachersList } from '@/components/teachers-list'
 import { EditTeacherModal } from '@/components/edit-teacher-modal'
 import { AddTeacherModal } from '@/components/add-teacher-modal'
 import { RestrictedAction } from '@/components/restricted-action'
+import { StatCard } from '@/components/ui/stat-card'
 
 interface Teacher {
   id: string
@@ -94,60 +95,37 @@ export function StaffPageWrapper({ initialTeachers }: StaffPageWrapperProps) {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-[var(--card)] p-6 rounded-lg shadow border border-[var(--border)]">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <UserCheck className="h-8 w-8 text-blue-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-[var(--muted-foreground)]">Total Staff</p>
-              <p className="text-2xl font-semibold text-[var(--foreground)]">{teachers.length}</p>
-            </div>
-          </div>
-        </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+        <StatCard
+          title="Total Staff"
+          value={teachers.length}
+          icon={<UserCheck className="h-4 w-4 text-blue-600" />}
+          className="border-l-4 border-l-blue-500 bg-blue-50/30"
+        />
         
-        <div className="bg-[var(--card)] p-6 rounded-lg shadow border border-[var(--border)]">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <Shield className="h-8 w-8 text-green-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-[var(--muted-foreground)]">Active</p>
-              <p className="text-2xl font-semibold text-[var(--foreground)]">
-                {teachers.filter(t => t.isActive).length}
-              </p>
-            </div>
-          </div>
-        </div>
+        <StatCard
+          title="Active"
+          value={teachers.filter(t => t.isActive).length}
+          description="Currently active"
+          icon={<Shield className="h-4 w-4 text-green-600" />}
+          className="border-l-4 border-l-green-500 bg-green-50/30"
+        />
         
-        <div className="bg-[var(--card)] p-6 rounded-lg shadow border border-[var(--border)]">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <GraduationCap className="h-8 w-8 text-purple-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-[var(--muted-foreground)]">With Classes</p>
-              <p className="text-2xl font-semibold text-[var(--foreground)]">
-                {teachers.filter(t => t._count.classes > 0).length}
-              </p>
-            </div>
-          </div>
-        </div>
+        <StatCard
+          title="With Classes"
+          value={teachers.filter(t => t._count.classes > 0).length}
+          description="Assigned to classes"
+          icon={<GraduationCap className="h-4 w-4 text-purple-600" />}
+          className="border-l-4 border-l-purple-500 bg-purple-50/30"
+        />
         
-        <div className="bg-[var(--card)] p-6 rounded-lg shadow border border-[var(--border)]">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <User className="h-8 w-8 text-orange-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-[var(--muted-foreground)]">Inactive</p>
-              <p className="text-2xl font-semibold text-[var(--foreground)]">
-                {teachers.filter(t => !t.isActive).length}
-              </p>
-            </div>
-          </div>
-        </div>
+        <StatCard
+          title="Inactive"
+          value={teachers.filter(t => !t.isActive).length}
+          description="Not currently active"
+          icon={<User className="h-4 w-4 text-orange-600" />}
+          className="border-l-4 border-l-orange-500 bg-orange-50/30"
+        />
       </div>
 
       {/* Staff List */}
