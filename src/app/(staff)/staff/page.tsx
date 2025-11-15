@@ -14,34 +14,75 @@ export default async function StaffPage() {
   // Always use real database data
   const { prisma } = await import('@/lib/prisma')
   
-  // Get staff members from database
+  // Get staff members from database with their classes and student counts
   const memberships = await prisma.userOrgMembership.findMany({
     where: {
       orgId: org.id,
       role: { in: ['ADMIN', 'STAFF'] }
     },
     include: {
-      User: true,
+      User: {
+        include: {
+          Class: {
+            where: {
+              orgId: org.id,
+              isArchived: false
+            },
+            include: {
+              StudentClass: {
+                where: {
+                  Student: {
+                    isArchived: false
+                  }
+                },
+                select: {
+                  studentId: true
+                }
+              },
+              _count: {
+                select: {
+                  StudentClass: {
+                    where: {
+                      Student: {
+                        isArchived: false
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
       Org: true
     }
   })
 
-  const teachers = memberships.map(membership => ({
-    id: membership.userId,
-    name: membership.User.name || '',
-    email: membership.User.email || '',
-    phone: membership.User.phone || '',
-    username: membership.User.email?.split('@')[0] || '',
-    isActive: !membership.User.isArchived,
-    role: membership.role,
-    createdAt: membership.User.createdAt,
-    updatedAt: membership.User.updatedAt,
-    classes: [], // TODO: Get classes from database
-    _count: {
-      classes: 0,
-      students: 0
+  const teachers = memberships.map(membership => {
+    const classes = membership.User.Class || []
+    const totalStudents = classes.reduce((sum, cls) => sum + (cls._count?.StudentClass || 0), 0)
+    
+    return {
+      id: membership.userId,
+      name: membership.User.name || '',
+      email: membership.User.email || '',
+      phone: membership.User.phone || '',
+      username: membership.User.email?.split('@')[0] || '',
+      isActive: !membership.User.isArchived,
+      role: membership.role,
+      createdAt: membership.User.createdAt,
+      updatedAt: membership.User.updatedAt,
+      classes: classes.map(cls => ({
+        id: cls.id,
+        name: cls.name,
+        students: cls._count?.StudentClass || 0
+      })),
+      _count: {
+        classes: classes.length,
+        students: totalStudents
+      }
     }
-  }))
+  })
 
   return (
     <StaffPageWrapper initialTeachers={teachers} />
