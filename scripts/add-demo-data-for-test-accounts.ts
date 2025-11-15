@@ -87,6 +87,46 @@ async function main() {
 
   console.log('✅ Verified: No owner accounts in this organization\n')
 
+  // Step 0: Set up payment details for the organization (make it look like they have a subscription)
+  console.log('💳 Setting up payment details for organization...')
+  const billingAnniversaryDate = org.createdAt.getDate()
+  const trialEndDate = new Date(org.createdAt)
+  trialEndDate.setMonth(trialEndDate.getMonth() + 1)
+  
+  // Use fake Stripe IDs that won't conflict with real data (prefixed with demo_)
+  const fakeStripeCustomerId = `cus_demo_${org.id.substring(0, 24)}`
+  const fakePaymentMethodId = `pm_demo_${org.id.substring(0, 24)}`
+  const fakeSubscriptionId = `sub_demo_${org.id.substring(0, 24)}`
+  const fakeSubscriptionItemId = `si_demo_${org.id.substring(0, 24)}`
+  
+  await prisma.platformOrgBilling.upsert({
+    where: { orgId: org.id },
+    update: {
+      stripeCustomerId: fakeStripeCustomerId,
+      defaultPaymentMethodId: fakePaymentMethodId,
+      stripeSubscriptionId: fakeSubscriptionId,
+      stripeSubscriptionItemId: fakeSubscriptionItemId,
+      subscriptionStatus: 'active',
+      billingAnniversaryDate,
+      trialEndDate,
+      updatedAt: new Date()
+    },
+    create: {
+      id: `billing_demo_${org.id}`,
+      orgId: org.id,
+      stripeCustomerId: fakeStripeCustomerId,
+      defaultPaymentMethodId: fakePaymentMethodId,
+      stripeSubscriptionId: fakeSubscriptionId,
+      stripeSubscriptionItemId: fakeSubscriptionItemId,
+      subscriptionStatus: 'active',
+      billingAnniversaryDate,
+      trialEndDate,
+      updatedAt: new Date()
+    }
+  })
+  
+  console.log(`   ✅ Payment details configured (demo Stripe IDs - not real)`)
+
   // Step 1: Create 5 classes
   console.log('📚 Creating 5 classes...')
   const classNames = [
