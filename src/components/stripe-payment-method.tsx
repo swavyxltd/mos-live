@@ -166,6 +166,7 @@ function PaymentMethodForm({ onSuccess, onCancel, clientSecret: propClientSecret
         </label>
         <div className="p-4 border border-[var(--border)] rounded-lg bg-[var(--card)] hover:border-[var(--border)] focus-within:border-[var(--ring)] focus-within:ring-1 focus-within:ring-[var(--ring)] transition-all duration-200 stripe-card-element">
           <CardElement
+            key={isDarkMode ? 'dark' : 'light'}
             options={{
               style: {
                 base: {
