@@ -219,14 +219,24 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
       // Add new class enrollments
       if (selectedClasses.length > 0) {
-        await prisma.studentClass.createMany({
-          data: selectedClasses.map((classId: string) => ({
-            id: `student-class-${id}-${classId}-${Date.now()}`,
-            studentId: id,
-            classId,
-            orgId
-          }))
-        })
+        // Use individual creates to ensure IDs are generated
+        for (const classId of selectedClasses) {
+          await prisma.studentClass.upsert({
+            where: {
+              studentId_classId: {
+                studentId: id,
+                classId: classId
+              }
+            },
+            update: {},
+            create: {
+              id: `student-class-${id}-${classId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              studentId: id,
+              classId: classId,
+              orgId
+            }
+          })
+        }
       }
     }
 
