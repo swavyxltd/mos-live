@@ -422,7 +422,7 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
                     <TableHeader>
                       <TableRow>
                         <TableHead>Student</TableHead>
-                        <TableHead>Age/Grade</TableHead>
+                        <TableHead>Age</TableHead>
                         <TableHead className="hidden md:table-cell">Parent</TableHead>
                         <TableHead>Attendance (YTD)</TableHead>
                         <TableHead>Status</TableHead>
@@ -434,7 +434,7 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
                 <TableRow key={student.id} className={student.isArchived ? 'bg-gray-50 opacity-75' : ''}>
                   <TableCell>
                     <div className="flex items-center space-x-3">
-                      <div className={`h-10 w-10 rounded-full flex items-center justify-center ${getAttendanceBgColor(student.attendanceRate)}`}>
+                      <div className={`h-10 w-10 rounded-full flex items-center justify-center ${getAttendanceBgColor(student.attendanceRate)} hidden md:flex`}>
                         <span className="text-sm font-medium text-gray-700">
                           {student.firstName.charAt(0)}{student.lastName.charAt(0)}
                         </span>
@@ -458,8 +458,7 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="text-sm">Age {student.age}</div>
-                    <div className="text-sm text-gray-500">Grade {student.grade}</div>
+                    <div className="text-sm">{student.age}</div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
                     <div className="text-sm font-medium">{student.parentName}</div>
