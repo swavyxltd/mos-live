@@ -33,11 +33,16 @@ export function MadrasahLogo({ className = '', showText = true, textSize = 'md',
     // Check immediately
     checkDarkMode()
 
-    // Also check after a delay to catch any late-applied classes
-    const timeoutId = setTimeout(checkDarkMode, 100)
+    // Check multiple times to catch any late-applied classes
+    const timeoutId1 = setTimeout(checkDarkMode, 50)
+    const timeoutId2 = setTimeout(checkDarkMode, 200)
+    const timeoutId3 = setTimeout(checkDarkMode, 500)
 
     // Watch for dark mode changes using MutationObserver
-    const observer = new MutationObserver(checkDarkMode)
+    const observer = new MutationObserver(() => {
+      // Use a small delay to ensure the class change is complete
+      setTimeout(checkDarkMode, 10)
+    })
     if (typeof window !== 'undefined') {
       observer.observe(document.documentElement, {
         attributes: true,
@@ -47,7 +52,9 @@ export function MadrasahLogo({ className = '', showText = true, textSize = 'md',
     }
 
     return () => {
-      clearTimeout(timeoutId)
+      clearTimeout(timeoutId1)
+      clearTimeout(timeoutId2)
+      clearTimeout(timeoutId3)
       observer.disconnect()
     }
   }, [])
@@ -73,13 +80,24 @@ export function MadrasahLogo({ className = '', showText = true, textSize = 'md',
     <div className={`flex flex-col items-center ${className}`}>
       {/* Logo Icon - Using your PNG image */}
       <div className="flex items-center justify-start mb-2 w-full">
+        {/* Light mode logo */}
         <Image 
-          key={logoSrc} 
-          src={logoSrc} 
+          key="light-logo"
+          src="/madrasah-logo.png" 
           alt="Madrasah OS Logo" 
           width={size === 'sm' ? 128 : size === 'md' ? 192 : size === 'lg' ? 256 : size === 'lg-sm' ? 224 : 288}
           height={size === 'sm' ? 24 : size === 'md' ? 40 : size === 'lg' ? 48 : size === 'lg-sm' ? 48 : 60}
-          className={cn('w-full object-contain max-w-full h-auto', logoSizeClasses[size])}
+          className={cn('w-full object-contain max-w-full h-auto', logoSizeClasses[size], isDarkMode ? 'hidden' : 'block')}
+          priority
+        />
+        {/* Dark mode logo */}
+        <Image 
+          key="dark-logo"
+          src="/logo-dark.png" 
+          alt="Madrasah OS Logo" 
+          width={size === 'sm' ? 128 : size === 'md' ? 192 : size === 'lg' ? 256 : size === 'lg-sm' ? 224 : 288}
+          height={size === 'sm' ? 24 : size === 'md' ? 40 : size === 'lg' ? 48 : size === 'lg-sm' ? 48 : 60}
+          className={cn('w-full object-contain max-w-full h-auto', logoSizeClasses[size], isDarkMode ? 'block' : 'hidden')}
           priority
         />
       </div>
