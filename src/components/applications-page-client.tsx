@@ -241,8 +241,8 @@ export function ApplicationsPageClient({ orgSlug }: ApplicationsPageClientProps)
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Applications</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-[var(--foreground)]">Applications</h1>
+          <p className="mt-1 text-sm text-[var(--muted-foreground)]">
             Manage student applications for your madrasah.
           </p>
         </div>
@@ -388,10 +388,10 @@ export function ApplicationsPageClient({ orgSlug }: ApplicationsPageClientProps)
                 <div className="flex-1">
                   <div className="flex items-center space-x-4">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">
+                      <h3 className="text-lg font-semibold text-[var(--foreground)]">
                         {application.guardianName}
                       </h3>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-[var(--muted-foreground)]">
                         {application.guardianEmail} • {application.guardianPhone}
                       </p>
                       <p className="text-sm text-gray-500 mt-1">
