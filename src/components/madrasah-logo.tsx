@@ -15,7 +15,8 @@ export function MadrasahLogo({ className = '', showText = true, textSize = 'md',
   const [isDarkMode, setIsDarkMode] = useState(() => {
     // Check initial dark mode state on client side only
     if (typeof window !== 'undefined') {
-      return document.documentElement.classList.contains('dark')
+      return document.documentElement.classList.contains('dark') || 
+             window.matchMedia('(prefers-color-scheme: dark)').matches
     }
     return false
   })
@@ -24,7 +25,9 @@ export function MadrasahLogo({ className = '', showText = true, textSize = 'md',
     // Check initial dark mode state
     const checkDarkMode = () => {
       if (typeof window !== 'undefined') {
-        const isDark = document.documentElement.classList.contains('dark')
+        const hasDarkClass = document.documentElement.classList.contains('dark')
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+        const isDark = hasDarkClass || prefersDark
         setIsDarkMode(isDark)
       }
     }
@@ -32,8 +35,10 @@ export function MadrasahLogo({ className = '', showText = true, textSize = 'md',
     // Check immediately
     checkDarkMode()
 
-    // Also check after a small delay to catch any late-applied classes
-    const timeoutId = setTimeout(checkDarkMode, 100)
+    // Also check after multiple delays to catch any late-applied classes
+    const timeoutId1 = setTimeout(checkDarkMode, 50)
+    const timeoutId2 = setTimeout(checkDarkMode, 200)
+    const timeoutId3 = setTimeout(checkDarkMode, 500)
 
     // Watch for dark mode changes
     const observer = new MutationObserver(checkDarkMode)
@@ -44,13 +49,21 @@ export function MadrasahLogo({ className = '', showText = true, textSize = 'md',
       })
     }
 
+    // Watch for system preference changes
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    const handleMediaChange = () => checkDarkMode()
+    mediaQuery.addEventListener('change', handleMediaChange)
+
     // Also listen for storage changes (in case dark mode preference is stored)
     const handleStorageChange = () => checkDarkMode()
     window.addEventListener('storage', handleStorageChange)
 
     return () => {
-      clearTimeout(timeoutId)
+      clearTimeout(timeoutId1)
+      clearTimeout(timeoutId2)
+      clearTimeout(timeoutId3)
       observer.disconnect()
+      mediaQuery.removeEventListener('change', handleMediaChange)
       window.removeEventListener('storage', handleStorageChange)
     }
   }, [])
