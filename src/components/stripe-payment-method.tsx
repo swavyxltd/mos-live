@@ -28,6 +28,25 @@ function PaymentMethodForm({ onSuccess, onCancel, clientSecret: propClientSecret
   const [clientSecret, setClientSecret] = useState<string>(propClientSecret || '')
   const [initializing, setInitializing] = useState(!propClientSecret)
   const [success, setSuccess] = useState(false)
+  const [isDarkMode, setIsDarkMode] = useState(false)
+
+  // Check dark mode
+  React.useEffect(() => {
+    const checkDarkMode = () => {
+      if (typeof window !== 'undefined') {
+        setIsDarkMode(document.documentElement.classList.contains('dark'))
+      }
+    }
+    checkDarkMode()
+    const observer = new MutationObserver(checkDarkMode)
+    if (typeof window !== 'undefined') {
+      observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class']
+      })
+    }
+    return () => observer.disconnect()
+  }, [])
 
   useEffect(() => {
     // If client secret is provided, skip fetching
@@ -151,10 +170,10 @@ function PaymentMethodForm({ onSuccess, onCancel, clientSecret: propClientSecret
               style: {
                 base: {
                   fontSize: '16px',
-                  color: 'var(--foreground)',
+                  color: isDarkMode ? '#ffffff' : '#111827',
                   fontFamily: 'system-ui, -apple-system, sans-serif',
                   '::placeholder': {
-                    color: 'var(--muted-foreground)',
+                    color: isDarkMode ? '#9CA3AF' : '#6B7280',
                   },
                 },
                 invalid: {
