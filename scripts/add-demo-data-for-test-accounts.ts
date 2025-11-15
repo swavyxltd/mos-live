@@ -325,7 +325,8 @@ async function main() {
           name: `${parentData.firstName} ${parentData.lastName}`,
           email: parentData.email,
           phone: `+44${Math.floor(Math.random() * 9000000000) + 1000000000}`,
-          emailVerified: new Date()
+          emailVerified: new Date(),
+          updatedAt: new Date()
         }
       })
 
@@ -339,6 +340,7 @@ async function main() {
         },
         update: {},
         create: {
+          id: `demo-membership-${newParent.id}-${org.id}`,
           userId: newParent.id,
           orgId: org.id,
           role: 'PARENT'
@@ -629,7 +631,8 @@ async function main() {
           name: `${staffData.firstName} ${staffData.lastName}`,
           email: staffData.email,
           phone: `+44${Math.floor(Math.random() * 9000000000) + 1000000000}`,
-          emailVerified: new Date()
+          emailVerified: new Date(),
+          updatedAt: new Date()
         }
       })
 
@@ -643,6 +646,7 @@ async function main() {
         },
         update: {},
         create: {
+          id: `demo-membership-${staffUser.id}-${org.id}`,
           userId: staffUser.id,
           orgId: org.id,
           role: 'STAFF'
@@ -723,7 +727,7 @@ async function main() {
           additionalNotes: i % 3 === 0 ? 'Looking forward to joining the madrasah community.' : null,
           submittedAt: submittedDate,
           updatedAt: submittedDate,
-          children: {
+          ApplicationChild: {
             create: children.map((child, idx) => ({
               id: `demo-app-child-${i + 1}-${idx}-${org.id}`,
               firstName: child.firstName,
