@@ -111,11 +111,11 @@ export default async function StudentsPage() {
     }
   })
 
-  // Sort students alphabetically by lastName, then firstName (A-Z)
+  // Sort students alphabetically by firstName, then lastName (A-Z)
   const sortedStudents = transformedStudents.sort((a, b) => {
-    const lastNameCompare = (a.lastName || '').localeCompare(b.lastName || '', undefined, { sensitivity: 'base' })
-    if (lastNameCompare !== 0) return lastNameCompare
-    return (a.firstName || '').localeCompare(b.firstName || '', undefined, { sensitivity: 'base' })
+    const firstNameCompare = (a.firstName || '').localeCompare(b.firstName || '', undefined, { sensitivity: 'base' })
+    if (firstNameCompare !== 0) return firstNameCompare
+    return (a.lastName || '').localeCompare(b.lastName || '', undefined, { sensitivity: 'base' })
   })
 
   return (

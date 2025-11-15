@@ -102,9 +102,9 @@ export default async function AttendancePage() {
     .map((item: any) => ({
       ...item,
       students: item.students.sort((a: any, b: any) => {
-        const lastNameCompare = (a.lastName || '').localeCompare(b.lastName || '', undefined, { sensitivity: 'base' })
-        if (lastNameCompare !== 0) return lastNameCompare
-        return (a.firstName || '').localeCompare(b.firstName || '', undefined, { sensitivity: 'base' })
+        const firstNameCompare = (a.firstName || '').localeCompare(b.firstName || '', undefined, { sensitivity: 'base' })
+        if (firstNameCompare !== 0) return firstNameCompare
+        return (a.lastName || '').localeCompare(b.lastName || '', undefined, { sensitivity: 'base' })
       })
     }))
     .slice(0, 10) // Show most recent 10

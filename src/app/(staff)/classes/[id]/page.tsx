@@ -225,9 +225,9 @@ export default async function ClassDetailsPage({ params }: ClassDetailsPageProps
                   <TableBody>
                     {classData.studentClasses
                       .sort((a: any, b: any) => {
-                        const lastNameCompare = (a.student.lastName || '').localeCompare(b.student.lastName || '', undefined, { sensitivity: 'base' })
-                        if (lastNameCompare !== 0) return lastNameCompare
-                        return (a.student.firstName || '').localeCompare(b.student.firstName || '', undefined, { sensitivity: 'base' })
+                        const firstNameCompare = (a.student.firstName || '').localeCompare(b.student.firstName || '', undefined, { sensitivity: 'base' })
+                        if (firstNameCompare !== 0) return firstNameCompare
+                        return (a.student.lastName || '').localeCompare(b.student.lastName || '', undefined, { sensitivity: 'base' })
                       })
                       .map((enrollment: any, index: number) => (
                       <TableRow key={index}>

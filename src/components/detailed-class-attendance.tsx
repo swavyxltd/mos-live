@@ -138,7 +138,7 @@ export function DetailedClassAttendance({
           <div>
             <h2 className="text-xl font-semibold text-gray-900">{classDetails.name}</h2>
             <p className="text-sm text-gray-600">
-              {classDetails.date.toLocaleDateString()} • {classDetails.teacher}
+              {classDetails.date instanceof Date ? classDetails.date.toLocaleDateString() : new Date(classDetails.date).toLocaleDateString()} • {classDetails.teacher}
             </p>
           </div>
         </div>
@@ -209,17 +209,17 @@ export function DetailedClassAttendance({
           <div className="space-y-4">
             {[...classDetails.students]
               .sort((a, b) => {
-                // Extract lastName and firstName from name (format: "FirstName LastName")
+                // Extract firstName and lastName from name (format: "FirstName LastName")
                 const aParts = a.name.split(' ')
                 const bParts = b.name.split(' ')
-                const aLastName = aParts.length > 1 ? aParts[aParts.length - 1] : ''
-                const bLastName = bParts.length > 1 ? bParts[bParts.length - 1] : ''
                 const aFirstName = aParts[0] || ''
                 const bFirstName = bParts[0] || ''
+                const aLastName = aParts.length > 1 ? aParts[aParts.length - 1] : ''
+                const bLastName = bParts.length > 1 ? bParts[bParts.length - 1] : ''
                 
-                const lastNameCompare = aLastName.localeCompare(bLastName, undefined, { sensitivity: 'base' })
-                if (lastNameCompare !== 0) return lastNameCompare
-                return aFirstName.localeCompare(bFirstName, undefined, { sensitivity: 'base' })
+                const firstNameCompare = aFirstName.localeCompare(bFirstName, undefined, { sensitivity: 'base' })
+                if (firstNameCompare !== 0) return firstNameCompare
+                return aLastName.localeCompare(bLastName, undefined, { sensitivity: 'base' })
               })
               .map((student) => (
               <div 

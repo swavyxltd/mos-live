@@ -326,12 +326,12 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
     
     switch (sortBy) {
       case 'name':
-        // Sort by lastName first, then firstName (A-Z)
-        const lastNameCompare = (a.lastName || '').localeCompare(b.lastName || '', undefined, { sensitivity: 'base' })
-        if (lastNameCompare !== 0) {
-          comparison = lastNameCompare
+        // Sort by firstName first, then lastName (A-Z)
+        const firstNameCompare = (a.firstName || '').localeCompare(b.firstName || '', undefined, { sensitivity: 'base' })
+        if (firstNameCompare !== 0) {
+          comparison = firstNameCompare
         } else {
-          comparison = (a.firstName || '').localeCompare(b.firstName || '', undefined, { sensitivity: 'base' })
+          comparison = (a.lastName || '').localeCompare(b.lastName || '', undefined, { sensitivity: 'base' })
         }
         break
       case 'age':

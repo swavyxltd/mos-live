@@ -124,9 +124,9 @@ export default async function PaymentsPage() {
         parentEmail: sc.Student.User?.email || '',
         parentPhone: sc.Student.User?.phone || ''
       })).sort((a, b) => {
-        const lastNameCompare = (a.lastName || '').localeCompare(b.lastName || '', undefined, { sensitivity: 'base' })
-        if (lastNameCompare !== 0) return lastNameCompare
-        return (a.firstName || '').localeCompare(b.firstName || '', undefined, { sensitivity: 'base' })
+        const firstNameCompare = (a.firstName || '').localeCompare(b.firstName || '', undefined, { sensitivity: 'base' })
+        if (firstNameCompare !== 0) return firstNameCompare
+        return (a.lastName || '').localeCompare(b.lastName || '', undefined, { sensitivity: 'base' })
       }),
       paymentRecords: updatedRecords
         .map(record => ({
@@ -147,9 +147,9 @@ export default async function PaymentsPage() {
           parentPhone: record.Student.User?.phone || ''
         }))
         .sort((a, b) => {
-          const lastNameCompare = (a.lastName || '').localeCompare(b.lastName || '', undefined, { sensitivity: 'base' })
-          if (lastNameCompare !== 0) return lastNameCompare
-          return (a.firstName || '').localeCompare(b.firstName || '', undefined, { sensitivity: 'base' })
+          const firstNameCompare = (a.firstName || '').localeCompare(b.firstName || '', undefined, { sensitivity: 'base' })
+          if (firstNameCompare !== 0) return firstNameCompare
+          return (a.lastName || '').localeCompare(b.lastName || '', undefined, { sensitivity: 'base' })
         })
     }
   })
