@@ -425,7 +425,7 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
                         <TableHead>Age</TableHead>
                         <TableHead className="hidden md:table-cell">Parent</TableHead>
                         <TableHead>Attendance (YTD)</TableHead>
-                        <TableHead>Status</TableHead>
+                        <TableHead className="hidden md:table-cell">Status</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -484,7 +484,7 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
                       )}
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden md:table-cell">
                     <Badge className={student.isArchived ? 'bg-gray-100 text-gray-800' : getStatusColor(student.status)}>
                       {student.isArchived ? 'ARCHIVED' : student.status}
                     </Badge>
