@@ -73,9 +73,6 @@ export function MadrasahLogo({ className = '', showText = true, textSize = 'md',
     xl: 'sm:w-72 sm:h-15'
   }
 
-  // Use dark logo when dark mode is active
-  const logoSrc = isDarkMode ? '/logo-dark.png' : '/madrasah-logo.png'
-
   return (
     <div className={`flex flex-col items-center ${className}`}>
       {/* Logo Icon - Using your PNG image */}
