@@ -12,22 +12,33 @@ interface MadrasahLogoProps {
 }
 
 export function MadrasahLogo({ className = '', showText = true, textSize = 'md', size = 'md' }: MadrasahLogoProps) {
-  const [isDarkMode, setIsDarkMode] = useState(false)
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    // Check initial dark mode state on client side only
+    if (typeof window !== 'undefined') {
+      return document.documentElement.classList.contains('dark')
+    }
+    return false
+  })
 
   useEffect(() => {
     // Check initial dark mode state
     const checkDarkMode = () => {
-      setIsDarkMode(document.documentElement.classList.contains('dark'))
+      if (typeof window !== 'undefined') {
+        setIsDarkMode(document.documentElement.classList.contains('dark'))
+      }
     }
     
+    // Check immediately
     checkDarkMode()
 
     // Watch for dark mode changes
     const observer = new MutationObserver(checkDarkMode)
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class']
-    })
+    if (typeof window !== 'undefined') {
+      observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class']
+      })
+    }
 
     return () => observer.disconnect()
   }, [])
