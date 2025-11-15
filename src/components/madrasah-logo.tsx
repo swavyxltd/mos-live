@@ -24,12 +24,16 @@ export function MadrasahLogo({ className = '', showText = true, textSize = 'md',
     // Check initial dark mode state
     const checkDarkMode = () => {
       if (typeof window !== 'undefined') {
-        setIsDarkMode(document.documentElement.classList.contains('dark'))
+        const isDark = document.documentElement.classList.contains('dark')
+        setIsDarkMode(isDark)
       }
     }
     
     // Check immediately
     checkDarkMode()
+
+    // Also check after a small delay to catch any late-applied classes
+    const timeoutId = setTimeout(checkDarkMode, 100)
 
     // Watch for dark mode changes
     const observer = new MutationObserver(checkDarkMode)
@@ -40,7 +44,15 @@ export function MadrasahLogo({ className = '', showText = true, textSize = 'md',
       })
     }
 
-    return () => observer.disconnect()
+    // Also listen for storage changes (in case dark mode preference is stored)
+    const handleStorageChange = () => checkDarkMode()
+    window.addEventListener('storage', handleStorageChange)
+
+    return () => {
+      clearTimeout(timeoutId)
+      observer.disconnect()
+      window.removeEventListener('storage', handleStorageChange)
+    }
   }, [])
 
   const textSizeClasses = {
