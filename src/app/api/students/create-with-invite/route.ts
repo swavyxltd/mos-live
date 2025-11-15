@@ -86,9 +86,13 @@ export async function POST(request: NextRequest) {
 
     // Use transaction to ensure data consistency
     const result = await prisma.$transaction(async (tx) => {
+      // Generate student ID
+      const studentId = `student_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      
       // Create student
       const student = await tx.student.create({
         data: {
+          id: studentId,
           orgId,
           firstName,
           lastName,

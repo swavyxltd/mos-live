@@ -204,17 +204,18 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     try {
       await prisma.auditLog.create({
         data: {
+          id: `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           orgId,
           actorUserId: session.user.id,
           action: AuditLogAction.UPDATE,
           targetType: AuditLogTargetType.STUDENT,
           targetId: updatedStudent.id,
-          data: {
+          data: JSON.stringify({
             studentName: `${updatedStudent.firstName} ${updatedStudent.lastName}`,
             updatedFields: Object.keys(updateData).filter(key => 
               !['id', 'isArchived', 'archivedAt', 'createdAt', 'updatedAt', 'selectedClasses'].includes(key)
             )
-          },
+          }),
         },
       })
     } catch (auditError) {

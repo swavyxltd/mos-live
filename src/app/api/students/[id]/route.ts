@@ -115,7 +115,6 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         firstName,
         lastName,
         dob: dateOfBirth ? new Date(dateOfBirth) : null,
-        grade,
         User: parentName || parentEmail || parentPhone ? {
           update: {
             name: parentName,
@@ -123,11 +122,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
             phone: parentPhone,
           }
         } : undefined,
-        address,
-        emergencyContact,
         allergies,
         medicalNotes,
-        status,
         updatedAt: new Date()
       },
       include: {
@@ -162,17 +158,18 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     // Create audit log
     await prisma.auditLog.create({
       data: {
+        id: `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         orgId,
         actorUserId: session.user.id,
         action: AuditLogAction.UPDATE,
         targetType: AuditLogTargetType.STUDENT,
         targetId: updatedStudent.id,
-        data: {
+        data: JSON.stringify({
           studentName: `${updatedStudent.firstName} ${updatedStudent.lastName}`,
           updatedFields: Object.keys(updateData).filter(key => 
             !['id', 'isArchived', 'archivedAt', 'createdAt', 'updatedAt'].includes(key)
           )
-        },
+        }),
       },
     })
 
@@ -211,14 +208,15 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     // Create audit log
     await prisma.auditLog.create({
       data: {
+        id: `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         orgId,
         actorUserId: session.user.id,
         action: AuditLogAction.DELETE,
         targetType: AuditLogTargetType.STUDENT,
         targetId: id,
-        data: {
+        data: JSON.stringify({
           studentName: `${student.firstName} ${student.lastName}`,
-        },
+        }),
       },
     })
 
