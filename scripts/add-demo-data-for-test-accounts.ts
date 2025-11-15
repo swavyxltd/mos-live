@@ -142,17 +142,44 @@ async function main() {
     console.log(`\n✅ Updated staff@test.com to ADMIN role (full editing permissions)`)
   }
 
-  // Step 2: Create 100 students (20 per class)
-  console.log('\n👥 Creating 100 students (20 per class)...')
-  const firstNames = [
-    'Ahmed', 'Fatima', 'Yusuf', 'Aisha', 'Omar', 'Zainab', 'Hassan', 'Maryam',
-    'Ibrahim', 'Khadija', 'Ali', 'Aminah', 'Muhammad', 'Safiya', 'Hamza', 'Hafsa',
-    'Bilal', 'Ruqayyah', 'Umar', 'Umm Kulthum', 'Khalid', 'Fatimah', 'Salman', 'Zaynab',
-    'Abdullah', 'Ayesha', 'Usman', 'Sumayyah', 'Zaid', 'Nusaybah'
+  // Step 2: Create 100 students (20 per class) with proper Muslim names
+  console.log('\n👥 Creating 100 students (20 per class) with proper Muslim names...')
+  
+  // Proper Muslim names from various countries
+  const maleFirstNames = [
+    // Arabic/Saudi
+    'Ahmed', 'Muhammad', 'Omar', 'Ali', 'Hassan', 'Hussein', 'Ibrahim', 'Yusuf', 'Khalid', 'Hamza',
+    'Abdullah', 'Abdul Rahman', 'Abdul Aziz', 'Salman', 'Faisal', 'Saeed', 'Tariq', 'Zaid', 'Bilal', 'Usman',
+    // Indian/Pakistani
+    'Ayan', 'Armaan', 'Zayan', 'Rayyan', 'Ayaan', 'Ishaan', 'Rayan', 'Aryan', 'Zain', 'Ahaan',
+    // Afghan
+    'Ahmad', 'Ahmad Shah', 'Farid', 'Karim', 'Noor', 'Rahim', 'Sami', 'Wali', 'Yasin', 'Zahir',
+    // Moroccan
+    'Amine', 'Anas', 'Ayoub', 'Bilal', 'Hicham', 'Idris', 'Mehdi', 'Nabil', 'Othman', 'Reda'
   ]
+  
+  const femaleFirstNames = [
+    // Arabic/Saudi
+    'Fatima', 'Aisha', 'Maryam', 'Khadija', 'Zainab', 'Aminah', 'Hafsa', 'Safiya', 'Ruqayyah', 'Sumayyah',
+    'Layla', 'Noor', 'Hana', 'Sara', 'Mariam', 'Yasmin', 'Nadia', 'Leila', 'Rania', 'Dina',
+    // Indian/Pakistani
+    'Aaliyah', 'Ayesha', 'Haniya', 'Inaya', 'Iman', 'Layla', 'Maryam', 'Noor', 'Sana', 'Zara',
+    // Afghan
+    'Farah', 'Laila', 'Mariam', 'Nadia', 'Parisa', 'Roya', 'Sahar', 'Samira', 'Soraya', 'Zahra',
+    // Moroccan
+    'Aicha', 'Amina', 'Fatima', 'Hafsa', 'Imane', 'Khadija', 'Layla', 'Mariam', 'Nour', 'Salma'
+  ]
+  
   const lastNames = [
-    'Khan', 'Ali', 'Hassan', 'Patel', 'Ahmed', 'Malik', 'Sheikh', 'Hussain',
-    'Rahman', 'Iqbal', 'Syed', 'Mahmood', 'Butt', 'Chaudhry', 'Akhtar'
+    // Pakistani/Indian
+    'Khan', 'Ali', 'Ahmed', 'Hassan', 'Hussain', 'Malik', 'Sheikh', 'Rahman', 'Iqbal', 'Syed',
+    'Mahmood', 'Butt', 'Chaudhry', 'Akhtar', 'Qureshi', 'Raza', 'Shah', 'Abbas', 'Hashmi', 'Javed',
+    // Arabic/Saudi
+    'Al-Saud', 'Al-Rashid', 'Al-Mansour', 'Al-Zahrani', 'Al-Ghamdi', 'Al-Otaibi', 'Al-Mutairi', 'Al-Shammari',
+    // Afghan
+    'Ahmadzai', 'Khan', 'Mohammadi', 'Rahimi', 'Safi', 'Yousufzai', 'Zahir', 'Karimi',
+    // Moroccan
+    'Alaoui', 'Benali', 'Bennani', 'Cherkaoui', 'El Fassi', 'Idrissi', 'Lahlou', 'Tazi'
   ]
 
   const students = []
@@ -162,25 +189,27 @@ async function main() {
     const classItem = classes[classIndex]
     
     for (let i = 0; i < 20; i++) {
-      const firstName = firstNames[studentIndex % firstNames.length]
+      // Alternate between male and female names
+      const isMale = studentIndex % 2 === 0
+      const firstNamePool = isMale ? maleFirstNames : femaleFirstNames
+      const firstName = firstNamePool[studentIndex % firstNamePool.length]
       const lastName = lastNames[studentIndex % lastNames.length]
-      const studentNumber = studentIndex + 1
 
-      const studentId = `demo-student-${studentNumber}-${org.id}`
+      const studentId = `demo-student-${studentIndex + 1}-${org.id}`
       const student = await prisma.student.upsert({
         where: { id: studentId },
         update: {},
         create: {
           id: studentId,
           orgId: org.id,
-          firstName: `${firstName} ${studentNumber}`,
+          firstName: firstName,
           lastName: lastName,
           dob: new Date(2010 + (studentIndex % 10), studentIndex % 12, (studentIndex % 28) + 1),
           isArchived: false,
           updatedAt: new Date(),
           StudentClass: {
             create: {
-              id: `demo-student-class-${studentNumber}-${org.id}`,
+              id: `demo-student-class-${studentIndex + 1}-${org.id}`,
               orgId: org.id,
               classId: classItem.id
             }
@@ -198,7 +227,7 @@ async function main() {
         },
         update: {},
         create: {
-          id: `demo-student-class-${studentNumber}-${org.id}`,
+          id: `demo-student-class-${studentIndex + 1}-${org.id}`,
           orgId: org.id,
           studentId: student.id,
           classId: classItem.id
@@ -262,131 +291,458 @@ async function main() {
     console.log(`   ✅ Created parent membership in organization`)
   }
 
-  // Step 4: Create 3 months of attendance data
-  console.log('\n📊 Creating 3 months of attendance data...')
+  // Step 3.5: Create 15 additional parent users with proper Muslim names
+  console.log('\n👨‍👩‍👧 Creating 15 additional parent users with proper Muslim names...')
+  const additionalParentNames = [
+    { firstName: 'Mohammed', lastName: 'Iqbal', email: 'mohammed.iqbal.parent@test.com' },
+    { firstName: 'Amina', lastName: 'Hassan', email: 'amina.hassan.parent@test.com' },
+    { firstName: 'Yusuf', lastName: 'Ali', email: 'yusuf.ali.parent@test.com' },
+    { firstName: 'Sara', lastName: 'Ahmed', email: 'sara.ahmed.parent@test.com' },
+    { firstName: 'Omar', lastName: 'Khan', email: 'omar.khan.parent@test.com' },
+    { firstName: 'Layla', lastName: 'Malik', email: 'layla.malik.parent@test.com' },
+    { firstName: 'Hassan', lastName: 'Sheikh', email: 'hassan.sheikh.parent@test.com' },
+    { firstName: 'Noor', lastName: 'Rahman', email: 'noor.rahman.parent@test.com' },
+    { firstName: 'Ibrahim', lastName: 'Syed', email: 'ibrahim.syed.parent@test.com' },
+    { firstName: 'Zainab', lastName: 'Patel', email: 'zainab.patel.parent@test.com' },
+    { firstName: 'Abdullah', lastName: 'Mahmood', email: 'abdullah.mahmood.parent@test.com' },
+    { firstName: 'Fatima', lastName: 'Butt', email: 'fatima.butt.parent@test.com' },
+    { firstName: 'Khalid', lastName: 'Chaudhry', email: 'khalid.chaudhry.parent@test.com' },
+    { firstName: 'Aisha', lastName: 'Qureshi', email: 'aisha.qureshi.parent@test.com' },
+    { firstName: 'Hamza', lastName: 'Raza', email: 'hamza.raza.parent@test.com' }
+  ]
+
+  const additionalParents = []
+  let studentIndexForParents = 2 // Start from student index 2 (after the 2 linked to parent@test.com)
+  
+  for (const parentData of additionalParentNames) {
+    try {
+      const parentId = `demo-parent-${parentData.email.replace('@', '-').replace(/\./g, '-')}-${org.id}`
+      const newParent = await prisma.user.upsert({
+        where: { email: parentData.email },
+        update: {},
+        create: {
+          id: parentId,
+          name: `${parentData.firstName} ${parentData.lastName}`,
+          email: parentData.email,
+          phone: `+44${Math.floor(Math.random() * 9000000000) + 1000000000}`,
+          emailVerified: new Date()
+        }
+      })
+
+      // Add parent to organization
+      await prisma.userOrgMembership.upsert({
+        where: {
+          userId_orgId: {
+            userId: newParent.id,
+            orgId: org.id
+          }
+        },
+        update: {},
+        create: {
+          userId: newParent.id,
+          orgId: org.id,
+          role: 'PARENT'
+        }
+      })
+
+      // Create parent billing profile
+      await prisma.parentBillingProfile.upsert({
+        where: {
+          orgId_parentUserId: {
+            orgId: org.id,
+            parentUserId: newParent.id
+          }
+        },
+        update: {},
+        create: {
+          id: `demo-parent-billing-${newParent.id}-${org.id}`,
+          orgId: org.id,
+          parentUserId: newParent.id,
+          preferredPaymentMethod: Math.random() > 0.5 ? 'CASH' : 'BANK_TRANSFER',
+          autoPayEnabled: Math.random() > 0.7,
+          updatedAt: new Date()
+        }
+      })
+
+      // Link 1-3 children to this parent (distribute remaining students)
+      const numChildren = Math.min(
+        Math.floor(Math.random() * 3) + 1, // 1-3 children
+        students.length - studentIndexForParents // Don't exceed available students
+      )
+      
+      const childrenToLink = students.slice(studentIndexForParents, studentIndexForParents + numChildren)
+      for (const child of childrenToLink) {
+        await prisma.student.update({
+          where: { id: child.id },
+          data: {
+            primaryParentId: newParent.id
+          }
+        })
+      }
+
+      const childrenNames = childrenToLink.map(c => `${c.firstName} ${c.lastName}`).join(', ')
+      console.log(`   ✅ Created parent: ${parentData.firstName} ${parentData.lastName} (linked to ${numChildren} child/ren: ${childrenNames})`)
+      
+      additionalParents.push(newParent)
+      studentIndexForParents += numChildren
+      
+      // Stop if we've linked all students
+      if (studentIndexForParents >= students.length) {
+        break
+      }
+    } catch (error) {
+      console.error(`   ⚠️  Error creating parent ${parentData.email}:`, error)
+      // Continue with next parent
+    }
+  }
+
+  console.log(`\n✅ Created ${additionalParents.length} additional parent users`)
+
+  // Step 4: Create 1 month of attendance data + current week
+  console.log('\n📊 Creating 1 month of attendance data + current week...')
   const now = new Date()
-  const threeMonthsAgo = new Date(now)
-  threeMonthsAgo.setMonth(now.getMonth() - 3)
+  const oneMonthAgo = new Date(now)
+  oneMonthAgo.setMonth(now.getMonth() - 1)
+  
+  // Also create attendance for current week to ensure dashboard shows data
+  const weekStart = new Date(now)
+  weekStart.setDate(now.getDate() - now.getDay()) // Start of week (Sunday)
+  weekStart.setHours(0, 0, 0, 0)
 
   let attendanceCount = 0
   const statuses = ['PRESENT', 'ABSENT', 'LATE', 'PRESENT', 'PRESENT'] // 60% present rate
 
-  // Generate attendance for each class, for each student, for each day in the last 3 months
-  for (const classItem of classes) {
-    // Get students enrolled in this class
-    const studentClasses = await prisma.studentClass.findMany({
-      where: { classId: classItem.id },
-      include: { Student: true }
-    })
-    const classStudents = studentClasses.map(sc => sc.Student)
+  // Generate attendance for each class, for each student, for each day in the last 1 month
+  for (let classIdx = 0; classIdx < classes.length; classIdx++) {
+    const classItem = classes[classIdx]
+    console.log(`   Processing class ${classIdx + 1}/${classes.length}: ${classItem.name}...`)
+    
+    try {
+      // Get students enrolled in this class
+      const studentClasses = await prisma.studentClass.findMany({
+        where: { classId: classItem.id },
+        include: { Student: true }
+      })
+      const classStudents = studentClasses.map(sc => sc.Student)
 
-    // Get class schedule days (Monday, Wednesday, Friday)
-    const schedule = JSON.parse(classItem.schedule)
-    const classDays = schedule.days || ['Monday', 'Wednesday', 'Friday']
+      // Get class schedule days (Monday, Wednesday, Friday)
+      const schedule = JSON.parse(classItem.schedule)
+      const classDays = schedule.days || ['Monday', 'Wednesday', 'Friday']
 
-    // Generate attendance for the last 3 months
-    for (let monthOffset = 0; monthOffset < 3; monthOffset++) {
-      const monthDate = new Date(threeMonthsAgo)
-      monthDate.setMonth(threeMonthsAgo.getMonth() + monthOffset)
+      // Generate attendance for the last 1 month
+      for (let monthOffset = 0; monthOffset < 1; monthOffset++) {
+        const monthDate = new Date(oneMonthAgo)
+        monthDate.setMonth(oneMonthAgo.getMonth() + monthOffset)
 
-      // For each day in the month
-      for (let day = 1; day <= 28; day++) { // Use 28 days to avoid month-end issues
-        const date = new Date(monthDate.getFullYear(), monthDate.getMonth(), day)
-        const dayName = date.toLocaleDateString('en-US', { weekday: 'long' })
+        // For each day in the month
+        for (let day = 1; day <= 28; day++) { // Use 28 days to avoid month-end issues
+          const date = new Date(monthDate.getFullYear(), monthDate.getMonth(), day)
+          const dayName = date.toLocaleDateString('en-US', { weekday: 'long' })
 
-        // Only create attendance for scheduled class days
-        if (classDays.includes(dayName)) {
-          for (const student of classStudents) {
-            const status = statuses[Math.floor(Math.random() * statuses.length)]
-            
-            await prisma.attendance.upsert({
-              where: {
-                classId_studentId_date: {
-                  classId: classItem.id,
-                  studentId: student.id,
-                  date: date
+          // Only create attendance for scheduled class days
+          if (classDays.includes(dayName)) {
+            for (const student of classStudents) {
+              try {
+                const status = statuses[Math.floor(Math.random() * statuses.length)]
+                
+                await prisma.attendance.upsert({
+                  where: {
+                    classId_studentId_date: {
+                      classId: classItem.id,
+                      studentId: student.id,
+                      date: date
+                    }
+                  },
+                  update: {},
+                  create: {
+                    id: `demo-attendance-${classItem.id}-${student.id}-${date.getTime()}`,
+                    orgId: org.id,
+                    classId: classItem.id,
+                    studentId: student.id,
+                    date: date,
+                    status: status
+                  }
+                })
+                attendanceCount++
+              } catch (error) {
+                // Skip duplicate or error, continue with next record
+                if (attendanceCount % 100 === 0) {
+                  console.log(`      Progress: ${attendanceCount} attendance records created...`)
                 }
-              },
-              update: {},
-              create: {
-                id: `demo-attendance-${classItem.id}-${student.id}-${date.toISOString()}`,
-                orgId: org.id,
-                classId: classItem.id,
-                studentId: student.id,
-                date: date,
-                status: status
               }
-            })
-            attendanceCount++
+            }
           }
         }
       }
+      
+      // Also create attendance for current week to ensure dashboard shows data
+      for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+        const date = new Date(weekStart)
+        date.setDate(weekStart.getDate() + dayOffset)
+        const dayName = date.toLocaleDateString('en-US', { weekday: 'long' })
+        
+        // Only create attendance for scheduled class days
+        if (classDays.includes(dayName)) {
+          for (const student of classStudents) {
+            try {
+              const status = statuses[Math.floor(Math.random() * statuses.length)]
+              
+              await prisma.attendance.upsert({
+                where: {
+                  classId_studentId_date: {
+                    classId: classItem.id,
+                    studentId: student.id,
+                    date: date
+                  }
+                },
+                update: {},
+                create: {
+                  id: `demo-attendance-current-${classItem.id}-${student.id}-${date.getTime()}`,
+                  orgId: org.id,
+                  classId: classItem.id,
+                  studentId: student.id,
+                  date: date,
+                  status: status
+                }
+              })
+              attendanceCount++
+            } catch (error) {
+              // Skip duplicate or error, continue with next record
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`   ⚠️  Error processing class ${classItem.name}:`, error)
+      // Continue with next class
     }
   }
 
   console.log(`   ✅ Created ${attendanceCount} attendance records`)
 
-  // Step 5: Create payment records for the last 3 months
-  console.log('\n💳 Creating payment records for the last 3 months...')
+  // Step 5: Create payment records for the last 1 month
+  console.log('\n💳 Creating payment records for the last 1 month...')
   let paymentCount = 0
   const paymentMethods = ['CASH', 'BANK_TRANSFER']
   const paymentStatuses = ['PAID', 'PENDING', 'LATE', 'OVERDUE']
 
-  for (const student of students) {
-    const studentClasses = await prisma.studentClass.findMany({
-      where: { studentId: student.id },
-      include: { Class: true }
-    })
+  for (let studentIdx = 0; studentIdx < students.length; studentIdx++) {
+    const student = students[studentIdx]
+    if ((studentIdx + 1) % 20 === 0) {
+      console.log(`   Progress: Processing student ${studentIdx + 1}/${students.length}...`)
+    }
+    
+    try {
+      const studentClasses = await prisma.studentClass.findMany({
+        where: { studentId: student.id },
+        include: { Class: true }
+      })
 
-    for (const studentClass of studentClasses) {
-      const classItem = studentClass.Class
-      if (!classItem.monthlyFeeP) continue
+      for (const studentClass of studentClasses) {
+        const classItem = studentClass.Class
+        if (!classItem.monthlyFeeP) continue
 
-      // Create payment records for last 3 months
-      for (let monthOffset = 0; monthOffset < 3; monthOffset++) {
-        const monthDate = new Date(now)
-        monthDate.setMonth(now.getMonth() - monthOffset)
-        monthDate.setDate(1) // First of the month
+        // Create payment records for last 1 month
+        for (let monthOffset = 0; monthOffset < 1; monthOffset++) {
+          const monthDate = new Date(now)
+          monthDate.setMonth(now.getMonth() - monthOffset)
+          monthDate.setDate(1) // First of the month
 
-        // Determine status based on month
-        let status = 'PAID'
-        if (monthOffset === 0) {
-          // Current month - mix of statuses
-          status = paymentStatuses[Math.floor(Math.random() * paymentStatuses.length)]
-        } else if (monthOffset === 1) {
-          // Last month - mostly paid, some late
-          status = Math.random() > 0.2 ? 'PAID' : 'LATE'
-        } else {
-          // 2 months ago - all paid
-          status = 'PAID'
-        }
-
-        const paymentMethod = status === 'PAID' 
-          ? paymentMethods[Math.floor(Math.random() * paymentMethods.length)]
-          : null
-
-        await prisma.monthlyPaymentRecord.create({
-          data: {
-            id: `demo-payment-${student.id}-${classItem.id}-${monthDate.toISOString()}`,
-            orgId: org.id,
-            studentId: student.id,
-            classId: classItem.id,
-            month: monthDate.toISOString().substring(0, 7), // Format: YYYY-MM
-            amountP: classItem.monthlyFeeP,
-            status: status,
-            method: paymentMethod,
-            paidAt: status === 'PAID' ? new Date(monthDate.getTime() + (Math.random() * 5 * 24 * 60 * 60 * 1000)) : null, // Paid within 5 days of due date
-            reference: status === 'PAID' ? `DEMO-${Math.random().toString(36).substr(2, 9).toUpperCase()}` : null,
-            createdAt: monthDate,
-            updatedAt: new Date()
+          // Determine status based on month - more realistic distribution
+          let status = 'PAID'
+          if (monthOffset === 0) {
+            // Current month - mix of statuses (60% paid, 20% pending, 15% late, 5% overdue)
+            const rand = Math.random()
+            if (rand < 0.6) status = 'PAID'
+            else if (rand < 0.8) status = 'PENDING'
+            else if (rand < 0.95) status = 'LATE'
+            else status = 'OVERDUE'
+          } else {
+            // Past months - mostly paid
+            status = Math.random() > 0.15 ? 'PAID' : 'LATE'
           }
-        })
-        paymentCount++
+
+          const paymentMethod = status === 'PAID' 
+            ? paymentMethods[Math.floor(Math.random() * paymentMethods.length)]
+            : null
+
+          const monthStr = monthDate.toISOString().substring(0, 7) // Format: YYYY-MM
+
+          try {
+            await prisma.monthlyPaymentRecord.upsert({
+              where: {
+                studentId_classId_month: {
+                  studentId: student.id,
+                  classId: classItem.id,
+                  month: monthStr
+                }
+              },
+              update: {},
+              create: {
+                id: `demo-payment-${student.id}-${classItem.id}-${monthStr}`,
+                orgId: org.id,
+                studentId: student.id,
+                classId: classItem.id,
+                month: monthStr,
+                amountP: classItem.monthlyFeeP,
+                status: status,
+                method: paymentMethod,
+                paidAt: status === 'PAID' ? new Date(monthDate.getTime() + (Math.random() * 5 * 24 * 60 * 60 * 1000)) : null, // Paid within 5 days of due date
+                reference: status === 'PAID' ? `DEMO-${Math.random().toString(36).substr(2, 9).toUpperCase()}` : null,
+                createdAt: monthDate,
+                updatedAt: new Date()
+              }
+            })
+            paymentCount++
+          } catch (error) {
+            // Skip duplicate or error, continue with next record
+          }
+        }
       }
+    } catch (error) {
+      console.error(`   ⚠️  Error processing student ${student.firstName} ${student.lastName}:`, error)
+      // Continue with next student
     }
   }
 
   console.log(`   ✅ Created ${paymentCount} payment records`)
+
+  // Step 6: Create additional staff members
+  console.log('\n👨‍🏫 Creating additional staff members...')
+  const staffNames = [
+    { firstName: 'Umar', lastName: 'Al-Rashid', email: 'umar.teacher@test.com' },
+    { firstName: 'Fatima', lastName: 'Khan', email: 'fatima.teacher@test.com' },
+    { firstName: 'Ibrahim', lastName: 'Ahmed', email: 'ibrahim.teacher@test.com' },
+    { firstName: 'Aisha', lastName: 'Malik', email: 'aisha.teacher@test.com' },
+    { firstName: 'Hassan', lastName: 'Sheikh', email: 'hassan.teacher@test.com' }
+  ]
+
+  const additionalStaff = []
+  for (const staffData of staffNames) {
+    try {
+      const staffId = `demo-staff-${staffData.email.replace('@', '-').replace(/\./g, '-')}-${org.id}`
+      const staffUser = await prisma.user.upsert({
+        where: { email: staffData.email },
+        update: {},
+        create: {
+          id: staffId,
+          name: `${staffData.firstName} ${staffData.lastName}`,
+          email: staffData.email,
+          phone: `+44${Math.floor(Math.random() * 9000000000) + 1000000000}`,
+          emailVerified: new Date()
+        }
+      })
+
+      // Add staff to organization
+      await prisma.userOrgMembership.upsert({
+        where: {
+          userId_orgId: {
+            userId: staffUser.id,
+            orgId: org.id
+          }
+        },
+        update: {},
+        create: {
+          userId: staffUser.id,
+          orgId: org.id,
+          role: 'STAFF'
+        }
+      })
+
+      // Assign to a class (distribute across classes)
+      const classIndex = additionalStaff.length % classes.length
+      await prisma.class.update({
+        where: { id: classes[classIndex].id },
+        data: { teacherId: staffUser.id }
+      })
+
+      additionalStaff.push(staffUser)
+      console.log(`   ✅ Created staff: ${staffData.firstName} ${staffData.lastName} (assigned to "${classes[classIndex].name}")`)
+    } catch (error) {
+      console.error(`   ⚠️  Error creating staff ${staffData.email}:`, error)
+      // Continue with next staff
+    }
+  }
+
+  // Step 7: Create fake applications
+  console.log('\n📝 Creating fake applications...')
+  const guardianNames = [
+    { firstName: 'Mohammed', lastName: 'Iqbal', email: 'mohammed.iqbal@demo.com' },
+    { firstName: 'Amina', lastName: 'Hassan', email: 'amina.hassan@demo.com' },
+    { firstName: 'Yusuf', lastName: 'Ali', email: 'yusuf.ali@demo.com' },
+    { firstName: 'Sara', lastName: 'Ahmed', email: 'sara.ahmed@demo.com' },
+    { firstName: 'Omar', lastName: 'Khan', email: 'omar.khan@demo.com' },
+    { firstName: 'Layla', lastName: 'Malik', email: 'layla.malik@demo.com' },
+    { firstName: 'Hassan', lastName: 'Sheikh', email: 'hassan.sheikh@demo.com' },
+    { firstName: 'Noor', lastName: 'Rahman', email: 'noor.rahman@demo.com' },
+    { firstName: 'Ibrahim', lastName: 'Syed', email: 'ibrahim.syed@demo.com' },
+    { firstName: 'Zainab', lastName: 'Patel', email: 'zainab.patel@demo.com' }
+  ]
+
+  // More realistic application status distribution
+  const applicationStatuses = ['NEW', 'NEW', 'NEW', 'REVIEWED', 'REVIEWED', 'ACCEPTED', 'ACCEPTED', 'REJECTED', 'NEW', 'REVIEWED']
+  let applicationCount = 0
+
+  for (let i = 0; i < guardianNames.length; i++) {
+    try {
+      const guardian = guardianNames[i]
+      const status = applicationStatuses[i % applicationStatuses.length]
+      const submittedDate = new Date()
+      submittedDate.setDate(submittedDate.getDate() - (i * 2)) // Stagger submission dates
+
+      // Create 1-2 children per application
+      const numChildren = Math.random() > 0.5 ? 1 : 2
+      const children = []
+      
+      for (let j = 0; j < numChildren; j++) {
+        const isMale = Math.random() > 0.5
+        const firstNamePool = isMale ? maleFirstNames : femaleFirstNames
+        const childFirstName = firstNamePool[Math.floor(Math.random() * firstNamePool.length)]
+        const childLastName = guardian.lastName
+        
+        children.push({
+          firstName: childFirstName,
+          lastName: childLastName,
+          dob: new Date(2015 + Math.floor(Math.random() * 8), Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1),
+          gender: isMale ? 'Male' : 'Female'
+        })
+      }
+
+      const application = await prisma.application.create({
+        data: {
+          id: `demo-application-${i + 1}-${org.id}`,
+          orgId: org.id,
+          status: status,
+          guardianName: `${guardian.firstName} ${guardian.lastName}`,
+          guardianPhone: `+44${Math.floor(Math.random() * 9000000000) + 1000000000}`,
+          guardianEmail: guardian.email,
+          guardianAddress: `${Math.floor(Math.random() * 999) + 1} High Street, London, UK`,
+          preferredClass: classes[i % classes.length].name,
+          preferredTerm: 'September 2024',
+          preferredStartDate: new Date(2024, 8, 1),
+          additionalNotes: i % 3 === 0 ? 'Looking forward to joining the madrasah community.' : null,
+          submittedAt: submittedDate,
+          updatedAt: submittedDate,
+          children: {
+            create: children.map((child, idx) => ({
+              id: `demo-app-child-${i + 1}-${idx}-${org.id}`,
+              firstName: child.firstName,
+              lastName: child.lastName,
+              dob: child.dob,
+              gender: child.gender,
+              updatedAt: new Date()
+            }))
+          }
+        }
+      })
+
+      applicationCount++
+      console.log(`   ✅ Created application: ${guardian.firstName} ${guardian.lastName} (${status}, ${numChildren} child/ren)`)
+    } catch (error) {
+      console.error(`   ⚠️  Error creating application ${i + 1}:`, error)
+      // Continue with next application
+    }
+  }
 
   // Summary
   console.log('\n' + '─'.repeat(80))
@@ -395,20 +751,30 @@ async function main() {
   console.log(`   Organization: ${org.name}`)
   console.log(`   Classes: ${classes.length}`)
   console.log(`   Students: ${students.length}`)
+  console.log(`   Staff Members: ${additionalStaff.length + 1} (including staff@test.com)`)
+  console.log(`   Parent Users: ${additionalParents.length + 1} (including parent@test.com)`)
+  console.log(`   Applications: ${applicationCount}`)
   console.log(`   Attendance Records: ${attendanceCount}`)
   console.log(`   Payment Records: ${paymentCount}`)
   console.log(`   Staff Account: staff@test.com (assigned to "${classes[0].name}")`)
   console.log(`   Parent Account: parent@test.com (linked to 2 children)`)
+  console.log(`   Additional Parents: ${additionalParents.length} parents with proper Muslim names`)
   console.log('\n⚠️  IMPORTANT: This data is isolated to the test organization only.')
   console.log('   It will NOT appear in owner accounts or other organizations.\n')
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Error:', e)
+    console.error('\n❌ Fatal Error:', e)
+    console.error('Stack:', e.stack)
     process.exit(1)
   })
   .finally(async () => {
-    await prisma.$disconnect()
+    try {
+      await prisma.$disconnect()
+      console.log('\n✅ Database connection closed')
+    } catch (error) {
+      console.error('Error closing database connection:', error)
+    }
   })
 

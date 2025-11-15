@@ -79,16 +79,22 @@ export async function GET(request: NextRequest) {
       : newStudentsThisMonth > 0 ? 100 : 0
 
     // Get attendance data for this week and last week in parallel
+    // If no attendance this week, look at last 7 days instead
     const weekStart = new Date(now)
     weekStart.setDate(now.getDate() - now.getDay()) // Start of week (Sunday)
     weekStart.setHours(0, 0, 0, 0)
+
+    // Also check last 7 days as fallback
+    const last7Days = new Date(now)
+    last7Days.setDate(now.getDate() - 7)
+    last7Days.setHours(0, 0, 0, 0)
 
     const lastWeekStart = new Date(weekStart)
     lastWeekStart.setDate(weekStart.getDate() - 7)
     const lastWeekEnd = new Date(weekStart)
     lastWeekEnd.setDate(weekStart.getDate() - 1)
 
-    const [weekAttendance, lastWeekAttendance] = await Promise.all([
+    const [weekAttendance, lastWeekAttendance, recentAttendance] = await Promise.all([
       prisma.attendance.findMany({
         where: {
           orgId: org.id,
@@ -102,11 +108,22 @@ export async function GET(request: NextRequest) {
           date: { gte: lastWeekStart, lte: lastWeekEnd }
         },
         select: { status: true }
+      }),
+      // Fallback: get last 7 days if no data this week
+      prisma.attendance.findMany({
+        where: {
+          orgId: org.id,
+          date: { gte: last7Days }
+        },
+        select: { status: true }
       })
     ])
 
-    const presentCount = weekAttendance.filter(a => a.status === 'PRESENT' || a.status === 'LATE').length
-    const totalAttendanceRecords = weekAttendance.length
+    // Use recent attendance (last 7 days) if no data this week
+    const attendanceData = weekAttendance.length > 0 ? weekAttendance : recentAttendance
+    
+    const presentCount = attendanceData.filter(a => a.status === 'PRESENT' || a.status === 'LATE').length
+    const totalAttendanceRecords = attendanceData.length
     const attendanceRate = totalAttendanceRecords > 0
       ? Math.round((presentCount / totalAttendanceRecords) * 100)
       : 0
@@ -117,51 +134,52 @@ export async function GET(request: NextRequest) {
       ? Math.round((lastWeekPresent / lastWeekTotal) * 100)
       : 0
 
-    const attendanceGrowth = attendanceRate - lastWeekRate
+    // If no last week data, compare to previous 7 days
+    const attendanceGrowth = lastWeekTotal > 0 
+      ? attendanceRate - lastWeekRate
+      : 0
 
-    // Get monthly revenue from invoices and other queries in parallel
+    // Get monthly revenue from MonthlyPaymentRecord (student fees) and invoices in parallel
+    const currentMonthStr = now.toISOString().substring(0, 7) // Format: YYYY-MM
+    const lastMonthStr = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().substring(0, 7)
+    
     const [
-      monthlyInvoices,
-      lastMonthInvoices,
-      pendingInvoices,
+      monthlyPayments,
+      lastMonthPayments,
+      pendingPayments,
       overduePayments,
       pendingApplications
     ] = await Promise.all([
-      prisma.invoice.findMany({
+      prisma.monthlyPaymentRecord.findMany({
         where: {
           orgId: org.id,
           status: 'PAID',
-          paidAt: {
-            gte: thisMonth,
-            not: null
-          }
+          month: currentMonthStr,
+          paidAt: { not: null }
         },
         select: { amountP: true }
       }),
-      prisma.invoice.findMany({
+      prisma.monthlyPaymentRecord.findMany({
         where: {
           orgId: org.id,
           status: 'PAID',
-          paidAt: {
-            gte: lastMonth,
-            lt: thisMonth,
-            not: null
-          }
+          month: lastMonthStr,
+          paidAt: { not: null }
         },
         select: { amountP: true }
       }),
-      prisma.invoice.count({
+      prisma.monthlyPaymentRecord.count({
         where: {
           orgId: org.id,
           status: 'PENDING',
-          dueDate: { gte: now }
+          month: currentMonthStr
         }
       }),
-      prisma.invoice.count({
+      prisma.monthlyPaymentRecord.count({
         where: {
           orgId: org.id,
-          status: { in: ['OVERDUE', 'PENDING'] },
-          dueDate: { lt: now }
+          status: { in: ['OVERDUE', 'LATE'] },
+          month: currentMonthStr
         }
       }),
       prisma.application.count({
@@ -172,18 +190,18 @@ export async function GET(request: NextRequest) {
       })
     ])
 
-    const monthlyRevenue = monthlyInvoices.reduce((sum, inv) => sum + Number(inv.amountP || 0) / 100, 0)
-    const lastMonthRevenue = lastMonthInvoices.reduce((sum, inv) => sum + Number(inv.amountP || 0) / 100, 0)
+    const monthlyRevenue = monthlyPayments.reduce((sum, payment) => sum + Number(payment.amountP || 0) / 100, 0)
+    const lastMonthRevenue = lastMonthPayments.reduce((sum, payment) => sum + Number(payment.amountP || 0) / 100, 0)
 
     const revenueGrowth = lastMonthRevenue > 0
       ? ((monthlyRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
       : monthlyRevenue > 0 ? 100 : 0
 
     // Calculate paid this month count
-    const paidThisMonth = monthlyInvoices.length
+    const paidThisMonth = monthlyPayments.length
 
-    // Calculate average payment time (from invoice creation to payment)
-    const paidInvoicesWithDates = await prisma.invoice.findMany({
+    // Calculate average payment time (from payment record creation to payment)
+    const paidPaymentsWithDates = await prisma.monthlyPaymentRecord.findMany({
       where: {
         orgId: org.id,
         status: 'PAID',
@@ -194,16 +212,16 @@ export async function GET(request: NextRequest) {
         createdAt: true,
         paidAt: true
       },
-      take: 100 // Sample last 100 paid invoices
+      take: 100 // Sample last 100 paid payments
     })
 
     let averagePaymentTime = 0
-    if (paidInvoicesWithDates.length > 0) {
-      const paymentTimes = paidInvoicesWithDates
-        .filter(inv => inv.createdAt && inv.paidAt)
-        .map(inv => {
-          const created = new Date(inv.createdAt!)
-          const paid = new Date(inv.paidAt!)
+    if (paidPaymentsWithDates.length > 0) {
+      const paymentTimes = paidPaymentsWithDates
+        .filter(payment => payment.createdAt && payment.paidAt)
+        .map(payment => {
+          const created = new Date(payment.createdAt!)
+          const paid = new Date(payment.paidAt!)
           return (paid.getTime() - created.getTime()) / (1000 * 60 * 60 * 24) // Convert to days
         })
       
@@ -266,7 +284,7 @@ export async function GET(request: NextRequest) {
       attendanceGrowth,
       monthlyRevenue,
       revenueGrowth,
-      pendingInvoices,
+      pendingPayments,
       overduePayments,
       pendingApplications,
       attendanceTrend,
