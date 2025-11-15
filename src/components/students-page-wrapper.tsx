@@ -8,11 +8,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Plus, Users, Calendar, Heart, AlertTriangle, Archive, ArchiveRestore, ChevronDown } from 'lucide-react'
+import { Plus, Users, Calendar, Heart, AlertTriangle, Archive, ArchiveRestore, ChevronDown, CheckCircle } from 'lucide-react'
 import { StudentsPageClient } from '@/components/students-page-client'
 import { AddStudentModal } from '@/components/add-student-modal'
 import { BulkUploadStudentsModal } from '@/components/bulk-upload-students-modal'
 import { RestrictedAction } from '@/components/restricted-action'
+import { StatCard } from '@/components/ui/stat-card'
 
 interface Student {
   id: string
@@ -146,67 +147,46 @@ export function StudentsPageWrapper({ initialStudents, classes }: StudentsPageWr
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-[var(--card)] p-6 rounded-lg shadow border border-[var(--border)]">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <Users className="h-8 w-8 text-blue-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-[var(--muted-foreground)]">
-                {showArchived ? 'Archived Students' : 'Total Students'}
-              </p>
-              <p className="text-2xl font-semibold text-[var(--foreground)]">
-                {showArchived 
-                  ? students.filter(s => s.isArchived).length 
-                  : students.filter(s => !s.isArchived).length
-                }
-              </p>
-            </div>
-          </div>
-        </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+        <StatCard
+          title={showArchived ? 'Archived Students' : 'Total Students'}
+          value={showArchived 
+            ? students.filter(s => s.isArchived).length 
+            : students.filter(s => !s.isArchived).length
+          }
+          icon={<Users className="h-4 w-4 text-blue-600" />}
+          className="border-l-4 border-l-blue-500 bg-blue-50/30"
+        />
         
-        <div className="bg-[var(--card)] p-6 rounded-lg shadow border border-[var(--border)]">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <Calendar className="h-8 w-8 text-green-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-[var(--muted-foreground)]">New This Month</p>
-              <p className="text-2xl font-semibold text-[var(--foreground)]">
-                {students.filter(s => s.enrollmentDate >= new Date('2024-12-01')).length}
-              </p>
-            </div>
-          </div>
-        </div>
+        <StatCard
+          title="New This Month"
+          value={students.filter(s => {
+            const enrollmentDate = s.enrollmentDate instanceof Date ? s.enrollmentDate : new Date(s.enrollmentDate)
+            const firstOfMonth = new Date()
+            firstOfMonth.setDate(1)
+            firstOfMonth.setHours(0, 0, 0, 0)
+            return enrollmentDate >= firstOfMonth
+          }).length}
+          description="Enrolled this month"
+          icon={<Calendar className="h-4 w-4 text-green-600" />}
+          className="border-l-4 border-l-green-500 bg-green-50/30"
+        />
         
-        <div className="bg-[var(--card)] p-6 rounded-lg shadow border border-[var(--border)]">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <Heart className="h-8 w-8 text-red-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-[var(--muted-foreground)]">With Allergies</p>
-              <p className="text-2xl font-semibold text-[var(--foreground)]">
-                {students.filter(s => s.allergies && s.allergies !== 'None').length}
-              </p>
-            </div>
-          </div>
-        </div>
+        <StatCard
+          title="With Allergies"
+          value={students.filter(s => s.allergies && s.allergies !== 'None' && s.allergies.trim() !== '').length}
+          description="Require special attention"
+          icon={<Heart className="h-4 w-4 text-red-600" />}
+          className="border-l-4 border-l-red-500 bg-red-50/30"
+        />
         
-        <div className="bg-[var(--card)] p-6 rounded-lg shadow border border-[var(--border)]">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <AlertTriangle className="h-8 w-8 text-yellow-600" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-[var(--muted-foreground)]">Low Attendance</p>
-              <p className="text-2xl font-semibold text-[var(--foreground)]">
-                {students.filter(s => s.attendanceRate < 86).length}
-              </p>
-            </div>
-          </div>
-        </div>
+        <StatCard
+          title="Low Attendance"
+          value={students.filter(s => s.attendanceRate < 86).length}
+          description="Below 86% threshold"
+          icon={<AlertTriangle className="h-4 w-4 text-yellow-600" />}
+          className="border-l-4 border-l-yellow-500 bg-yellow-50/30"
+        />
       </div>
 
       {/* Filters and Students List */}
