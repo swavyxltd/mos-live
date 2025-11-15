@@ -8,64 +8,64 @@ import { formatDate } from '@/lib/utils'
 
 // Static navigation pages
 const navigationPages = [
-  { name: 'Dashboard', href: '/dashboard', icon: '🏠', type: 'page' },
-  { name: 'Classes', href: '/classes', icon: '📚', type: 'page' },
-  { name: 'Students', href: '/students', icon: '👥', type: 'page' },
-  { name: 'Applications', href: '/applications', icon: '📝', type: 'page' },
-  { name: 'Staff', href: '/staff', icon: '👨‍🏫', type: 'page' },
-  { name: 'Attendance', href: '/attendance', icon: '📊', type: 'page' },
-  { name: 'Finances', href: '/finances', icon: '💰', type: 'page' },
-  { name: 'Fees', href: '/fees', icon: '💳', type: 'page' },
-  { name: 'Payments', href: '/payments', icon: '💵', type: 'page' },
-  { name: 'Messages', href: '/messages', icon: '💬', type: 'page' },
-  { name: 'Calendar', href: '/calendar', icon: '📅', type: 'page' },
-  { name: 'Support', href: '/support', icon: '❓', type: 'page' },
-  { name: 'Settings', href: '/settings', icon: '⚙️', type: 'page' },
+  { name: 'Dashboard', href: '/dashboard', icon: 'Home', type: 'page' },
+  { name: 'Classes', href: '/classes', icon: 'GraduationCap', type: 'page' },
+  { name: 'Students', href: '/students', icon: 'Users', type: 'page' },
+  { name: 'Applications', href: '/applications', icon: 'FileCheck', type: 'page' },
+  { name: 'Staff', href: '/staff', icon: 'UserCheck', type: 'page' },
+  { name: 'Attendance', href: '/attendance', icon: 'ClipboardList', type: 'page' },
+  { name: 'Finances', href: '/finances', icon: 'DollarSign', type: 'page' },
+  { name: 'Fees', href: '/fees', icon: 'CreditCard', type: 'page' },
+  { name: 'Payments', href: '/payments', icon: 'FileText', type: 'page' },
+  { name: 'Messages', href: '/messages', icon: 'MessageSquare', type: 'page' },
+  { name: 'Calendar', href: '/calendar', icon: 'Calendar', type: 'page' },
+  { name: 'Support', href: '/support', icon: 'HelpCircle', type: 'page' },
+  { name: 'Settings', href: '/settings', icon: 'Settings', type: 'page' },
 ]
 
 // Settings sub-pages
 const settingsPages = [
-  { name: 'Profile Settings', href: '/settings?tab=profile', icon: '👤', type: 'settings' },
-  { name: 'Organization Settings', href: '/settings?tab=organization', icon: '🏢', type: 'settings' },
-  { name: 'Payment Methods', href: '/settings?tab=payment-methods', icon: '💳', type: 'settings' },
-  { name: 'Your Subscription', href: '/settings?tab=subscription', icon: '📦', type: 'settings' },
-  { name: 'Billing History', href: '/settings?tab=billing', icon: '📄', type: 'settings' },
+  { name: 'Profile Settings', href: '/settings?tab=profile', icon: 'User', type: 'settings' },
+  { name: 'Organization Settings', href: '/settings?tab=organization', icon: 'Building2', type: 'settings' },
+  { name: 'Payment Methods', href: '/settings?tab=payment-methods', icon: 'CreditCard', type: 'settings' },
+  { name: 'Your Subscription', href: '/settings?tab=subscription', icon: 'Package', type: 'settings' },
+  { name: 'Billing History', href: '/settings?tab=billing', icon: 'FileText', type: 'settings' },
 ]
 
 // FAQ data
 const faqData = [
-  { question: 'How do I set up my madrasah on Madrasah OS?', category: 'Getting Started', href: '/support/faq', icon: '🚀', type: 'faq' },
-  { question: 'What information do I need to provide during setup?', category: 'Getting Started', href: '/support/faq', icon: '🚀', type: 'faq' },
-  { question: 'How do I invite teachers to join my madrasah?', category: 'Getting Started', href: '/support/faq', icon: '🚀', type: 'faq' },
-  { question: 'How do I add students to my madrasah?', category: 'Student Management', href: '/support/faq', icon: '👥', type: 'faq' },
-  { question: 'Can parents add their own children?', category: 'Student Management', href: '/support/faq', icon: '👥', type: 'faq' },
-  { question: 'How do I mark attendance?', category: 'Student Management', href: '/support/faq', icon: '👥', type: 'faq' },
-  { question: 'How do I record student progress?', category: 'Student Management', href: '/support/faq', icon: '👥', type: 'faq' },
-  { question: 'How do I set up fees for my classes?', category: 'Billing & Payments', href: '/support/faq', icon: '💳', type: 'faq' },
-  { question: 'How do parents pay their fees?', category: 'Billing & Payments', href: '/support/faq', icon: '💳', type: 'faq' },
-  { question: 'What payment methods do you support?', category: 'Billing & Payments', href: '/support/faq', icon: '💳', type: 'faq' },
-  { question: 'How do I generate invoices?', category: 'Billing & Payments', href: '/support/faq', icon: '💳', type: 'faq' },
-  { question: 'How do I send announcements to parents?', category: 'Communication', href: '/support/faq', icon: '📱', type: 'faq' },
-  { question: 'How do I set up WhatsApp messaging?', category: 'Communication', href: '/support/faq', icon: '📱', type: 'faq' },
-  { question: 'Can parents reply to messages?', category: 'Communication', href: '/support/faq', icon: '📱', type: 'faq' },
-  { question: 'What browsers are supported?', category: 'Technical Support', href: '/support/faq', icon: '🔧', type: 'faq' },
-  { question: 'Is my data secure?', category: 'Technical Support', href: '/support/faq', icon: '🔧', type: 'faq' },
-  { question: 'Can I export my data?', category: 'Technical Support', href: '/support/faq', icon: '🔧', type: 'faq' },
-  { question: 'What if I forget my password?', category: 'Technical Support', href: '/support/faq', icon: '🔧', type: 'faq' },
+  { question: 'How do I set up my madrasah on Madrasah OS?', category: 'Getting Started', href: '/support/faq', icon: 'Rocket', type: 'faq' },
+  { question: 'What information do I need to provide during setup?', category: 'Getting Started', href: '/support/faq', icon: 'Rocket', type: 'faq' },
+  { question: 'How do I invite teachers to join my madrasah?', category: 'Getting Started', href: '/support/faq', icon: 'Rocket', type: 'faq' },
+  { question: 'How do I add students to my madrasah?', category: 'Student Management', href: '/support/faq', icon: 'Users', type: 'faq' },
+  { question: 'Can parents add their own children?', category: 'Student Management', href: '/support/faq', icon: 'Users', type: 'faq' },
+  { question: 'How do I mark attendance?', category: 'Student Management', href: '/support/faq', icon: 'Users', type: 'faq' },
+  { question: 'How do I record student progress?', category: 'Student Management', href: '/support/faq', icon: 'Users', type: 'faq' },
+  { question: 'How do I set up fees for my classes?', category: 'Billing & Payments', href: '/support/faq', icon: 'CreditCard', type: 'faq' },
+  { question: 'How do parents pay their fees?', category: 'Billing & Payments', href: '/support/faq', icon: 'CreditCard', type: 'faq' },
+  { question: 'What payment methods do you support?', category: 'Billing & Payments', href: '/support/faq', icon: 'CreditCard', type: 'faq' },
+  { question: 'How do I generate invoices?', category: 'Billing & Payments', href: '/support/faq', icon: 'CreditCard', type: 'faq' },
+  { question: 'How do I send announcements to parents?', category: 'Communication', href: '/support/faq', icon: 'MessageSquare', type: 'faq' },
+  { question: 'How do I set up WhatsApp messaging?', category: 'Communication', href: '/support/faq', icon: 'MessageSquare', type: 'faq' },
+  { question: 'Can parents reply to messages?', category: 'Communication', href: '/support/faq', icon: 'MessageSquare', type: 'faq' },
+  { question: 'What browsers are supported?', category: 'Technical Support', href: '/support/faq', icon: 'Wrench', type: 'faq' },
+  { question: 'Is my data secure?', category: 'Technical Support', href: '/support/faq', icon: 'Wrench', type: 'faq' },
+  { question: 'Can I export my data?', category: 'Technical Support', href: '/support/faq', icon: 'Wrench', type: 'faq' },
+  { question: 'What if I forget my password?', category: 'Technical Support', href: '/support/faq', icon: 'Wrench', type: 'faq' },
 ]
 
 // Documentation topics
 const documentationTopics = [
-  { title: 'Welcome to Madrasah OS', href: '/support/docs', icon: '📖', type: 'guide' },
-  { title: 'Dashboard Overview', href: '/support/docs', icon: '📊', type: 'guide' },
-  { title: 'Student Management', href: '/support/docs', icon: '👥', type: 'guide' },
-  { title: 'Class Management', href: '/support/docs', icon: '📚', type: 'guide' },
-  { title: 'Attendance Tracking', href: '/support/docs', icon: '📊', type: 'guide' },
-  { title: 'Fee Management', href: '/support/docs', icon: '💳', type: 'guide' },
-  { title: 'Payment Processing', href: '/support/docs', icon: '💵', type: 'guide' },
-  { title: 'Messaging & Communication', href: '/support/docs', icon: '💬', type: 'guide' },
-  { title: 'Calendar & Events', href: '/support/docs', icon: '📅', type: 'guide' },
-  { title: 'Reports & Analytics', href: '/support/docs', icon: '📈', type: 'guide' },
+  { title: 'Welcome to Madrasah OS', href: '/support/docs', icon: 'BookOpen', type: 'guide' },
+  { title: 'Dashboard Overview', href: '/support/docs', icon: 'BarChart3', type: 'guide' },
+  { title: 'Student Management', href: '/support/docs', icon: 'Users', type: 'guide' },
+  { title: 'Class Management', href: '/support/docs', icon: 'GraduationCap', type: 'guide' },
+  { title: 'Attendance Tracking', href: '/support/docs', icon: 'ClipboardList', type: 'guide' },
+  { title: 'Fee Management', href: '/support/docs', icon: 'CreditCard', type: 'guide' },
+  { title: 'Payment Processing', href: '/support/docs', icon: 'FileText', type: 'guide' },
+  { title: 'Messaging & Communication', href: '/support/docs', icon: 'MessageSquare', type: 'guide' },
+  { title: 'Calendar & Events', href: '/support/docs', icon: 'Calendar', type: 'guide' },
+  { title: 'Reports & Analytics', href: '/support/docs', icon: 'TrendingUp', type: 'guide' },
 ]
 
 export async function GET(request: NextRequest) {
@@ -88,6 +88,21 @@ export async function GET(request: NextRequest) {
     // Get active organization
     const org = await getActiveOrg(session.user.id)
     if (!org) {
+      return NextResponse.json({ results: [] })
+    }
+
+    // Security: Verify user has access to this organization
+    const userMembership = await prisma.userOrgMembership.findUnique({
+      where: {
+        userId_orgId: {
+          userId: session.user.id,
+          orgId: org.id,
+        },
+      },
+    })
+
+    if (!userMembership) {
+      // User doesn't have access to this organization - return empty results
       return NextResponse.json({ results: [] })
     }
 
@@ -120,7 +135,7 @@ export async function GET(request: NextRequest) {
           title: `${student.firstName} ${student.lastName}`,
           subtitle: `Parent: ${student.User?.name || student.User?.email || 'N/A'}`,
           url: `/students`,
-          icon: '👨‍🎓',
+          icon: 'User',
         })
       })
     } catch (error) {
@@ -154,7 +169,7 @@ export async function GET(request: NextRequest) {
           title: classItem.name,
           subtitle: `Teacher: ${classItem.User?.name || 'Unassigned'}`,
           url: `/classes/${classItem.id}`,
-          icon: '📚',
+          icon: 'GraduationCap',
         })
       })
     } catch (error) {
@@ -193,7 +208,7 @@ export async function GET(request: NextRequest) {
           title: membership.User.name || membership.User.email,
           subtitle: `Role: ${membership.role}`,
           url: `/staff/${membership.User.id}`,
-          icon: '👨‍🏫',
+          icon: 'UserCheck',
         })
       })
     } catch (error) {
@@ -237,7 +252,7 @@ export async function GET(request: NextRequest) {
           title: `${record.Student.firstName} ${record.Student.lastName} - ${month}`,
           subtitle: `Class: ${record.Class?.name || 'N/A'} • Amount: £${record.amount.toFixed(2)} • Status: ${record.status}`,
           url: `/payments`,
-          icon: '💵',
+          icon: 'FileText',
         })
       })
     } catch (error) {
@@ -266,7 +281,7 @@ export async function GET(request: NextRequest) {
           title: message.title,
           subtitle: `Sent: ${date}`,
           url: `/messages`,
-          icon: '💬',
+          icon: 'MessageSquare',
         })
       })
     } catch (error) {
@@ -295,7 +310,7 @@ export async function GET(request: NextRequest) {
           title: event.title,
           subtitle: `Date: ${date}`,
           url: `/calendar`,
-          icon: '📅',
+          icon: 'Calendar',
         })
       })
     } catch (error) {
@@ -324,7 +339,7 @@ export async function GET(request: NextRequest) {
           title: `${app.studentName} - ${app.guardianName}`,
           subtitle: `Status: ${app.status} • ${app.guardianEmail}`,
           url: `/applications`,
-          icon: '📝',
+          icon: 'FileCheck',
         })
       })
     } catch (error) {

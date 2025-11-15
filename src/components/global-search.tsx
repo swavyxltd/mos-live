@@ -1,7 +1,32 @@
 'use client'
 
 import * as React from 'react'
-import { Search, X } from 'lucide-react'
+import { 
+  Search, 
+  X, 
+  User, 
+  GraduationCap, 
+  UserCheck, 
+  FileText, 
+  MessageSquare, 
+  Calendar, 
+  FileCheck,
+  Home,
+  Users,
+  ClipboardList,
+  DollarSign,
+  CreditCard,
+  HelpCircle,
+  Settings,
+  Building2,
+  Package,
+  Rocket,
+  Wrench,
+  BookOpen,
+  BarChart3,
+  TrendingUp,
+  type LucideIcon
+} from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -15,6 +40,31 @@ interface SearchResult {
   subtitle: string
   url: string
   icon: string
+}
+
+// Icon mapping
+const iconMap: Record<string, LucideIcon> = {
+  User,
+  GraduationCap,
+  UserCheck,
+  FileText,
+  MessageSquare,
+  Calendar,
+  FileCheck,
+  Home,
+  Users,
+  ClipboardList,
+  DollarSign,
+  CreditCard,
+  HelpCircle,
+  Settings,
+  Building2,
+  Package,
+  Rocket,
+  Wrench,
+  BookOpen,
+  BarChart3,
+  TrendingUp,
 }
 
 export function GlobalSearch() {
@@ -94,17 +144,25 @@ export function GlobalSearch() {
     setQuery('')
   }
 
+  const getIcon = (iconName: string) => {
+    const IconComponent = iconMap[iconName] || Search
+    return <IconComponent className="h-5 w-5 text-[var(--muted-foreground)]" />
+  }
+
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'student': return 'bg-blue-100 text-blue-800'
-      case 'class': return 'bg-green-100 text-green-800'
-      case 'staff': return 'bg-purple-100 text-purple-800'
-      case 'invoice': return 'bg-yellow-100 text-yellow-800'
-      case 'message': return 'bg-pink-100 text-pink-800'
-      case 'attendance': return 'bg-indigo-100 text-indigo-800'
-      case 'event': return 'bg-orange-100 text-orange-800'
-      case 'fee': return 'bg-emerald-100 text-emerald-800'
-      default: return 'bg-gray-100 text-gray-800'
+      case 'student': return 'bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800'
+      case 'class': return 'bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800'
+      case 'staff': return 'bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800'
+      case 'payment': return 'bg-yellow-50 dark:bg-yellow-950 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800'
+      case 'message': return 'bg-pink-50 dark:bg-pink-950 text-pink-700 dark:text-pink-300 border-pink-200 dark:border-pink-800'
+      case 'event': return 'bg-orange-50 dark:bg-orange-950 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800'
+      case 'application': return 'bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800'
+      case 'page': return 'bg-gray-50 dark:bg-gray-950 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-800'
+      case 'settings': return 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800'
+      case 'faq': return 'bg-cyan-50 dark:bg-cyan-950 text-cyan-700 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800'
+      case 'guide': return 'bg-teal-50 dark:bg-teal-950 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-800'
+      default: return 'bg-gray-50 dark:bg-gray-950 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-800'
     }
   }
 
@@ -174,53 +232,53 @@ export function GlobalSearch() {
               
               {/* Search Results */}
               {isOpen && showResults && (
-                <Card className="max-h-[60vh] overflow-y-auto shadow-2xl border-2 border-[var(--border)]">
-                  <CardContent className="p-0">
-                    {isLoading ? (
-                      <div className="p-8 text-center text-muted-foreground">
-                        <div className="animate-pulse">Searching...</div>
-                      </div>
-                    ) : results.length > 0 ? (
-                      <div className="py-2">
-                        {results.map((result, index) => (
-                          <Link
-                            key={`${result.type}-${result.id}-${index}`}
-                            href={result.url}
-                            onClick={() => {
-                              handleResultClick()
-                              setIsMobileSearchOpen(false)
-                            }}
-                            className="flex items-center gap-4 p-4 hover:bg-[var(--accent)] transition-colors border-b border-[var(--border)] last:border-b-0"
-                          >
-                            <span className="text-2xl">{result.icon}</span>
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium text-base truncate text-[var(--foreground)]">
-                                {result.title}
-                              </div>
-                              <div className="text-sm text-[var(--muted-foreground)] truncate mt-1">
-                                {result.subtitle}
-                              </div>
+                <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-lg max-h-[60vh] overflow-y-auto">
+                  {isLoading ? (
+                    <div className="p-8 text-center text-[var(--muted-foreground)]">
+                      <div className="animate-pulse">Searching...</div>
+                    </div>
+                  ) : results.length > 0 ? (
+                    <div className="py-2">
+                      {results.map((result, index) => (
+                        <Link
+                          key={`${result.type}-${result.id}-${index}`}
+                          href={result.url}
+                          onClick={() => {
+                            handleResultClick()
+                            setIsMobileSearchOpen(false)
+                          }}
+                          className="flex items-center gap-3 px-4 py-3 hover:bg-[var(--accent)] transition-colors border-b border-[var(--border)] last:border-b-0"
+                        >
+                          <div className="w-10 h-10 bg-[var(--muted)] rounded-lg flex items-center justify-center flex-shrink-0">
+                            {getIcon(result.icon)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-sm truncate text-[var(--foreground)]">
+                              {result.title}
                             </div>
-                            <Badge 
-                              variant="secondary" 
-                              className={`text-xs ${getTypeColor(result.type)}`}
-                            >
-                              {result.type}
-                            </Badge>
-                          </Link>
-                        ))}
-                      </div>
-                    ) : query.length >= 2 ? (
-                      <div className="p-8 text-center text-muted-foreground">
-                        No results found for "{query}"
-                      </div>
-                    ) : (
-                      <div className="p-8 text-center text-muted-foreground">
-                        Start typing to search...
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                            <div className="text-xs text-[var(--muted-foreground)] truncate mt-0.5">
+                              {result.subtitle}
+                            </div>
+                          </div>
+                          <Badge 
+                            variant="outline" 
+                            className={`text-xs border ${getTypeColor(result.type)}`}
+                          >
+                            {result.type}
+                          </Badge>
+                        </Link>
+                      ))}
+                    </div>
+                  ) : query.length >= 2 ? (
+                    <div className="p-8 text-center text-[var(--muted-foreground)]">
+                      No results found for "{query}"
+                    </div>
+                  ) : (
+                    <div className="p-8 text-center text-[var(--muted-foreground)]">
+                      Start typing to search...
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </div>
