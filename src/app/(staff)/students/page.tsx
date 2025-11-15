@@ -37,30 +37,66 @@ export default async function StudentsPage() {
     }
   })
 
+  // Get all attendance records for these students
+  const studentIds = students.map(s => s.id)
+  const allAttendance = studentIds.length > 0 ? await prisma.attendance.findMany({
+    where: {
+      studentId: { in: studentIds },
+      orgId: org.id
+    },
+    select: {
+      studentId: true,
+      status: true,
+      date: true
+    },
+    orderBy: {
+      date: 'desc'
+    }
+  }) : []
+
+  // Calculate attendance rates per student
+  const attendanceByStudent = new Map<string, { present: number; total: number; lastDate: Date | null }>()
+  allAttendance.forEach(att => {
+    const entry = attendanceByStudent.get(att.studentId) || { present: 0, total: 0, lastDate: null }
+    entry.total++
+    if (att.status === 'PRESENT' || att.status === 'LATE') {
+      entry.present++
+    }
+    if (!entry.lastDate || att.date > entry.lastDate) {
+      entry.lastDate = att.date
+    }
+    attendanceByStudent.set(att.studentId, entry)
+  })
+
   // Transform student data for frontend
   const transformedStudents = students.map(student => {
-    const age = student.dateOfBirth 
-      ? Math.floor((new Date().getTime() - new Date(student.dateOfBirth).getTime()) / (1000 * 60 * 60 * 24 * 365.25))
+    const age = student.dob 
+      ? Math.floor((new Date().getTime() - new Date(student.dob).getTime()) / (1000 * 60 * 60 * 24 * 365.25))
+      : 0
+
+    const attendance = attendanceByStudent.get(student.id) || { present: 0, total: 0, lastDate: null }
+    const attendanceRate = attendance.total > 0
+      ? Math.round((attendance.present / attendance.total) * 100)
       : 0
 
     return {
       id: student.id,
       firstName: student.firstName,
       lastName: student.lastName,
-      email: student.email || '',
-      phone: student.phone || '',
-      dateOfBirth: student.dateOfBirth,
+      email: '',
+      phone: '',
+      dateOfBirth: student.dob,
       age,
-      grade: student.grade || '',
+      grade: '',
       parentName: student.User?.name || '',
       parentEmail: student.User?.email || '',
       parentPhone: student.User?.phone || '',
-      address: student.address || '',
-      emergencyContact: student.emergencyContact || '',
+      address: '',
+      emergencyContact: '',
       allergies: student.allergies || 'None',
       medicalNotes: student.medicalNotes || '',
-      enrollmentDate: student.enrollmentDate || student.createdAt,
-      status: student.status || 'ACTIVE',
+      enrollmentDate: student.createdAt,
+      status: 'ACTIVE',
       isArchived: student.isArchived,
       archivedAt: student.archivedAt,
       orgId: student.orgId,
@@ -70,8 +106,8 @@ export default async function StudentsPage() {
         id: sc.Class.id,
         name: sc.Class.name
       })),
-      attendanceRate: 0, // TODO: Calculate from attendance records
-      lastAttendance: new Date() // TODO: Get from attendance records
+      attendanceRate,
+      lastAttendance: attendance.lastDate || student.createdAt
     }
   })
 
