@@ -14,10 +14,18 @@ export default async function AttendancePage() {
   // Always use real database data
   const { prisma } = await import('@/lib/prisma')
   
-  // Get attendance records from database
+  // Get attendance records from database - include current week and past 4 weeks
+  const now = new Date()
+  const fourWeeksAgo = new Date(now)
+  fourWeeksAgo.setDate(now.getDate() - 28) // 4 weeks ago
+  fourWeeksAgo.setHours(0, 0, 0, 0)
+  
   const attendanceRecords = await prisma.attendance.findMany({
     where: {
-      orgId: org.id
+      orgId: org.id,
+      date: {
+        gte: fourWeeksAgo
+      }
     },
     include: {
       Student: {
@@ -42,8 +50,7 @@ export default async function AttendancePage() {
     },
     orderBy: {
       date: 'desc'
-    },
-    take: 100 // Limit to recent 100 records
+    }
   })
 
   // Group attendance by class and date

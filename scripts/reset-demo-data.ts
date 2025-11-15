@@ -543,6 +543,46 @@ async function main() {
         }
       }
     }
+    
+    // Also generate attendance for current week and past 3 weeks
+    const weekStart = new Date(now)
+    weekStart.setDate(now.getDate() - now.getDay() + 1) // Monday of current week
+    weekStart.setHours(0, 0, 0, 0)
+    
+    // Generate for current week and 3 weeks back
+    for (let weekOffset = -3; weekOffset <= 0; weekOffset++) {
+      const weekDate = new Date(weekStart)
+      weekDate.setDate(weekStart.getDate() + (weekOffset * 7))
+      
+      for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+        const date = new Date(weekDate)
+        date.setDate(weekDate.getDate() + dayOffset)
+        const dayName = date.toLocaleDateString('en-US', { weekday: 'long' })
+        
+        if (classDaysList.includes(dayName)) {
+          const shouldBePresent = Math.random() < attendanceRate
+          const status = shouldBePresent 
+            ? (Math.random() > 0.1 ? 'PRESENT' : 'LATE')
+            : 'ABSENT'
+          
+          try {
+            await prisma.attendance.create({
+              data: {
+                id: `attendance-current-${student.id}-${classItem.id}-${date.getTime()}`,
+                orgId: org.id,
+                classId: classItem.id,
+                studentId: student.id,
+                date: date,
+                status: status
+              }
+            })
+            attendanceCount++
+          } catch (error) {
+            // Skip duplicates
+          }
+        }
+      }
+    }
   }
   
   console.log(`   ✅ Created ${attendanceCount} attendance records`)
