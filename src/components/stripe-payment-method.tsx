@@ -145,7 +145,7 @@ function PaymentMethodForm({ onSuccess, onCancel, clientSecret: propClientSecret
         <label className="text-sm font-medium text-[var(--foreground)]">
           Card Information
         </label>
-        <div className="p-4 border border-[var(--border)] rounded-lg bg-[var(--card)] hover:border-[var(--border)] focus-within:border-[var(--ring)] focus-within:ring-1 focus-within:ring-[var(--ring)] transition-all duration-200">
+        <div className="p-4 border border-[var(--border)] rounded-lg bg-[var(--card)] hover:border-[var(--border)] focus-within:border-[var(--ring)] focus-within:ring-1 focus-within:ring-[var(--ring)] transition-all duration-200 stripe-card-element">
           <CardElement
             options={{
               style: {

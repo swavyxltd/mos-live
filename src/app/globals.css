@@ -149,3 +149,24 @@ table {
     margin-top: 1.25rem; /* 20px instead of 24px */
   }
 }
+
+/* Stripe CardElement dark mode support */
+.stripe-card-element .StripeElement,
+.stripe-card-element .StripeElement input,
+.stripe-card-element .StripeElement--focus,
+.stripe-card-element .StripeElement--complete {
+  color: var(--foreground) !important;
+}
+
+.stripe-card-element .StripeElement input::placeholder {
+  color: var(--muted-foreground) !important;
+}
+
+.stripe-card-element .StripeElement--invalid {
+  color: #DC2626 !important;
+}
+
+/* Target Stripe's iframe content */
+.stripe-card-element iframe {
+  color-scheme: light dark;
+}
