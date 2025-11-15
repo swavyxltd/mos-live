@@ -108,6 +108,87 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       selectedClasses
     } = updateData
 
+    // Get existing student to check if they have a parent
+    const existingStudent = await prisma.student.findUnique({
+      where: { id, orgId },
+      include: { User: true }
+    })
+
+    if (!existingStudent) {
+      return NextResponse.json({ error: 'Student not found' }, { status: 404 })
+    }
+
+    // Handle parent update/create if parent info is provided
+    if (parentName || parentEmail || parentPhone) {
+      if (existingStudent.primaryParentId) {
+        // Update existing parent
+        try {
+          await prisma.user.update({
+            where: { id: existingStudent.primaryParentId },
+            data: {
+              ...(parentName && { name: parentName }),
+              ...(parentEmail && { email: parentEmail }),
+              ...(parentPhone && { phone: parentPhone })
+            }
+          })
+        } catch (parentError) {
+          console.error('Error updating parent:', parentError)
+          // Don't fail the entire request if parent update fails
+        }
+      } else if (parentEmail) {
+        // Create new parent if email is provided
+        try {
+          let parentUser = await prisma.user.findUnique({
+            where: { email: parentEmail.toLowerCase().trim() }
+          })
+
+          if (!parentUser) {
+            parentUser = await prisma.user.create({
+              data: {
+                email: parentEmail.toLowerCase().trim(),
+                name: parentName || '',
+                phone: parentPhone || null
+              }
+            })
+
+            // Add parent to organization
+            await prisma.userOrgMembership.upsert({
+              where: {
+                userId_orgId: {
+                  userId: parentUser.id,
+                  orgId: orgId
+                }
+              },
+              update: {},
+              create: {
+                userId: parentUser.id,
+                orgId: orgId,
+                role: 'PARENT'
+              }
+            })
+          } else {
+            // Update existing user
+            await prisma.user.update({
+              where: { id: parentUser.id },
+              data: {
+                ...(parentName && { name: parentName }),
+                ...(parentPhone && { phone: parentPhone })
+              }
+            })
+          }
+
+          // Link student to parent
+          await prisma.student.update({
+            where: { id },
+            data: { primaryParentId: parentUser.id }
+          })
+        } catch (parentError) {
+          console.error('Error creating/updating parent:', parentError)
+          // Don't fail the entire request if parent creation fails
+        }
+      }
+    }
+
     // Update the student
     const updatedStudent = await prisma.student.update({
       where: { id, orgId },
@@ -115,13 +196,6 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         firstName,
         lastName,
         dob: dateOfBirth ? new Date(dateOfBirth) : null,
-        User: parentName || parentEmail || parentPhone ? {
-          update: {
-            name: parentName,
-            email: parentEmail,
-            phone: parentPhone,
-          }
-        } : undefined,
         allergies,
         medicalNotes,
         updatedAt: new Date()
@@ -147,6 +221,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       if (selectedClasses.length > 0) {
         await prisma.studentClass.createMany({
           data: selectedClasses.map((classId: string) => ({
+            id: `student-class-${id}-${classId}-${Date.now()}`,
             studentId: id,
             classId,
             orgId
@@ -155,25 +230,47 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       }
     }
 
-    // Create audit log
-    await prisma.auditLog.create({
-      data: {
-        id: `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        orgId,
-        actorUserId: session.user.id,
-        action: AuditLogAction.UPDATE,
-        targetType: AuditLogTargetType.STUDENT,
-        targetId: updatedStudent.id,
-        data: JSON.stringify({
-          studentName: `${updatedStudent.firstName} ${updatedStudent.lastName}`,
-          updatedFields: Object.keys(updateData).filter(key => 
-            !['id', 'isArchived', 'archivedAt', 'createdAt', 'updatedAt'].includes(key)
-          )
-        }),
-      },
+    // Refetch student with all relations to return complete data
+    const finalStudent = await prisma.student.findUnique({
+      where: { id, orgId },
+      include: {
+        User: true,
+        StudentClass: {
+          include: {
+            Class: true
+          }
+        }
+      }
     })
 
-    return NextResponse.json(updatedStudent)
+    if (!finalStudent) {
+      return NextResponse.json({ error: 'Student not found after update' }, { status: 404 })
+    }
+
+    // Create audit log
+    try {
+      await prisma.auditLog.create({
+        data: {
+          id: `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          orgId,
+          actorUserId: session.user.id,
+          action: AuditLogAction.UPDATE,
+          targetType: AuditLogTargetType.STUDENT,
+          targetId: finalStudent.id,
+          data: JSON.stringify({
+            studentName: `${finalStudent.firstName} ${finalStudent.lastName}`,
+            updatedFields: Object.keys(updateData).filter(key => 
+              !['id', 'isArchived', 'archivedAt', 'createdAt', 'updatedAt'].includes(key)
+            )
+          }),
+        },
+      })
+    } catch (auditError) {
+      console.error('Error creating audit log:', auditError)
+      // Don't fail the request if audit log fails
+    }
+
+    return NextResponse.json(finalStudent)
   } catch (error) {
     console.error('Error updating student:', error)
     return NextResponse.json({ error: 'Failed to update student' }, { status: 500 })
