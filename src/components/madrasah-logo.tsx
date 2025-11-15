@@ -19,13 +19,23 @@ export function MadrasahLogo({ className = '', showText = true, textSize = 'md',
     setMounted(true)
     const checkDarkMode = () => {
       if (typeof window !== 'undefined') {
-        setIsDarkMode(document.documentElement.classList.contains('dark'))
+        const hasDark = document.documentElement.classList.contains('dark')
+        setIsDarkMode(hasDark)
       }
     }
     
+    // Check immediately
     checkDarkMode()
 
-    const observer = new MutationObserver(checkDarkMode)
+    // Check again after a short delay to catch any late-applied classes
+    const timeoutId = setTimeout(checkDarkMode, 100)
+
+    // Watch for class changes
+    const observer = new MutationObserver(() => {
+      // Small delay to ensure class change is complete
+      setTimeout(checkDarkMode, 10)
+    })
+    
     if (typeof window !== 'undefined') {
       observer.observe(document.documentElement, {
         attributes: true,
@@ -33,7 +43,10 @@ export function MadrasahLogo({ className = '', showText = true, textSize = 'md',
       })
     }
 
-    return () => observer.disconnect()
+    return () => {
+      clearTimeout(timeoutId)
+      observer.disconnect()
+    }
   }, [])
 
   const textSizeClasses = {
@@ -61,29 +74,21 @@ export function MadrasahLogo({ className = '', showText = true, textSize = 'md',
     )
   }
 
+  const logoSrc = isDarkMode ? '/logo-dark.png' : '/madrasah-logo.png'
+
   return (
     <div className={`flex flex-col items-center ${className}`}>
       {/* Logo Icon */}
       <div className="flex items-center justify-start mb-2 w-full">
-        {isDarkMode ? (
-          <Image 
-            src="/logo-dark.png" 
-            alt="Madrasah OS Logo" 
-            width={size === 'sm' ? 128 : size === 'md' ? 192 : size === 'lg' ? 256 : size === 'lg-sm' ? 224 : 288}
-            height={size === 'sm' ? 24 : size === 'md' ? 40 : size === 'lg' ? 48 : size === 'lg-sm' ? 48 : 60}
-            className={cn('w-full object-contain max-w-full h-auto', logoSizeClasses[size])}
-            priority
-          />
-        ) : (
-          <Image 
-            src="/madrasah-logo.png" 
-            alt="Madrasah OS Logo" 
-            width={size === 'sm' ? 128 : size === 'md' ? 192 : size === 'lg' ? 256 : size === 'lg-sm' ? 224 : 288}
-            height={size === 'sm' ? 24 : size === 'md' ? 40 : size === 'lg' ? 48 : size === 'lg-sm' ? 48 : 60}
-            className={cn('w-full object-contain max-w-full h-auto', logoSizeClasses[size])}
-            priority
-          />
-        )}
+        <Image 
+          key={logoSrc}
+          src={logoSrc} 
+          alt="Madrasah OS Logo" 
+          width={size === 'sm' ? 128 : size === 'md' ? 192 : size === 'lg' ? 256 : size === 'lg-sm' ? 224 : 288}
+          height={size === 'sm' ? 24 : size === 'md' ? 40 : size === 'lg' ? 48 : size === 'lg-sm' ? 48 : 60}
+          className={cn('w-full object-contain max-w-full h-auto', logoSizeClasses[size])}
+          priority
+        />
       </div>
       
       {/* Text */}
