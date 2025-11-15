@@ -69,11 +69,12 @@ interface StudentsListProps {
   }
   onAddStudent?: () => void
   onStudentArchiveChange?: (id: string, isArchived: boolean) => void
+  onStudentUpdate?: (updatedStudent: Student) => void
   classes?: Class[]
   showArchived?: boolean
 }
 
-export function StudentsList({ students, filters, onAddStudent, onStudentArchiveChange, classes = [], showArchived = false }: StudentsListProps) {
+export function StudentsList({ students, filters, onAddStudent, onStudentArchiveChange, onStudentUpdate, classes = [], showArchived = false }: StudentsListProps) {
   const [sortBy, setSortBy] = useState<'name' | 'age' | 'enrollment' | 'attendance'>('name')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
@@ -201,11 +202,50 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
   }
 
   const handleEditSave = (updatedStudent: any) => {
-    // TODO: Update the student in the list
-    console.log('Student updated:', updatedStudent)
+    // Transform the updated student to match the Student interface
+    const transformedStudent: Student = {
+      id: updatedStudent.id,
+      firstName: updatedStudent.firstName || updatedStudent.name?.split(' ')[0] || '',
+      lastName: updatedStudent.lastName || updatedStudent.name?.split(' ').slice(1).join(' ') || '',
+      email: updatedStudent.email || '',
+      phone: updatedStudent.phone || '',
+      dateOfBirth: updatedStudent.dateOfBirth ? new Date(updatedStudent.dateOfBirth) : new Date(),
+      age: updatedStudent.age || 0,
+      grade: updatedStudent.grade || '',
+      parentName: updatedStudent.parentName || updatedStudent.User?.name || '',
+      parentEmail: updatedStudent.parentEmail || updatedStudent.User?.email || '',
+      parentPhone: updatedStudent.parentPhone || updatedStudent.User?.phone || '',
+      address: updatedStudent.address || '',
+      emergencyContact: updatedStudent.emergencyContact || '',
+      allergies: updatedStudent.allergies || 'None',
+      medicalNotes: updatedStudent.medicalNotes || '',
+      enrollmentDate: updatedStudent.enrollmentDate ? new Date(updatedStudent.enrollmentDate) : new Date(),
+      status: updatedStudent.status || 'ACTIVE',
+      isArchived: updatedStudent.isArchived || false,
+      archivedAt: updatedStudent.archivedAt ? new Date(updatedStudent.archivedAt) : undefined,
+      orgId: updatedStudent.orgId || '',
+      createdAt: updatedStudent.createdAt ? new Date(updatedStudent.createdAt) : new Date(),
+      updatedAt: updatedStudent.updatedAt ? new Date(updatedStudent.updatedAt) : new Date(),
+      classes: updatedStudent.classes || updatedStudent.StudentClass?.map((sc: any) => ({
+        id: sc.Class?.id || sc.classId || sc.class?.id,
+        name: sc.Class?.name || sc.class?.name || sc.className
+      })) || [],
+      attendanceRate: updatedStudent.attendanceRate || 0,
+      lastAttendance: updatedStudent.lastAttendance ? new Date(updatedStudent.lastAttendance) : new Date()
+    }
+    
+    // Call the update callback if provided
+    if (onStudentUpdate) {
+      onStudentUpdate(transformedStudent)
+    }
+    
     setIsEditModalOpen(false)
     setStudentToEdit(null)
-    // You might want to refresh the student list or update the local state here
+    
+    // Also update the selected student if it's the same one
+    if (selectedStudent && selectedStudent.id === transformedStudent.id) {
+      setSelectedStudent(transformedStudent)
+    }
   }
 
   // Filter students based on current filters

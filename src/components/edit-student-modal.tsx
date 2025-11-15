@@ -158,6 +158,8 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
         ...updatedStudentData,
         ...updatedStudent
       })
+      
+      toast.success('Student updated successfully!')
       onClose()
     } catch (error: any) {
       console.error('Error updating student:', error)

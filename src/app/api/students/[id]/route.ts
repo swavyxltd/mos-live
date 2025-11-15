@@ -280,7 +280,26 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       // Don't fail the request if audit log fails
     }
 
-    return NextResponse.json(finalStudent)
+    // Transform response to match frontend expectations
+    const transformedStudent = {
+      id: finalStudent.id,
+      firstName: finalStudent.firstName,
+      lastName: finalStudent.lastName,
+      dateOfBirth: finalStudent.dob ? finalStudent.dob.toISOString().split('T')[0] : null,
+      allergies: finalStudent.allergies || null,
+      medicalNotes: finalStudent.medicalNotes || null,
+      parentName: finalStudent.User?.name || null,
+      parentEmail: finalStudent.User?.email || null,
+      parentPhone: finalStudent.User?.phone || null,
+      classes: finalStudent.StudentClass.map(sc => ({
+        id: sc.Class.id,
+        name: sc.Class.name
+      })),
+      User: finalStudent.User,
+      StudentClass: finalStudent.StudentClass
+    }
+
+    return NextResponse.json(transformedStudent)
   } catch (error) {
     console.error('Error updating student:', error)
     return NextResponse.json({ error: 'Failed to update student' }, { status: 500 })

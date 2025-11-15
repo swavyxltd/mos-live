@@ -67,6 +67,15 @@ export function StudentsPageWrapper({ initialStudents, classes }: StudentsPageWr
     window.location.reload()
   }
 
+  const handleStudentUpdate = (updatedStudent: Student) => {
+    setStudents(prevStudents => 
+      prevStudents.map(student => 
+        student.id === updatedStudent.id 
+          ? updatedStudent
+          : student
+      )
+    )
+  }
 
   const handleStudentArchiveChange = (id: string, isArchived: boolean) => {
     setStudents(prevStudents => 
@@ -206,6 +215,7 @@ export function StudentsPageWrapper({ initialStudents, classes }: StudentsPageWr
         classes={classes} 
         onAddStudent={handleAddStudent}
         onStudentArchiveChange={handleStudentArchiveChange}
+        onStudentUpdate={handleStudentUpdate}
         showArchived={showArchived}
       />
       
