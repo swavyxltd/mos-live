@@ -33,84 +33,77 @@ export default async function ClassDetailsPage({ params }: ClassDetailsPageProps
     return <div>Loading...</div>
   }
 
-  // Check if we're in demo mode
-  const { isDemoMode } = await import('@/lib/demo-mode')
+  // Always use real database data
+  const { prisma } = await import('@/lib/prisma')
   
-  let classData: any = null
-
-  if (isDemoMode()) {
-    // Demo data for class details
-    const demoClasses = [
-      {
-        id: 'demo-class-1',
-        name: 'Quran Recitation - Level 1',
-        description: 'Basic Quran recitation for beginners',
-        grade: '1-3',
-        maxStudents: 15,
-        room: 'Room A',
-        schedule: {
-          days: ['Monday', 'Wednesday', 'Friday'],
-          startTime: '4:00 PM',
-          endTime: '5:00 PM'
-        },
-        teacher: {
-          name: 'Moulana Omar',
-          email: 'omar@demo.com'
-        },
-        studentClasses: [
-          {
-            student: { firstName: 'Ahmed', lastName: 'Hassan' },
-            enrolledAt: new Date('2024-09-01')
-          },
-          {
-            student: { firstName: 'Fatima', lastName: 'Ali' },
-            enrolledAt: new Date('2024-09-01')
-          },
-          {
-            student: { firstName: 'Yusuf', lastName: 'Patel' },
-            enrolledAt: new Date('2024-09-15')
-          }
-        ],
-        _count: {
-          studentClasses: 3
+  const classData = await prisma.class.findFirst({
+    where: {
+      id: params.id,
+      orgId: org.id
+    },
+    include: {
+      User: {
+        select: {
+          name: true,
+          email: true
         }
       },
-      {
-        id: 'demo-class-2',
-        name: 'Islamic Studies - Level 2',
-        description: 'Intermediate Islamic studies and history',
-        grade: '4-6',
-        maxStudents: 12,
-        room: 'Room B',
-        schedule: {
-          days: ['Tuesday', 'Thursday'],
-          startTime: '5:00 PM',
-          endTime: '6:00 PM'
-        },
-        teacher: {
-          name: 'Apa Aisha',
-          email: 'aisha@demo.com'
-        },
-        studentClasses: [
-          {
-            student: { firstName: 'Mariam', lastName: 'Ahmed' },
-            enrolledAt: new Date('2024-09-01')
-          },
-          {
-            student: { firstName: 'Hassan', lastName: 'Khan' },
-            enrolledAt: new Date('2024-09-01')
+      StudentClass: {
+        include: {
+          Student: {
+            select: {
+              firstName: true,
+              lastName: true,
+              isArchived: true
+            }
           }
-        ],
-        _count: {
-          studentClasses: 2
+        },
+        where: {
+          Student: {
+            isArchived: false
+          }
+        }
+      },
+      _count: {
+        select: {
+          StudentClass: {
+            where: {
+              Student: {
+                isArchived: false
+              }
+            }
+          }
         }
       }
-    ]
+    }
+  })
 
-    classData = demoClasses.find(cls => cls.id === params.id)
-  }
+  // Transform the data to match the expected format
+  const transformedClassData = classData ? {
+    id: classData.id,
+    name: classData.name,
+    description: classData.description || '',
+    grade: '', // Not stored in current schema
+    maxStudents: 0, // Not stored in current schema
+    room: '', // Not stored in current schema
+    schedule: classData.schedule as any,
+    teacher: classData.User ? {
+      name: classData.User.name || '',
+      email: classData.User.email || ''
+    } : null,
+    studentClasses: classData.StudentClass.map(sc => ({
+      student: {
+        firstName: sc.Student.firstName,
+        lastName: sc.Student.lastName
+      },
+      enrolledAt: sc.createdAt
+    })),
+    _count: {
+      studentClasses: classData._count.StudentClass
+    }
+  } : null
 
-  if (!classData) {
+  if (!transformedClassData) {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-4">
@@ -131,7 +124,7 @@ export default async function ClassDetailsPage({ params }: ClassDetailsPageProps
     )
   }
 
-  const schedule = classData.schedule as any
+  const schedule = transformedClassData.schedule as any
   const days = schedule?.days || []
   const startTime = schedule?.startTime || 'TBD'
   const endTime = schedule?.endTime || 'TBD'
@@ -148,7 +141,7 @@ export default async function ClassDetailsPage({ params }: ClassDetailsPageProps
           </Link>
         </div>
         <div className="flex gap-3">
-          <Link href={`/classes/${classData.id}/edit`}>
+          <Link href={`/classes/${transformedClassData.id}/edit`}>
             <Button variant="outline">
               <Edit className="h-4 w-4 mr-2" />
               Edit Class
@@ -173,33 +166,27 @@ export default async function ClassDetailsPage({ params }: ClassDetailsPageProps
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <h3 className="text-xl font-semibold text-[var(--foreground)]">{classData.name}</h3>
-                {classData.description && (
-                  <p className="text-gray-600 mt-1">{classData.description}</p>
+                <h3 className="text-xl font-semibold text-[var(--foreground)]">{transformedClassData.name}</h3>
+                {transformedClassData.description && (
+                  <p className="text-gray-600 mt-1">{transformedClassData.description}</p>
                 )}
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Users className="h-4 w-4" />
-                  <span>Grade: {classData.grade || 'Not specified'}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Users className="h-4 w-4" />
-                  <span>Max Students: {classData.maxStudents}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <MapPin className="h-4 w-4" />
-                  <span>Room: {classData.room || 'Not assigned'}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
                   <Calendar className="h-4 w-4" />
-                  <span>Days: {days.join(', ')}</span>
+                  <span>Days: {days.join(', ') || 'Not specified'}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <Clock className="h-4 w-4" />
                   <span>Time: {startTime} - {endTime}</span>
                 </div>
+                {transformedClassData.teacher && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <User className="h-4 w-4" />
+                    <span>Teacher: {transformedClassData.teacher.name}</span>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -209,11 +196,11 @@ export default async function ClassDetailsPage({ params }: ClassDetailsPageProps
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
-                Enrolled Students ({classData._count.studentClasses})
+                Enrolled Students ({transformedClassData._count.studentClasses})
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {classData.studentClasses.length > 0 ? (
+              {transformedClassData.studentClasses.length > 0 ? (
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -223,7 +210,7 @@ export default async function ClassDetailsPage({ params }: ClassDetailsPageProps
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {classData.studentClasses
+                    {transformedClassData.studentClasses
                       .sort((a: any, b: any) => {
                         const firstNameCompare = (a.student.firstName || '').localeCompare(b.student.firstName || '', undefined, { sensitivity: 'base' })
                         if (firstNameCompare !== 0) return firstNameCompare
@@ -235,7 +222,7 @@ export default async function ClassDetailsPage({ params }: ClassDetailsPageProps
                           {enrollment.student.firstName} {enrollment.student.lastName}
                         </TableCell>
                         <TableCell>
-                          {enrollment.enrolledAt.toLocaleDateString()}
+                          {new Date(enrollment.enrolledAt).toLocaleDateString()}
                         </TableCell>
                         <TableCell>
                           <Button variant="ghost" size="sm">
@@ -268,13 +255,13 @@ export default async function ClassDetailsPage({ params }: ClassDetailsPageProps
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {classData.teacher ? (
+              {transformedClassData.teacher ? (
                 <div className="space-y-3">
                   <div>
-                    <h4 className="font-medium text-[var(--foreground)]">{classData.teacher.name}</h4>
+                    <h4 className="font-medium text-[var(--foreground)]">{transformedClassData.teacher.name}</h4>
                     <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
                       <Mail className="h-4 w-4" />
-                      <span>{classData.teacher.email}</span>
+                      <span>{transformedClassData.teacher.email}</span>
                     </div>
                   </div>
                   <Button variant="outline" size="sm" className="w-full">
@@ -301,19 +288,13 @@ export default async function ClassDetailsPage({ params }: ClassDetailsPageProps
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Enrolled Students</span>
                 <Badge variant="secondary">
-                  {classData._count.studentClasses} / {classData.maxStudents}
-                </Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Available Spots</span>
-                <Badge variant={classData.maxStudents - classData._count.studentClasses > 0 ? 'default' : 'destructive'}>
-                  {classData.maxStudents - classData._count.studentClasses}
+                  {transformedClassData._count.studentClasses}
                 </Badge>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Status</span>
-                <Badge variant={classData._count.studentClasses > 0 ? 'default' : 'secondary'}>
-                  {classData._count.studentClasses > 0 ? 'Active' : 'Empty'}
+                <Badge variant={transformedClassData._count.studentClasses > 0 ? 'default' : 'secondary'}>
+                  {transformedClassData._count.studentClasses > 0 ? 'Active' : 'Empty'}
                 </Badge>
               </div>
             </CardContent>

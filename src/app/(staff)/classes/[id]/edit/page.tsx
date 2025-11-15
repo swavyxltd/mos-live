@@ -19,48 +19,38 @@ export default async function EditClassPage({ params }: EditClassPageProps) {
     return <div>Loading...</div>
   }
 
-  // Check if we're in demo mode
-  const { isDemoMode } = await import('@/lib/demo-mode')
+  // Always use real database data
+  const { prisma } = await import('@/lib/prisma')
   
-  let classData: any = null
-
-  if (isDemoMode()) {
-    // Demo data for class editing
-    const demoClasses = [
-      {
-        id: 'demo-class-1',
-        name: 'Quran Recitation - Level 1',
-        description: 'Basic Quran recitation for beginners',
-        grade: '1-3',
-        maxStudents: 15,
-        room: 'Room A',
-        schedule: {
-          days: ['Monday', 'Wednesday', 'Friday'],
-          startTime: '4:00 PM',
-          endTime: '5:00 PM'
-        },
-        teacherId: 'teacher-1'
-      },
-      {
-        id: 'demo-class-2',
-        name: 'Islamic Studies - Level 2',
-        description: 'Intermediate Islamic studies and history',
-        grade: '4-6',
-        maxStudents: 12,
-        room: 'Room B',
-        schedule: {
-          days: ['Tuesday', 'Thursday'],
-          startTime: '5:00 PM',
-          endTime: '6:00 PM'
-        },
-        teacherId: 'teacher-2'
+  const classData = await prisma.class.findFirst({
+    where: {
+      id: params.id,
+      orgId: org.id
+    },
+    include: {
+      User: {
+        select: {
+          id: true,
+          name: true,
+          email: true
+        }
       }
-    ]
+    }
+  })
 
-    classData = demoClasses.find(cls => cls.id === params.id)
-  }
+  // Transform the data to match the expected format
+  const transformedClassData = classData ? {
+    id: classData.id,
+    name: classData.name,
+    description: classData.description || '',
+    grade: '', // Not stored in current schema
+    maxStudents: 0, // Not stored in current schema
+    room: '', // Not stored in current schema
+    schedule: classData.schedule as any,
+    teacherId: classData.teacherId || classData.User?.id || ''
+  } : null
 
-  if (!classData) {
+  if (!transformedClassData) {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-4">
@@ -95,7 +85,7 @@ export default async function EditClassPage({ params }: EditClassPageProps) {
       <div className="max-w-4xl">
         <EditClassForm
           classId={params.id}
-          initialData={classData}
+          initialData={transformedClassData}
         />
       </div>
     </div>
