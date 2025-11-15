@@ -27,7 +27,7 @@ interface ClassAttendance {
   id: string
   name: string
   teacher: string
-  date: Date
+  date: Date | string
   totalStudents: number
   present: number
   absent: number
@@ -46,6 +46,14 @@ export function ClassAttendanceOverview({
   onClassClick, 
   onStudentClick 
 }: ClassAttendanceOverviewProps) {
+  if (!classes || classes.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-500">No attendance data available for this week.</p>
+      </div>
+    )
+  }
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
       {classes.map((classItem) => (

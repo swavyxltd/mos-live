@@ -25,7 +25,7 @@ interface ClassAttendance {
   id: string
   name: string
   teacher: string
-  date: Date
+  date: Date | string
   totalStudents: number
   present: number
   absent: number
@@ -42,7 +42,7 @@ export function AttendancePageClient({ attendanceData }: AttendancePageClientPro
   const [selectedStudent, setSelectedStudent] = useState<any>(null)
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false)
   const [currentWeek, setCurrentWeek] = useState(new Date())
-  const [filteredData, setFilteredData] = useState(attendanceData)
+  const [filteredData, setFilteredData] = useState(attendanceData || [])
 
   // Filter data by week
   useEffect(() => {
@@ -54,7 +54,7 @@ export function AttendancePageClient({ attendanceData }: AttendancePageClientPro
     weekEnd.setDate(weekEnd.getDate() + 6) // Sunday
     weekEnd.setHours(23, 59, 59, 999)
     
-    const filtered = attendanceData.filter(item => {
+    const filtered = (attendanceData || []).filter(item => {
       const itemDate = new Date(item.date)
       return itemDate >= weekStart && itemDate <= weekEnd
     })

@@ -97,5 +97,11 @@ export default async function AttendancePage() {
 
   const attendanceData = Object.values(attendanceByClass).slice(0, 10) // Show most recent 10
 
-  return <AttendancePageClient attendanceData={attendanceData} />
+  // Serialize dates for client component
+  const serializedData = attendanceData.map(item => ({
+    ...item,
+    date: item.date.toISOString()
+  }))
+
+  return <AttendancePageClient attendanceData={serializedData || []} />
 }
