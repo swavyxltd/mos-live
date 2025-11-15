@@ -31,7 +31,7 @@ function PaymentMethodForm({ onSuccess, onCancel, clientSecret: propClientSecret
   const [isDarkMode, setIsDarkMode] = useState(false)
 
   // Check dark mode
-  React.useEffect(() => {
+  useEffect(() => {
     const checkDarkMode = () => {
       if (typeof window !== 'undefined') {
         setIsDarkMode(document.documentElement.classList.contains('dark'))
