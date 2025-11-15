@@ -14,57 +14,41 @@ interface MadrasahLogoProps {
 export function MadrasahLogo({ className = '', showText = true, textSize = 'md', size = 'md' }: MadrasahLogoProps) {
   const [isDarkMode, setIsDarkMode] = useState(() => {
     // Check initial dark mode state on client side only
+    // Only check for the 'dark' class, not system preference
     if (typeof window !== 'undefined') {
-      return document.documentElement.classList.contains('dark') || 
-             window.matchMedia('(prefers-color-scheme: dark)').matches
+      return document.documentElement.classList.contains('dark')
     }
     return false
   })
 
   useEffect(() => {
-    // Check initial dark mode state
+    // Check dark mode state - only check for the 'dark' class
     const checkDarkMode = () => {
       if (typeof window !== 'undefined') {
         const hasDarkClass = document.documentElement.classList.contains('dark')
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-        const isDark = hasDarkClass || prefersDark
-        setIsDarkMode(isDark)
+        setIsDarkMode(hasDarkClass)
       }
     }
     
     // Check immediately
     checkDarkMode()
 
-    // Also check after multiple delays to catch any late-applied classes
-    const timeoutId1 = setTimeout(checkDarkMode, 50)
-    const timeoutId2 = setTimeout(checkDarkMode, 200)
-    const timeoutId3 = setTimeout(checkDarkMode, 500)
+    // Also check after a delay to catch any late-applied classes
+    const timeoutId = setTimeout(checkDarkMode, 100)
 
-    // Watch for dark mode changes
+    // Watch for dark mode changes using MutationObserver
     const observer = new MutationObserver(checkDarkMode)
     if (typeof window !== 'undefined') {
       observer.observe(document.documentElement, {
         attributes: true,
-        attributeFilter: ['class']
+        attributeFilter: ['class'],
+        attributeOldValue: false
       })
     }
 
-    // Watch for system preference changes
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-    const handleMediaChange = () => checkDarkMode()
-    mediaQuery.addEventListener('change', handleMediaChange)
-
-    // Also listen for storage changes (in case dark mode preference is stored)
-    const handleStorageChange = () => checkDarkMode()
-    window.addEventListener('storage', handleStorageChange)
-
     return () => {
-      clearTimeout(timeoutId1)
-      clearTimeout(timeoutId2)
-      clearTimeout(timeoutId3)
+      clearTimeout(timeoutId)
       observer.disconnect()
-      mediaQuery.removeEventListener('change', handleMediaChange)
-      window.removeEventListener('storage', handleStorageChange)
     }
   }, [])
 
