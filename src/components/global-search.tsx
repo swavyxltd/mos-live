@@ -120,161 +120,113 @@ export function GlobalSearch() {
         <Search className="h-5 w-5" />
       </Button>
 
-      {/* Desktop: Always visible search bar */}
-      <div className="hidden md:block relative w-full max-w-2xl">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          value={query}
-          onChange={handleInputChange}
-          onFocus={() => setIsOpen(true)}
-          placeholder="Search..."
-          className="pl-10 pr-10 w-full rounded-[var(--radius-md)] border-[var(--border)] bg-[var(--background)]"
-        />
-        {query && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleClear}
-            className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
-          >
-            <X className="h-3 w-3" />
-          </Button>
-        )}
-      </div>
+      {/* Desktop: Search Icon Button */}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => {
+          setIsOpen(true)
+          setIsMobileSearchOpen(true)
+        }}
+        className="hidden md:flex h-10 w-10 hover:bg-gray-100 flex-shrink-0"
+      >
+        <Search className="h-5 w-5" />
+      </Button>
 
-      {/* Mobile: Search bar overlay (shown when icon is clicked) */}
+      {/* Search Modal - Desktop & Mobile (Spotlight-style) */}
       {isMobileSearchOpen && (
         <>
           {/* Backdrop */}
           <div 
-            className="md:hidden fixed inset-0 bg-black/50 z-40"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
             onClick={() => {
               setIsMobileSearchOpen(false)
               setQuery('')
               setShowResults(false)
+              setIsOpen(false)
             }}
           />
-          {/* Search bar */}
-          <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-[var(--background)] border-b border-[var(--border)] p-4">
-            <div className="relative max-w-2xl mx-auto">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                value={query}
-                onChange={handleInputChange}
-                onFocus={() => setIsOpen(true)}
-                placeholder="Search..."
-                className="pl-10 pr-10 w-full rounded-[var(--radius-md)] border-[var(--border)] bg-[var(--background)]"
-                autoFocus
-              />
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setIsMobileSearchOpen(false)
-                  setQuery('')
-                  setShowResults(false)
-                }}
-                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0"
-              >
-                <X className="h-4 w-4" />
-              </Button>
+          {/* Spotlight-style Search Modal */}
+          <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] px-4 pointer-events-none">
+            <div className="w-full max-w-3xl pointer-events-auto">
+              {/* Search Input */}
+              <div className="relative mb-4">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                  value={query}
+                  onChange={handleInputChange}
+                  onFocus={() => setIsOpen(true)}
+                  placeholder="Search students, classes, staff, invoices..."
+                  className="pl-12 pr-12 h-14 text-lg rounded-xl border-2 border-[var(--border)] bg-[var(--background)] shadow-xl focus:border-[var(--ring)] focus:ring-2 focus:ring-[var(--ring)]"
+                  autoFocus
+                />
+                {query && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClear}
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              
+              {/* Search Results */}
+              {isOpen && showResults && (
+                <Card className="max-h-[60vh] overflow-y-auto shadow-2xl border-2 border-[var(--border)]">
+                  <CardContent className="p-0">
+                    {isLoading ? (
+                      <div className="p-8 text-center text-muted-foreground">
+                        <div className="animate-pulse">Searching...</div>
+                      </div>
+                    ) : results.length > 0 ? (
+                      <div className="py-2">
+                        {results.map((result, index) => (
+                          <Link
+                            key={`${result.type}-${result.id}-${index}`}
+                            href={result.url}
+                            onClick={() => {
+                              handleResultClick()
+                              setIsMobileSearchOpen(false)
+                            }}
+                            className="flex items-center gap-4 p-4 hover:bg-[var(--accent)] transition-colors border-b border-[var(--border)] last:border-b-0"
+                          >
+                            <span className="text-2xl">{result.icon}</span>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-base truncate text-[var(--foreground)]">
+                                {result.title}
+                              </div>
+                              <div className="text-sm text-[var(--muted-foreground)] truncate mt-1">
+                                {result.subtitle}
+                              </div>
+                            </div>
+                            <Badge 
+                              variant="secondary" 
+                              className={`text-xs ${getTypeColor(result.type)}`}
+                            >
+                              {result.type}
+                            </Badge>
+                          </Link>
+                        ))}
+                      </div>
+                    ) : query.length >= 2 ? (
+                      <div className="p-8 text-center text-muted-foreground">
+                        No results found for "{query}"
+                      </div>
+                    ) : (
+                      <div className="p-8 text-center text-muted-foreground">
+                        Start typing to search...
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
         </>
       )}
 
-      {/* Search Results Dropdown - Desktop */}
-      {isOpen && showResults && !isMobileSearchOpen && (
-        <div className="hidden md:block fixed top-20 left-1/2 transform -translate-x-1/2 mt-1 z-50 w-[90vw] max-w-6xl">
-          <Card className="max-h-[70vh] overflow-y-auto shadow-lg">
-            <CardContent className="p-0">
-              {isLoading ? (
-                <div className="p-4 text-center text-muted-foreground">
-                  Searching...
-                </div>
-              ) : results.length > 0 ? (
-                <div className="py-2">
-                  {results.map((result, index) => (
-                    <Link
-                      key={`${result.type}-${result.id}-${index}`}
-                      href={result.url}
-                      onClick={handleResultClick}
-                      className="flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors"
-                    >
-                      <span className="text-lg">{result.icon}</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm truncate">
-                          {result.title}
-                        </div>
-                        <div className="text-xs text-muted-foreground truncate">
-                          {result.subtitle}
-                        </div>
-                      </div>
-                      <Badge 
-                        variant="secondary" 
-                        className={`text-xs ${getTypeColor(result.type)}`}
-                      >
-                        {result.type}
-                      </Badge>
-                    </Link>
-                  ))}
-                </div>
-              ) : query.length >= 2 ? (
-                <div className="p-4 text-center text-muted-foreground">
-                  No results found for "{query}"
-                </div>
-              ) : null}
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Search Results Dropdown - Mobile */}
-      {isMobileSearchOpen && isOpen && showResults && (
-        <div className="md:hidden fixed top-[73px] left-0 right-0 z-50 max-h-[calc(100vh-73px)] overflow-y-auto bg-[var(--background)] border-b border-[var(--border)]">
-          <div className="max-w-2xl mx-auto">
-            {isLoading ? (
-              <div className="p-4 text-center text-muted-foreground">
-                Searching...
-              </div>
-            ) : results.length > 0 ? (
-              <div className="py-2">
-                {results.map((result, index) => (
-                  <Link
-                    key={`${result.type}-${result.id}-${index}`}
-                    href={result.url}
-                    onClick={() => {
-                      handleResultClick()
-                      setIsMobileSearchOpen(false)
-                    }}
-                    className="flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors border-b border-[var(--border)] last:border-b-0"
-                  >
-                    <span className="text-lg">{result.icon}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm truncate">
-                        {result.title}
-                      </div>
-                      <div className="text-xs text-muted-foreground truncate">
-                        {result.subtitle}
-                      </div>
-                    </div>
-                    <Badge 
-                      variant="secondary" 
-                      className={`text-xs ${getTypeColor(result.type)}`}
-                    >
-                      {result.type}
-                    </Badge>
-                  </Link>
-                ))}
-              </div>
-            ) : query.length >= 2 ? (
-              <div className="p-4 text-center text-muted-foreground">
-                No results found for "{query}"
-              </div>
-            ) : null}
-          </div>
-        </div>
-      )}
 
     </div>
   )
