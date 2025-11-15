@@ -51,7 +51,7 @@ const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
         onClick={onClick}
         {...props}
       >
-        <CardContent className="p-3 sm:p-4 h-full flex flex-col justify-center">
+        <CardContent className="!p-3 sm:!p-4 h-full flex flex-col justify-center">
           <div className="flex items-start justify-between">
             <div className="space-y-1 flex-1 min-w-0">
               {/* Mobile: ALWAYS 2 lines, Desktop: 1 line */}
@@ -65,24 +65,34 @@ const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
                 <p className="text-xs text-[var(--muted-foreground)] whitespace-nowrap overflow-hidden text-ellipsis">{description}</p>
               )}
               {detail && (
-                <p className="text-xs text-[var(--muted-foreground)] whitespace-nowrap overflow-hidden text-ellipsis">{detail}</p>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              {change && (
-                <div className={cn(
-                  "px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-xs font-medium flex-shrink-0",
-                  changeColor[change.type]
-                )}>
-                  {change.value}
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs text-[var(--muted-foreground)] whitespace-nowrap overflow-hidden text-ellipsis flex-1 min-w-0">{detail}</p>
+                  {change && (
+                    <div className={cn(
+                      "px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-xs font-medium flex-shrink-0",
+                      changeColor[change.type]
+                    )}>
+                      {change.value}
+                    </div>
+                  )}
                 </div>
               )}
-              {icon && (
-                <div className="text-[var(--muted-foreground)] flex-shrink-0">
-                  {icon}
+              {!detail && change && (
+                <div className="flex justify-end">
+                  <div className={cn(
+                    "px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-xs font-medium flex-shrink-0",
+                    changeColor[change.type]
+                  )}>
+                    {change.value}
+                  </div>
                 </div>
               )}
             </div>
+            {icon && (
+              <div className="text-[var(--muted-foreground)] flex-shrink-0">
+                {icon}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

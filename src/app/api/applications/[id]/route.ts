@@ -35,7 +35,7 @@ export async function PATCH(
         orgId: org.id
       },
       include: {
-        children: true
+        ApplicationChild: true
       }
     })
 
@@ -50,11 +50,12 @@ export async function PATCH(
         status,
         adminNotes,
         reviewedAt: new Date(),
-        reviewedById: session.user.id
+        reviewedById: session.user.id,
+        updatedAt: new Date()
       },
       include: {
-        children: true,
-        reviewedBy: {
+        ApplicationChild: true,
+        User: {
           select: {
             name: true,
             email: true
@@ -92,7 +93,7 @@ export async function PATCH(
         }
 
         // Create student records for each child
-        for (const child of application.children) {
+        for (const child of application.ApplicationChild) {
           const student = await prisma.student.create({
             data: {
               orgId: org.id,

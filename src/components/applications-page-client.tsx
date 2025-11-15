@@ -68,7 +68,7 @@ export function ApplicationsPageClient({ orgSlug }: ApplicationsPageClientProps)
           guardianPhone: app.guardianPhone,
           guardianEmail: app.guardianEmail,
           submittedAt: app.submittedAt,
-          children: app.children || [],
+          children: app.ApplicationChild || [],
           preferredClass: app.preferredClass || '',
           additionalNotes: app.additionalNotes || '',
           adminNotes: app.adminNotes || ''

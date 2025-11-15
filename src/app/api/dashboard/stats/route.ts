@@ -139,35 +139,37 @@ export async function GET(request: NextRequest) {
       ? attendanceRate - lastWeekRate
       : 0
 
-    // Get monthly revenue from MonthlyPaymentRecord (student fees) and invoices in parallel
+    // Calculate monthly revenue based on students × class fees
+    // Get all classes with their fees and student counts
+    const classes = await prisma.class.findMany({
+      where: {
+        orgId: org.id,
+        isArchived: false
+      },
+      include: {
+        _count: {
+          select: {
+            StudentClass: true
+          }
+        }
+      }
+    })
+
+    // Calculate current month revenue: sum of (monthlyFee × studentCount) for all classes
+    const monthlyRevenue = classes.reduce((sum, cls) => {
+      const monthlyFee = cls.monthlyFeeP ? Number(cls.monthlyFeeP) / 100 : 0
+      const studentCount = cls._count.StudentClass
+      return sum + (monthlyFee * studentCount)
+    }, 0)
+
+    // Get payment records for pending/overdue counts
     const currentMonthStr = now.toISOString().substring(0, 7) // Format: YYYY-MM
-    const lastMonthStr = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().substring(0, 7)
     
     const [
-      monthlyPayments,
-      lastMonthPayments,
       pendingPayments,
       overduePayments,
       pendingApplications
     ] = await Promise.all([
-      prisma.monthlyPaymentRecord.findMany({
-        where: {
-          orgId: org.id,
-          status: 'PAID',
-          month: currentMonthStr,
-          paidAt: { not: null }
-        },
-        select: { amountP: true }
-      }),
-      prisma.monthlyPaymentRecord.findMany({
-        where: {
-          orgId: org.id,
-          status: 'PAID',
-          month: lastMonthStr,
-          paidAt: { not: null }
-        },
-        select: { amountP: true }
-      }),
       prisma.monthlyPaymentRecord.count({
         where: {
           orgId: org.id,
@@ -185,28 +187,59 @@ export async function GET(request: NextRequest) {
       prisma.application.count({
         where: {
           orgId: org.id,
-          status: 'PENDING'
+          status: { in: ['NEW', 'PENDING', 'REVIEWED'] }
         }
       })
     ])
 
-    const monthlyRevenue = monthlyPayments.reduce((sum, payment) => sum + Number(payment.amountP || 0) / 100, 0)
-    const lastMonthRevenue = lastMonthPayments.reduce((sum, payment) => sum + Number(payment.amountP || 0) / 100, 0)
+    // Calculate last month revenue based on students enrolled by end of last month
+    // Reuse lastMonthEnd defined earlier
+    const lastMonthClasses = await prisma.class.findMany({
+      where: {
+        orgId: org.id,
+        isArchived: false,
+        createdAt: { lte: lastMonthEnd }
+      },
+      include: {
+        StudentClass: {
+          include: {
+            Student: {
+              select: {
+                createdAt: true
+              }
+            }
+          }
+        }
+      }
+    })
+
+    const lastMonthRevenue = lastMonthClasses.reduce((sum, cls) => {
+      const monthlyFee = cls.monthlyFeeP ? Number(cls.monthlyFeeP) / 100 : 0
+      // Count only students that were created by end of last month
+      const studentCount = cls.StudentClass.filter(sc => sc.Student.createdAt <= lastMonthEnd).length
+      return sum + (monthlyFee * studentCount)
+    }, 0)
 
     const revenueGrowth = lastMonthRevenue > 0
       ? ((monthlyRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
       : monthlyRevenue > 0 ? 100 : 0
 
-    // Calculate paid this month count
-    const paidThisMonth = monthlyPayments.length
+    // Calculate paid this month count from payment records
+    const paidThisMonth = await prisma.monthlyPaymentRecord.count({
+      where: {
+        orgId: org.id,
+        status: 'PAID',
+        month: currentMonthStr,
+        paidAt: { not: null }
+      }
+    })
 
     // Calculate average payment time (from payment record creation to payment)
     const paidPaymentsWithDates = await prisma.monthlyPaymentRecord.findMany({
       where: {
         orgId: org.id,
         status: 'PAID',
-        paidAt: { not: null },
-        createdAt: { not: null }
+        paidAt: { not: null }
       },
       select: {
         createdAt: true,

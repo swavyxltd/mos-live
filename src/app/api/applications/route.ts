@@ -21,8 +21,8 @@ export async function GET() {
     const applications = await prisma.application.findMany({
       where: { orgId: org.id },
       include: {
-        children: true,
-        reviewedBy: {
+        ApplicationChild: true,
+        User: {
           select: {
             name: true,
             email: true
@@ -79,17 +79,19 @@ export async function POST(request: NextRequest) {
         preferredTerm,
         preferredStartDate: preferredStartDate ? new Date(preferredStartDate) : undefined,
         additionalNotes,
-        children: {
+        updatedAt: new Date(),
+        ApplicationChild: {
           create: validChildren.map((child: any) => ({
             firstName: child.firstName,
             lastName: child.lastName,
             dob: child.dob ? new Date(child.dob) : undefined,
-            gender: child.gender
+            gender: child.gender,
+            updatedAt: new Date()
           }))
         }
       },
       include: {
-        children: true
+        ApplicationChild: true
       }
     })
 
