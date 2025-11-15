@@ -151,15 +151,15 @@ export function AttendanceMarking() {
 
       {/* Attendance Marking Modal */}
       {isOpen && (
-        <div className="fixed inset-0 bg-white/20 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
-          <div className="bg-white rounded-lg shadow-xl border border-gray-200 w-full max-w-4xl max-h-[95vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-[var(--card)] rounded-lg shadow-xl border border-[var(--border)] w-full max-w-4xl max-h-[95vh] overflow-y-auto">
             <div className="p-3 sm:p-6">
               <div className="flex justify-between items-center mb-4 sm:mb-6">
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Mark Attendance</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-[var(--foreground)]">Mark Attendance</h2>
                 <Button 
                   variant="outline" 
                   onClick={() => setIsOpen(false)}
-                  className="text-gray-500 hover:text-gray-700 p-2"
+                  className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] p-2"
                 >
                   ✕
                 </Button>
@@ -167,7 +167,7 @@ export function AttendanceMarking() {
 
               {!selectedClass ? (
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Select Class</h3>
+                  <h3 className="text-lg font-semibold text-[var(--foreground)] mb-4">Select Class</h3>
                   <div className="grid grid-cols-1 gap-3 sm:gap-4">
                     {classes.map((classItem) => (
                       <Card 
@@ -176,10 +176,10 @@ export function AttendanceMarking() {
                         onClick={() => handleClassSelect(classItem)}
                       >
                         <div className="space-y-2">
-                          <h4 className="text-lg font-semibold text-gray-900">{classItem.name}</h4>
-                          <p className="text-sm text-gray-600">Teacher: {classItem.teacher}</p>
+                          <h4 className="text-lg font-semibold text-[var(--foreground)]">{classItem.name}</h4>
+                          <p className="text-sm text-[var(--muted-foreground)]">Teacher: {classItem.teacher}</p>
                           <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-500">
+                            <span className="text-sm text-[var(--muted-foreground)]">
                               {classItem.students.length} students
                             </span>
                             <Badge variant="outline" className="text-xs">
@@ -195,8 +195,8 @@ export function AttendanceMarking() {
                 <div className="space-y-4 sm:space-y-6">
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{selectedClass.name}</h3>
-                      <p className="text-sm text-gray-600">Teacher: {selectedClass.teacher} • Date: {currentDate}</p>
+                      <h3 className="text-lg font-semibold text-[var(--foreground)]">{selectedClass.name}</h3>
+                      <p className="text-sm text-[var(--muted-foreground)]">Teacher: {selectedClass.teacher} • Date: {currentDate}</p>
                     </div>
                     <Button 
                       variant="outline" 
@@ -209,13 +209,13 @@ export function AttendanceMarking() {
 
                   <div className="space-y-3">
                     {selectedClass.students.map((student) => (
-                      <div key={student.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors shadow-sm">
+                      <div key={student.id} className="flex items-center justify-between p-4 border border-[var(--border)] rounded-lg bg-[var(--muted)] hover:bg-[var(--accent)] transition-colors shadow-sm">
                         <div className="flex items-center space-x-3 flex-1 min-w-0">
                           {getStatusIcon(student.status)}
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-gray-900 truncate">{student.name}</p>
+                            <p className="font-medium text-[var(--foreground)] truncate">{student.name}</p>
                             {student.time && (
-                              <p className="text-xs text-gray-500">Time: {student.time}</p>
+                              <p className="text-xs text-[var(--muted-foreground)]">Time: {student.time}</p>
                             )}
                           </div>
                         </div>
@@ -227,7 +227,7 @@ export function AttendanceMarking() {
                             className={`h-12 w-12 p-0 ${
                               student.status === 'PRESENT' 
                                 ? 'bg-green-600 hover:bg-green-700 text-white border-green-600' 
-                                : 'border-green-300 text-green-700 hover:bg-green-50'
+                                : 'border-green-300 dark:border-green-700 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20'
                             }`}
                           >
                             <CheckCircle className="h-6 w-6" />
@@ -239,7 +239,7 @@ export function AttendanceMarking() {
                             className={`h-12 w-12 p-0 ${
                               student.status === 'ABSENT' 
                                 ? 'bg-red-600 hover:bg-red-700 text-white border-red-600' 
-                                : 'border-red-300 text-red-700 hover:bg-red-50'
+                                : 'border-red-300 dark:border-red-700 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
                             }`}
                           >
                             <XCircle className="h-6 w-6" />
@@ -251,7 +251,7 @@ export function AttendanceMarking() {
                             className={`h-12 w-12 p-0 ${
                               student.status === 'LATE' 
                                 ? 'bg-yellow-600 hover:bg-yellow-700 text-white border-yellow-600' 
-                                : 'border-yellow-300 text-yellow-700 hover:bg-yellow-50'
+                                : 'border-yellow-300 dark:border-yellow-700 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20'
                             }`}
                           >
                             <Clock className="h-6 w-6" />
