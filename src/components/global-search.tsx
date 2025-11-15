@@ -186,7 +186,7 @@ export function GlobalSearch() {
       {/* Search Results Dropdown - Desktop */}
       {isOpen && showResults && !isMobileSearchOpen && (
         <div className="hidden md:block absolute top-full left-0 right-0 mt-1 z-20">
-          <Card className="max-h-96 overflow-y-auto">
+          <Card className="max-h-[70vh] overflow-y-auto shadow-lg">
             <CardContent className="p-0">
               {isLoading ? (
                 <div className="p-4 text-center text-muted-foreground">
