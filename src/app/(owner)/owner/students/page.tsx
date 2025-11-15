@@ -116,7 +116,7 @@ export default function OwnerStudentsPage() {
   const uniqueOrgs = [...new Set((studentData.allStudents || []).map((student: any) => student.orgName))]
 
   // Filter students based on search and filters
-  const filteredStudents = (studentData.allStudents || []).filter((student: any) => {
+  let filteredStudents = (studentData.allStudents || []).filter((student: any) => {
     const matchesSearch = !searchTerm || 
       `${student.firstName} ${student.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.parentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -131,6 +131,13 @@ export default function OwnerStudentsPage() {
       (allergiesFilter === 'none' && (!student.allergies || student.allergies === 'None'))
     
     return matchesSearch && matchesStatus && matchesOrg && matchesClass && matchesAllergies
+  })
+
+  // Sort students alphabetically by lastName, then firstName (A-Z)
+  filteredStudents = filteredStudents.sort((a: any, b: any) => {
+    const lastNameCompare = (a.lastName || '').localeCompare(b.lastName || '', undefined, { sensitivity: 'base' })
+    if (lastNameCompare !== 0) return lastNameCompare
+    return (a.firstName || '').localeCompare(b.firstName || '', undefined, { sensitivity: 'base' })
   })
 
   // Handler functions

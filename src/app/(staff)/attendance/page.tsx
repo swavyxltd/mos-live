@@ -88,6 +88,8 @@ export default async function AttendancePage() {
     acc[key].students.push({
       id: record.Student.id,
       name: `${record.Student.firstName} ${record.Student.lastName}`,
+      firstName: record.Student.firstName,
+      lastName: record.Student.lastName,
       status: record.status,
       time: record.time || undefined
     })
@@ -95,7 +97,17 @@ export default async function AttendancePage() {
     return acc
   }, {} as Record<string, any>)
 
-  const attendanceData = Object.values(attendanceByClass).slice(0, 10) // Show most recent 10
+  // Sort students alphabetically within each attendance record
+  const attendanceData = Object.values(attendanceByClass)
+    .map((item: any) => ({
+      ...item,
+      students: item.students.sort((a: any, b: any) => {
+        const lastNameCompare = (a.lastName || '').localeCompare(b.lastName || '', undefined, { sensitivity: 'base' })
+        if (lastNameCompare !== 0) return lastNameCompare
+        return (a.firstName || '').localeCompare(b.firstName || '', undefined, { sensitivity: 'base' })
+      })
+    }))
+    .slice(0, 10) // Show most recent 10
 
   // Serialize dates for client component
   const serializedData = attendanceData.map(item => ({

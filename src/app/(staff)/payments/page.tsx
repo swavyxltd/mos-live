@@ -123,22 +123,34 @@ export default async function PaymentsPage() {
         parentName: sc.Student.User?.name || '',
         parentEmail: sc.Student.User?.email || '',
         parentPhone: sc.Student.User?.phone || ''
-      })),
-      paymentRecords: updatedRecords.map(record => ({
-        id: record.id,
-        studentId: record.Student.id,
-        studentName: `${record.Student.firstName} ${record.Student.lastName}`,
-        month: record.month,
-        amountP: record.amountP,
-        method: record.method,
-        status: record.status,
-        paidAt: record.paidAt?.toISOString() || null,
-        notes: record.notes,
-        reference: record.reference,
-        parentName: record.Student.User?.name || '',
-        parentEmail: record.Student.User?.email || '',
-        parentPhone: record.Student.User?.phone || ''
-      }))
+      })).sort((a, b) => {
+        const lastNameCompare = (a.lastName || '').localeCompare(b.lastName || '', undefined, { sensitivity: 'base' })
+        if (lastNameCompare !== 0) return lastNameCompare
+        return (a.firstName || '').localeCompare(b.firstName || '', undefined, { sensitivity: 'base' })
+      }),
+      paymentRecords: updatedRecords
+        .map(record => ({
+          id: record.id,
+          studentId: record.Student.id,
+          studentName: `${record.Student.firstName} ${record.Student.lastName}`,
+          firstName: record.Student.firstName,
+          lastName: record.Student.lastName,
+          month: record.month,
+          amountP: record.amountP,
+          method: record.method,
+          status: record.status,
+          paidAt: record.paidAt?.toISOString() || null,
+          notes: record.notes,
+          reference: record.reference,
+          parentName: record.Student.User?.name || '',
+          parentEmail: record.Student.User?.email || '',
+          parentPhone: record.Student.User?.phone || ''
+        }))
+        .sort((a, b) => {
+          const lastNameCompare = (a.lastName || '').localeCompare(b.lastName || '', undefined, { sensitivity: 'base' })
+          if (lastNameCompare !== 0) return lastNameCompare
+          return (a.firstName || '').localeCompare(b.firstName || '', undefined, { sensitivity: 'base' })
+        })
     }
   })
 

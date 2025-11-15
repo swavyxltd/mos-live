@@ -207,7 +207,21 @@ export function DetailedClassAttendance({
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {classDetails.students.map((student) => (
+            {[...classDetails.students]
+              .sort((a, b) => {
+                // Extract lastName and firstName from name (format: "FirstName LastName")
+                const aParts = a.name.split(' ')
+                const bParts = b.name.split(' ')
+                const aLastName = aParts.length > 1 ? aParts[aParts.length - 1] : ''
+                const bLastName = bParts.length > 1 ? bParts[bParts.length - 1] : ''
+                const aFirstName = aParts[0] || ''
+                const bFirstName = bParts[0] || ''
+                
+                const lastNameCompare = aLastName.localeCompare(bLastName, undefined, { sensitivity: 'base' })
+                if (lastNameCompare !== 0) return lastNameCompare
+                return aFirstName.localeCompare(bFirstName, undefined, { sensitivity: 'base' })
+              })
+              .map((student) => (
               <div 
                 key={student.id}
                 className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"

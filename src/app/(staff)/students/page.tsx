@@ -111,9 +111,16 @@ export default async function StudentsPage() {
     }
   })
 
+  // Sort students alphabetically by lastName, then firstName (A-Z)
+  const sortedStudents = transformedStudents.sort((a, b) => {
+    const lastNameCompare = (a.lastName || '').localeCompare(b.lastName || '', undefined, { sensitivity: 'base' })
+    if (lastNameCompare !== 0) return lastNameCompare
+    return (a.firstName || '').localeCompare(b.firstName || '', undefined, { sensitivity: 'base' })
+  })
+
   return (
     <StudentsPageWrapper 
-      initialStudents={transformedStudents} 
+      initialStudents={sortedStudents} 
       classes={classes} 
     />
   )

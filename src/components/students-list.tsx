@@ -326,7 +326,13 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
     
     switch (sortBy) {
       case 'name':
-        comparison = `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`)
+        // Sort by lastName first, then firstName (A-Z)
+        const lastNameCompare = (a.lastName || '').localeCompare(b.lastName || '', undefined, { sensitivity: 'base' })
+        if (lastNameCompare !== 0) {
+          comparison = lastNameCompare
+        } else {
+          comparison = (a.firstName || '').localeCompare(b.firstName || '', undefined, { sensitivity: 'base' })
+        }
         break
       case 'age':
         comparison = a.age - b.age
