@@ -124,7 +124,8 @@ async function main() {
     console.log(`   ✅ Created: ${classData.name}`)
   }
 
-  // Update staff user to be a teacher for the first class
+  // Update staff user - set to ADMIN role for full editing permissions in demos
+  // Change to 'STAFF' if you want limited permissions for demonstration
   const staffMembership = staffUser.UserOrgMembership.find(m => m.orgId === org.id)
   if (staffMembership) {
     await prisma.userOrgMembership.update({
@@ -135,10 +136,10 @@ async function main() {
         }
       },
       data: {
-        role: 'STAFF'
+        role: 'ADMIN' // Set to ADMIN for full editing permissions, or 'STAFF' for limited
       }
     })
-    console.log(`\n✅ Updated staff@test.com to STAFF role`)
+    console.log(`\n✅ Updated staff@test.com to ADMIN role (full editing permissions)`)
   }
 
   // Step 2: Create 100 students (20 per class)
