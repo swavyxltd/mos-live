@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 
@@ -12,53 +12,6 @@ interface MadrasahLogoProps {
 }
 
 export function MadrasahLogo({ className = '', showText = true, textSize = 'md', size = 'md' }: MadrasahLogoProps) {
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    // Check initial dark mode state on client side only
-    // Only check for the 'dark' class, not system preference
-    if (typeof window !== 'undefined') {
-      return document.documentElement.classList.contains('dark')
-    }
-    return false
-  })
-
-  useEffect(() => {
-    // Check dark mode state - only check for the 'dark' class
-    const checkDarkMode = () => {
-      if (typeof window !== 'undefined') {
-        const hasDarkClass = document.documentElement.classList.contains('dark')
-        setIsDarkMode(hasDarkClass)
-      }
-    }
-    
-    // Check immediately
-    checkDarkMode()
-
-    // Check multiple times to catch any late-applied classes
-    const timeoutId1 = setTimeout(checkDarkMode, 50)
-    const timeoutId2 = setTimeout(checkDarkMode, 200)
-    const timeoutId3 = setTimeout(checkDarkMode, 500)
-
-    // Watch for dark mode changes using MutationObserver
-    const observer = new MutationObserver(() => {
-      // Use a small delay to ensure the class change is complete
-      setTimeout(checkDarkMode, 10)
-    })
-    if (typeof window !== 'undefined') {
-      observer.observe(document.documentElement, {
-        attributes: true,
-        attributeFilter: ['class'],
-        attributeOldValue: false
-      })
-    }
-
-    return () => {
-      clearTimeout(timeoutId1)
-      clearTimeout(timeoutId2)
-      clearTimeout(timeoutId3)
-      observer.disconnect()
-    }
-  }, [])
-
   const textSizeClasses = {
     sm: 'text-xs',
     md: 'text-sm',
@@ -75,26 +28,24 @@ export function MadrasahLogo({ className = '', showText = true, textSize = 'md',
 
   return (
     <div className={`flex flex-col items-center ${className}`}>
-      {/* Logo Icon - Using your PNG image */}
-      <div className="flex items-center justify-start mb-2 w-full">
-        {/* Light mode logo */}
+      {/* Logo Icon - Using CSS to show/hide based on dark class */}
+      <div className="flex items-center justify-start mb-2 w-full relative">
+        {/* Light mode logo - hidden when dark class is present */}
         <Image 
-          key="light-logo"
           src="/madrasah-logo.png" 
           alt="Madrasah OS Logo" 
           width={size === 'sm' ? 128 : size === 'md' ? 192 : size === 'lg' ? 256 : size === 'lg-sm' ? 224 : 288}
           height={size === 'sm' ? 24 : size === 'md' ? 40 : size === 'lg' ? 48 : size === 'lg-sm' ? 48 : 60}
-          className={cn('w-full object-contain max-w-full h-auto', logoSizeClasses[size], isDarkMode ? 'hidden' : 'block')}
+          className={cn('w-full object-contain max-w-full h-auto', logoSizeClasses[size], 'dark:hidden')}
           priority
         />
-        {/* Dark mode logo */}
+        {/* Dark mode logo - hidden when dark class is NOT present */}
         <Image 
-          key="dark-logo"
           src="/logo-dark.png" 
           alt="Madrasah OS Logo" 
           width={size === 'sm' ? 128 : size === 'md' ? 192 : size === 'lg' ? 256 : size === 'lg-sm' ? 224 : 288}
           height={size === 'sm' ? 24 : size === 'md' ? 40 : size === 'lg' ? 48 : size === 'lg-sm' ? 48 : 60}
-          className={cn('w-full object-contain max-w-full h-auto', logoSizeClasses[size], isDarkMode ? 'block' : 'hidden')}
+          className={cn('w-full object-contain max-w-full h-auto', logoSizeClasses[size], 'hidden dark:block')}
           priority
         />
       </div>
