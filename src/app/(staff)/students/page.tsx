@@ -37,12 +37,19 @@ export default async function StudentsPage() {
     }
   })
 
-  // Get all attendance records for these students
+  // Get YTD (Year to Date) attendance records for these students
   const studentIds = students.map(s => s.id)
+  const now = new Date()
+  const yearStart = new Date(now.getFullYear(), 0, 1) // January 1st of current year
+  yearStart.setHours(0, 0, 0, 0)
+  
   const allAttendance = studentIds.length > 0 ? await prisma.attendance.findMany({
     where: {
       studentId: { in: studentIds },
-      orgId: org.id
+      orgId: org.id,
+      date: {
+        gte: yearStart // Only records from current year (YTD)
+      }
     },
     select: {
       studentId: true,
@@ -54,7 +61,7 @@ export default async function StudentsPage() {
     }
   }) : []
 
-  // Calculate attendance rates per student
+  // Calculate YTD attendance rates per student
   const attendanceByStudent = new Map<string, { present: number; total: number; lastDate: Date | null }>()
   allAttendance.forEach(att => {
     const entry = attendanceByStudent.get(att.studentId) || { present: 0, total: 0, lastDate: null }

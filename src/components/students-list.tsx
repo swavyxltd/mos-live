@@ -423,8 +423,8 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
                       <TableRow>
                         <TableHead>Student</TableHead>
                         <TableHead>Age/Grade</TableHead>
-                        <TableHead>Parent</TableHead>
-                        <TableHead>Attendance</TableHead>
+                        <TableHead className="hidden md:table-cell">Parent</TableHead>
+                        <TableHead>Attendance (YTD)</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
@@ -461,7 +461,7 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
                     <div className="text-sm">Age {student.age}</div>
                     <div className="text-sm text-gray-500">Grade {student.grade}</div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden md:table-cell">
                     <div className="text-sm font-medium">{student.parentName}</div>
                     <div className="text-sm text-gray-500">{student.parentEmail}</div>
                   </TableCell>
