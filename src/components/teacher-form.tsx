@@ -127,22 +127,6 @@ export function TeacherForm({ initialData, isEditing = false, onSubmit, onCancel
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Validate password only when editing
-    if (isEditing) {
-      const passwordValidationError = validatePassword(formData.password)
-      if (passwordValidationError) {
-        setPasswordError(passwordValidationError)
-        return
-      }
-
-      // Check username availability one more time when editing
-      const isAvailable = !EXISTING_USERNAMES.includes(formData.username.toLowerCase())
-      if (!isAvailable) {
-        setUsernameError('Username is already taken. Please choose a different one.')
-        return
-      }
-    }
-    
     // For new staff, username is automatically set to email
     if (!isEditing) {
       formData.username = formData.email
@@ -251,149 +235,6 @@ export function TeacherForm({ initialData, isEditing = false, onSubmit, onCancel
             </p>
           </div>
 
-          {/* Login Credentials - Only show when editing */}
-          {isEditing && (
-            <div className="border-t pt-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Shield className="h-5 w-5" />
-                <h3 className="text-lg font-medium">Login Credentials</h3>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="username">Username *</Label>
-                  <div className="relative">
-                    <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="username"
-                      value={formData.username}
-                      onChange={(e) => handleUsernameChange(e.target.value)}
-                      placeholder="e.g., omar.khan"
-                      className="pl-10"
-                      required
-                    />
-                    {isCheckingUsername && (
-                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                      </div>
-                    )}
-                  </div>
-                  {usernameError && (
-                    <div className="flex items-center gap-1 text-sm text-red-600">
-                      <AlertCircle className="h-4 w-4" />
-                      {usernameError}
-                    </div>
-                  )}
-                  {formData.username && !usernameError && !isCheckingUsername && (
-                    <div className="flex items-center gap-1 text-sm text-green-600">
-                      <CheckCircle className="h-4 w-4" />
-                      Username is available
-                    </div>
-                  )}
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password *</Label>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPassword ? 'text' : 'password'}
-                      value={formData.password}
-                      onChange={(e) => handlePasswordChange(e.target.value)}
-                      placeholder="Enter secure password"
-                      required
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-                  
-                  {/* Password Requirements */}
-                  <div className="space-y-1">
-                    <div className="text-xs text-gray-600">Password requirements:</div>
-                    <div className="space-y-1">
-                      <div className={`flex items-center gap-1 text-xs ${
-                        formData.password.length >= 8 ? 'text-green-600' : 'text-gray-500'
-                      }`}>
-                        {formData.password.length >= 8 ? (
-                          <CheckCircle className="h-3 w-3" />
-                        ) : (
-                          <div className="h-3 w-3 rounded-full border border-gray-300" />
-                        )}
-                        At least 8 characters
-                      </div>
-                      <div className={`flex items-center gap-1 text-xs ${
-                        /[A-Z]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'
-                      }`}>
-                        {/[A-Z]/.test(formData.password) ? (
-                          <CheckCircle className="h-3 w-3" />
-                        ) : (
-                          <div className="h-3 w-3 rounded-full border border-gray-300" />
-                        )}
-                        One uppercase letter
-                      </div>
-                      <div className={`flex items-center gap-1 text-xs ${
-                        /[0-9]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'
-                      }`}>
-                        {/[0-9]/.test(formData.password) ? (
-                          <CheckCircle className="h-3 w-3" />
-                        ) : (
-                          <div className="h-3 w-3 rounded-full border border-gray-300" />
-                        )}
-                        One number
-                      </div>
-                    </div>
-                    
-                    {/* Password Strength Indicator */}
-                    {formData.password && (
-                      <div className="mt-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-600">Strength:</span>
-                          <div className="flex gap-1">
-                            {[1, 2, 3, 4].map((level) => (
-                              <div
-                                key={level}
-                                className={`h-2 w-6 rounded ${
-                                  level <= passwordStrength
-                                    ? passwordStrength <= 2
-                                      ? 'bg-red-500'
-                                      : passwordStrength <= 3
-                                      ? 'bg-yellow-500'
-                                      : 'bg-green-500'
-                                    : 'bg-gray-200'
-                                }`}
-                              />
-                            ))}
-                          </div>
-                          <span className="text-xs text-gray-600">
-                            {passwordStrength <= 2 ? 'Weak' : passwordStrength <= 3 ? 'Good' : 'Strong'}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {passwordError && (
-                    <div className="flex items-center gap-1 text-sm text-red-600">
-                      <AlertCircle className="h-4 w-4" />
-                      {passwordError}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-          
           {!isEditing && (
             <div className="border-t pt-6">
               <div className="flex items-center gap-2 mb-4">
@@ -443,9 +284,7 @@ export function TeacherForm({ initialData, isEditing = false, onSubmit, onCancel
             !formData.name || 
             !formData.email || 
             !formData.phone || 
-            (isEditing && (!formData.username || !formData.password)) ||
-            !formData.staffSubrole ||
-            (isEditing && (!!usernameError || !!passwordError))
+            !formData.staffSubrole
           }
         >
           <Save className="h-4 w-4 mr-2" />
