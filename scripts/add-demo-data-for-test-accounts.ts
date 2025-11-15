@@ -693,15 +693,36 @@ async function main() {
         }
       })
 
-      // Assign to a class (distribute across classes)
-      const classIndex = additionalStaff.length % classes.length
-      await prisma.class.update({
-        where: { id: classes[classIndex].id },
-        data: { teacherId: staffUser.id }
-      })
+      // Assign to a class (ensure all classes have at least one teacher)
+      // First, assign teachers to classes that don't have teachers yet
+      let assignedClass = null
+      for (const classItem of classes) {
+        const classWithTeacher = await prisma.class.findUnique({
+          where: { id: classItem.id },
+          select: { teacherId: true }
+        })
+        if (!classWithTeacher?.teacherId) {
+          await prisma.class.update({
+            where: { id: classItem.id },
+            data: { teacherId: staffUser.id }
+          })
+          assignedClass = classItem
+          break
+        }
+      }
+      
+      // If all classes already have teachers, assign to first class (or distribute evenly)
+      if (!assignedClass) {
+        const classIndex = additionalStaff.length % classes.length
+        assignedClass = classes[classIndex]
+        await prisma.class.update({
+          where: { id: assignedClass.id },
+          data: { teacherId: staffUser.id }
+        })
+      }
 
       additionalStaff.push(staffUser)
-      console.log(`   ✅ Created staff: ${staffData.firstName} ${staffData.lastName} (assigned to "${classes[classIndex].name}")`)
+      console.log(`   ✅ Created staff: ${staffData.firstName} ${staffData.lastName} (assigned to "${assignedClass.name}")`)
     } catch (error) {
       console.error(`   ⚠️  Error creating staff ${staffData.email}:`, error)
       // Continue with next staff
@@ -785,6 +806,21 @@ async function main() {
     } catch (error) {
       console.error(`   ⚠️  Error creating application ${i + 1}:`, error)
       // Continue with next application
+    }
+  }
+
+  // Verify all classes have teachers assigned
+  console.log('\n🔍 Verifying teacher assignments...')
+  const allClasses = await prisma.class.findMany({
+    where: { orgId: org.id },
+    include: { User: { select: { name: true, email: true } } }
+  })
+  
+  for (const classItem of allClasses) {
+    if (classItem.teacherId && classItem.User) {
+      console.log(`   ✅ ${classItem.name}: ${classItem.User.name}`)
+    } else {
+      console.log(`   ⚠️  ${classItem.name}: NO TEACHER ASSIGNED`)
     }
   }
 

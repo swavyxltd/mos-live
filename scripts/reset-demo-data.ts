@@ -676,6 +676,21 @@ async function main() {
   console.log(`      - ${lateCount} late (10%)`)
   console.log(`      - ${students.length - overdueCount - lateCount} paid on time (80%)`)
 
+  // Verify all classes have teachers assigned
+  console.log('\n🔍 Verifying teacher assignments...')
+  const allClasses = await prisma.class.findMany({
+    where: { orgId: org.id },
+    include: { User: { select: { name: true, email: true } } }
+  })
+  
+  for (const classItem of allClasses) {
+    if (classItem.teacherId && classItem.User) {
+      console.log(`   ✅ ${classItem.name}: ${classItem.User.name}`)
+    } else {
+      console.log(`   ⚠️  ${classItem.name}: NO TEACHER ASSIGNED`)
+    }
+  }
+
   // Summary
   console.log('\n' + '─'.repeat(80))
   console.log('✅ DEMO DATA RESET COMPLETE\n')
