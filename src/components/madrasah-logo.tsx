@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 
@@ -12,6 +12,30 @@ interface MadrasahLogoProps {
 }
 
 export function MadrasahLogo({ className = '', showText = true, textSize = 'md', size = 'md' }: MadrasahLogoProps) {
+  const [isDarkMode, setIsDarkMode] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    const checkDarkMode = () => {
+      if (typeof window !== 'undefined') {
+        setIsDarkMode(document.documentElement.classList.contains('dark'))
+      }
+    }
+    
+    checkDarkMode()
+
+    const observer = new MutationObserver(checkDarkMode)
+    if (typeof window !== 'undefined') {
+      observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class']
+      })
+    }
+
+    return () => observer.disconnect()
+  }, [])
+
   const textSizeClasses = {
     sm: 'text-xs',
     md: 'text-sm',
@@ -26,28 +50,40 @@ export function MadrasahLogo({ className = '', showText = true, textSize = 'md',
     xl: 'sm:w-72 sm:h-15'
   }
 
+  // Don't render until mounted to avoid hydration mismatch
+  if (!mounted) {
+    return (
+      <div className={`flex flex-col items-center ${className}`}>
+        <div className="flex items-center justify-start mb-2 w-full">
+          <div className={cn('w-full', logoSizeClasses[size])} style={{ height: size === 'sm' ? 24 : size === 'md' ? 40 : size === 'lg' ? 48 : size === 'lg-sm' ? 48 : 60 }} />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className={`flex flex-col items-center ${className}`}>
-      {/* Logo Icon - Using CSS to show/hide based on dark class */}
-      <div className="flex items-center justify-start mb-2 w-full relative">
-        {/* Light mode logo - hidden when dark class is present */}
-        <Image 
-          src="/madrasah-logo.png" 
-          alt="Madrasah OS Logo" 
-          width={size === 'sm' ? 128 : size === 'md' ? 192 : size === 'lg' ? 256 : size === 'lg-sm' ? 224 : 288}
-          height={size === 'sm' ? 24 : size === 'md' ? 40 : size === 'lg' ? 48 : size === 'lg-sm' ? 48 : 60}
-          className={cn('w-full object-contain max-w-full h-auto', logoSizeClasses[size], 'dark:hidden')}
-          priority
-        />
-        {/* Dark mode logo - hidden when dark class is NOT present */}
-        <Image 
-          src="/logo-dark.png" 
-          alt="Madrasah OS Logo" 
-          width={size === 'sm' ? 128 : size === 'md' ? 192 : size === 'lg' ? 256 : size === 'lg-sm' ? 224 : 288}
-          height={size === 'sm' ? 24 : size === 'md' ? 40 : size === 'lg' ? 48 : size === 'lg-sm' ? 48 : 60}
-          className={cn('w-full object-contain max-w-full h-auto', logoSizeClasses[size], 'hidden dark:block')}
-          priority
-        />
+      {/* Logo Icon */}
+      <div className="flex items-center justify-start mb-2 w-full">
+        {isDarkMode ? (
+          <Image 
+            src="/logo-dark.png" 
+            alt="Madrasah OS Logo" 
+            width={size === 'sm' ? 128 : size === 'md' ? 192 : size === 'lg' ? 256 : size === 'lg-sm' ? 224 : 288}
+            height={size === 'sm' ? 24 : size === 'md' ? 40 : size === 'lg' ? 48 : size === 'lg-sm' ? 48 : 60}
+            className={cn('w-full object-contain max-w-full h-auto', logoSizeClasses[size])}
+            priority
+          />
+        ) : (
+          <Image 
+            src="/madrasah-logo.png" 
+            alt="Madrasah OS Logo" 
+            width={size === 'sm' ? 128 : size === 'md' ? 192 : size === 'lg' ? 256 : size === 'lg-sm' ? 224 : 288}
+            height={size === 'sm' ? 24 : size === 'md' ? 40 : size === 'lg' ? 48 : size === 'lg-sm' ? 48 : 60}
+            className={cn('w-full object-contain max-w-full h-auto', logoSizeClasses[size])}
+            priority
+          />
+        )}
       </div>
       
       {/* Text */}
