@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import Image from 'next/image'
 import { cn } from '@/lib/utils'
 
 interface MadrasahLogoProps {
@@ -27,12 +26,12 @@ export function MadrasahLogo({ className = '', showText = true, textSize = 'md',
     // Check immediately
     checkDarkMode()
 
-    // Check again after a short delay to catch any late-applied classes
-    const timeoutId = setTimeout(checkDarkMode, 100)
+    // Check again after delays
+    const timeoutId1 = setTimeout(checkDarkMode, 50)
+    const timeoutId2 = setTimeout(checkDarkMode, 200)
 
     // Watch for class changes
     const observer = new MutationObserver(() => {
-      // Small delay to ensure class change is complete
       setTimeout(checkDarkMode, 10)
     })
     
@@ -44,7 +43,8 @@ export function MadrasahLogo({ className = '', showText = true, textSize = 'md',
     }
 
     return () => {
-      clearTimeout(timeoutId)
+      clearTimeout(timeoutId1)
+      clearTimeout(timeoutId2)
       observer.disconnect()
     }
   }, [])
@@ -63,7 +63,7 @@ export function MadrasahLogo({ className = '', showText = true, textSize = 'md',
     xl: 'sm:w-72 sm:h-15'
   }
 
-  // Don't render until mounted to avoid hydration mismatch
+  // Don't render until mounted
   if (!mounted) {
     return (
       <div className={`flex flex-col items-center ${className}`}>
@@ -74,20 +74,23 @@ export function MadrasahLogo({ className = '', showText = true, textSize = 'md',
     )
   }
 
+  // Use logo-dark.png when dark mode is ON, madrasah-logo.png when OFF
   const logoSrc = isDarkMode ? '/logo-dark.png' : '/madrasah-logo.png'
 
   return (
     <div className={`flex flex-col items-center ${className}`}>
-      {/* Logo Icon */}
+      {/* Logo Icon - Using regular img tag for better compatibility */}
       <div className="flex items-center justify-start mb-2 w-full">
-        <Image 
+        <img 
           key={logoSrc}
           src={logoSrc} 
           alt="Madrasah OS Logo" 
-          width={size === 'sm' ? 128 : size === 'md' ? 192 : size === 'lg' ? 256 : size === 'lg-sm' ? 224 : 288}
-          height={size === 'sm' ? 24 : size === 'md' ? 40 : size === 'lg' ? 48 : size === 'lg-sm' ? 48 : 60}
           className={cn('w-full object-contain max-w-full h-auto', logoSizeClasses[size])}
-          priority
+          style={{ 
+            width: '100%',
+            height: 'auto',
+            maxWidth: '100%'
+          }}
         />
       </div>
       
