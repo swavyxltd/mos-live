@@ -2,6 +2,71 @@ export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { getActiveOrg } from '@/lib/org'
+import { prisma } from '@/lib/prisma'
+import { formatDate } from '@/lib/utils'
+
+// Static navigation pages
+const navigationPages = [
+  { name: 'Dashboard', href: '/dashboard', icon: '🏠', type: 'page' },
+  { name: 'Classes', href: '/classes', icon: '📚', type: 'page' },
+  { name: 'Students', href: '/students', icon: '👥', type: 'page' },
+  { name: 'Applications', href: '/applications', icon: '📝', type: 'page' },
+  { name: 'Staff', href: '/staff', icon: '👨‍🏫', type: 'page' },
+  { name: 'Attendance', href: '/attendance', icon: '📊', type: 'page' },
+  { name: 'Finances', href: '/finances', icon: '💰', type: 'page' },
+  { name: 'Fees', href: '/fees', icon: '💳', type: 'page' },
+  { name: 'Payments', href: '/payments', icon: '💵', type: 'page' },
+  { name: 'Messages', href: '/messages', icon: '💬', type: 'page' },
+  { name: 'Calendar', href: '/calendar', icon: '📅', type: 'page' },
+  { name: 'Support', href: '/support', icon: '❓', type: 'page' },
+  { name: 'Settings', href: '/settings', icon: '⚙️', type: 'page' },
+]
+
+// Settings sub-pages
+const settingsPages = [
+  { name: 'Profile Settings', href: '/settings?tab=profile', icon: '👤', type: 'settings' },
+  { name: 'Organization Settings', href: '/settings?tab=organization', icon: '🏢', type: 'settings' },
+  { name: 'Payment Methods', href: '/settings?tab=payment-methods', icon: '💳', type: 'settings' },
+  { name: 'Your Subscription', href: '/settings?tab=subscription', icon: '📦', type: 'settings' },
+  { name: 'Billing History', href: '/settings?tab=billing', icon: '📄', type: 'settings' },
+]
+
+// FAQ data
+const faqData = [
+  { question: 'How do I set up my madrasah on Madrasah OS?', category: 'Getting Started', href: '/support/faq', icon: '🚀', type: 'faq' },
+  { question: 'What information do I need to provide during setup?', category: 'Getting Started', href: '/support/faq', icon: '🚀', type: 'faq' },
+  { question: 'How do I invite teachers to join my madrasah?', category: 'Getting Started', href: '/support/faq', icon: '🚀', type: 'faq' },
+  { question: 'How do I add students to my madrasah?', category: 'Student Management', href: '/support/faq', icon: '👥', type: 'faq' },
+  { question: 'Can parents add their own children?', category: 'Student Management', href: '/support/faq', icon: '👥', type: 'faq' },
+  { question: 'How do I mark attendance?', category: 'Student Management', href: '/support/faq', icon: '👥', type: 'faq' },
+  { question: 'How do I record student progress?', category: 'Student Management', href: '/support/faq', icon: '👥', type: 'faq' },
+  { question: 'How do I set up fees for my classes?', category: 'Billing & Payments', href: '/support/faq', icon: '💳', type: 'faq' },
+  { question: 'How do parents pay their fees?', category: 'Billing & Payments', href: '/support/faq', icon: '💳', type: 'faq' },
+  { question: 'What payment methods do you support?', category: 'Billing & Payments', href: '/support/faq', icon: '💳', type: 'faq' },
+  { question: 'How do I generate invoices?', category: 'Billing & Payments', href: '/support/faq', icon: '💳', type: 'faq' },
+  { question: 'How do I send announcements to parents?', category: 'Communication', href: '/support/faq', icon: '📱', type: 'faq' },
+  { question: 'How do I set up WhatsApp messaging?', category: 'Communication', href: '/support/faq', icon: '📱', type: 'faq' },
+  { question: 'Can parents reply to messages?', category: 'Communication', href: '/support/faq', icon: '📱', type: 'faq' },
+  { question: 'What browsers are supported?', category: 'Technical Support', href: '/support/faq', icon: '🔧', type: 'faq' },
+  { question: 'Is my data secure?', category: 'Technical Support', href: '/support/faq', icon: '🔧', type: 'faq' },
+  { question: 'Can I export my data?', category: 'Technical Support', href: '/support/faq', icon: '🔧', type: 'faq' },
+  { question: 'What if I forget my password?', category: 'Technical Support', href: '/support/faq', icon: '🔧', type: 'faq' },
+]
+
+// Documentation topics
+const documentationTopics = [
+  { title: 'Welcome to Madrasah OS', href: '/support/docs', icon: '📖', type: 'guide' },
+  { title: 'Dashboard Overview', href: '/support/docs', icon: '📊', type: 'guide' },
+  { title: 'Student Management', href: '/support/docs', icon: '👥', type: 'guide' },
+  { title: 'Class Management', href: '/support/docs', icon: '📚', type: 'guide' },
+  { title: 'Attendance Tracking', href: '/support/docs', icon: '📊', type: 'guide' },
+  { title: 'Fee Management', href: '/support/docs', icon: '💳', type: 'guide' },
+  { title: 'Payment Processing', href: '/support/docs', icon: '💵', type: 'guide' },
+  { title: 'Messaging & Communication', href: '/support/docs', icon: '💬', type: 'guide' },
+  { title: 'Calendar & Events', href: '/support/docs', icon: '📅', type: 'guide' },
+  { title: 'Reports & Analytics', href: '/support/docs', icon: '📈', type: 'guide' },
+]
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,185 +82,324 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ results: [] })
     }
 
-    // Comprehensive demo data for search
-    const demoResults = [
-      // Students
-      {
-        type: 'student',
-        id: '1',
-        title: 'Ahmed Hassan',
-        subtitle: 'Parent: Mohammed Hassan',
-        url: '/students',
-        icon: '👨‍🎓'
-      },
-      {
-        type: 'student',
-        id: '2',
-        title: 'Aisha Khan',
-        subtitle: 'Parent: Fatima Khan',
-        url: '/students',
-        icon: '👨‍🎓'
-      },
-      {
-        type: 'student',
-        id: '3',
-        title: 'Omar Ali',
-        subtitle: 'Parent: Hassan Ali',
-        url: '/students',
-        icon: '👨‍🎓'
-      },
-      {
-        type: 'student',
-        id: '4',
-        title: 'Fatima Ahmed',
-        subtitle: 'Parent: Ahmed Mohammed',
-        url: '/students',
-        icon: '👨‍🎓'
-      },
-      // Classes
-      {
-        type: 'class',
-        id: '1',
-        title: 'Quran Recitation - Level 1',
-        subtitle: 'Teacher: Moulana Omar',
-        url: '/classes',
-        icon: '📚'
-      },
-      {
-        type: 'class',
-        id: '2',
-        title: 'Islamic Studies - Level 2',
-        subtitle: 'Teacher: Apa Aisha',
-        url: '/classes',
-        icon: '📚'
-      },
-      {
-        type: 'class',
-        id: '3',
-        title: 'Arabic Grammar',
-        subtitle: 'Teacher: Hassan Ali',
-        url: '/classes',
-        icon: '📚'
-      },
-      // Staff
-      {
-        type: 'staff',
-        id: '1',
-        title: 'Ahmed Hassan',
-        subtitle: 'Role: ADMIN',
-        url: '/settings',
-        icon: '👨‍🏫'
-      },
-      {
-        type: 'staff',
-        id: '2',
-        title: 'Moulana Omar',
-        subtitle: 'Role: STAFF',
-        url: '/settings',
-        icon: '👨‍🏫'
-      },
-      {
-        type: 'staff',
-        id: '3',
-        title: 'Apa Aisha',
-        subtitle: 'Role: STAFF',
-        url: '/settings',
-        icon: '👨‍🏫'
-      },
-      // Invoices
-      {
-        type: 'invoice',
-        id: '1',
-        title: 'Invoice for Ahmed Hassan',
-        subtitle: 'Amount: £50.00',
-        url: '/invoices',
-        icon: '💰'
-      },
-      {
-        type: 'invoice',
-        id: '2',
-        title: 'Invoice for Aisha Khan',
-        subtitle: 'Amount: £45.00',
-        url: '/invoices',
-        icon: '💰'
-      },
-      // Messages
-      {
-        type: 'message',
-        id: '1',
-        title: 'Message to Parents',
-        subtitle: 'Sent: 2 hours ago',
-        url: '/messages',
-        icon: '💬'
-      },
-      {
-        type: 'message',
-        id: '2',
-        title: 'Announcement: End of Term',
-        subtitle: 'Sent: 1 day ago',
-        url: '/messages',
-        icon: '💬'
-      },
-      // Attendance
-      {
-        type: 'attendance',
-        id: '1',
-        title: 'Today\'s Attendance',
-        subtitle: '89% attendance rate',
-        url: '/attendance',
-        icon: '📊'
-      },
-      {
-        type: 'attendance',
-        id: '2',
-        title: 'Weekly Report',
-        subtitle: 'Quran Level 1 class',
-        url: '/attendance',
-        icon: '📊'
-      },
-      // Calendar Events
-      {
-        type: 'event',
-        id: '1',
-        title: 'End of Term Exams',
-        subtitle: 'Dec 16, 2024',
-        url: '/calendar',
-        icon: '📅'
-      },
-      {
-        type: 'event',
-        id: '2',
-        title: 'Parent-Teacher Meeting',
-        subtitle: 'Dec 20, 2024',
-        url: '/calendar',
-        icon: '📅'
-      },
-      // Fees
-      {
-        type: 'fee',
-        id: '1',
-        title: 'Monthly Fee Collection',
-        subtitle: 'Due: End of month',
-        url: '/fees',
-        icon: '💳'
-      },
-      {
-        type: 'fee',
-        id: '2',
-        title: 'Registration Fee',
-        subtitle: 'New students only',
-        url: '/fees',
-        icon: '💳'
+    const searchQuery = query.toLowerCase().trim()
+    const results: any[] = []
+
+    // Get active organization
+    const org = await getActiveOrg(session.user.id)
+    if (!org) {
+      return NextResponse.json({ results: [] })
+    }
+
+    // Search Students
+    try {
+      const students = await prisma.student.findMany({
+        where: {
+          orgId: org.id,
+          OR: [
+            { firstName: { contains: searchQuery, mode: 'insensitive' } },
+            { lastName: { contains: searchQuery, mode: 'insensitive' } },
+            { email: { contains: searchQuery, mode: 'insensitive' } },
+          ],
+        },
+        include: {
+          User: {
+            select: {
+              name: true,
+              email: true,
+            },
+          },
+        },
+        take: 10,
+      })
+
+      students.forEach((student) => {
+        results.push({
+          type: 'student',
+          id: student.id,
+          title: `${student.firstName} ${student.lastName}`,
+          subtitle: `Parent: ${student.User?.name || student.User?.email || 'N/A'}`,
+          url: `/students`,
+          icon: '👨‍🎓',
+        })
+      })
+    } catch (error) {
+      console.error('Error searching students:', error)
+    }
+
+    // Search Classes
+    try {
+      const classes = await prisma.class.findMany({
+        where: {
+          orgId: org.id,
+          OR: [
+            { name: { contains: searchQuery, mode: 'insensitive' } },
+            { description: { contains: searchQuery, mode: 'insensitive' } },
+          ],
+        },
+        include: {
+          User: {
+            select: {
+              name: true,
+            },
+          },
+        },
+        take: 10,
+      })
+
+      classes.forEach((classItem) => {
+        results.push({
+          type: 'class',
+          id: classItem.id,
+          title: classItem.name,
+          subtitle: `Teacher: ${classItem.User?.name || 'Unassigned'}`,
+          url: `/classes/${classItem.id}`,
+          icon: '📚',
+        })
+      })
+    } catch (error) {
+      console.error('Error searching classes:', error)
+    }
+
+    // Search Staff
+    try {
+      const staffMembers = await prisma.userOrgMembership.findMany({
+        where: {
+          orgId: org.id,
+          role: { in: ['ADMIN', 'STAFF'] },
+          User: {
+            OR: [
+              { name: { contains: searchQuery, mode: 'insensitive' } },
+              { email: { contains: searchQuery, mode: 'insensitive' } },
+            ],
+          },
+        },
+        include: {
+          User: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+        take: 10,
+      })
+
+      staffMembers.forEach((membership) => {
+        results.push({
+          type: 'staff',
+          id: membership.User.id,
+          title: membership.User.name || membership.User.email,
+          subtitle: `Role: ${membership.role}`,
+          url: `/staff/${membership.User.id}`,
+          icon: '👨‍🏫',
+        })
+      })
+    } catch (error) {
+      console.error('Error searching staff:', error)
+    }
+
+    // Search Payment Records
+    try {
+      const paymentRecords = await prisma.monthlyPaymentRecord.findMany({
+        where: {
+          Student: {
+            orgId: org.id,
+            OR: [
+              { firstName: { contains: searchQuery, mode: 'insensitive' } },
+              { lastName: { contains: searchQuery, mode: 'insensitive' } },
+            ],
+          },
+        },
+        include: {
+          Student: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
+          Class: {
+            select: {
+              name: true,
+            },
+          },
+        },
+        take: 10,
+      })
+
+      paymentRecords.forEach((record) => {
+        const month = new Date(record.month).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+        results.push({
+          type: 'payment',
+          id: record.id,
+          title: `${record.Student.firstName} ${record.Student.lastName} - ${month}`,
+          subtitle: `Class: ${record.Class?.name || 'N/A'} • Amount: £${record.amount.toFixed(2)} • Status: ${record.status}`,
+          url: `/payments`,
+          icon: '💵',
+        })
+      })
+    } catch (error) {
+      console.error('Error searching payments:', error)
+    }
+
+    // Search Messages
+    try {
+      const messages = await prisma.message.findMany({
+        where: {
+          orgId: org.id,
+          OR: [
+            { title: { contains: searchQuery, mode: 'insensitive' } },
+            { body: { contains: searchQuery, mode: 'insensitive' } },
+          ],
+        },
+        take: 10,
+        orderBy: { createdAt: 'desc' },
+      })
+
+      messages.forEach((message) => {
+        const date = formatDate(message.createdAt)
+        results.push({
+          type: 'message',
+          id: message.id,
+          title: message.title,
+          subtitle: `Sent: ${date}`,
+          url: `/messages`,
+          icon: '💬',
+        })
+      })
+    } catch (error) {
+      console.error('Error searching messages:', error)
+    }
+
+    // Search Events
+    try {
+      const events = await prisma.event.findMany({
+        where: {
+          orgId: org.id,
+          OR: [
+            { title: { contains: searchQuery, mode: 'insensitive' } },
+            { description: { contains: searchQuery, mode: 'insensitive' } },
+          ],
+        },
+        take: 10,
+        orderBy: { startDate: 'asc' },
+      })
+
+      events.forEach((event) => {
+        const date = formatDate(event.startDate)
+        results.push({
+          type: 'event',
+          id: event.id,
+          title: event.title,
+          subtitle: `Date: ${date}`,
+          url: `/calendar`,
+          icon: '📅',
+        })
+      })
+    } catch (error) {
+      console.error('Error searching events:', error)
+    }
+
+    // Search Applications
+    try {
+      const applications = await prisma.application.findMany({
+        where: {
+          orgId: org.id,
+          OR: [
+            { guardianName: { contains: searchQuery, mode: 'insensitive' } },
+            { guardianEmail: { contains: searchQuery, mode: 'insensitive' } },
+            { studentName: { contains: searchQuery, mode: 'insensitive' } },
+          ],
+        },
+        take: 10,
+        orderBy: { createdAt: 'desc' },
+      })
+
+      applications.forEach((app) => {
+        results.push({
+          type: 'application',
+          id: app.id,
+          title: `${app.studentName} - ${app.guardianName}`,
+          subtitle: `Status: ${app.status} • ${app.guardianEmail}`,
+          url: `/applications`,
+          icon: '📝',
+        })
+      })
+    } catch (error) {
+      console.error('Error searching applications:', error)
+    }
+
+    // Search Navigation Pages
+    navigationPages.forEach((page) => {
+      if (page.name.toLowerCase().includes(searchQuery)) {
+        results.push({
+          type: 'page',
+          id: page.href,
+          title: page.name,
+          subtitle: 'Navigation page',
+          url: page.href,
+          icon: page.icon,
+        })
       }
-    ]
+    })
 
-    // Filter demo results based on query
-    const filteredResults = demoResults.filter(result => 
-      result.title.toLowerCase().includes(query.toLowerCase()) ||
-      result.subtitle.toLowerCase().includes(query.toLowerCase())
-    )
+    // Search Settings Pages
+    settingsPages.forEach((page) => {
+      if (page.name.toLowerCase().includes(searchQuery)) {
+        results.push({
+          type: 'settings',
+          id: page.href,
+          title: page.name,
+          subtitle: 'Settings page',
+          url: page.href,
+          icon: page.icon,
+        })
+      }
+    })
 
-    return NextResponse.json({ results: filteredResults })
+    // Search FAQs
+    faqData.forEach((faq) => {
+      if (
+        faq.question.toLowerCase().includes(searchQuery) ||
+        faq.category.toLowerCase().includes(searchQuery)
+      ) {
+        results.push({
+          type: 'faq',
+          id: `faq-${faq.question}`,
+          title: faq.question,
+          subtitle: `Category: ${faq.category}`,
+          url: faq.href,
+          icon: faq.icon,
+        })
+      }
+    })
+
+    // Search Documentation
+    documentationTopics.forEach((doc) => {
+      if (doc.title.toLowerCase().includes(searchQuery)) {
+        results.push({
+          type: 'guide',
+          id: `doc-${doc.title}`,
+          title: doc.title,
+          subtitle: 'Documentation guide',
+          url: doc.href,
+          icon: doc.icon,
+        })
+      }
+    })
+
+    // Sort results by relevance (exact matches first, then partial matches)
+    const sortedResults = results.sort((a, b) => {
+      const aTitleMatch = a.title.toLowerCase().startsWith(searchQuery)
+      const bTitleMatch = b.title.toLowerCase().startsWith(searchQuery)
+      if (aTitleMatch && !bTitleMatch) return -1
+      if (!aTitleMatch && bTitleMatch) return 1
+      return 0
+    })
+
+    return NextResponse.json({ results: sortedResults.slice(0, 50) })
 
   } catch (error) {
     console.error('Search error:', error)
