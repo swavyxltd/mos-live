@@ -19,8 +19,8 @@ interface Student {
   name: string
   status: 'PRESENT' | 'ABSENT' | 'LATE'
   time?: string
-  attendancePercentage: number
-  weeklyAttendance: {
+  attendancePercentage?: number
+  weeklyAttendance?: {
     day: string
     status: 'PRESENT' | 'ABSENT' | 'LATE' | 'NOT_SCHEDULED'
     time?: string
@@ -31,7 +31,7 @@ interface ClassDetails {
   id: string
   name: string
   teacher: string
-  date: Date
+  date: Date | string
   totalStudents: number
   present: number
   absent: number
@@ -150,7 +150,9 @@ export function DetailedClassAttendance({
           </Badge>
           <Badge variant="outline" className="flex items-center gap-1">
             <Calendar className="h-3 w-3" />
-            {Math.round(((classDetails.present + classDetails.late) / classDetails.totalStudents) * 100)}% attendance
+            {classDetails.totalStudents > 0 
+              ? `${Math.round(((classDetails.present + classDetails.late) / classDetails.totalStudents) * 100)}% attendance`
+              : '0% attendance'}
           </Badge>
         </div>
       </div>
@@ -246,24 +248,28 @@ export function DetailedClassAttendance({
                 </div>
                 
                 {/* Weekly Attendance Dots */}
-                <div className="hidden sm:flex items-center gap-2 flex-shrink-0 mr-4">
-                  {student.weeklyAttendance.map((day, index) => (
-                    <div key={index} className="flex flex-col items-center gap-1">
-                      <div className="text-xs text-gray-500 font-medium">{day.day}</div>
-                      {getWeeklyStatusIcon(day.status, day.day, day.time)}
-                    </div>
-                  ))}
-                </div>
+                {student.weeklyAttendance && student.weeklyAttendance.length > 0 && (
+                  <div className="hidden sm:flex items-center gap-2 flex-shrink-0 mr-4">
+                    {student.weeklyAttendance.map((day, index) => (
+                      <div key={index} className="flex flex-col items-center gap-1">
+                        <div className="text-xs text-gray-500 font-medium">{day.day}</div>
+                        {getWeeklyStatusIcon(day.status, day.day, day.time)}
+                      </div>
+                    ))}
+                  </div>
+                )}
                 
                 {/* Attendance Percentage */}
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  <div className="text-right">
-                    <div className="text-sm font-medium text-gray-900">
-                      {student.attendancePercentage}%
+                {student.attendancePercentage !== undefined && (
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <div className="text-right">
+                      <div className="text-sm font-medium text-gray-900">
+                        {student.attendancePercentage}%
+                      </div>
+                      <div className="text-xs text-gray-500">attendance</div>
                     </div>
-                    <div className="text-xs text-gray-500">attendance</div>
                   </div>
-                </div>
+                )}
               </div>
             ))}
           </div>
