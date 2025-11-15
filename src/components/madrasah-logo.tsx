@@ -65,6 +65,7 @@ export function MadrasahLogo({ className = '', showText = true, textSize = 'md',
       {/* Logo Icon - Using your PNG image */}
       <div className="flex items-center justify-start mb-2 w-full">
         <Image 
+          key={logoSrc} 
           src={logoSrc} 
           alt="Madrasah OS Logo" 
           width={size === 'sm' ? 128 : size === 'md' ? 192 : size === 'lg' ? 256 : size === 'lg-sm' ? 224 : 288}
