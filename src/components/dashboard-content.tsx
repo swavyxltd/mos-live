@@ -304,11 +304,10 @@ export function DashboardContent() {
             icon={<TrendingUp className="h-4 w-4" />}
           />
         </Link>
-        <Link href="/settings" className="block">
+        <Link href="/staff" className="block">
           <StatCard
             title="Staff Members"
             value={staffMembers}
-            change={{ value: "Teachers & admin", type: "neutral" }}
             description="Team size"
             detail="Active personnel"
             icon={<UserCheck className="h-4 w-4" />}
