@@ -12,6 +12,6 @@ export async function getLogoUrlForEmail(): Promise<string> {
   
   // Fallback to default logo path
   const baseUrl = process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'https://app.madrasah.io'
-  return `${baseUrl.replace(/\/$/, '')}/logo.png`
+  return `${baseUrl.replace(/\/$/, '')}/madrasah-logo.png`
 }
 

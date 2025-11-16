@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { getActiveOrg } from '@/lib/org'
 import { prisma } from '@/lib/prisma'
+import { randomUUID } from 'crypto'
 
 // GET /api/applications - Get all applications for the current org
 export async function GET() {
@@ -68,9 +69,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the application
+    const now = new Date()
     const application = await prisma.application.create({
       data: {
+        id: randomUUID(),
         orgId,
+        status: 'NEW', // Default status for new applications
         guardianName,
         guardianPhone,
         guardianEmail,
@@ -79,14 +83,16 @@ export async function POST(request: NextRequest) {
         preferredTerm,
         preferredStartDate: preferredStartDate ? new Date(preferredStartDate) : undefined,
         additionalNotes,
-        updatedAt: new Date(),
+        submittedAt: now, // Set submittedAt to current time
+        updatedAt: now,
         ApplicationChild: {
           create: validChildren.map((child: any) => ({
+            id: randomUUID(),
             firstName: child.firstName,
             lastName: child.lastName,
             dob: child.dob ? new Date(child.dob) : undefined,
             gender: child.gender,
-            updatedAt: new Date()
+            updatedAt: now
           }))
         }
       },

@@ -24,6 +24,10 @@ interface InvitationData {
     name: string
     monthlyFee: number
   }
+  parent: {
+    name: string
+    phone: string
+  } | null
   org: {
     id: string
     name: string
@@ -86,8 +90,10 @@ function ParentSetupForm() {
 
       const data = await response.json()
       setInvitationData(data)
-      setParentName('')
-      setParentPhone('')
+      // Pre-fill parent info if available
+      setParentName(data.parent?.name || '')
+      setParentPhone(data.parent?.phone || '')
+      // Pre-fill student info
       setStudentFirstName(data.student.firstName)
       setStudentLastName(data.student.lastName)
       setStudentDob(data.student.dob ? new Date(data.student.dob).toISOString().split('T')[0] : '')

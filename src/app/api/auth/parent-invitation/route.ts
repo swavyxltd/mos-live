@@ -29,6 +29,14 @@ export async function GET(request: NextRequest) {
                   }
                 }
               }
+            },
+            primaryParent: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true
+              }
             }
           }
         },
@@ -91,6 +99,10 @@ export async function GET(request: NextRequest) {
         allergies: invitation.student.allergies,
         medicalNotes: invitation.student.medicalNotes
       },
+      parent: invitation.student.primaryParent ? {
+        name: invitation.student.primaryParent.name || '',
+        phone: invitation.student.primaryParent.phone || ''
+      } : null,
       class: {
         id: studentClass.class.id,
         name: studentClass.class.name,

@@ -4,6 +4,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { getActiveOrg } from '@/lib/org'
 import { prisma } from '@/lib/prisma'
+import { sendApplicationAcceptanceEmail } from '@/lib/mail'
+import crypto from 'crypto'
 
 // PATCH /api/applications/[id] - Update application status
 export async function PATCH(
@@ -64,7 +66,7 @@ export async function PATCH(
       }
     })
 
-    // If status is ACCEPTED, create student records
+    // If status is ACCEPTED, create student records and send email
     if (status === 'ACCEPTED') {
       try {
         // Find or create parent user
@@ -92,6 +94,9 @@ export async function PATCH(
           })
         }
 
+        const childrenNames: string[] = []
+        const createdStudentIds: string[] = []
+
         // Create student records for each child
         for (const child of application.ApplicationChild) {
           const student = await prisma.student.create({
@@ -101,6 +106,24 @@ export async function PATCH(
               lastName: child.lastName,
               dob: child.dob ? new Date(child.dob) : undefined,
               primaryParentId: parentUser.id
+            }
+          })
+
+          childrenNames.push(`${child.firstName} ${child.lastName}`)
+          createdStudentIds.push(student.id)
+
+          // Create parent invitation for this student
+          const token = crypto.randomBytes(32).toString('hex')
+          const expiresAt = new Date()
+          expiresAt.setDate(expiresAt.getDate() + 30) // 30 days expiry
+
+          await prisma.parentInvitation.create({
+            data: {
+              orgId: org.id,
+              studentId: student.id,
+              parentEmail: application.guardianEmail.toLowerCase().trim(),
+              token,
+              expiresAt
             }
           })
 
@@ -128,6 +151,35 @@ export async function PATCH(
               })
             }
           }
+        }
+
+        // Send acceptance email to parent
+        try {
+          const baseUrl = process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'https://app.madrasah.io'
+          const cleanBaseUrl = baseUrl.trim().replace(/\/+$/, '')
+          // Use the first student's invitation token for the signup link
+          const firstInvitation = await prisma.parentInvitation.findFirst({
+            where: {
+              studentId: createdStudentIds[0],
+              parentEmail: application.guardianEmail.toLowerCase().trim()
+            },
+            orderBy: { createdAt: 'desc' }
+          })
+          
+          const signupUrl = firstInvitation 
+            ? `${cleanBaseUrl}/auth/parent-setup?token=${firstInvitation.token}`
+            : `${cleanBaseUrl}/auth/signin`
+
+          await sendApplicationAcceptanceEmail({
+            to: application.guardianEmail,
+            orgName: org.name,
+            parentName: application.guardianName,
+            childrenNames,
+            signupUrl
+          })
+        } catch (emailError) {
+          console.error('Failed to send application acceptance email:', emailError)
+          // Don't fail the request if email fails, but log it
         }
       } catch (error) {
         console.error('Error creating students from application:', error)

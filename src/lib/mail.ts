@@ -601,3 +601,172 @@ export async function sendPaymentConfirmationEmail({
     text: `Payment Confirmation - ${orgName}\n\nAssalamu alaikum!\n\nThis email confirms that your payment has been received and processed.\n\nStudent: ${studentName}\nClass: ${className}\nMonth: ${month}\nPayment Method: ${methodLabel}\n${reference ? `Reference: ${reference}\n` : ''}Amount Paid: ${amountFormatted}\n\nJazakallahu Khairan\nThank you for your payment. We appreciate your continued support.\n\nBest regards,\n${orgName}`
   })
 }
+
+export async function sendApplicationAcceptanceEmail({
+  to,
+  orgName,
+  parentName,
+  childrenNames,
+  signupUrl
+}: {
+  to: string
+  orgName: string
+  parentName: string
+  childrenNames: string[]
+  signupUrl: string
+}) {
+  // Ensure signupUrl is clean
+  let safeSignupUrl = signupUrl.trim()
+  const urlMatch = safeSignupUrl.match(/^(https?:\/\/[^\/\?]+)(.*)$/)
+  if (urlMatch) {
+    const [, protocolDomain, path] = urlMatch
+    const cleanPath = path.replace(/\/https?:\/\/[^\/\?]+/g, '').replace(/^\/+/g, '/')
+    safeSignupUrl = protocolDomain + cleanPath
+  }
+  
+  const childrenList = childrenNames.length === 1 
+    ? childrenNames[0]
+    : childrenNames.length === 2
+    ? `${childrenNames[0]} and ${childrenNames[1]}`
+    : `${childrenNames.slice(0, -1).join(', ')}, and ${childrenNames[childrenNames.length - 1]}`
+  
+  const content = `
+    <!-- Congratulations Message -->
+    <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #22c55e; border-radius: 8px; padding: 20px; margin-bottom: 24px; text-align: center;">
+      <p style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: #166534;">
+        Alhamdulillah! 🎉
+      </p>
+      <p style="margin: 0; font-size: 16px; color: #15803d; line-height: 1.6;">
+        We are delighted to inform you that your application has been <strong>accepted</strong>!
+      </p>
+    </div>
+    
+    <!-- Welcome Message -->
+    <p style="margin: 0 0 16px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">
+      Assalamu alaikum <strong>${parentName}</strong>,
+    </p>
+    
+    <p style="margin: 0 0 24px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">
+      We are thrilled to welcome <strong>${childrenList}</strong> to <strong>${orgName}</strong>. We look forward to supporting ${childrenNames.length === 1 ? 'their' : 'their'} journey in learning the Quran and Islamic knowledge, inshallah.
+    </p>
+    
+    <!-- Sign Up CTA -->
+    <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; margin: 32px 0; text-align: center;">
+      <h2 style="margin: 0 0 12px 0; font-size: 18px; font-weight: 600; color: #111827;">
+        Create Your Parent Account
+      </h2>
+      <p style="margin: 0 0 24px 0; font-size: 15px; color: #6b7280; line-height: 1.6;">
+        Sign up for a free account to stay connected with your child's education and access all our features.
+      </p>
+      <a href="${safeSignupUrl.replace(/&/g, '&amp;')}" style="display: inline-block; background-color: #111827; color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+        Sign Up Now
+      </a>
+    </div>
+    
+    <!-- Features Section -->
+    <div style="margin: 32px 0;">
+      <h2 style="margin: 0 0 20px 0; font-size: 18px; font-weight: 600; color: #111827; text-align: center;">
+        Why Sign Up? Here's What You'll Get:
+      </h2>
+      
+      <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+        <!-- Row 1 -->
+        <tr>
+          <td style="padding: 16px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center; width: 50%;">
+            <div style="font-size: 28px; margin-bottom: 8px;">✅</div>
+            <h3 style="margin: 0 0 6px 0; font-size: 15px; font-weight: 600; color: #111827;">Track Attendance</h3>
+            <p style="margin: 0; font-size: 13px; color: #6b7280; line-height: 1.5;">See your child's daily attendance in real-time</p>
+          </td>
+          <td style="width: 12px;"></td>
+          <td style="padding: 16px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center; width: 50%;">
+            <div style="font-size: 28px; margin-bottom: 8px;">📅</div>
+            <h3 style="margin: 0 0 6px 0; font-size: 15px; font-weight: 600; color: #111827;">View Holidays</h3>
+            <p style="margin: 0; font-size: 13px; color: #6b7280; line-height: 1.5;">Stay informed about school holidays and events</p>
+          </td>
+        </tr>
+        <tr style="height: 12px;"><td colspan="3"></td></tr>
+        <!-- Row 2 -->
+        <tr>
+          <td style="padding: 16px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center; width: 50%;">
+            <div style="font-size: 28px; margin-bottom: 8px;">📊</div>
+            <h3 style="margin: 0 0 6px 0; font-size: 15px; font-weight: 600; color: #111827;">Monitor Progress</h3>
+            <p style="margin: 0; font-size: 13px; color: #6b7280; line-height: 1.5;">Track your child's academic progress and achievements</p>
+          </td>
+          <td style="width: 12px;"></td>
+          <td style="padding: 16px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center; width: 50%;">
+            <div style="font-size: 28px; margin-bottom: 8px;">💬</div>
+            <h3 style="margin: 0 0 6px 0; font-size: 15px; font-weight: 600; color: #111827;">Stay Connected</h3>
+            <p style="margin: 0; font-size: 13px; color: #6b7280; line-height: 1.5;">Receive announcements and messages from teachers</p>
+          </td>
+        </tr>
+        <tr style="height: 12px;"><td colspan="3"></td></tr>
+        <!-- Row 3 -->
+        <tr>
+          <td style="padding: 16px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center; width: 50%;">
+            <div style="font-size: 28px; margin-bottom: 8px;">💰</div>
+            <h3 style="margin: 0 0 6px 0; font-size: 15px; font-weight: 600; color: #111827;">Easy Payments</h3>
+            <p style="margin: 0; font-size: 13px; color: #6b7280; line-height: 1.5;">Pay fees securely online and view payment history</p>
+          </td>
+          <td style="width: 12px;"></td>
+          <td style="padding: 16px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center; width: 50%;">
+            <div style="font-size: 28px; margin-bottom: 8px;">📱</div>
+            <h3 style="margin: 0 0 6px 0; font-size: 15px; font-weight: 600; color: #111827;">Mobile Friendly</h3>
+            <p style="margin: 0; font-size: 13px; color: #6b7280; line-height: 1.5;">Access everything from your phone, anytime, anywhere</p>
+          </td>
+        </tr>
+      </table>
+    </div>
+    
+    <!-- Closing Message -->
+    <p style="margin: 32px 0 0 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">
+      Jazakallahu Khairan for choosing <strong>${orgName}</strong>. We're excited to begin this journey with you and your family, inshallah.
+    </p>
+  `
+  
+  const html = await generateEmailTemplate({
+    title: 'Application Accepted - Alhamdulillah!',
+    description: '',
+    content,
+    footerText: `If you have any questions, please don't hesitate to contact us. We're here to help!`,
+    showLogo: true
+  })
+  
+  const text = `Application Accepted - ${orgName}
+
+Alhamdulillah!
+
+We are delighted to inform you that your application has been ACCEPTED!
+
+Assalamu alaikum ${parentName},
+
+We are thrilled to welcome ${childrenList} to ${orgName}. We look forward to supporting ${childrenNames.length === 1 ? 'their' : 'their'} journey in learning the Quran and Islamic knowledge, inshallah.
+
+Create Your Parent Account
+
+Sign up for a free account to stay connected with your child's education and access all our features.
+
+Sign up here: ${safeSignupUrl}
+
+Why Sign Up? Here's What You'll Get:
+
+✅ Track Attendance - See your child's daily attendance in real-time
+📅 View Holidays - Stay informed about school holidays and events
+📊 Monitor Progress - Track your child's academic progress and achievements
+💬 Stay Connected - Receive announcements and messages from teachers
+💰 Easy Payments - Pay fees securely online and view payment history
+📱 Mobile Friendly - Access everything from your phone, anytime, anywhere
+
+Jazakallahu Khairan for choosing ${orgName}. We're excited to begin this journey with you and your family, inshallah.
+
+If you have any questions, please don't hesitate to contact us. We're here to help!
+
+Best regards,
+The ${orgName} Team`
+  
+  return sendEmail({
+    to,
+    subject: `Application Accepted - Welcome to ${orgName}!`,
+    html,
+    text
+  })
+}

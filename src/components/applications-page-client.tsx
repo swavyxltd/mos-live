@@ -63,12 +63,17 @@ export function ApplicationsPageClient({ orgSlug }: ApplicationsPageClientProps)
         // Transform API data to match Application interface
         const transformed = data.map((app: any) => ({
           id: app.id,
-          status: app.status,
-          guardianName: app.guardianName,
-          guardianPhone: app.guardianPhone,
-          guardianEmail: app.guardianEmail,
-          submittedAt: app.submittedAt,
-          children: app.ApplicationChild || [],
+          status: app.status || 'NEW',
+          guardianName: app.guardianName || '',
+          guardianPhone: app.guardianPhone || '',
+          guardianEmail: app.guardianEmail || '',
+          submittedAt: app.submittedAt || app.createdAt || new Date().toISOString(),
+          children: (app.ApplicationChild || []).map((child: any) => ({
+            firstName: child.firstName || '',
+            lastName: child.lastName || '',
+            dob: child.dob ? (typeof child.dob === 'string' ? child.dob : child.dob.toISOString().split('T')[0]) : undefined,
+            gender: child.gender || ''
+          })),
           preferredClass: app.preferredClass || '',
           additionalNotes: app.additionalNotes || '',
           adminNotes: app.adminNotes || ''
@@ -282,74 +287,74 @@ export function ApplicationsPageClient({ orgSlug }: ApplicationsPageClientProps)
         <div className="flex flex-wrap gap-2 items-center justify-between">
           <div className="flex flex-wrap gap-2">
             <Button
-              variant={statusFilter === 'ALL' ? 'default' : 'outline'}
+              variant="outline"
               size="sm"
               onClick={() => setStatusFilter('ALL')}
-              className={`${
+              className={`transition-all ${
                 statusFilter === 'ALL' 
-                  ? 'bg-gray-600 hover:bg-gray-700 text-white' 
-                  : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                  ? 'bg-[var(--foreground)] text-[var(--background)] border-[var(--foreground)] shadow-[var(--shadow-xs)] font-semibold' 
+                  : 'border-[var(--border)] text-[var(--muted-foreground)] hover:bg-[var(--accent)] hover:text-[var(--accent-foreground)] hover:border-[var(--foreground)]/20'
               }`}
             >
               All Statuses
             </Button>
             <Button
-              variant={statusFilter === 'NEW' ? 'default' : 'outline'}
+              variant="outline"
               size="sm"
               onClick={() => setStatusFilter('NEW')}
-              className={`${
+              className={`transition-all ${
                 statusFilter === 'NEW' 
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                  : 'border-blue-300 text-blue-600 hover:bg-blue-50'
+                  ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-[var(--shadow-xs)] font-semibold dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800' 
+                  : 'border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-950'
               }`}
             >
-              <Clock className="h-4 w-4 mr-1" />
+              <Clock className="h-3.5 w-3.5 mr-1.5" />
               New
             </Button>
             <Button
-              variant={statusFilter === 'REVIEWED' ? 'default' : 'outline'}
+              variant="outline"
               size="sm"
               onClick={() => setStatusFilter('REVIEWED')}
-              className={`${
+              className={`transition-all ${
                 statusFilter === 'REVIEWED' 
-                  ? 'bg-yellow-600 hover:bg-yellow-700 text-white' 
-                  : 'border-yellow-300 text-yellow-600 hover:bg-yellow-50'
+                  ? 'bg-amber-50 text-amber-700 border-amber-200 shadow-[var(--shadow-xs)] font-semibold dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800' 
+                  : 'border-amber-200 text-amber-600 hover:bg-amber-50 hover:border-amber-300 dark:border-amber-800 dark:text-amber-400 dark:hover:bg-amber-950'
               }`}
             >
-              <Eye className="h-4 w-4 mr-1" />
+              <Eye className="h-3.5 w-3.5 mr-1.5" />
               Reviewed
             </Button>
             <Button
-              variant={statusFilter === 'ACCEPTED' ? 'default' : 'outline'}
+              variant="outline"
               size="sm"
               onClick={() => setStatusFilter('ACCEPTED')}
-              className={`${
+              className={`transition-all ${
                 statusFilter === 'ACCEPTED' 
-                  ? 'bg-green-600 hover:bg-green-700 text-white' 
-                  : 'border-green-300 text-green-600 hover:bg-green-50'
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-[var(--shadow-xs)] font-semibold dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800' 
+                  : 'border-emerald-200 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-300 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950'
               }`}
             >
-              <CheckCircle className="h-4 w-4 mr-1" />
+              <CheckCircle className="h-3.5 w-3.5 mr-1.5" />
               Accepted
             </Button>
             <Button
-              variant={statusFilter === 'REJECTED' ? 'default' : 'outline'}
+              variant="outline"
               size="sm"
               onClick={() => setStatusFilter('REJECTED')}
-              className={`${
+              className={`transition-all ${
                 statusFilter === 'REJECTED' 
-                  ? 'bg-red-600 hover:bg-red-700 text-white' 
-                  : 'border-red-300 text-red-600 hover:bg-red-50'
+                  ? 'bg-red-50 text-red-700 border-red-200 shadow-[var(--shadow-xs)] font-semibold dark:bg-red-950 dark:text-red-300 dark:border-red-800' 
+                  : 'border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950'
               }`}
             >
-              <XCircle className="h-4 w-4 mr-1" />
+              <XCircle className="h-3.5 w-3.5 mr-1.5" />
               Rejected
             </Button>
           </div>
           
           {/* Date Filter Dropdown */}
           <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700">Sort by:</label>
+            <label className="text-sm font-medium text-[var(--muted-foreground)]">Sort by:</label>
             <Select
               value={dateFilter}
               onValueChange={(value: 'MOST_RECENT' | 'OLDEST') => setDateFilter(value)}
