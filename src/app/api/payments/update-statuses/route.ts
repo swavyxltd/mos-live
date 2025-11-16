@@ -3,13 +3,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireRole, requireOrg } from '@/lib/roles'
 import { prisma } from '@/lib/prisma'
 import { calculatePaymentStatus } from '@/lib/payment-status'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
 /**
  * POST /api/payments/update-statuses
  * Updates payment record statuses based on due dates
  * Can be called periodically or on-demand
  */
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     const session = await requireRole(['ADMIN', 'OWNER'])(request)
     if (session instanceof NextResponse) return session
@@ -62,11 +64,17 @@ export async function POST(request: NextRequest) {
       total: unpaidRecords.length
     })
   } catch (error: any) {
-    console.error('Error updating payment statuses:', error)
+    logger.error('Error updating payment statuses', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: error.message || 'Failed to update payment statuses' },
+      { 
+        error: 'Failed to update payment statuses',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const POST = withRateLimit(handlePOST)
 

@@ -2,8 +2,10 @@ export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRole, requireOrg } from '@/lib/roles'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
-export async function POST(
+async function handlePOST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
@@ -56,8 +58,17 @@ export async function POST(
     })
     
     return NextResponse.json(student)
-  } catch (error) {
-    console.error('Archive student error:', error)
-    return NextResponse.json({ error: 'Failed to archive student' }, { status: 500 })
+  } catch (error: any) {
+    logger.error('Archive student error', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
+    return NextResponse.json(
+      { 
+        error: 'Failed to archive student',
+        ...(isDevelopment && { details: error?.message })
+      },
+      { status: 500 }
+    )
   }
 }
+
+export const POST = withRateLimit(handlePOST)

@@ -4,8 +4,11 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import crypto from 'crypto'
 import { sendOrgSetupInvitation } from '@/lib/mail'
+import { logger } from '@/lib/logger'
+import { sanitizeText, isValidEmail, isValidPhone, MAX_STRING_LENGTHS } from '@/lib/input-validation'
+import { withRateLimit } from '@/lib/api-middleware'
 
-export async function GET(request: NextRequest) {
+async function handleGET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
@@ -37,15 +40,19 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(orgs)
 
   } catch (error: any) {
-    console.error('Error fetching organizations:', error)
+    logger.error('Error fetching organizations', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to fetch organizations', details: error.message },
+      { 
+        error: 'Failed to fetch organizations',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
@@ -67,20 +74,54 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Generate slug from name and city if not provided
-    let finalSlug = slug
-    if (!finalSlug) {
-      const nameSlug = name.toLowerCase()
-        .trim()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '')
+    // Sanitize and validate inputs
+    const sanitizedName = sanitizeText(name, MAX_STRING_LENGTHS.name)
+    const sanitizedDescription = description ? sanitizeText(description, MAX_STRING_LENGTHS.text) : null
+    const sanitizedAddress = address ? sanitizeText(address, MAX_STRING_LENGTHS.text) : null
+    const sanitizedAddressLine1 = addressLine1 ? sanitizeText(addressLine1, MAX_STRING_LENGTHS.text) : null
+    const sanitizedPostcode = postcode ? sanitizeText(postcode, 20) : null
+    const sanitizedCity = city ? sanitizeText(city, MAX_STRING_LENGTHS.name) : null
+    const sanitizedPhone = phone ? sanitizeText(phone, MAX_STRING_LENGTHS.phone) : null
+    const sanitizedEmail = email ? email.toLowerCase().trim() : null
+    const sanitizedWebsite = website ? website.trim() : null
+    const sanitizedAdminEmail = adminEmail ? adminEmail.toLowerCase().trim() : null
+
+    // Validate emails if provided
+    if (sanitizedEmail && !isValidEmail(sanitizedEmail)) {
+      return NextResponse.json(
+        { error: 'Invalid email format' },
+        { status: 400 }
+      )
+    }
+
+    if (sanitizedAdminEmail && !isValidEmail(sanitizedAdminEmail)) {
+      return NextResponse.json(
+        { error: 'Invalid admin email format' },
+        { status: 400 }
+      )
+    }
+
+    if (sanitizedPhone && !isValidPhone(sanitizedPhone)) {
+      return NextResponse.json(
+        { error: 'Invalid phone number format' },
+        { status: 400 }
+      )
+    }
+
+      // Generate slug from name and city if not provided
+      let finalSlug = slug
+      if (!finalSlug) {
+        const nameSlug = sanitizedName.toLowerCase()
+          .trim()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '')
       
-      const citySlug = city 
-        ? city.toLowerCase()
-            .trim()
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/^-+|-+$/g, '')
-        : ''
+        const citySlug = sanitizedCity 
+          ? sanitizedCity.toLowerCase()
+              .trim()
+              .replace(/[^a-z0-9]+/g, '-')
+              .replace(/^-+|-+$/g, '')
+          : ''
       
       // Combine name and city
       finalSlug = citySlug 
@@ -108,7 +149,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (!adminEmail) {
+    if (!sanitizedAdminEmail) {
       return NextResponse.json(
         { error: 'Admin email is required to send invitation' },
         { status: 400 }
@@ -118,18 +159,18 @@ export async function POST(request: NextRequest) {
     // Create org
     const org = await prisma.org.create({
       data: {
-        name,
+        name: sanitizedName,
         slug: finalSlug,
         timezone: timezone || 'Europe/London',
         settings: JSON.stringify({ lateThreshold: 15 }),
         status: 'ACTIVE',
         // Optional fields (only include if they exist in schema)
-        address: address || undefined,
-        addressLine1: addressLine1 || undefined,
-        postcode: postcode || undefined,
-        city: city || undefined,
-        phone: phone || undefined,
-        email: email || undefined
+        address: sanitizedAddress || undefined,
+        addressLine1: sanitizedAddressLine1 || undefined,
+        postcode: sanitizedPostcode || undefined,
+        city: sanitizedCity || undefined,
+        phone: sanitizedPhone || undefined,
+        email: sanitizedEmail || undefined
         // Note: description and website are not in the Org schema
       }
     })
@@ -143,7 +184,7 @@ export async function POST(request: NextRequest) {
     await prisma.invitation.create({
       data: {
         orgId: org.id,
-        email: adminEmail,
+        email: sanitizedAdminEmail,
         role: 'ADMIN',
         token,
         expiresAt
@@ -156,25 +197,26 @@ export async function POST(request: NextRequest) {
       const cleanBaseUrl = baseUrl.trim().replace(/\/+$/, '')
       const signupUrl = `${cleanBaseUrl}/auth/signup?token=${token}`
       
-      console.log('📧 Attempting to send org setup invitation:', {
-        to: adminEmail,
-        orgName: name,
-        signupUrl,
+      logger.info('Sending org setup invitation', {
+        to: sanitizedAdminEmail,
+        orgName: sanitizedName,
         hasResendKey: !!process.env.RESEND_API_KEY
       })
       
       await sendOrgSetupInvitation({
-        to: adminEmail,
-        orgName: name,
+        to: sanitizedAdminEmail,
+        orgName: sanitizedName,
         signupUrl
       })
       
-      console.log('✅ Org setup invitation email sent successfully')
+      logger.info('Org setup invitation email sent successfully', {
+        to: sanitizedAdminEmail,
+        orgId: org.id
+      })
     } catch (emailError: any) {
-      console.error('❌ Failed to send invitation email:', {
-        error: emailError,
-        message: emailError?.message,
-        stack: emailError?.stack
+      logger.error('Failed to send invitation email', emailError, {
+        to: sanitizedAdminEmail,
+        orgId: org.id
       })
       // Don't fail org creation if email fails, but log it
     }
@@ -190,7 +232,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error: any) {
-    console.error('Error creating organization:', error)
+    logger.error('Error creating organization', error)
     
     // Handle unique constraint violation
     if (error.code === 'P2002') {
@@ -200,10 +242,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to create organization', details: error.message },
+      { 
+        error: 'Failed to create organization',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const GET = withRateLimit(handleGET)
+export const POST = withRateLimit(handlePOST)
 

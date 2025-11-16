@@ -2,27 +2,21 @@ export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRole, requireOrg } from '@/lib/roles'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
 // GET: Fetch payment records with filters
-export async function GET(request: NextRequest) {
+async function handleGET(request: NextRequest) {
   try {
-    console.log('[API] GET /api/payments/records - Starting request')
-    
     const session = await requireRole(['ADMIN', 'OWNER'])(request)
     if (session instanceof NextResponse) {
-      console.log('[API] Session check failed:', session.status)
       return session
     }
-
-    console.log('[API] Session validated, user:', session.user?.email)
     
     const orgId = await requireOrg(request)
     if (orgId instanceof NextResponse) {
-      console.log('[API] Org check failed:', orgId.status)
       return orgId
     }
-    
-    console.log('[API] Org ID:', orgId)
 
     const { searchParams } = new URL(request.url)
     const month = searchParams.get('month')
@@ -60,27 +54,14 @@ export async function GET(request: NextRequest) {
       ]
     })
 
-    console.log(`[API] Found ${records.length} payment records for org ${orgId}`)
-    console.log(`[API] Records:`, records.map(r => ({ id: r.id, month: r.month, status: r.status, student: `${r.Student.firstName} ${r.Student.lastName}` })))
-
     return NextResponse.json(records)
   } catch (error: any) {
-    console.error('[API] ❌ Error fetching payment records:', error)
-    console.error('[API] Error details:', {
-      message: error?.message || 'Unknown error',
-      stack: error?.stack || 'No stack trace',
-      name: error?.name || 'Unknown',
-      cause: error?.cause || 'No cause'
-    })
-    
-    // Return a more detailed error response
+    logger.error('Error fetching payment records', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
       { 
-        error: error?.message || 'Failed to fetch payment records',
-        details: process.env.NODE_ENV === 'development' ? {
-          stack: error?.stack,
-          name: error?.name
-        } : undefined
+        error: 'Failed to fetch payment records',
+        ...(isDevelopment && { details: error?.message })
       },
       { status: 500 }
     )
@@ -88,7 +69,7 @@ export async function GET(request: NextRequest) {
 }
 
 // PATCH: Update payment record (mark as paid, add notes, etc.)
-export async function PATCH(request: NextRequest) {
+async function handlePATCH(request: NextRequest) {
   try {
     const session = await requireRole(['ADMIN', 'OWNER'])(request)
     if (session instanceof NextResponse) return session
@@ -187,20 +168,30 @@ export async function PATCH(request: NextRequest) {
           paymentMethod: currentRecord.method || 'Unknown',
           reference: reference || currentRecord.reference
         })
-        console.log(`✅ Payment confirmation email sent to ${currentRecord.Student.User.email}`)
-      } catch (emailError) {
-        console.error('Error sending payment confirmation email:', emailError)
+        logger.info('Payment confirmation email sent', {
+          to: currentRecord.Student.User.email,
+          studentId: currentRecord.Student.id
+        })
+      } catch (emailError: any) {
+        logger.error('Error sending payment confirmation email', emailError)
         // Don't fail the request if email fails
       }
     }
 
     return NextResponse.json(record)
   } catch (error: any) {
-    console.error('Error updating payment record:', error)
+    logger.error('Error updating payment record', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: error.message || 'Failed to update payment record' },
+      { 
+        error: 'Failed to update payment record',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const GET = withRateLimit(handleGET)
+export const PATCH = withRateLimit(handlePATCH)
 

@@ -4,8 +4,11 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { getActiveOrg } from '@/lib/org'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
+import { sanitizeText, MAX_STRING_LENGTHS } from '@/lib/input-validation'
+import { withRateLimit } from '@/lib/api-middleware'
 
-export async function PUT(request: NextRequest) {
+async function handlePUT(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
@@ -35,20 +38,32 @@ export async function PUT(request: NextRequest) {
       slug // Allow manual slug update
     } = body
 
+    // Sanitize inputs
+    const sanitizedName = name ? sanitizeText(name, MAX_STRING_LENGTHS.name) : undefined
+    const sanitizedAddress = address ? sanitizeText(address, MAX_STRING_LENGTHS.text) : undefined
+    const sanitizedAddressLine1 = addressLine1 ? sanitizeText(addressLine1, MAX_STRING_LENGTHS.text) : undefined
+    const sanitizedPostcode = postcode ? sanitizeText(postcode, 20) : undefined
+    const sanitizedCity = city ? sanitizeText(city, MAX_STRING_LENGTHS.name) : undefined
+    const sanitizedPhone = phone ? sanitizeText(phone, MAX_STRING_LENGTHS.phone) : undefined
+    const sanitizedPublicPhone = publicPhone ? sanitizeText(publicPhone, MAX_STRING_LENGTHS.phone) : undefined
+    const sanitizedEmail = email ? email.toLowerCase().trim() : undefined
+    const sanitizedPublicEmail = publicEmail ? publicEmail.toLowerCase().trim() : undefined
+    const sanitizedOfficeHours = officeHours ? sanitizeText(officeHours, MAX_STRING_LENGTHS.text) : undefined
+
     // If name or city changed, update slug automatically (unless slug is explicitly provided)
     let newSlug = slug || org.slug
     const currentCity = (org as any).city || ''
-    const shouldUpdateSlug = (name && name !== org.name) || (city && city !== currentCity)
+    const shouldUpdateSlug = (sanitizedName && sanitizedName !== org.name) || (sanitizedCity && sanitizedCity !== currentCity)
     
     if (shouldUpdateSlug && !slug) {
       // Generate slug from name and city
-      const nameSlug = name.toLowerCase()
+      const nameSlug = (sanitizedName || org.name).toLowerCase()
         .trim()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '')
       
-      const citySlug = city 
-        ? city.toLowerCase()
+      const citySlug = sanitizedCity 
+        ? sanitizedCity.toLowerCase()
             .trim()
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/^-+|-+$/g, '')
@@ -87,18 +102,18 @@ export async function PUT(request: NextRequest) {
     const updatedOrg = await prisma.org.update({
       where: { id: org.id },
       data: {
-        name,
+        ...(sanitizedName && { name: sanitizedName }),
         slug: newSlug,
-        timezone,
-        address: address || undefined, // Keep legacy address for backward compatibility
-        addressLine1: addressLine1 || undefined,
-        postcode: postcode || undefined,
-        city: city || undefined,
-        phone: phone || undefined,
-        publicPhone: publicPhone || undefined,
-        email: email || undefined,
-        publicEmail: publicEmail || undefined,
-        officeHours: officeHours || undefined,
+        ...(timezone && { timezone }),
+        ...(sanitizedAddress !== undefined && { address: sanitizedAddress }),
+        ...(sanitizedAddressLine1 !== undefined && { addressLine1: sanitizedAddressLine1 }),
+        ...(sanitizedPostcode !== undefined && { postcode: sanitizedPostcode }),
+        ...(sanitizedCity !== undefined && { city: sanitizedCity }),
+        ...(sanitizedPhone !== undefined && { phone: sanitizedPhone }),
+        ...(sanitizedPublicPhone !== undefined && { publicPhone: sanitizedPublicPhone }),
+        ...(sanitizedEmail !== undefined && { email: sanitizedEmail }),
+        ...(sanitizedPublicEmail !== undefined && { publicEmail: sanitizedPublicEmail }),
+        ...(sanitizedOfficeHours !== undefined && { officeHours: sanitizedOfficeHours }),
         settings: JSON.stringify({
           lateThreshold
         })
@@ -109,16 +124,20 @@ export async function PUT(request: NextRequest) {
       success: true, 
       organization: updatedOrg 
     })
-  } catch (error) {
-    console.error('Error updating organization settings:', error)
+  } catch (error: any) {
+    logger.error('Error updating organization settings', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to update organization settings' },
+      { 
+        error: 'Failed to update organization settings',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
 
-export async function GET() {
+async function handleGET() {
   try {
     const session = await getServerSession(authOptions)
     
@@ -148,11 +167,18 @@ export async function GET() {
       publicEmail: (org as any).publicEmail || '',
       officeHours: org.officeHours || ''
     })
-  } catch (error) {
-    console.error('Error fetching organization settings:', error)
+  } catch (error: any) {
+    logger.error('Error fetching organization settings', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to fetch organization settings' },
+      { 
+        error: 'Failed to fetch organization settings',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const PUT = withRateLimit(handlePUT)
+export const GET = withRateLimit(handleGET)

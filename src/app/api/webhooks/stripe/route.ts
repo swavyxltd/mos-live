@@ -5,8 +5,9 @@ import { headers } from 'next/headers'
 import { stripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
 import { sendPaymentFailedPlatform } from '@/lib/mail'
+import { logger } from '@/lib/logger'
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   const body = await request.text()
   const signature = headers().get('stripe-signature')
 
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
       process.env.STRIPE_WEBHOOK_SECRET!
     )
   } catch (err: any) {
-    console.error('Webhook signature verification failed:', err.message)
+    logger.error('Webhook signature verification failed', err)
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }
 
@@ -59,15 +60,17 @@ export async function POST(request: NextRequest) {
         break
       
       default:
-        console.log(`Unhandled event type: ${event.type}`)
+        logger.info('Unhandled webhook event type', { eventType: event.type })
     }
 
     return NextResponse.json({ received: true })
-  } catch (error) {
-    console.error('Webhook handler error:', error)
+  } catch (error: any) {
+    logger.error('Webhook handler error', error)
     return NextResponse.json({ error: 'Webhook handler failed' }, { status: 500 })
   }
 }
+
+export const POST = handlePOST // Webhooks don't need rate limiting, they're verified by signature
 
 async function handlePaymentIntentSucceeded(paymentIntent: any) {
   const { metadata } = paymentIntent
@@ -152,7 +155,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: any) {
         }
       })
     } catch (error: any) {
-      console.error('Error processing platform overdue payment:', error)
+      logger.error('Error processing platform overdue payment', error)
     }
     return
   }

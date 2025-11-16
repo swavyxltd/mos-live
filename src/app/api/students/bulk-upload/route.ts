@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth'
 import { getActiveOrg } from '@/lib/org'
 import { prisma } from '@/lib/prisma'
 import { parse } from 'csv-parse/sync'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
 interface CSVRow {
   firstName: string
@@ -20,7 +22,7 @@ interface ValidatedRow extends CSVRow {
   existingStudentId?: string
 }
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
@@ -171,11 +173,17 @@ export async function POST(request: NextRequest) {
       duplicateRows: validatedRows.filter(r => r.isDuplicate).length
     })
   } catch (error: any) {
-    console.error('Error processing CSV:', error)
+    logger.error('Error processing CSV', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to process CSV file', details: error.message },
+      { 
+        error: 'Failed to process CSV file',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const POST = withRateLimit(handlePOST, { upload: true })
 

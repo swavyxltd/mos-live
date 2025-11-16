@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPlatformSettings } from '@/lib/platform-settings'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
-export async function GET(request: NextRequest) {
+async function handleGET(request: NextRequest) {
   try {
     const settings = await getPlatformSettings()
     
@@ -36,11 +38,17 @@ export async function GET(request: NextRequest) {
       hoursUntil: hoursUntil
     })
   } catch (error: any) {
-    console.error('Error fetching maintenance notification:', error)
+    logger.error('Error fetching maintenance notification', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to fetch maintenance notification', details: error.message },
+      { 
+        error: 'Failed to fetch maintenance notification',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const GET = withRateLimit(handleGET)
 

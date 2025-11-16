@@ -4,8 +4,10 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { getActiveOrg } from '@/lib/org'
 import { checkPaymentMethod } from '@/lib/payment-check'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -868,8 +870,8 @@ export async function POST(request: NextRequest) {
           'Cache-Control': 'no-cache'
         }
       })
-    } catch (pdfError) {
-      console.error('PDF generation error:', pdfError)
+    } catch (pdfError: any) {
+      logger.error('PDF generation error', pdfError)
       
       // Fallback to HTML if PDF fails
       const reportHtml = `
@@ -943,16 +945,14 @@ export async function POST(request: NextRequest) {
       })
     }
 
-  } catch (error) {
-    console.error('Error generating report:', error)
-    console.error('Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      name: error instanceof Error ? error.name : undefined
-    })
+  } catch (error: any) {
+    logger.error('Error generating report', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json({ 
-      error: 'Failed to generate report', 
-      details: error instanceof Error ? error.message : 'Unknown error'
+      error: 'Failed to generate report',
+      ...(isDevelopment && { details: error?.message })
     }, { status: 500 })
   }
 }
+
+export const POST = withRateLimit(handlePOST)

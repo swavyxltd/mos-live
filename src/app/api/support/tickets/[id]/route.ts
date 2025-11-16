@@ -4,9 +4,12 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { getActiveOrg } from '@/lib/org'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
+import { sanitizeText, MAX_STRING_LENGTHS } from '@/lib/input-validation'
+import { withRateLimit } from '@/lib/api-middleware'
 
 // GET /api/support/tickets/[id] - Get a specific support ticket
-export async function GET(
+async function handleGET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
@@ -42,14 +45,21 @@ export async function GET(
     }
 
     return NextResponse.json(ticket)
-  } catch (error) {
-    console.error('Error fetching support ticket:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  } catch (error: any) {
+    logger.error('Error fetching support ticket', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
+    return NextResponse.json(
+      { 
+        error: 'Internal server error',
+        ...(isDevelopment && { details: error?.message })
+      },
+      { status: 500 }
+    )
   }
 }
 
 // PATCH /api/support/tickets/[id] - Update a support ticket
-export async function PATCH(
+async function handlePATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
@@ -81,8 +91,8 @@ export async function PATCH(
 
     const updateData: any = {}
     if (status) updateData.status = status
-    if (subject) updateData.subject = subject
-    if (ticketBody) updateData.body = ticketBody
+    if (subject) updateData.subject = sanitizeText(subject, MAX_STRING_LENGTHS.title)
+    if (ticketBody) updateData.body = sanitizeText(ticketBody, MAX_STRING_LENGTHS.body)
 
     const ticket = await prisma.supportTicket.update({
       where: { id: params.id },
@@ -99,14 +109,21 @@ export async function PATCH(
     })
 
     return NextResponse.json(ticket)
-  } catch (error) {
-    console.error('Error updating support ticket:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  } catch (error: any) {
+    logger.error('Error updating support ticket', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
+    return NextResponse.json(
+      { 
+        error: 'Internal server error',
+        ...(isDevelopment && { details: error?.message })
+      },
+      { status: 500 }
+    )
   }
 }
 
 // DELETE /api/support/tickets/[id] - Delete a support ticket
-export async function DELETE(
+async function handleDELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
@@ -138,8 +155,19 @@ export async function DELETE(
     })
 
     return NextResponse.json({ message: 'Ticket deleted successfully' })
-  } catch (error) {
-    console.error('Error deleting support ticket:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  } catch (error: any) {
+    logger.error('Error deleting support ticket', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
+    return NextResponse.json(
+      { 
+        error: 'Internal server error',
+        ...(isDevelopment && { details: error?.message })
+      },
+      { status: 500 }
+    )
   }
 }
+
+export const GET = withRateLimit(handleGET)
+export const PATCH = withRateLimit(handlePATCH)
+export const DELETE = withRateLimit(handleDELETE)

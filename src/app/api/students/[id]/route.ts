@@ -120,12 +120,15 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: 'Student not found' }, { status: 404 })
     }
 
-    // Handle parent update/create if parent info is provided
-    if (parentName || parentEmail || parentPhone) {
-      if (existingStudent.primaryParentId) {
-        // Update existing parent
-        try {
-          await prisma.user.update({
+    // Use transaction to ensure all updates are atomic
+    const finalStudent = await prisma.$transaction(async (tx) => {
+      // Handle parent update/create if parent info is provided
+      let parentUserId = existingStudent.primaryParentId
+      
+      if (parentName || parentEmail || parentPhone) {
+        if (existingStudent.primaryParentId) {
+          // Update existing parent
+          await tx.user.update({
             where: { id: existingStudent.primaryParentId },
             data: {
               ...(parentName && { name: parentName }),
@@ -133,19 +136,15 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
               ...(parentPhone && { phone: parentPhone })
             }
           })
-        } catch (parentError) {
-          logger.error('Error updating parent', parentError)
-          // Don't fail the entire request if parent update fails
-        }
-      } else if (parentEmail) {
-        // Create new parent if email is provided
-        try {
-          let parentUser = await prisma.user.findUnique({
+          parentUserId = existingStudent.primaryParentId
+        } else if (parentEmail) {
+          // Create new parent if email is provided
+          let parentUser = await tx.user.findUnique({
             where: { email: parentEmail.toLowerCase().trim() }
           })
 
           if (!parentUser) {
-            parentUser = await prisma.user.create({
+            parentUser = await tx.user.create({
               data: {
                 email: parentEmail.toLowerCase().trim(),
                 name: parentName || '',
@@ -154,7 +153,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
             })
 
             // Add parent to organization
-            await prisma.userOrgMembership.upsert({
+            await tx.userOrgMembership.upsert({
               where: {
                 userId_orgId: {
                   userId: parentUser.id,
@@ -170,7 +169,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
             })
           } else {
             // Update existing user
-            await prisma.user.update({
+            await tx.user.update({
               where: { id: parentUser.id },
               data: {
                 ...(parentName && { name: parentName }),
@@ -178,81 +177,58 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
               }
             })
           }
-
-          // Link student to parent
-          await prisma.student.update({
-            where: { id },
-            data: { primaryParentId: parentUser.id }
-          })
-        } catch (parentError) {
-          logger.error('Error creating/updating parent', parentError)
-          // Don't fail the entire request if parent creation fails
+          parentUserId = parentUser.id
         }
       }
-    }
 
-    // Update the student
-    const updatedStudent = await prisma.student.update({
-      where: { id, orgId },
-      data: {
-        firstName,
-        lastName,
-        dob: dateOfBirth ? new Date(dateOfBirth) : null,
-        allergies,
-        medicalNotes,
-        updatedAt: new Date()
-      },
-      include: {
-        User: true,
-        StudentClass: {
-          include: {
-            Class: true
-          }
+      // Update the student
+      await tx.student.update({
+        where: { id, orgId },
+        data: {
+          firstName,
+          lastName,
+          dob: dateOfBirth ? new Date(dateOfBirth) : null,
+          allergies,
+          medicalNotes,
+          ...(parentUserId && { primaryParentId: parentUserId }),
+          updatedAt: new Date()
         }
-      }
-    })
-
-    // Handle class enrollments if provided
-    if (selectedClasses && Array.isArray(selectedClasses)) {
-      // Remove existing class enrollments
-      await prisma.studentClass.deleteMany({
-        where: { studentId: id }
       })
 
-      // Add new class enrollments
-      if (selectedClasses.length > 0) {
-        // Use individual creates to ensure IDs are generated
-        for (const classId of selectedClasses) {
-          await prisma.studentClass.upsert({
-            where: {
-              studentId_classId: {
-                studentId: id,
-                classId: classId
-              }
-            },
-            update: {},
-            create: {
+      // Handle class enrollments if provided
+      if (selectedClasses && Array.isArray(selectedClasses)) {
+        // Remove existing class enrollments
+        await tx.studentClass.deleteMany({
+          where: { studentId: id }
+        })
+
+        // Add new class enrollments
+        if (selectedClasses.length > 0) {
+          // Batch create class enrollments
+          await tx.studentClass.createMany({
+            data: selectedClasses.map((classId: string) => ({
               id: `student-class-${id}-${classId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
               studentId: id,
               classId: classId,
               orgId
-            }
+            })),
+            skipDuplicates: true
           })
         }
       }
-    }
 
-    // Refetch student with all relations to return complete data
-    const finalStudent = await prisma.student.findUnique({
-      where: { id, orgId },
-      include: {
-        User: true,
-        StudentClass: {
-          include: {
-            Class: true
+      // Refetch student with all relations to return complete data
+      return await tx.student.findUnique({
+        where: { id, orgId },
+        include: {
+          User: true,
+          StudentClass: {
+            include: {
+              Class: true
+            }
           }
         }
-      }
+      })
     })
 
     if (!finalStudent) {

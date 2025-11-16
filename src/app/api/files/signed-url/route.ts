@@ -2,8 +2,10 @@ export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAuth, requireOrg } from '@/lib/roles'
 import { createSignedUrl } from '@/lib/storage'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
-export async function GET(request: NextRequest) {
+async function handleGET(request: NextRequest) {
   try {
     const session = await requireAuth(request)
     if (session instanceof NextResponse) return session
@@ -30,11 +32,17 @@ export async function GET(request: NextRequest) {
       signedUrl,
       expiresIn
     })
-  } catch (error) {
-    console.error('Signed URL error:', error)
+  } catch (error: any) {
+    logger.error('Signed URL error', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to create signed URL' },
+      { 
+        error: 'Failed to create signed URL',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const GET = withRateLimit(handleGET)

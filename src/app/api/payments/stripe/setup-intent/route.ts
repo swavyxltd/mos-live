@@ -2,8 +2,10 @@ export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRole, requireOrg } from '@/lib/roles'
 import { createSetupIntent } from '@/lib/stripe'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     const session = await requireRole(['PARENT'])(request)
     if (session instanceof NextResponse) return session
@@ -17,11 +19,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       clientSecret: setupIntent.client_secret
     })
-  } catch (error) {
-    console.error('Setup intent error:', error)
+  } catch (error: any) {
+    logger.error('Setup intent error', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to create setup intent' },
+      { 
+        error: 'Failed to create setup intent',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const POST = withRateLimit(handlePOST)

@@ -3,8 +3,11 @@ import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { checkEmailRateLimit } from '@/lib/rate-limit'
 import { generateTwoFactorCode, sendTwoFactorCode, storeTwoFactorCode, isTwoFactorEnabled } from '@/lib/two-factor'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
+import { isValidEmail } from '@/lib/input-validation'
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     const body = await request.json()
     const { email, password, twoFactorCode, pendingUserId } = body
@@ -37,9 +40,19 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Validate email format
+    const sanitizedEmail = email.toLowerCase().trim()
+    if (!isValidEmail(sanitizedEmail)) {
+      return NextResponse.json(
+        { error: 'Invalid email format' },
+        { status: 400 }
+      )
+    }
+
     // Check rate limit
-    const emailRateLimit = checkEmailRateLimit(email)
+    const emailRateLimit = checkEmailRateLimit(sanitizedEmail)
     if (!emailRateLimit.allowed) {
+      logger.warn('Rate limit exceeded for signin', { email: sanitizedEmail })
       return NextResponse.json(
         { error: 'Too many login attempts. Please try again later.' },
         { status: 429 }
@@ -47,7 +60,7 @@ export async function POST(request: NextRequest) {
     }
 
     const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() }
+      where: { email: sanitizedEmail }
     })
 
     if (!user) {
@@ -134,13 +147,17 @@ export async function POST(request: NextRequest) {
       requiresTwoFactor: false
     })
   } catch (error: any) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Signin error:', error)
-    }
+    logger.error('Signin error', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'An error occurred during sign in' },
+      { 
+        error: 'An error occurred during sign in',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const POST = withRateLimit(handlePOST, { strict: true })
 

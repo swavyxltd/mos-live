@@ -3,8 +3,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
@@ -160,11 +162,17 @@ export async function POST(request: NextRequest) {
 
     return response
 
-  } catch (error) {
-    console.error('Error generating subscription payments CSV:', error)
+  } catch (error: any) {
+    logger.error('Error generating subscription payments CSV', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to generate subscription payments CSV' },
+      { 
+        error: 'Failed to generate subscription payments CSV',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const POST = withRateLimit(handlePOST)

@@ -3,8 +3,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
+import { sanitizeText, MAX_STRING_LENGTHS } from '@/lib/input-validation'
+import { withRateLimit } from '@/lib/api-middleware'
 
-export async function POST(
+async function handlePOST(
   request: NextRequest,
   { params }: { params: Promise<{ orgId: string }> | { orgId: string } }
 ) {
@@ -20,13 +23,16 @@ export async function POST(
     const resolvedParams = await Promise.resolve(params)
     const { orgId } = resolvedParams
 
+    // Sanitize reason
+    const sanitizedReason = reason ? sanitizeText(reason, MAX_STRING_LENGTHS.text) : 'Account paused by platform administrator'
+
     // Update organization status to PAUSED
     const updatedOrg = await prisma.org.update({
       where: { id: orgId },
       data: {
         status: 'PAUSED',
         pausedAt: new Date(),
-        pausedReason: reason || 'Account paused by platform administrator'
+        pausedReason: sanitizedReason
       },
       include: {
         memberships: {
@@ -56,7 +62,7 @@ export async function POST(
         targetId: orgId,
         data: JSON.stringify({
           orgName: updatedOrg.name,
-          reason: reason || 'Account paused by platform administrator',
+          reason: sanitizedReason,
           affectedUsers: updatedOrg.memberships.map(m => ({
             userId: m.user.id,
             userName: m.user.name,
@@ -74,26 +80,22 @@ export async function POST(
     })
 
   } catch (error: any) {
-    console.error('Error pausing organization:', error)
-    console.error('Error details:', {
-      message: error?.message,
-      stack: error?.stack,
-      name: error?.name,
-      code: error?.code,
-      meta: error?.meta
-    })
+    logger.error('Error pausing organization', error)
     
     // Check if it's a Prisma field error
     if (error?.code === 'P2002' || error?.message?.includes('Unknown column') || error?.message?.includes('column') || error?.message?.includes('does not exist')) {
       return NextResponse.json({ 
         error: 'Database schema error. Please run migrations to add pausedAt and pausedReason fields.',
-        details: process.env.NODE_ENV === 'development' ? error?.message : undefined
+        ...(process.env.NODE_ENV === 'development' && { details: error?.message })
       }, { status: 500 })
     }
     
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json({ 
       error: 'Failed to pause organization',
-      details: process.env.NODE_ENV === 'development' ? error?.message : undefined
+      ...(isDevelopment && { details: error?.message })
     }, { status: 500 })
   }
 }
+
+export const POST = withRateLimit(handlePOST)

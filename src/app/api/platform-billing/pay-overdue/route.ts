@@ -3,8 +3,10 @@ import { requireRole } from '@/lib/roles'
 import { prisma } from '@/lib/prisma'
 import { stripe } from '@/lib/stripe'
 import { getActiveOrg } from '@/lib/org'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     const session = await requireRole(['ADMIN', 'OWNER'])(request)
     if (session instanceof NextResponse) return session
@@ -133,7 +135,7 @@ export async function POST(request: NextRequest) {
           }
         })
       } catch (stripeError: any) {
-        console.error('Stripe invoice payment error:', stripeError)
+        logger.error('Stripe invoice payment error', stripeError)
         
         // If payment method is required, return client secret for payment intent
         if (stripeError.code === 'payment_method_required' || stripeError.code === 'invoice_payment_intent_requires_action') {
@@ -234,7 +236,7 @@ export async function POST(request: NextRequest) {
         }
       })
     } catch (stripeError: any) {
-      console.error('Stripe invoice payment error:', stripeError)
+      logger.error('Stripe invoice payment error', stripeError)
       
       // If payment method is required, return client secret for payment intent
       if (stripeError.code === 'payment_method_required' || stripeError.code === 'invoice_payment_intent_requires_action') {
@@ -263,16 +265,20 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
   } catch (error: any) {
-    console.error('Error paying overdue invoice:', error)
+    logger.error('Error paying overdue invoice', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to process payment', details: error.message },
+      { 
+        error: 'Failed to process payment',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
 
 // GET endpoint to check overdue status and amount
-export async function GET(request: NextRequest) {
+async function handleGET(request: NextRequest) {
   try {
     const session = await requireRole(['ADMIN', 'OWNER'])(request)
     if (session instanceof NextResponse) return session
@@ -314,11 +320,18 @@ export async function GET(request: NextRequest) {
       invoiceId: overdueInvoice?.id
     })
   } catch (error: any) {
-    console.error('Error checking overdue status:', error)
+    logger.error('Error checking overdue status', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to check overdue status', details: error.message },
+      { 
+        error: 'Failed to check overdue status',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const POST = withRateLimit(handlePOST)
+export const GET = withRateLimit(handleGET)
 

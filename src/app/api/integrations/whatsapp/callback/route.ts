@@ -1,8 +1,9 @@
 export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
-export async function GET(request: NextRequest) {
+async function handleGET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const code = searchParams.get('code')
@@ -92,8 +93,10 @@ export async function GET(request: NextRequest) {
     }
     
     throw new Error('Failed to get WhatsApp Business Account info')
-  } catch (error) {
-    console.error('WhatsApp callback error:', error)
+  } catch (error: any) {
+    logger.error('WhatsApp callback error', error)
     return NextResponse.redirect(`${process.env.APP_BASE_URL}/settings?whatsapp=error`)
   }
 }
+
+export const GET = handleGET

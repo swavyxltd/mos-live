@@ -3,8 +3,11 @@ import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 import { sendOrgSetupConfirmation, sendStaffInvitation } from '@/lib/mail'
+import { logger } from '@/lib/logger'
+import { sanitizeText, isValidEmail, isValidPhone, MAX_STRING_LENGTHS } from '@/lib/input-validation'
+import { withRateLimit } from '@/lib/api-middleware'
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     const body = await request.json()
     const {
@@ -36,6 +39,33 @@ export async function POST(request: NextRequest) {
     if (!name || !email || !password) {
       return NextResponse.json(
         { error: 'Name, email, and password are required' },
+        { status: 400 }
+      )
+    }
+
+    // Validate password length
+    if (password.length < 8) {
+      return NextResponse.json(
+        { error: 'Password must be at least 8 characters long' },
+        { status: 400 }
+      )
+    }
+
+    // Sanitize and validate inputs
+    const sanitizedEmail = email.toLowerCase().trim()
+    if (!isValidEmail(sanitizedEmail)) {
+      return NextResponse.json(
+        { error: 'Invalid email format' },
+        { status: 400 }
+      )
+    }
+
+    const sanitizedName = sanitizeText(name, MAX_STRING_LENGTHS.name)
+    const sanitizedPhone = phone ? sanitizeText(phone, MAX_STRING_LENGTHS.phone) : null
+
+    if (sanitizedPhone && !isValidPhone(sanitizedPhone)) {
+      return NextResponse.json(
+        { error: 'Invalid phone number format' },
         { status: 400 }
       )
     }
@@ -72,7 +102,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify email matches invitation (if invitation has email)
-    if (invitation.email && invitation.email.toLowerCase() !== email.toLowerCase()) {
+    if (invitation.email && invitation.email.toLowerCase() !== sanitizedEmail) {
       return NextResponse.json(
         { error: 'Email does not match invitation' },
         { status: 400 }
@@ -81,7 +111,7 @@ export async function POST(request: NextRequest) {
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() }
+      where: { email: sanitizedEmail }
     })
 
     if (existingUser) {
@@ -98,18 +128,18 @@ export async function POST(request: NextRequest) {
     const result = await prisma.$transaction(async (tx) => {
       // Create or update user
       const user = await tx.user.upsert({
-        where: { email: email.toLowerCase() },
+        where: { email: sanitizedEmail },
         update: {
-          name,
+          name: sanitizedName,
           password: hashedPassword,
-          phone: phone || null,
+          phone: sanitizedPhone,
           updatedAt: new Date()
         },
         create: {
-          email: email.toLowerCase(),
-          name,
+          email: sanitizedEmail,
+          name: sanitizedName,
           password: hashedPassword,
-          phone: phone || null,
+          phone: sanitizedPhone,
           isSuperAdmin: false
         }
       })
@@ -178,13 +208,13 @@ export async function POST(request: NextRequest) {
       if (result.isNewOrgSetup) {
         // Send org setup confirmation email
         await sendOrgSetupConfirmation({
-          to: email,
+          to: sanitizedEmail,
           orgName: result.org.name,
           dashboardUrl: `${cleanBaseUrl}/dashboard`
         })
       }
-    } catch (emailError) {
-      console.error('Failed to send confirmation email:', emailError)
+    } catch (emailError: any) {
+      logger.error('Failed to send confirmation email', emailError)
       // Don't fail the signup if email fails
     }
 
@@ -196,7 +226,7 @@ export async function POST(request: NextRequest) {
       orgName: result.org.name
     })
   } catch (error: any) {
-    console.error('Error creating account:', error)
+    logger.error('Error creating account', error)
     
     // Handle unique constraint violation
     if (error.code === 'P2002') {
@@ -206,10 +236,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to create account', details: error.message },
+      { 
+        error: 'Failed to create account',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const POST = withRateLimit(handlePOST, { strict: true })
 

@@ -4,9 +4,12 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { sendEmail } from '@/lib/mail'
+import { logger } from '@/lib/logger'
+import { sanitizeText, MAX_STRING_LENGTHS } from '@/lib/input-validation'
+import { withRateLimit } from '@/lib/api-middleware'
 
 // POST /api/owner/support/tickets/[id]/respond - Respond to a support ticket
-export async function POST(
+async function handlePOST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
@@ -23,6 +26,9 @@ export async function POST(
     if (!responseBody || !responseBody.trim()) {
       return NextResponse.json({ error: 'Response body is required' }, { status: 400 })
     }
+
+    // Sanitize input
+    const sanitizedResponseBody = sanitizeText(responseBody, MAX_STRING_LENGTHS.body)
 
     // Check if user is an owner/super admin
     const user = await prisma.user.findUnique({
@@ -58,7 +64,7 @@ export async function POST(
     const response = await prisma.supportTicketResponse.create({
       data: {
         ticketId: ticketId,
-        body: responseBody,
+        body: sanitizedResponseBody,
         createdById: session.user.id
       },
       include: {
@@ -107,15 +113,24 @@ export async function POST(
           subject: `Response to your support ticket: ${ticket.subject}`,
           html
         })
-      } catch (emailError) {
-        console.error('Error sending email notification:', emailError)
+      } catch (emailError: any) {
+        logger.error('Error sending email notification', emailError)
         // Don't fail the request if email fails
       }
     }
 
     return NextResponse.json(response, { status: 201 })
-  } catch (error) {
-    console.error('Error responding to support ticket:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  } catch (error: any) {
+    logger.error('Error responding to support ticket', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
+    return NextResponse.json(
+      { 
+        error: 'Internal server error',
+        ...(isDevelopment && { details: error?.message })
+      },
+      { status: 500 }
+    )
   }
 }
+
+export const POST = withRateLimit(handlePOST)

@@ -3,8 +3,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
-export async function POST(
+async function handlePOST(
   request: NextRequest,
   { params }: { params: Promise<{ orgId: string }> | { orgId: string } }
 ) {
@@ -74,8 +76,17 @@ export async function POST(
       affectedUsers: updatedOrg.memberships.length
     })
 
-  } catch (error) {
-    console.error('Error reactivating organization:', error)
-    return NextResponse.json({ error: 'Failed to reactivate organization' }, { status: 500 })
+  } catch (error: any) {
+    logger.error('Error reactivating organization', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
+    return NextResponse.json(
+      { 
+        error: 'Failed to reactivate organization',
+        ...(isDevelopment && { details: error?.message })
+      },
+      { status: 500 }
+    )
   }
 }
+
+export const POST = withRateLimit(handlePOST)

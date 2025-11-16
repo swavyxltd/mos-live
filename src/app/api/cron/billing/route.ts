@@ -2,11 +2,12 @@ export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { updatePlatformSubscription, getActiveStudentCount } from '@/lib/stripe'
+import { logger } from '@/lib/logger'
 
 // This endpoint should be called daily via cron job
 // It checks for orgs whose billing anniversary is tomorrow
 // On the day before anniversary, it counts students and updates subscription
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     // Verify cron secret (optional but recommended)
     // Vercel cron jobs automatically add authorization header
@@ -84,13 +85,13 @@ export async function POST(request: NextRequest) {
             status: 'created'
           })
         }
-      } catch (error) {
-        console.error(`Error processing billing for org ${billing.orgId}:`, error)
+      } catch (error: any) {
+        logger.error(`Error processing billing for org ${billing.orgId}`, error)
         results.push({
           orgId: billing.orgId,
           orgName: billing.org.name,
           status: 'error',
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error?.message || 'Unknown error'
         })
       }
     }
@@ -100,17 +101,21 @@ export async function POST(request: NextRequest) {
       processed: results.length,
       results
     })
-  } catch (error) {
-    console.error('Error in billing cron job:', error)
+  } catch (error: any) {
+    logger.error('Error in billing cron job', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to process billing' },
+      { 
+        error: 'Failed to process billing',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
 
 // GET endpoint for manual testing
-export async function GET(request: NextRequest) {
+async function handleGET(request: NextRequest) {
   const today = new Date()
   const tomorrow = new Date(today)
   tomorrow.setDate(tomorrow.getDate() + 1)
@@ -150,4 +155,7 @@ export async function GET(request: NextRequest) {
     }))
   })
 }
+
+export const POST = handlePOST // Cron jobs don't need rate limiting, they're authenticated via secret
+export const GET = handleGET
 

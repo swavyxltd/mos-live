@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     // Optional: Add a secret key check for security
     const authHeader = request.headers.get('authorization')
@@ -46,14 +48,12 @@ export async function POST(request: NextRequest) {
       note: 'Owner account created. Password must be set via password reset or invitation system.',
     })
   } catch (error: any) {
-    // Log error server-side only (not to console in production)
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Setup error:', error)
-    }
+    logger.error('Setup error', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
       {
         error: 'Failed to setup owner account',
-        details: error.message,
+        ...(isDevelopment && { details: error?.message }),
       },
       { status: 500 }
     )
@@ -61,6 +61,8 @@ export async function POST(request: NextRequest) {
     await prisma.$disconnect()
   }
 }
+
+export const POST = withRateLimit(handlePOST)
 
 
 

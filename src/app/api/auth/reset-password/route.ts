@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     const { token, password } = await request.json()
 
@@ -69,12 +71,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       message: 'Password has been reset successfully.',
     })
-  } catch (error) {
-    console.error('Password reset error:', error)
+  } catch (error: any) {
+    logger.error('Password reset error', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'An error occurred. Please try again later.' },
+      { 
+        error: 'An error occurred. Please try again later.',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const POST = withRateLimit(handlePOST, { strict: true })
 

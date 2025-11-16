@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
-export async function GET(request: NextRequest) {
+async function handleGET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
@@ -107,7 +109,7 @@ export async function GET(request: NextRequest) {
         take: 10
       })
     } catch (error) {
-      console.error('Error fetching failed payments:', error)
+      logger.error('Error fetching failed payments', error)
       // Continue with empty array
     }
 
@@ -215,11 +217,17 @@ export async function GET(request: NextRequest) {
       topRevenueGenerators
     })
   } catch (error: any) {
-    console.error('Error fetching revenue data:', error)
+    logger.error('Error fetching revenue data', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to fetch revenue data', details: error.message },
+      { 
+        error: 'Failed to fetch revenue data',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const GET = withRateLimit(handleGET)
 

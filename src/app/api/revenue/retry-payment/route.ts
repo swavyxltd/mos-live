@@ -1,12 +1,14 @@
 export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2024-06-20',
 })
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     const { paymentIntentId, organizationId } = await request.json()
 
@@ -110,14 +112,16 @@ export async function POST(request: NextRequest) {
     */
 
   } catch (error: any) {
-    console.error('Stripe payment retry error:', error)
-    
+    logger.error('Stripe payment retry error', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
       { 
-        error: 'Payment retry failed', 
-        details: error.message 
+        error: 'Payment retry failed',
+        ...(isDevelopment && { details: error?.message })
       },
       { status: 500 }
     )
   }
 }
+
+export const POST = withRateLimit(handlePOST)

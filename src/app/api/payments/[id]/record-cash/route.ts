@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { requireRole, requireOrg } from '@/lib/roles'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
+import { sanitizeText, MAX_STRING_LENGTHS } from '@/lib/input-validation'
+import { withRateLimit } from '@/lib/api-middleware'
 
 const recordCashSchema = z.object({
   amountP: z.number().positive(),
@@ -10,7 +13,7 @@ const recordCashSchema = z.object({
   notes: z.string().optional()
 })
 
-export async function POST(
+async function handlePOST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
@@ -23,6 +26,9 @@ export async function POST(
     
     const body = await request.json()
     const { amountP, method, notes } = recordCashSchema.parse(body)
+    
+    // Sanitize notes if provided
+    const sanitizedNotes = notes ? sanitizeText(notes, MAX_STRING_LENGTHS.text) : undefined
     
     const invoiceId = params.id
     
@@ -49,7 +55,7 @@ export async function POST(
         amountP,
         status: 'SUCCEEDED',
         providerId: `${method.toLowerCase()}_${Date.now()}`,
-        meta: { notes }
+        meta: { notes: sanitizedNotes }
       }
     })
     
@@ -93,11 +99,17 @@ export async function POST(
         paidAt: updatedInvoice.paidAt
       }
     })
-  } catch (error) {
-    console.error('Record cash payment error:', error)
+  } catch (error: any) {
+    logger.error('Record cash payment error', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to record cash payment' },
+      { 
+        error: 'Failed to record cash payment',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const POST = withRateLimit(handlePOST)

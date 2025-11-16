@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     const body = await request.json()
     const { userId } = body
@@ -74,13 +76,17 @@ export async function POST(request: NextRequest) {
       email: user.email
     })
   } catch (error: any) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Complete signin error:', error)
-    }
+    logger.error('Complete signin error', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to complete sign in' },
+      { 
+        error: 'Failed to complete sign in',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const POST = withRateLimit(handlePOST, { strict: true })
 

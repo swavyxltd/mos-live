@@ -3,8 +3,10 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { AuditLogAction, AuditLogTargetType } from '@prisma/client'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+async function handleGET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions)
     
@@ -83,13 +85,20 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     }
 
     return NextResponse.json(transformedStudent)
-  } catch (error) {
-    console.error('Error fetching student:', error)
-    return NextResponse.json({ error: 'Failed to fetch student' }, { status: 500 })
+  } catch (error: any) {
+    logger.error('Error fetching student', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
+    return NextResponse.json(
+      { 
+        error: 'Failed to fetch student',
+        ...(isDevelopment && { details: error?.message })
+      },
+      { status: 500 }
+    )
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+async function handlePUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions)
     
@@ -142,8 +151,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
             ...(parentPhone && { phone: parentPhone })
           }
         })
-      } catch (parentError) {
-        console.error('Error updating parent:', parentError)
+      } catch (parentError: any) {
+        logger.error('Error updating parent', parentError)
         // Don't fail the entire request if parent update fails
       }
     }
@@ -218,8 +227,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
           }),
         },
       })
-    } catch (auditError) {
-      console.error('Error creating audit log:', auditError)
+    } catch (auditError: any) {
+      logger.error('Error creating audit log', auditError)
       // Don't fail the request if audit log fails
     }
 
@@ -273,11 +282,18 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
     return NextResponse.json(transformedStudent)
   } catch (error: any) {
-    console.error('Error updating student:', error)
+    logger.error('Error updating student', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to update student', details: error.message },
+      { 
+        error: 'Failed to update student',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const GET = withRateLimit(handleGET)
+export const PUT = withRateLimit(handlePUT)
 

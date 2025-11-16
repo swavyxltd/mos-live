@@ -5,6 +5,8 @@ import { getActiveOrg } from '@/lib/org'
 import { prisma } from '@/lib/prisma'
 import crypto from 'crypto'
 import { sendParentOnboardingEmail } from '@/lib/mail'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
 interface StudentData {
   firstName: string
@@ -18,7 +20,7 @@ interface StudentData {
   existingStudentId?: string
 }
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
@@ -274,8 +276,8 @@ export async function POST(request: NextRequest) {
                 studentName: `${studentData.firstName} ${studentData.lastName}`,
                 setupUrl
               })
-            } catch (emailError) {
-              console.error('Failed to send parent onboarding email:', emailError)
+            } catch (emailError: any) {
+              logger.error('Failed to send parent onboarding email', emailError)
               // Don't fail the transaction if email fails
             }
 
@@ -316,11 +318,17 @@ export async function POST(request: NextRequest) {
       }
     })
   } catch (error: any) {
-    console.error('Error confirming bulk upload:', error)
+    logger.error('Error confirming bulk upload', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to create students', details: error.message },
+      { 
+        error: 'Failed to create students',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const POST = withRateLimit(handlePOST, { upload: true })
 

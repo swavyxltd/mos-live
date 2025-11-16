@@ -6,9 +6,11 @@ import { getActiveOrg } from '@/lib/org'
 import { hasPlatformPaymentMethod, createPlatformSetupIntent } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
 import { stripe } from '@/lib/stripe'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
 // GET: Check if org has payment method on file
-export async function GET() {
+async function handleGET() {
   try {
     const session = await getServerSession(authOptions)
     
@@ -87,12 +89,12 @@ export async function GET() {
                 default_payment_method: firstMethod.id
               }
             })
-          } catch (stripeError) {
-            console.error('Error setting default payment method in Stripe:', stripeError)
+          } catch (stripeError: any) {
+            logger.error('Error setting default payment method in Stripe', stripeError)
           }
         }
-      } catch (error) {
-        console.error('Error fetching payment methods:', error)
+      } catch (error: any) {
+        logger.error('Error fetching payment methods', error)
       }
     }
 
@@ -104,17 +106,21 @@ export async function GET() {
       trialEndDate: billing.trialEndDate?.toISOString() || null,
       billingAnniversaryDate: billing.billingAnniversaryDate
     })
-  } catch (error) {
-    console.error('Error fetching platform payment settings:', error)
+  } catch (error: any) {
+    logger.error('Error fetching platform payment settings', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to fetch payment settings' },
+      { 
+        error: 'Failed to fetch payment settings',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
 
 // POST: Create setup intent for adding payment method
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
@@ -142,14 +148,7 @@ export async function POST(request: NextRequest) {
       setupIntentId: setupIntent.id
     })
   } catch (error: any) {
-    console.error('Error creating setup intent:', error)
-    console.error('Error details:', {
-      message: error?.message,
-      stack: error?.stack,
-      type: error?.type,
-      code: error?.code,
-      statusCode: error?.statusCode
-    })
+    logger.error('Error creating setup intent', error)
     
     // Return more specific error message
     const errorMessage = error?.message || 'Failed to create setup intent'
@@ -159,17 +158,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { 
           error: 'Unable to connect to Stripe. Please check your internet connection and try again. If the problem persists, check your Stripe API key configuration.',
-          details: error?.type || error?.code,
+          ...(process.env.NODE_ENV === 'development' && { details: error?.type || error?.code }),
           retryable: true
         },
         { status: 503 } // Service Unavailable
       )
     }
     
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: errorMessage, details: error?.type || error?.code },
+      { 
+        error: errorMessage,
+        ...(isDevelopment && { details: error?.type || error?.code })
+      },
       { status: 500 }
     )
   }
 }
+
+export const GET = withRateLimit(handleGET)
+export const POST = withRateLimit(handlePOST)
 

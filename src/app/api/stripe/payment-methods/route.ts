@@ -4,8 +4,10 @@ import { requireRole } from '@/lib/roles'
 import { getActiveOrg } from '@/lib/org'
 import { prisma } from '@/lib/prisma'
 import { stripe } from '@/lib/stripe'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
-export async function GET(request: NextRequest) {
+async function handleGET(request: NextRequest) {
   try {
     const session = await requireRole(['PARENT'])(request)
     if (session instanceof NextResponse) return session
@@ -68,16 +70,20 @@ export async function GET(request: NextRequest) {
         isDefault: pm.id === billingProfile.defaultPaymentMethodId
       }))
     })
-  } catch (error) {
-    console.error('Error fetching payment methods:', error)
+  } catch (error: any) {
+    logger.error('Error fetching payment methods', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to fetch payment methods' },
+      { 
+        error: 'Failed to fetch payment methods',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
 
-export async function DELETE(request: NextRequest) {
+async function handleDELETE(request: NextRequest) {
   try {
     const session = await requireRole(['PARENT'])(request)
     if (session instanceof NextResponse) return session
@@ -126,11 +132,18 @@ export async function DELETE(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Error deleting payment method:', error)
+  } catch (error: any) {
+    logger.error('Error deleting payment method', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to delete payment method' },
+      { 
+        error: 'Failed to delete payment method',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const GET = withRateLimit(handleGET)
+export const DELETE = withRateLimit(handleDELETE)

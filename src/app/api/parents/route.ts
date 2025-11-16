@@ -5,9 +5,11 @@ import { authOptions } from '@/lib/auth'
 import { getActiveOrg } from '@/lib/org'
 import { prisma } from '@/lib/prisma'
 import { requireRole } from '@/lib/roles'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
 // GET /api/parents - Get all parents for the current org
-export async function GET(request: NextRequest) {
+async function handleGET(request: NextRequest) {
   try {
     const session = await requireRole(['ADMIN', 'OWNER'])(request)
     if (session instanceof NextResponse) return session
@@ -37,9 +39,18 @@ export async function GET(request: NextRequest) {
     })
 
     return NextResponse.json(parents)
-  } catch (error) {
-    console.error('Error fetching parents:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  } catch (error: any) {
+    logger.error('Error fetching parents', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
+    return NextResponse.json(
+      { 
+        error: 'Internal server error',
+        ...(isDevelopment && { details: error?.message })
+      },
+      { status: 500 }
+    )
   }
 }
+
+export const GET = withRateLimit(handleGET)
 

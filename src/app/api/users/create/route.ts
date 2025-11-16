@@ -6,8 +6,12 @@ import { checkPaymentMethod } from '@/lib/payment-check'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 import { sendStaffInvitation } from '@/lib/mail'
+import { logger } from '@/lib/logger'
+import { sanitizeText, isValidEmail, isValidPhone, MAX_STRING_LENGTHS } from '@/lib/input-validation'
+import { withRateLimit } from '@/lib/api-middleware'
+import { requireRole } from '@/lib/roles'
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
@@ -17,6 +21,31 @@ export async function POST(request: NextRequest) {
         { error: 'Unauthorized' },
         { status: 401 }
       )
+    }
+
+    // Verify user has permission (super admin or org admin)
+    if (!session.user.isSuperAdmin) {
+      // For non-super-admin, verify they have ADMIN role in the org they're creating user for
+      const body = await request.json()
+      const { orgId } = body
+      
+      if (orgId) {
+        const membership = await prisma.userOrgMembership.findUnique({
+          where: {
+            userId_orgId: {
+              userId: session.user.id,
+              orgId
+            }
+          }
+        })
+        
+        if (!membership || membership.role !== 'ADMIN') {
+          return NextResponse.json(
+            { error: 'Unauthorized - Admin role required' },
+            { status: 403 }
+          )
+        }
+      }
     }
 
     const body = await request.json()
@@ -36,6 +65,25 @@ export async function POST(request: NextRequest) {
     if (!email || !name) {
       return NextResponse.json(
         { error: 'Email and name are required' },
+        { status: 400 }
+      )
+    }
+
+    // Sanitize and validate inputs
+    const sanitizedEmail = email.toLowerCase().trim()
+    if (!isValidEmail(sanitizedEmail)) {
+      return NextResponse.json(
+        { error: 'Invalid email format' },
+        { status: 400 }
+      )
+    }
+
+    const sanitizedName = sanitizeText(name, MAX_STRING_LENGTHS.name)
+    const sanitizedPhone = phone ? sanitizeText(phone, MAX_STRING_LENGTHS.phone) : null
+
+    if (sanitizedPhone && !isValidPhone(sanitizedPhone)) {
+      return NextResponse.json(
+        { error: 'Invalid phone number format' },
         { status: 400 }
       )
     }
@@ -75,18 +123,18 @@ export async function POST(request: NextRequest) {
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() }
+      where: { email: sanitizedEmail }
     })
 
     let user
     if (existingUser) {
       // Update existing user
       user = await prisma.user.update({
-        where: { email: email.toLowerCase() },
+        where: { email: sanitizedEmail },
         data: {
-          name,
+          name: sanitizedName,
           ...(hashedPassword && { password: hashedPassword }),
-          phone: phone || null,
+          phone: sanitizedPhone,
           isSuperAdmin: isSuperAdmin || false,
           updatedAt: new Date()
         }
@@ -102,10 +150,10 @@ export async function POST(request: NextRequest) {
 
       user = await prisma.user.create({
         data: {
-          email: email.toLowerCase(),
-          name,
+          email: sanitizedEmail,
+          name: sanitizedName,
           password: hashedPassword || crypto.randomBytes(32).toString('hex'), // Temporary password if sending invitation
-          phone: phone || null,
+          phone: sanitizedPhone,
           isSuperAdmin: isSuperAdmin || false,
         }
       })
@@ -148,7 +196,7 @@ export async function POST(request: NextRequest) {
             await prisma.invitation.create({
               data: {
                 orgId,
-                email: email.toLowerCase(),
+                email: sanitizedEmail,
                 role,
                 token,
                 expiresAt
@@ -161,14 +209,14 @@ export async function POST(request: NextRequest) {
             const signupUrl = `${cleanBaseUrl}/auth/signup?token=${token}`
             
             await sendStaffInvitation({
-              to: email.toLowerCase(),
+              to: sanitizedEmail,
               orgName: org.name,
               role,
               signupUrl
             })
           }
-        } catch (emailError) {
-          console.error('Failed to send invitation email:', emailError)
+        } catch (emailError: any) {
+          logger.error('Failed to send invitation email', emailError)
           // Don't fail user creation if email fails
         }
       }
@@ -186,7 +234,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error: any) {
-    console.error('Error creating user:', error)
+    logger.error('Error creating user', error)
     
     // Handle unique constraint violation
     if (error.code === 'P2002') {
@@ -196,10 +244,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to create user', details: error.message },
+      { 
+        error: 'Failed to create user',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const POST = withRateLimit(handlePOST)
 

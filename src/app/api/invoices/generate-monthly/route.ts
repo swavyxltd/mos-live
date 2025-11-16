@@ -2,8 +2,10 @@ export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRole, requireOrg } from '@/lib/roles'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     const session = await requireRole(['ADMIN', 'OWNER'])(request)
     if (session instanceof NextResponse) return session
@@ -92,11 +94,17 @@ export async function POST(request: NextRequest) {
       created: createdInvoices.length,
       invoices: createdInvoices.map(inv => ({ id: inv.id, studentId: inv.studentId, amount: inv.amountP }))
     })
-  } catch (error) {
-    console.error('Generate monthly invoices error:', error)
+  } catch (error: any) {
+    logger.error('Generate monthly invoices error', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to generate invoices' },
+      { 
+        error: 'Failed to generate invoices',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const POST = withRateLimit(handlePOST)

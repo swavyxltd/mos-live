@@ -4,9 +4,11 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { sendEmail } from '@/lib/mail'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
 // PATCH /api/owner/support/tickets/[id] - Update support ticket status
-export async function PATCH(
+async function handlePATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
@@ -124,15 +126,24 @@ export async function PATCH(
           subject: `Support ticket status update: ${ticket.subject}`,
           html
         })
-      } catch (emailError) {
-        console.error('Error sending email notification:', emailError)
+      } catch (emailError: any) {
+        logger.error('Error sending email notification', emailError)
         // Don't fail the request if email fails
       }
     }
 
     return NextResponse.json(updatedTicket)
-  } catch (error) {
-    console.error('Error updating support ticket:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  } catch (error: any) {
+    logger.error('Error updating support ticket', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
+    return NextResponse.json(
+      { 
+        error: 'Internal server error',
+        ...(isDevelopment && { details: error?.message })
+      },
+      { status: 500 }
+    )
   }
 }
+
+export const PATCH = withRateLimit(handlePATCH)

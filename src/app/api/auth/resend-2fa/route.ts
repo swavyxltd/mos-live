@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { generateTwoFactorCode, sendTwoFactorCode, storeTwoFactorCode } from '@/lib/two-factor'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     const body = await request.json()
     const { userId } = body
@@ -49,13 +51,17 @@ export async function POST(request: NextRequest) {
       message: 'Verification code sent to your email'
     })
   } catch (error: any) {
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Resend 2FA error:', error)
-    }
+    logger.error('Resend 2FA error', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to resend verification code' },
+      { 
+        error: 'Failed to resend verification code',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const POST = withRateLimit(handlePOST, { strict: true })
 

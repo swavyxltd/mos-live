@@ -2,8 +2,10 @@ export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRole, requireOrg } from '@/lib/roles'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
-export async function GET(request: NextRequest) {
+async function handleGET(request: NextRequest) {
   try {
     const session = await requireRole(['ADMIN', 'OWNER', 'PARENT'])(request)
     if (session instanceof NextResponse) return session
@@ -60,25 +62,42 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' }
     })
 
-    // Check for Stripe auto-payment status for each student
-    const invoicesWithStripeStatus = await Promise.all(
-      invoices.map(async (invoice) => {
-        const billingProfile = await prisma.parentBillingProfile.findFirst({
+    // Optimize: Batch fetch all billing profiles to avoid N+1 queries
+    const parentIds = invoices
+      .map(inv => inv.student.primaryParent?.id)
+      .filter((id): id is string => !!id)
+    
+    const billingProfiles = parentIds.length > 0
+      ? await prisma.parentBillingProfile.findMany({
           where: {
             orgId,
-            parentUserId: invoice.student.primaryParent?.id
+            parentUserId: { in: parentIds }
+          },
+          select: {
+            parentUserId: true,
+            autoPayEnabled: true
           }
         })
-
-        return {
-          ...invoice,
-          student: {
-            ...invoice.student,
-            hasStripeAutoPayment: billingProfile?.autoPayEnabled || false
-          }
-        }
-      })
+      : []
+    
+    const billingProfileMap = new Map(
+      billingProfiles.map(bp => [bp.parentUserId, bp.autoPayEnabled])
     )
+
+    // Map billing profiles to invoices
+    const invoicesWithStripeStatus = invoices.map((invoice) => {
+      const hasStripeAutoPayment = invoice.student.primaryParent?.id
+        ? billingProfileMap.get(invoice.student.primaryParent.id) || false
+        : false
+
+      return {
+        ...invoice,
+        student: {
+          ...invoice.student,
+          hasStripeAutoPayment
+        }
+      }
+    })
     
     // Transform the data for frontend
     const transformedInvoices = invoicesWithStripeStatus.map(invoice => ({
@@ -108,16 +127,20 @@ export async function GET(request: NextRequest) {
     }))
     
     return NextResponse.json(transformedInvoices)
-  } catch (error) {
-    console.error('Get invoices error:', error)
+  } catch (error: any) {
+    logger.error('Get payments error', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to fetch invoices' },
+      { 
+        error: 'Failed to fetch payments',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     const session = await requireRole(['ADMIN', 'OWNER'])(request)
     if (session instanceof NextResponse) return session
@@ -182,11 +205,18 @@ export async function POST(request: NextRequest) {
         dueDate: invoice.dueDate
       }
     })
-  } catch (error) {
-    console.error('Create invoice error:', error)
+  } catch (error: any) {
+    logger.error('Create payment error', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to create invoice' },
+      { 
+        error: 'Failed to create payment',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const GET = withRateLimit(handleGET)
+export const POST = withRateLimit(handlePOST)

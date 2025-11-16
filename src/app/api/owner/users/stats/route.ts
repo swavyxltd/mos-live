@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
-export async function GET(request: NextRequest) {
+async function handleGET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
@@ -119,7 +121,7 @@ export async function GET(request: NextRequest) {
         activeUsers: org._count.memberships // Simplified for now
       }))
     } catch (error) {
-      console.error('Error fetching top orgs:', error)
+      logger.error('Error fetching top orgs', error)
       topOrgsByUsers = []
     }
 
@@ -145,11 +147,17 @@ export async function GET(request: NextRequest) {
       topOrgsByUsers
     })
   } catch (error: any) {
-    console.error('Error fetching user stats:', error)
+    logger.error('Error fetching user stats', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to fetch user stats', details: error.message },
+      { 
+        error: 'Failed to fetch user stats',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const GET = withRateLimit(handleGET)
 

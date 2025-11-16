@@ -2,8 +2,9 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyWebhook, handleWebhook } from '@/lib/whatsapp'
+import { logger } from '@/lib/logger'
 
-export async function GET(request: NextRequest) {
+async function handleGET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const mode = searchParams.get('hub.mode')
   const token = searchParams.get('hub.verify_token')
@@ -20,13 +21,23 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 }
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     const body = await request.json()
     await handleWebhook(body)
     return NextResponse.json({ received: true })
-  } catch (error) {
-    console.error('WhatsApp webhook error:', error)
-    return NextResponse.json({ error: 'Webhook handler failed' }, { status: 500 })
+  } catch (error: any) {
+    logger.error('WhatsApp webhook error', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
+    return NextResponse.json(
+      { 
+        error: 'Webhook handler failed',
+        ...(isDevelopment && { details: error?.message })
+      },
+      { status: 500 }
+    )
   }
 }
+
+export const GET = handleGET
+export const POST = handlePOST

@@ -5,8 +5,10 @@ import { authOptions } from '@/lib/auth'
 import { getActiveOrg } from '@/lib/org'
 import { prisma } from '@/lib/prisma'
 import { requireRole } from '@/lib/roles'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
-export async function GET() {
+async function handleGET() {
   try {
     const session = await getServerSession(authOptions)
     
@@ -31,16 +33,20 @@ export async function GET() {
       bankAccountNumber: org.bankAccountNumber,
       hasStripeConfigured: !!(org.stripePublishableKey && org.stripeSecretKey)
     })
-  } catch (error) {
-    console.error('Error fetching payment method settings:', error)
+  } catch (error: any) {
+    logger.error('Error fetching payment method settings', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to fetch payment method settings' },
+      { 
+        error: 'Failed to fetch payment method settings',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
 
-export async function PUT(request: NextRequest) {
+async function handlePUT(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
@@ -117,11 +123,18 @@ export async function PUT(request: NextRequest) {
         hasStripeConfigured: !!(updatedOrg.stripePublishableKey && updatedOrg.stripeSecretKey)
       }
     })
-  } catch (error) {
-    console.error('Error updating payment method settings:', error)
+  } catch (error: any) {
+    logger.error('Error updating payment method settings', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to update payment method settings' },
+      { 
+        error: 'Failed to update payment method settings',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const GET = withRateLimit(handleGET)
+export const PUT = withRateLimit(handlePUT)

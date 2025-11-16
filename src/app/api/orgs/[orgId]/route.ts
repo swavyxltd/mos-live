@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
-export async function DELETE(
+async function handleDELETE(
   request: NextRequest,
   { params }: { params: { orgId: string } }
 ) {
@@ -44,7 +46,7 @@ export async function DELETE(
       )
     }
 
-    console.log(`🗑️  Deleting organization: ${org.name} (${org.slug})`)
+    logger.info(`Deleting organization: ${org.name} (${org.slug})`)
 
     // Delete the organization
     // Prisma will cascade delete all related records (students, classes, invoices, etc.)
@@ -52,7 +54,7 @@ export async function DELETE(
       where: { id: orgId }
     })
 
-    console.log(`✅ Organization ${org.name} deleted successfully`)
+    logger.info(`Organization ${org.name} deleted successfully`)
 
     return NextResponse.json({
       success: true,
@@ -60,7 +62,7 @@ export async function DELETE(
     })
 
   } catch (error: any) {
-    console.error('Error deleting organization:', error)
+    logger.error('Error deleting organization', error)
     
     // Handle foreign key constraint errors
     if (error.code === 'P2003') {
@@ -70,10 +72,16 @@ export async function DELETE(
       )
     }
 
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to delete organization', details: error.message },
+      { 
+        error: 'Failed to delete organization',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const DELETE = withRateLimit(handleDELETE)
 

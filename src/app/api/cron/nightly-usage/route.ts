@@ -2,8 +2,9 @@ export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { reportUsage } from '@/lib/stripe'
+import { logger } from '@/lib/logger'
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     // Verify this is a legitimate cron request (in production, you'd verify the request source)
     const authHeader = request.headers.get('authorization')
@@ -11,7 +12,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    console.log('Starting nightly usage report...')
+    logger.info('Starting nightly usage report...')
 
     // Get all organizations with platform billing
     const orgsWithBilling = await prisma.org.findMany({
@@ -44,10 +45,10 @@ export async function POST(request: NextRequest) {
         })
         await reportUsage(org.id, activeStudentCount)
         
-        console.log(`Reported usage for ${org.name}: ${activeStudentCount} students`)
+        logger.info(`Reported usage for ${org.name}: ${activeStudentCount} students`)
         successCount++
       } catch (error) {
-        console.error(`Failed to report usage for ${org.name}:`, error)
+        logger.error(`Failed to report usage for ${org.name}`, error)
         failureCount++
       }
     }
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    console.log(`Nightly usage report completed: ${successCount} success, ${failureCount} failures`)
+    logger.info(`Nightly usage report completed: ${successCount} success, ${failureCount} failures`)
 
     return NextResponse.json({
       success: true,
@@ -74,11 +75,17 @@ export async function POST(request: NextRequest) {
       successCount,
       failureCount
     })
-  } catch (error) {
-    console.error('Nightly usage report error:', error)
+  } catch (error: any) {
+    logger.error('Nightly usage report error', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to process nightly usage report' },
+      { 
+        error: 'Failed to process nightly usage report',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const POST = handlePOST

@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getPlatformSettings } from '@/lib/platform-settings'
+import { logger } from '@/lib/logger'
 
 // This endpoint should be called daily via cron job
 // It checks for organizations with overdue payments beyond grace period and suspends them
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     // Verify cron secret (optional but recommended)
     const authHeader = request.headers.get('authorization')
@@ -166,13 +167,13 @@ export async function POST(request: NextRequest) {
             status: 'deactivated'
           })
         }
-      } catch (error) {
-        console.error(`Error processing overdue org ${billing.orgId}:`, error)
+      } catch (error: any) {
+        logger.error(`Error processing overdue org ${billing.orgId}`, error)
         results.push({
           orgId: billing.orgId,
           orgName: billing.org.name,
           status: 'error',
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error?.message || 'Unknown error'
         })
       }
     }
@@ -184,17 +185,21 @@ export async function POST(request: NextRequest) {
       deactivated: results.filter(r => r.status === 'deactivated').length,
       results
     })
-  } catch (error) {
-    console.error('Error in overdue check cron job:', error)
+  } catch (error: any) {
+    logger.error('Error in overdue check cron job', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to check overdue payments', details: error instanceof Error ? error.message : 'Unknown error' },
+      { 
+        error: 'Failed to check overdue payments',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
 
 // GET endpoint for manual testing
-export async function GET(request: NextRequest) {
+async function handleGET(request: NextRequest) {
   try {
     const platformSettings = await getPlatformSettings()
     const gracePeriodDays = platformSettings?.gracePeriodDays || 14
@@ -255,12 +260,19 @@ export async function GET(request: NextRequest) {
           : null
       }))
     })
-  } catch (error) {
-    console.error('Error checking overdue:', error)
+  } catch (error: any) {
+    logger.error('Error checking overdue', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to check overdue payments' },
+      { 
+        error: 'Failed to check overdue payments',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const POST = handlePOST // Cron jobs don't need rate limiting, they're authenticated via secret
+export const GET = handleGET
 

@@ -33,6 +33,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Sanitize inputs
+    const { sanitizeText, MAX_STRING_LENGTHS } = await import('@/lib/input-validation')
+    const sanitizedName = sanitizeText(name, MAX_STRING_LENGTHS.name)
+    const sanitizedDescription = description ? sanitizeText(description, MAX_STRING_LENGTHS.text) : null
+    const sanitizedSchedule = sanitizeText(schedule, MAX_STRING_LENGTHS.text)
+
     if (monthlyFeeP === undefined || monthlyFeeP < 0) {
       return NextResponse.json(
         { error: 'Monthly fee must be provided and non-negative' },
@@ -50,9 +56,9 @@ export async function POST(request: NextRequest) {
     const classRecord = await prisma.class.create({
       data: {
         orgId,
-        name,
-        description: description || null,
-        schedule,
+        name: sanitizedName,
+        description: sanitizedDescription,
+        schedule: sanitizedSchedule,
         teacherId: teacherId || null,
         monthlyFeeP: Math.round(monthlyFeeP * 100), // Convert to pence
         feeDueDay: feeDueDay || null
@@ -71,12 +77,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(classRecord, { status: 201 })
   } catch (error: any) {
     logger.error('Create class error', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: error.message || 'Failed to create class' },
+      { 
+        error: 'Failed to create class',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const POST = withRateLimit(handlePOST)
 
 async function handleGET(request: NextRequest) {
   const session = await requireRole(['ADMIN', 'OWNER'])(request)

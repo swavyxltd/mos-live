@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
-export async function GET(request: NextRequest) {
+async function handleGET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
@@ -169,8 +171,8 @@ export async function GET(request: NextRequest) {
         studentCount: org._count.students || 0,
         activeStudents: org._count.students || 0
       }))
-    } catch (error) {
-      console.error('Error fetching org distribution:', error)
+    } catch (error: any) {
+      logger.error('Error fetching org distribution', error)
       topOrgsByStudents = []
     }
 
@@ -186,16 +188,17 @@ export async function GET(request: NextRequest) {
       topOrgsByStudents
     })
   } catch (error: any) {
-    console.error('Error fetching student stats:', error)
-    console.error('Error stack:', error.stack)
+    logger.error('Error fetching student stats', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
       { 
-        error: 'Failed to fetch student stats', 
-        details: error.message,
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        error: 'Failed to fetch student stats',
+        ...(isDevelopment && { details: error?.message })
       },
       { status: 500 }
     )
   }
 }
+
+export const GET = withRateLimit(handleGET)
 

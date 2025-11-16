@@ -2,8 +2,10 @@ export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRole, requireOrg } from '@/lib/roles'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
-export async function PATCH(
+async function handlePATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
@@ -64,11 +66,17 @@ export async function PATCH(
 
     return NextResponse.json(updatedClass)
   } catch (error: any) {
-    console.error('Update class error:', error)
+    logger.error('Update class error', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: error.message || 'Failed to update class' },
+      { 
+        error: 'Failed to update class',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const PATCH = withRateLimit(handlePATCH)
 

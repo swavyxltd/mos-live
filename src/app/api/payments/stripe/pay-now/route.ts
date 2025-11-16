@@ -4,12 +4,14 @@ import { z } from 'zod'
 import { requireRole, requireOrg } from '@/lib/roles'
 import { createPaymentIntent } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
 const payNowSchema = z.object({
   invoiceId: z.string()
 })
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     const session = await requireRole(['PARENT'])(request)
     if (session instanceof NextResponse) return session
@@ -53,11 +55,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       clientSecret: paymentIntent.client_secret
     })
-  } catch (error) {
-    console.error('Pay now error:', error)
+  } catch (error: any) {
+    logger.error('Pay now error', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to create payment intent' },
+      { 
+        error: 'Failed to create payment intent',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const POST = withRateLimit(handlePOST)

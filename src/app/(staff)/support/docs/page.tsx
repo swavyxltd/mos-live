@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Search, BookOpen, Video, HelpCircle, ArrowLeft, X } from 'lucide-react'
 import Link from 'next/link'
+import { sanitizeHtml } from '@/lib/input-validation'
 
 export default function DocumentationPage() {
   const [selectedArticle, setSelectedArticle] = useState<any>(null)
@@ -4654,20 +4655,24 @@ Comprehensive financial reporting is essential for effective madrasah financial 
                 <div 
                   className="prose prose-sm prose-gray max-w-none"
                   dangerouslySetInnerHTML={{
-                    __html: selectedArticle.content
-                      .replace(/^# (.*$)/gim, '<h1 class="text-lg font-semibold mb-4 text-gray-900 border-b border-gray-200 pb-2">$1</h1>')
-                      .replace(/^## (.*$)/gim, '<h2 class="text-base font-semibold mb-3 mt-6 text-gray-800">$1</h2>')
-                      .replace(/^### (.*$)/gim, '<h3 class="text-sm font-medium mb-2 mt-4 text-gray-700">$1</h3>')
-                      .replace(/^#### (.*$)/gim, '<h4 class="text-sm font-medium mb-2 mt-3 text-gray-700">$1</h4>')
-                      .replace(/^- (.*$)/gim, '<li class="mb-1 text-sm text-gray-700 leading-relaxed">$1</li>')
-                      .replace(/^\* (.*$)/gim, '<li class="mb-1 text-sm text-gray-700 leading-relaxed">$1</li>')
-                      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-medium text-gray-900">$1</strong>')
-                      .replace(/\*(.*?)\*/g, '<em class="italic text-gray-600">$1</em>')
-                      .replace(/\n\n/g, '</p><p class="mb-4 text-sm text-gray-700 leading-relaxed">')
-                      .replace(/^(?!<[h|l])/gm, '<p class="mb-4 text-sm text-gray-700 leading-relaxed">')
-                      .replace(/(<li.*<\/li>)/g, '<ul class="list-disc ml-6 mb-4 space-y-1">$1</ul>')
-                      .replace(/^(\d+\.) (.*$)/gim, '<li class="mb-1 text-sm text-gray-700 leading-relaxed"><span class="font-medium text-gray-900">$1</span> $2</li>')
-                      .replace(/(<li class="mb-1 text-sm text-gray-700 leading-relaxed"><span class="font-medium text-gray-900">\d+\.<\/span>.*<\/li>)/g, '<ol class="list-decimal ml-6 mb-4 space-y-1">$1</ol>')
+                    __html: (() => {
+                      // Sanitize content to prevent XSS
+                      const sanitized = sanitizeHtml(selectedArticle.content)
+                      return sanitized
+                        .replace(/^# (.*$)/gim, '<h1 class="text-lg font-semibold mb-4 text-gray-900 border-b border-gray-200 pb-2">$1</h1>')
+                        .replace(/^## (.*$)/gim, '<h2 class="text-base font-semibold mb-3 mt-6 text-gray-800">$1</h2>')
+                        .replace(/^### (.*$)/gim, '<h3 class="text-sm font-medium mb-2 mt-4 text-gray-700">$1</h3>')
+                        .replace(/^#### (.*$)/gim, '<h4 class="text-sm font-medium mb-2 mt-3 text-gray-700">$1</h4>')
+                        .replace(/^- (.*$)/gim, '<li class="mb-1 text-sm text-gray-700 leading-relaxed">$1</li>')
+                        .replace(/^\* (.*$)/gim, '<li class="mb-1 text-sm text-gray-700 leading-relaxed">$1</li>')
+                        .replace(/\*\*(.*?)\*\*/g, '<strong class="font-medium text-gray-900">$1</strong>')
+                        .replace(/\*(.*?)\*/g, '<em class="italic text-gray-600">$1</em>')
+                        .replace(/\n\n/g, '</p><p class="mb-4 text-sm text-gray-700 leading-relaxed">')
+                        .replace(/^(?!<[h|l])/gm, '<p class="mb-4 text-sm text-gray-700 leading-relaxed">')
+                        .replace(/(<li.*<\/li>)/g, '<ul class="list-disc ml-6 mb-4 space-y-1">$1</ul>')
+                        .replace(/^(\d+\.) (.*$)/gim, '<li class="mb-1 text-sm text-gray-700 leading-relaxed"><span class="font-medium text-gray-900">$1</span> $2</li>')
+                        .replace(/(<li class="mb-1 text-sm text-gray-700 leading-relaxed"><span class="font-medium text-gray-900">\d+\.<\/span>.*<\/li>)/g, '<ol class="list-decimal ml-6 mb-4 space-y-1">$1</ol>')
+                    })()
                   }}
                 />
               </div>

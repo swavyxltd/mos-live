@@ -4,8 +4,10 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { getActiveOrg } from '@/lib/org'
 import { stripe } from '@/lib/stripe'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
@@ -57,11 +59,17 @@ export async function POST(request: NextRequest) {
       clientSecret: setupIntent.client_secret,
       customerId
     })
-  } catch (error) {
-    console.error('Error creating Stripe setup intent:', error)
+  } catch (error: any) {
+    logger.error('Error creating Stripe setup intent', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to create setup intent' },
+      { 
+        error: 'Failed to create setup intent',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const POST = withRateLimit(handlePOST)

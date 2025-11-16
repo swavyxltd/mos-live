@@ -3,12 +3,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { requireRole, requireOrg } from '@/lib/roles'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
 const autopayToggleSchema = z.object({
   enabled: z.boolean()
 })
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     const session = await requireRole(['PARENT'])(request)
     if (session instanceof NextResponse) return session
@@ -41,11 +43,17 @@ export async function POST(request: NextRequest) {
       success: true,
       autoPayEnabled: profile.autoPayEnabled
     })
-  } catch (error) {
-    console.error('Autopay toggle error:', error)
+  } catch (error: any) {
+    logger.error('Autopay toggle error', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to update autopay setting' },
+      { 
+        error: 'Failed to update autopay setting',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const POST = withRateLimit(handlePOST)

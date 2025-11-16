@@ -4,8 +4,11 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { cancelStripeSubscription } from '@/lib/stripe'
+import { logger } from '@/lib/logger'
+import { sanitizeText, MAX_STRING_LENGTHS } from '@/lib/input-validation'
+import { withRateLimit } from '@/lib/api-middleware'
 
-export async function POST(
+async function handlePOST(
   request: NextRequest,
   { params }: { params: Promise<{ orgId: string }> | { orgId: string } }
 ) {
@@ -20,6 +23,9 @@ export async function POST(
     // Handle Next.js 15 async params
     const resolvedParams = await Promise.resolve(params)
     const { orgId } = resolvedParams
+
+    // Sanitize reason
+    const sanitizedReason = reason ? sanitizeText(reason, MAX_STRING_LENGTHS.text) : 'Account deactivated by platform administrator'
 
     // Get organization with billing info
     const org = await prisma.org.findUnique({
@@ -80,7 +86,7 @@ export async function POST(
           }
         })
       } catch (error: any) {
-        console.error('Error canceling subscription:', error)
+        logger.error('Error canceling subscription', error)
         // Continue with suspension even if subscription cancellation fails
         // Log the error but don't block the deactivation
       }
@@ -92,7 +98,7 @@ export async function POST(
       data: {
         status: 'DEACTIVATED',
         deactivatedAt: new Date(),
-        deactivatedReason: reason || 'Account deactivated by platform administrator'
+        deactivatedReason: sanitizedReason
       },
       include: {
         memberships: {
@@ -122,7 +128,7 @@ export async function POST(
         targetId: orgId,
         data: JSON.stringify({
           orgName: updatedOrg.name,
-          reason: reason || 'Account deactivated by platform administrator',
+          reason: sanitizedReason,
           subscriptionCanceled,
           affectedUsers: updatedOrg.memberships.map(m => ({
             userId: m.user.id,
@@ -145,8 +151,17 @@ export async function POST(
       subscriptionCanceled
     })
 
-  } catch (error) {
-    console.error('Error deactivating organization:', error)
-    return NextResponse.json({ error: 'Failed to deactivate organization' }, { status: 500 })
+  } catch (error: any) {
+    logger.error('Error deactivating organization', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
+    return NextResponse.json(
+      { 
+        error: 'Failed to deactivate organization',
+        ...(isDevelopment && { details: error?.message })
+      },
+      { status: 500 }
+    )
   }
 }
+
+export const POST = withRateLimit(handlePOST)

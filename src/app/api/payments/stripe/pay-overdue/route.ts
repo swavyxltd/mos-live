@@ -4,8 +4,10 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { getActiveOrg } from '@/lib/org'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
@@ -55,11 +57,14 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Payment processed successfully'
     })
-  } catch (error) {
-    console.error('Error processing overdue payment:', error)
+  } catch (error: any) {
+    logger.error('Error processing overdue payment', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json({ 
       error: 'Payment processing failed',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      ...(isDevelopment && { details: error?.message })
     }, { status: 500 })
   }
 }
+
+export const POST = withRateLimit(handlePOST)

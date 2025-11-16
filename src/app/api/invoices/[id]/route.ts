@@ -2,8 +2,10 @@ export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRole, requireOrg } from '@/lib/roles'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
-export async function GET(
+async function handleGET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
@@ -78,16 +80,20 @@ export async function GET(
     }
     
     return NextResponse.json(transformedInvoice)
-  } catch (error) {
-    console.error('Get invoice error:', error)
+  } catch (error: any) {
+    logger.error('Get invoice error', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to fetch invoice' },
+      { 
+        error: 'Failed to fetch invoice',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
 
-export async function PUT(
+async function handlePUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
@@ -156,16 +162,20 @@ export async function PUT(
         dueDate: updatedInvoice.dueDate
       }
     })
-  } catch (error) {
-    console.error('Update invoice error:', error)
+  } catch (error: any) {
+    logger.error('Update invoice error', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to update invoice' },
+      { 
+        error: 'Failed to update invoice',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
 
-export async function DELETE(
+async function handleDELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
@@ -215,11 +225,19 @@ export async function DELETE(
     })
     
     return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Delete invoice error:', error)
+  } catch (error: any) {
+    logger.error('Delete invoice error', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to delete invoice' },
+      { 
+        error: 'Failed to delete invoice',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const GET = withRateLimit(handleGET)
+export const PUT = withRateLimit(handlePUT)
+export const DELETE = withRateLimit(handleDELETE)

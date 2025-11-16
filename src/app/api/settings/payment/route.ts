@@ -4,8 +4,10 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { getActiveOrg } from '@/lib/org'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
-export async function PUT(request: NextRequest) {
+async function handlePUT(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
@@ -56,16 +58,20 @@ export async function PUT(request: NextRequest) {
       success: true, 
       billingProfile 
     })
-  } catch (error) {
-    console.error('Error updating payment settings:', error)
+  } catch (error: any) {
+    logger.error('Error updating payment settings', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to update payment settings' },
+      { 
+        error: 'Failed to update payment settings',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
 
-export async function GET() {
+async function handleGET() {
   try {
     const session = await getServerSession(authOptions)
     
@@ -125,16 +131,20 @@ export async function GET() {
         }
       ]
     })
-  } catch (error) {
-    console.error('Error fetching payment settings:', error)
+  } catch (error: any) {
+    logger.error('Error fetching payment settings', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to fetch payment settings' },
+      { 
+        error: 'Failed to fetch payment settings',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
 
-export async function DELETE() {
+async function handleDELETE() {
   try {
     const session = await getServerSession(authOptions)
     
@@ -171,11 +181,19 @@ export async function DELETE() {
       success: true, 
       message: 'Payment method cleared for testing' 
     })
-  } catch (error) {
-    console.error('Error clearing payment method:', error)
+  } catch (error: any) {
+    logger.error('Error clearing payment method', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to clear payment method' },
+      { 
+        error: 'Failed to clear payment method',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const PUT = withRateLimit(handlePUT)
+export const GET = withRateLimit(handleGET)
+export const DELETE = withRateLimit(handleDELETE)

@@ -2,8 +2,11 @@ export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { logger } from '@/lib/logger'
+import { sanitizeText, isValidPhone, MAX_STRING_LENGTHS } from '@/lib/input-validation'
+import { withRateLimit } from '@/lib/api-middleware'
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     const body = await request.json()
     const {
@@ -25,6 +28,42 @@ export async function POST(request: NextRequest) {
         { error: 'Missing required fields: token, password, parentName, paymentMethod' },
         { status: 400 }
       )
+    }
+
+    // Validate password length
+    if (password.length < 8) {
+      return NextResponse.json(
+        { error: 'Password must be at least 8 characters long' },
+        { status: 400 }
+      )
+    }
+
+    // Sanitize and validate inputs
+    const sanitizedParentName = sanitizeText(parentName, MAX_STRING_LENGTHS.name)
+    const sanitizedParentPhone = parentPhone ? sanitizeText(parentPhone, MAX_STRING_LENGTHS.phone) : null
+    const sanitizedStudentFirstName = studentFirstName ? sanitizeText(studentFirstName, MAX_STRING_LENGTHS.name) : null
+    const sanitizedStudentLastName = studentLastName ? sanitizeText(studentLastName, MAX_STRING_LENGTHS.name) : null
+    const sanitizedAllergies = studentAllergies ? sanitizeText(studentAllergies, MAX_STRING_LENGTHS.text) : null
+    const sanitizedMedicalNotes = studentMedicalNotes ? sanitizeText(studentMedicalNotes, MAX_STRING_LENGTHS.text) : null
+
+    // Validate phone if provided
+    if (sanitizedParentPhone && !isValidPhone(sanitizedParentPhone)) {
+      return NextResponse.json(
+        { error: 'Invalid phone number format' },
+        { status: 400 }
+      )
+    }
+
+    // Validate date if provided
+    let validatedDob: Date | null = null
+    if (studentDob) {
+      validatedDob = new Date(studentDob)
+      if (isNaN(validatedDob.getTime())) {
+        return NextResponse.json(
+          { error: 'Invalid date of birth format' },
+          { status: 400 }
+        )
+      }
     }
 
     // Validate invitation
@@ -92,8 +131,8 @@ export async function POST(request: NextRequest) {
         parentUser = await tx.user.create({
           data: {
             email: invitation.parentEmail.toLowerCase(),
-            name: parentName,
-            phone: parentPhone || null,
+            name: sanitizedParentName,
+            phone: sanitizedParentPhone,
             password: hashedPassword
           }
         })
@@ -102,8 +141,8 @@ export async function POST(request: NextRequest) {
         parentUser = await tx.user.update({
           where: { id: parentUser.id },
           data: {
-            name: parentName,
-            phone: parentPhone || null,
+            name: sanitizedParentName,
+            phone: sanitizedParentPhone,
             password: hashedPassword
           }
         })
@@ -134,11 +173,11 @@ export async function POST(request: NextRequest) {
         where: { id: invitation.studentId },
         data: {
           primaryParentId: parentUser.id,
-          firstName: studentFirstName || invitation.student.firstName,
-          lastName: studentLastName || invitation.student.lastName,
-          dob: studentDob ? new Date(studentDob) : invitation.student.dob,
-          allergies: studentAllergies || invitation.student.allergies,
-          medicalNotes: studentMedicalNotes || invitation.student.medicalNotes
+          firstName: sanitizedStudentFirstName || invitation.student.firstName,
+          lastName: sanitizedStudentLastName || invitation.student.lastName,
+          dob: validatedDob || invitation.student.dob,
+          allergies: sanitizedAllergies || invitation.student.allergies,
+          medicalNotes: sanitizedMedicalNotes || invitation.student.medicalNotes
         }
       })
 
@@ -196,11 +235,17 @@ export async function POST(request: NextRequest) {
       needsStripeSetup
     })
   } catch (error: any) {
-    console.error('Error completing parent setup:', error)
+    logger.error('Error completing parent setup', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: error.message || 'Failed to complete parent setup' },
+      { 
+        error: 'Failed to complete parent setup',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const POST = withRateLimit(handlePOST, { strict: true })
 

@@ -4,6 +4,8 @@ import { z } from 'zod'
 import { requireRole, requireOrg } from '@/lib/roles'
 import { prisma } from '@/lib/prisma'
 import { checkPaymentMethod } from '@/lib/payment-check'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
 const bulkAttendanceSchema = z.object({
   classId: z.string(),
@@ -14,7 +16,7 @@ const bulkAttendanceSchema = z.object({
   }))
 })
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     const session = await requireRole(['ADMIN', 'STAFF'])(request)
     if (session instanceof NextResponse) return session
@@ -84,11 +86,17 @@ export async function POST(request: NextRequest) {
     })
     
     return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Bulk attendance error:', error)
+  } catch (error: any) {
+    logger.error('Bulk attendance error', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to update attendance' },
+      { 
+        error: 'Failed to update attendance',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
 }
+
+export const POST = withRateLimit(handlePOST)
