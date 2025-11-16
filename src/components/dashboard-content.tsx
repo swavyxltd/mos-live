@@ -48,6 +48,7 @@ import {
   FileText,
   Loader2
 } from 'lucide-react'
+import type { DashboardStats as DashboardStatsType } from '@/lib/dashboard-stats'
 
 interface DashboardStats {
   totalStudents: number
@@ -63,29 +64,40 @@ interface DashboardStats {
   overduePayments: number
   pendingApplications: number
   attendanceTrend: Array<{ date: string; value: number }>
+  paidThisMonth?: number
+  averagePaymentTime?: number
 }
 
-export function DashboardContent() {
+interface DashboardContentProps {
+  initialStats?: DashboardStatsType | null
+}
+
+export function DashboardContent({ initialStats }: DashboardContentProps) {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [stats, setStats] = useState<DashboardStats>({
-    totalStudents: 0,
-    newStudentsThisMonth: 0,
-    studentGrowth: 0,
-    activeClasses: 0,
-    staffMembers: 0,
-    attendanceRate: 0,
-    attendanceGrowth: 0,
-    monthlyRevenue: 0,
-    revenueGrowth: 0,
-    pendingInvoices: 0,
-    overduePayments: 0,
-    pendingApplications: 0,
-    attendanceTrend: []
-  })
+  const [loading, setLoading] = useState(!initialStats) // Only loading if no initial stats
+  const [stats, setStats] = useState<DashboardStats>(
+    initialStats || {
+      totalStudents: 0,
+      newStudentsThisMonth: 0,
+      studentGrowth: 0,
+      activeClasses: 0,
+      staffMembers: 0,
+      attendanceRate: 0,
+      attendanceGrowth: 0,
+      monthlyRevenue: 0,
+      revenueGrowth: 0,
+      pendingInvoices: 0,
+      overduePayments: 0,
+      pendingApplications: 0,
+      attendanceTrend: []
+    }
+  )
 
   useEffect(() => {
-    fetchDashboardStats()
+    // Only fetch if we don't have initial stats
+    if (!initialStats) {
+      fetchDashboardStats()
+    }
     
     // Listen for refresh events
     const handleRefresh = () => {
@@ -97,7 +109,7 @@ export function DashboardContent() {
     return () => {
       window.removeEventListener('refresh-dashboard', handleRefresh)
     }
-  }, [])
+  }, [initialStats])
 
   const fetchDashboardStats = async () => {
     try {
