@@ -2,6 +2,8 @@
 
 import { SessionProvider } from 'next-auth/react'
 import { Toaster } from 'sonner'
+import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 import { ReactNode } from 'react'
 
 interface ProvidersProps {
@@ -17,6 +19,8 @@ export function Providers({ children }: ProvidersProps) {
     >
       {children}
       <Toaster />
+      <Analytics />
+      <SpeedInsights />
     </SessionProvider>
   )
 }
