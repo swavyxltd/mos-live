@@ -2,6 +2,7 @@
 
 import { useSearchParams } from 'next/navigation'
 import React, { useState, Suspense, useEffect } from 'react'
+import Image from 'next/image'
 import { Mail, Lock, User, MapPin, Phone, Globe } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
@@ -125,10 +126,14 @@ function SignUpForm() {
     return (
       <div className="w-full max-w-[440px]">
         <div className="mb-6 flex justify-center">
-          <img 
+          <Image 
             src="/logo.png" 
             alt="Madrasah OS" 
+            width={198}
+            height={40}
             className="w-[198px] h-auto"
+            priority
+            fetchPriority="high"
           />
         </div>
         <div className="rounded-2xl bg-white shadow-[0_8px_30px_rgba(0,0,0,0.08)] p-8">
@@ -142,10 +147,14 @@ function SignUpForm() {
     <div className="w-full max-w-[600px]">
       {/* Logo above card */}
       <div className="mb-6 flex justify-center">
-        <img 
+        <Image 
           src="/logo.png" 
           alt="Madrasah OS" 
+          width={198}
+          height={40}
           className="w-[198px] h-auto"
+          priority
+          fetchPriority="high"
         />
       </div>
       
@@ -484,10 +493,13 @@ export default function SignUpPage() {
     <Suspense fallback={
       <div className="w-full max-w-[440px]">
         <div className="mb-6 flex justify-center">
-          <img 
+          <Image 
             src="/logo.png" 
             alt="Madrasah OS" 
+            width={198}
+            height={40}
             className="w-[198px] h-auto"
+            priority
           />
         </div>
         <div className="rounded-2xl bg-white shadow-[0_8px_30px_rgba(0,0,0,0.08)] p-8">

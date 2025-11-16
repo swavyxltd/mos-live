@@ -3,6 +3,7 @@
 import { signIn, getSession } from 'next-auth/react'
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useState, Suspense } from 'react'
+import Image from 'next/image'
 import { LogIn } from 'lucide-react'
 import { getPostLoginRedirect } from '@/lib/auth'
 import { LoginForm } from '@/components/login-form'
@@ -109,10 +110,14 @@ function SignInPageContent() {
       <div className="flex w-full max-w-sm flex-col gap-6">
         {/* Logo/Branding */}
         <a href="/" className="flex items-center gap-2 self-center">
-          <img 
+          <Image 
             src="/logo.png" 
             alt="Madrasah OS" 
+            width={128}
+            height={32}
             className="h-8 w-auto"
+            priority
+            fetchPriority="high"
           />
         </a>
 
@@ -134,10 +139,13 @@ export default function SignInPage() {
       <div className="flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
         <div className="flex w-full max-w-sm flex-col gap-6">
           <div className="flex items-center gap-2 self-center">
-            <img 
+            <Image 
               src="/logo.png" 
               alt="Madrasah OS" 
+              width={128}
+              height={32}
               className="h-8 w-auto"
+              priority
             />
           </div>
           <div className="text-center text-gray-600">Loading...</div>

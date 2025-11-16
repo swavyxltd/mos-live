@@ -7,10 +7,14 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { QuickAddMenu } from '@/components/quick-add-menu'
-import GenerateReportModal from '@/components/generate-report-modal'
 import { RestrictedAction } from '@/components/restricted-action'
 import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
+
+// Lazy load modals to reduce initial bundle size
+const GenerateReportModal = dynamic(() => import('@/components/generate-report-modal'), {
+  ssr: false,
+})
 
 // Lazy load WaveChart to reduce initial bundle size
 const WaveChart = dynamic(() => import('@/components/ui/wave-chart').then(mod => ({ default: mod.WaveChart })), {
@@ -97,7 +101,13 @@ export function DashboardContent() {
 
   const fetchDashboardStats = async () => {
     try {
-      const response = await fetch('/api/dashboard/stats')
+      // Use cache headers for better performance
+      const response = await fetch('/api/dashboard/stats', {
+        cache: 'default',
+        headers: {
+          'Cache-Control': 'max-age=60'
+        }
+      })
       if (response.ok) {
         const data = await response.json()
         setStats(data)

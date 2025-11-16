@@ -327,8 +327,9 @@ async function handleGET(request: NextRequest) {
       averagePaymentTime
     })
 
-    // Cache response for 30 seconds to improve performance
-    response.headers.set('Cache-Control', 'private, s-maxage=30, stale-while-revalidate=60')
+    // Cache response for better performance - 60 seconds with stale-while-revalidate
+    response.headers.set('Cache-Control', 'private, s-maxage=60, stale-while-revalidate=120')
+    response.headers.set('X-Content-Type-Options', 'nosniff')
     
     return response
   } catch (error: any) {
