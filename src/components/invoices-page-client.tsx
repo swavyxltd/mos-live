@@ -253,6 +253,8 @@ export function InvoicesPageClient({ initialInvoices = [] }: InvoicesPageClientP
 
       if (result.success) {
         alert('Payment recorded successfully!')
+        // Trigger finance dashboard refresh
+        window.dispatchEvent(new CustomEvent('refresh-dashboard'))
         // Refresh the invoices list
         await fetchInvoices()
         setIsPaymentModalOpen(false)

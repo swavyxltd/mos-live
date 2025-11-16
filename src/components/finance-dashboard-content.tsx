@@ -55,6 +55,17 @@ export function FinanceDashboardContent() {
 
   useEffect(() => {
     fetchFinanceStats()
+    
+    // Listen for refresh events
+    const handleRefresh = () => {
+      fetchFinanceStats()
+    }
+    
+    window.addEventListener('refresh-dashboard', handleRefresh)
+    
+    return () => {
+      window.removeEventListener('refresh-dashboard', handleRefresh)
+    }
   }, [])
 
   const fetchFinanceStats = async () => {

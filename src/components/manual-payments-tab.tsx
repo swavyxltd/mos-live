@@ -140,6 +140,8 @@ export function ManualPaymentsTab() {
 
       if (response.ok) {
         toast.success('Payment recorded successfully')
+        // Trigger finance dashboard refresh
+        window.dispatchEvent(new CustomEvent('refresh-dashboard'))
         setShowPaymentForm(false)
         setSelectedInvoice(null)
         setPaymentForm({

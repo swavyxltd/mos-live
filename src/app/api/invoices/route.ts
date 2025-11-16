@@ -136,6 +136,26 @@ export async function POST(request: NextRequest) {
       )
     }
     
+    // Validate amount is positive
+    if (amountP <= 0) {
+      return NextResponse.json(
+        { error: 'Invoice amount must be greater than 0' },
+        { status: 400 }
+      )
+    }
+    
+    // Verify student belongs to organization
+    const student = await prisma.student.findFirst({
+      where: { id: studentId, orgId }
+    })
+    
+    if (!student) {
+      return NextResponse.json(
+        { error: 'Student not found or does not belong to this organization' },
+        { status: 404 }
+      )
+    }
+    
     // Create the invoice
     const invoice = await prisma.invoice.create({
       data: {
@@ -183,7 +203,8 @@ export async function POST(request: NextRequest) {
       }
     })
   } catch (error) {
-    console.error('Create invoice error:', error)
+    const { logger } = await import('@/lib/logger')
+    logger.error('Create invoice error', error)
     return NextResponse.json(
       { error: 'Failed to create invoice' },
       { status: 500 }

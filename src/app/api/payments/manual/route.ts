@@ -3,8 +3,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireRole } from '@/lib/roles'
 import { getActiveOrg } from '@/lib/org'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     const session = await requireRole(['OWNER', 'ADMIN', 'FINANCE_OFFICER'])(request)
     if (session instanceof NextResponse) return session
@@ -53,21 +55,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invoice not found or already paid' }, { status: 404 })
     }
 
-    // Validate amount matches invoice amount
-    if (amount !== invoice.amountP) {
+    // Validate amount matches invoice amount (with tolerance for rounding)
+    const amountP = Math.round(amount * 100) // Convert to pence
+    if (Math.abs(amountP - invoice.amountP) > 1) { // Allow 1 pence tolerance for rounding
       return NextResponse.json(
-        { error: 'Payment amount must match invoice amount' },
+        { error: `Payment amount must match invoice amount of £${(invoice.amountP / 100).toFixed(2)}` },
         { status: 400 }
       )
     }
 
-    // Create payment record
+    // Create payment record (use validated amountP)
     const payment = await prisma.payment.create({
       data: {
         orgId: org.id,
         invoiceId: invoice.id,
         method: paymentMethod,
-        amountP: amount,
+        amountP: amountP, // Use validated amount in pence
         status: 'COMPLETED',
         meta: JSON.stringify({
           notes: notes || '',
@@ -104,7 +107,7 @@ export async function POST(request: NextRequest) {
       }
     })
   } catch (error) {
-    console.error('Error recording manual payment:', error)
+    logger.error('Error recording manual payment', error)
     return NextResponse.json(
       { error: 'Failed to record payment' },
       { status: 500 }
@@ -112,7 +115,9 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET(request: NextRequest) {
+export const POST = withRateLimit(handlePOST, { strict: true })
+
+async function handleGET(request: NextRequest) {
   try {
     const session = await requireRole(['OWNER', 'ADMIN', 'FINANCE_OFFICER'])(request)
     if (session instanceof NextResponse) return session
@@ -178,10 +183,12 @@ export async function GET(request: NextRequest) {
       }))
     })
   } catch (error) {
-    console.error('Error fetching manual payments:', error)
+    logger.error('Error fetching manual payments', error)
     return NextResponse.json(
       { error: 'Failed to fetch payments' },
       { status: 500 }
     )
   }
 }
+
+export const GET = withRateLimit(handleGET)

@@ -73,8 +73,14 @@ export function ApplicationDetailModal({
     try {
       await onStatusUpdate(application.id, status, adminNotes)
       
-      // If status is ACCEPTED, show success modal with student creation
+      // If status is ACCEPTED, trigger dashboard refresh and show success modal
       if (status === 'ACCEPTED') {
+        // Trigger dashboard refresh events
+        window.dispatchEvent(new CustomEvent('refresh-dashboard'))
+        if (window.location.pathname.startsWith('/owner/')) {
+          window.dispatchEvent(new CustomEvent('refresh-owner-dashboard'))
+        }
+        
         // Create student records from application children
         const students = application.children.map((child, index) => ({
           id: `student-${application.id}-${index}`,

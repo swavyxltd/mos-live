@@ -5,6 +5,7 @@ import { authOptions } from '@/lib/auth'
 import { getActiveOrg } from '@/lib/org'
 import { prisma } from '@/lib/prisma'
 import { sendApplicationAcceptanceEmail } from '@/lib/mail'
+import { logger } from '@/lib/logger'
 import crypto from 'crypto'
 
 // PATCH /api/applications/[id] - Update application status
@@ -67,130 +68,162 @@ export async function PATCH(
     })
 
     // If status is ACCEPTED, create student records and send email
+    let emailSent = false
     if (status === 'ACCEPTED') {
       try {
-        // Find or create parent user
-        let parentUser = await prisma.user.findUnique({
-          where: { email: application.guardianEmail }
-        })
-
-        if (!parentUser) {
-          // Create new parent user
-          parentUser = await prisma.user.create({
-            data: {
-              name: application.guardianName,
-              email: application.guardianEmail,
-              phone: application.guardianPhone
-            }
+        // Use transaction to ensure all-or-nothing student creation
+        const result = await prisma.$transaction(async (tx) => {
+          // Find or create parent user
+          let parentUser = await tx.user.findUnique({
+            where: { email: application.guardianEmail.toLowerCase().trim() }
           })
 
-          // Add parent to organization
-          await prisma.userOrgMembership.create({
-            data: {
-              userId: parentUser.id,
-              orgId: org.id,
-              role: 'PARENT'
-            }
-          })
-        }
-
-        const childrenNames: string[] = []
-        const createdStudentIds: string[] = []
-
-        // Create student records for each child
-        for (const child of application.ApplicationChild) {
-          const student = await prisma.student.create({
-            data: {
-              orgId: org.id,
-              firstName: child.firstName,
-              lastName: child.lastName,
-              dob: child.dob ? new Date(child.dob) : undefined,
-              primaryParentId: parentUser.id
-            }
-          })
-
-          childrenNames.push(`${child.firstName} ${child.lastName}`)
-          createdStudentIds.push(student.id)
-
-          // Create parent invitation for this student
-          const token = crypto.randomBytes(32).toString('hex')
-          const expiresAt = new Date()
-          expiresAt.setDate(expiresAt.getDate() + 30) // 30 days expiry
-
-          await prisma.parentInvitation.create({
-            data: {
-              orgId: org.id,
-              studentId: student.id,
-              parentEmail: application.guardianEmail.toLowerCase().trim(),
-              token,
-              expiresAt
-            }
-          })
-
-          // If a preferred class was specified, try to enroll the student
-          if (application.preferredClass) {
-            // Find a class with a similar name (this is a simple match, could be improved)
-            const matchingClass = await prisma.class.findFirst({
-              where: {
-                orgId: org.id,
-                name: {
-                  contains: application.preferredClass,
-                  mode: 'insensitive'
-                },
-                isArchived: false
+          if (!parentUser) {
+            // Create new parent user
+            parentUser = await tx.user.create({
+              data: {
+                name: application.guardianName.trim(),
+                email: application.guardianEmail.toLowerCase().trim(),
+                phone: application.guardianPhone?.trim() || null
               }
             })
 
-            if (matchingClass) {
-              await prisma.studentClass.create({
-                data: {
+            // Add parent to organization
+            await tx.userOrgMembership.create({
+              data: {
+                userId: parentUser.id,
+                orgId: org.id,
+                role: 'PARENT'
+              }
+            })
+          }
+
+          const childrenNames: string[] = []
+          const createdStudentIds: string[] = []
+          const invitations: Array<{ studentId: string; token: string }> = []
+
+          // Create student records for each child
+          for (const child of application.ApplicationChild) {
+            const student = await tx.student.create({
+              data: {
+                orgId: org.id,
+                firstName: child.firstName.trim(),
+                lastName: child.lastName.trim(),
+                dob: child.dob ? new Date(child.dob) : undefined,
+                primaryParentId: parentUser.id
+              }
+            })
+
+            childrenNames.push(`${child.firstName} ${child.lastName}`)
+            createdStudentIds.push(student.id)
+
+            // Create parent invitation for this student
+            const token = crypto.randomBytes(32).toString('hex')
+            const expiresAt = new Date()
+            expiresAt.setDate(expiresAt.getDate() + 30) // 30 days expiry
+
+            await tx.parentInvitation.create({
+              data: {
+                orgId: org.id,
+                studentId: student.id,
+                parentEmail: application.guardianEmail.toLowerCase().trim(),
+                token,
+                expiresAt
+              }
+            })
+
+            invitations.push({ studentId: student.id, token })
+
+            // If a preferred class was specified, try to enroll the student
+            if (application.preferredClass) {
+              // Find a class with a similar name (this is a simple match, could be improved)
+              const matchingClass = await tx.class.findFirst({
+                where: {
                   orgId: org.id,
-                  studentId: student.id,
-                  classId: matchingClass.id
+                  name: {
+                    contains: application.preferredClass,
+                    mode: 'insensitive'
+                  },
+                  isArchived: false
                 }
               })
+
+              if (matchingClass) {
+                await tx.studentClass.create({
+                  data: {
+                    orgId: org.id,
+                    studentId: student.id,
+                    classId: matchingClass.id
+                  }
+                })
+              }
             }
           }
-        }
+
+          return { childrenNames, createdStudentIds, invitations }
+        })
+
+        const { childrenNames, createdStudentIds, invitations } = result
 
         // Send acceptance email to parent
-        try {
-          const baseUrl = process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'https://app.madrasah.io'
-          const cleanBaseUrl = baseUrl.trim().replace(/\/+$/, '')
-          // Use the first student's invitation token for the signup link
-          const firstInvitation = await prisma.parentInvitation.findFirst({
-            where: {
-              studentId: createdStudentIds[0],
-              parentEmail: application.guardianEmail.toLowerCase().trim()
-            },
-            orderBy: { createdAt: 'desc' }
-          })
-          
-          const signupUrl = firstInvitation 
-            ? `${cleanBaseUrl}/auth/parent-setup?token=${firstInvitation.token}`
-            : `${cleanBaseUrl}/auth/signin`
+        if (childrenNames.length > 0 && createdStudentIds.length > 0 && invitations.length > 0) {
+          try {
+            const baseUrl = process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'https://app.madrasah.io'
+            const cleanBaseUrl = baseUrl.trim().replace(/\/+$/, '')
+            // Use the first student's invitation token from transaction result
+            const signupUrl = `${cleanBaseUrl}/auth/parent-setup?token=${invitations[0].token}`
 
-          await sendApplicationAcceptanceEmail({
-            to: application.guardianEmail,
-            orgName: org.name,
-            parentName: application.guardianName,
-            childrenNames,
-            signupUrl
+            logger.info('Sending application acceptance email', {
+              to: application.guardianEmail,
+              orgName: org.name
+            })
+            
+            const emailResult = await sendApplicationAcceptanceEmail({
+              to: application.guardianEmail,
+              orgName: org.name,
+              parentName: application.guardianName,
+              childrenNames,
+              signupUrl
+            })
+            
+            emailSent = !!emailResult
+            if (emailResult) {
+              logger.info('Application acceptance email sent successfully', {
+                emailId: emailResult.id
+              })
+            } else {
+              logger.warn('Email function returned no result')
+            }
+          } catch (emailError: any) {
+            logger.error('Failed to send application acceptance email', emailError, {
+              to: application.guardianEmail
+            })
+            // Don't fail the request if email fails, but log it
+          }
+        } else {
+          logger.warn('Cannot send email: No children or invitations created', {
+            childrenCount: childrenNames.length,
+            studentIdsCount: createdStudentIds.length,
+            invitationsCount: invitations.length
           })
-        } catch (emailError) {
-          console.error('Failed to send application acceptance email:', emailError)
-          // Don't fail the request if email fails, but log it
         }
-      } catch (error) {
-        console.error('Error creating students from application:', error)
+      } catch (error: any) {
+        logger.error('Error creating students from application', error)
         // Don't fail the request, just log the error
         // The application status was already updated
       }
     }
 
-    return NextResponse.json(updatedApplication)
+    // Include email status in response if application was accepted
+    const response: any = { ...updatedApplication }
+    if (status === 'ACCEPTED') {
+      response.emailSent = emailSent
+      response.emailRecipient = application.guardianEmail
+    }
+    
+    return NextResponse.json(response)
   } catch (error) {
-    console.error('Error updating application:', error)
+    logger.error('Error updating application', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

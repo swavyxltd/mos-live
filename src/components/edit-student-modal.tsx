@@ -153,6 +153,12 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
 
       const updatedStudent = await response.json()
       
+      // Trigger dashboard refresh
+      window.dispatchEvent(new CustomEvent('refresh-dashboard'))
+      if (window.location.pathname.startsWith('/owner/')) {
+        window.dispatchEvent(new CustomEvent('refresh-owner-dashboard'))
+      }
+      
       // Call the onSave callback with updated data
       onSave({
         ...updatedStudentData,

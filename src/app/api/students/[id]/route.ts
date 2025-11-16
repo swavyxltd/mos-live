@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireRole, requireOrg } from '@/lib/roles'
 import { prisma } from '@/lib/prisma'
 import { AuditLogAction, AuditLogTargetType } from '@prisma/client'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -75,7 +77,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     return NextResponse.json(transformedStudent)
   } catch (error) {
-    console.error('Error fetching student:', error)
+    logger.error('Error fetching student', error)
     return NextResponse.json({ error: 'Failed to fetch student' }, { status: 500 })
   }
 }
@@ -132,7 +134,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
             }
           })
         } catch (parentError) {
-          console.error('Error updating parent:', parentError)
+          logger.error('Error updating parent', parentError)
           // Don't fail the entire request if parent update fails
         }
       } else if (parentEmail) {
@@ -183,7 +185,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
             data: { primaryParentId: parentUser.id }
           })
         } catch (parentError) {
-          console.error('Error creating/updating parent:', parentError)
+          logger.error('Error creating/updating parent', parentError)
           // Don't fail the entire request if parent creation fails
         }
       }
@@ -276,7 +278,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         },
       })
     } catch (auditError) {
-      console.error('Error creating audit log:', auditError)
+      logger.error('Error creating audit log', auditError)
       // Don't fail the request if audit log fails
     }
 
@@ -301,7 +303,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
     return NextResponse.json(transformedStudent)
   } catch (error) {
-    console.error('Error updating student:', error)
+    logger.error('Error updating student', error)
     return NextResponse.json({ error: 'Failed to update student' }, { status: 500 })
   }
 }
@@ -348,7 +350,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error deleting student:', error)
+    logger.error('Error deleting student', error)
     return NextResponse.json({ error: 'Failed to delete student' }, { status: 500 })
   }
 }

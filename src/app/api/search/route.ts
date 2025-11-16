@@ -4,6 +4,8 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { getActiveOrg } from '@/lib/org'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 import { formatDate } from '@/lib/utils'
 
 // Static navigation pages
@@ -68,7 +70,7 @@ const documentationTopics = [
   { title: 'Reports & Analytics', href: '/support/docs', icon: 'TrendingUp', type: 'guide' },
 ]
 
-export async function GET(request: NextRequest) {
+async function handleGET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -139,7 +141,7 @@ export async function GET(request: NextRequest) {
         })
       })
     } catch (error) {
-      console.error('Error searching students:', error)
+      logger.error('Error searching students', error)
     }
 
     // Search Classes
@@ -173,7 +175,7 @@ export async function GET(request: NextRequest) {
         })
       })
     } catch (error) {
-      console.error('Error searching classes:', error)
+      logger.error('Error searching classes', error)
     }
 
     // Search Staff
@@ -212,7 +214,7 @@ export async function GET(request: NextRequest) {
         })
       })
     } catch (error) {
-      console.error('Error searching staff:', error)
+      logger.error('Error searching staff', error)
     }
 
     // Search Payment Records
@@ -256,7 +258,7 @@ export async function GET(request: NextRequest) {
         })
       })
     } catch (error) {
-      console.error('Error searching payments:', error)
+      logger.error('Error searching payments', error)
     }
 
     // Search Messages
@@ -285,7 +287,7 @@ export async function GET(request: NextRequest) {
         })
       })
     } catch (error) {
-      console.error('Error searching messages:', error)
+      logger.error('Error searching messages', error)
     }
 
     // Search Events
@@ -314,7 +316,7 @@ export async function GET(request: NextRequest) {
         })
       })
     } catch (error) {
-      console.error('Error searching events:', error)
+      logger.error('Error searching events', error)
     }
 
     // Search Applications
@@ -343,7 +345,7 @@ export async function GET(request: NextRequest) {
         })
       })
     } catch (error) {
-      console.error('Error searching applications:', error)
+      logger.error('Error searching applications', error)
     }
 
     // Search Navigation Pages
@@ -417,7 +419,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ results: sortedResults.slice(0, 50) })
 
   } catch (error) {
-    console.error('Search error:', error)
+    logger.error('Search error', error)
     return NextResponse.json({ error: 'Search failed' }, { status: 500 })
   }
 }
+
+export const GET = withRateLimit(handleGET)

@@ -65,13 +65,21 @@ export async function POST(request: NextRequest) {
 
     const baseUrl = process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'https://app.madrasah.io'
 
+    // Optimize: Pre-fetch all classes once instead of querying for each student
+    const allClasses = await prisma.class.findMany({
+      where: { orgId: org.id, isArchived: false },
+      select: {
+        id: true,
+        monthlyFeeP: true
+      }
+    })
+    const classMap = new Map(allClasses.map(c => [c.id, c]))
+
     // Process each student
     for (const studentData of students) {
       try {
-        // Get class to get monthly fee
-        const classRecord = await prisma.class.findFirst({
-          where: { id: studentData.classId, orgId: org.id, isArchived: false }
-        })
+        // Get class from pre-fetched map instead of querying
+        const classRecord = classMap.get(studentData.classId)
 
         if (!classRecord) {
           results.errors.push({
@@ -81,7 +89,7 @@ export async function POST(request: NextRequest) {
           continue
         }
 
-        if (!classRecord.monthlyFeeP) {
+        if (!classRecord.monthlyFeeP || classRecord.monthlyFeeP <= 0) {
           results.errors.push({
             rowNumber: studentData.rowNumber,
             error: 'Class does not have a monthly fee set'

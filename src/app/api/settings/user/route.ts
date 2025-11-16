@@ -4,8 +4,11 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { logger } from '@/lib/logger'
+import { sanitizeText, isValidEmail, isValidPhone, MAX_STRING_LENGTHS } from '@/lib/input-validation'
+import { withRateLimit } from '@/lib/api-middleware'
 
-export async function PUT(request: NextRequest) {
+async function handlePUT(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
@@ -33,10 +36,10 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Validate email format if provided
+    // Validate and sanitize email format if provided
     if (email && email !== user.email) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      if (!emailRegex.test(email)) {
+      const sanitizedEmail = email.toLowerCase().trim()
+      if (!isValidEmail(sanitizedEmail)) {
         return NextResponse.json(
           { error: 'Invalid email format' },
           { status: 400 }
@@ -45,7 +48,7 @@ export async function PUT(request: NextRequest) {
       
       // Check if email is already taken by another user
       const existingUser = await prisma.user.findUnique({
-        where: { email }
+        where: { email: sanitizedEmail }
       })
       
       if (existingUser && existingUser.id !== session.user.id) {
@@ -61,17 +64,24 @@ export async function PUT(request: NextRequest) {
     
     // Update name if provided (allow empty string to clear name)
     if (name !== undefined) {
-      updateData.name = name
+      updateData.name = sanitizeText(name, MAX_STRING_LENGTHS.name)
     }
     
     // Update email if provided and different
     if (email !== undefined && email !== user.email) {
-      updateData.email = email
+      updateData.email = sanitizedEmail
     }
     
     // Update phone if provided
     if (phone !== undefined) {
-      updateData.phone = phone
+      const sanitizedPhone = sanitizeText(phone, MAX_STRING_LENGTHS.phone)
+      if (sanitizedPhone && !isValidPhone(sanitizedPhone)) {
+        return NextResponse.json(
+          { error: 'Invalid phone number format' },
+          { status: 400 }
+        )
+      }
+      updateData.phone = sanitizedPhone || null
     }
     
     // Update 2FA status if provided
@@ -114,7 +124,7 @@ export async function PUT(request: NextRequest) {
       user: updatedUser 
     })
   } catch (error) {
-    console.error('Error updating user settings:', error)
+    logger.error('Error updating user settings', error)
     return NextResponse.json(
       { error: 'Failed to update user settings' },
       { status: 500 }
@@ -122,7 +132,9 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-export async function GET() {
+export const PUT = withRateLimit(handlePUT)
+
+async function handleGET() {
   try {
     const session = await getServerSession(authOptions)
     
@@ -149,10 +161,12 @@ export async function GET() {
 
     return NextResponse.json(user)
   } catch (error) {
-    console.error('Error fetching user settings:', error)
+    logger.error('Error fetching user settings', error)
     return NextResponse.json(
       { error: 'Failed to fetch user settings' },
       { status: 500 }
     )
   }
 }
+
+export const GET = withRateLimit(handleGET)

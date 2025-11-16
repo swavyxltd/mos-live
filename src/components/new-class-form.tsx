@@ -34,6 +34,12 @@ export function NewClassForm() {
         throw new Error(error.error || 'Failed to create class')
       }
 
+      // Trigger dashboard refresh
+      window.dispatchEvent(new CustomEvent('refresh-dashboard'))
+      if (window.location.pathname.startsWith('/owner/')) {
+        window.dispatchEvent(new CustomEvent('refresh-owner-dashboard'))
+      }
+
       toast.success('Class created successfully')
       router.push('/classes')
     } catch (error: any) {

@@ -5,6 +5,8 @@ import { requireRole, requireOrg } from '@/lib/roles'
 import { prisma } from '@/lib/prisma'
 import { whatsapp } from '@/lib/whatsapp'
 import { sendEmail } from '@/lib/mail'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
 const sendMessageSchema = z.object({
   title: z.string().min(1),
@@ -17,256 +19,231 @@ const sendMessageSchema = z.object({
   saveOnly: z.boolean().optional() // If true, save to DB without sending emails
 })
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
+  const session = await requireRole(['ADMIN', 'OWNER'])(request)
+  if (session instanceof NextResponse) {
+    return session
+  }
+  
+  const orgId = await requireOrg(request)
+  if (orgId instanceof NextResponse) {
+    return orgId
+  }
+  
+  const requestBody = await request.json()
+  
+  // Validate request body
+  let parsedData
   try {
-    console.log('[API] POST /api/messages/send - Starting')
-    
-    const session = await requireRole(['ADMIN', 'OWNER'])(request)
-    if (session instanceof NextResponse) {
-      console.log('[API] Session check failed')
-      return session
-    }
-    
-    const orgId = await requireOrg(request)
-    if (orgId instanceof NextResponse) {
-      console.log('[API] Org check failed')
-      return orgId
-    }
-    
-    console.log('[API] Org ID:', orgId)
-    
-    const requestBody = await request.json()
-    console.log('[API] Request body:', { ...requestBody, body: requestBody.body?.substring(0, 50) + '...' })
-    
-    // Validate request body
-    let parsedData
-    try {
-      parsedData = sendMessageSchema.parse(requestBody)
-    } catch (validationError: any) {
-      console.error('[API] Validation error:', validationError)
-      return NextResponse.json(
-        { error: 'Validation error', details: validationError.errors },
-        { status: 400 }
-      )
-    }
-    
-    const { title, body, audience, channel = 'EMAIL', classIds, parentId, targets, saveOnly = false } = parsedData
-    console.log('[API] Parsed data:', { title, audience, channel, saveOnly, hasClassIds: !!classIds, hasParentId: !!parentId })
-    
-    // Get recipients based on audience
-    let recipients: Array<{ email?: string; phone?: string; name: string; id?: string }> = []
-    let audienceDisplayName = ''
-    
-    if (audience === 'ALL') {
-      // Get all parents
-      const parents = await prisma.user.findMany({
-        where: {
-          UserOrgMembership: {
-            some: {
-              orgId,
-              role: 'PARENT'
-            }
+    parsedData = sendMessageSchema.parse(requestBody)
+  } catch (validationError: any) {
+    logger.error('Message validation error', validationError)
+    return NextResponse.json(
+      { error: 'Validation error', details: validationError.errors },
+      { status: 400 }
+    )
+  }
+  
+  const { title, body, audience, channel = 'EMAIL', classIds, parentId, targets, saveOnly = false } = parsedData
+  
+  // Get recipients based on audience
+  let recipients: Array<{ email?: string; phone?: string; name: string; id?: string }> = []
+  let audienceDisplayName = ''
+  
+  if (audience === 'ALL') {
+    // Get all parents
+    const parents = await prisma.user.findMany({
+      where: {
+        UserOrgMembership: {
+          some: {
+            orgId,
+            role: 'PARENT'
           }
-        },
-        select: {
-          id: true,
-          email: true,
-          phone: true,
-          name: true
         }
-      })
-      recipients = parents
-      audienceDisplayName = 'All parents'
-    } else if (audience === 'BY_CLASS' && classIds && classIds.length > 0) {
-      // Get parents of students in specific classes
-      const classData = await prisma.class.findUnique({
-        where: { id: classIds[0] },
-        select: { name: true }
-      })
-      const parents = await prisma.user.findMany({
-        where: {
-          Student: {
-            some: {
-              StudentClass: {
-                some: {
-                  classId: { in: classIds }
-                }
+      },
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        name: true
+      }
+    })
+    recipients = parents
+    audienceDisplayName = 'All parents'
+  } else if (audience === 'BY_CLASS' && classIds && classIds.length > 0) {
+    // Get parents of students in specific classes
+    const classData = await prisma.class.findUnique({
+      where: { id: classIds[0] },
+      select: { name: true }
+    })
+    const parents = await prisma.user.findMany({
+      where: {
+        Student: {
+          some: {
+            StudentClass: {
+              some: {
+                classId: { in: classIds }
               }
             }
           }
-        },
-        select: {
-          id: true,
-          email: true,
-          phone: true,
-          name: true
         }
-      })
-      recipients = parents
-      audienceDisplayName = classData?.name || 'Specific class'
-    } else if (audience === 'INDIVIDUAL' && parentId) {
-      // Get individual parent
-      const parent = await prisma.user.findUnique({
-        where: { id: parentId },
-        select: {
-          id: true,
-          email: true,
-          phone: true,
-          name: true
-        }
-      })
-      if (parent) {
-        recipients = [parent]
-        audienceDisplayName = parent.name || parent.email || 'Individual parent'
-      }
-    }
-    
-    // Get org name for WhatsApp formatting
-    const org = await prisma.org.findUnique({
-      where: { id: orgId },
-      select: { name: true }
-    })
-    
-    // Generate unique message ID
-    const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-    
-    // Prepare targets data
-    const targetsData: any = {
-      audienceDisplayName,
-      recipientCount: recipients.length,
-      orgName: org?.name || 'Madrasah'
-    }
-    
-    if (targets && typeof targets === 'object') {
-      Object.assign(targetsData, targets)
-    }
-    
-    if (audience === 'BY_CLASS' && classIds) {
-      targetsData.classIds = classIds
-    }
-    
-    if (audience === 'INDIVIDUAL' && parentId) {
-      targetsData.parentId = parentId
-    }
-    
-    // Create message record
-    console.log('[API] Creating message with ID:', messageId)
-    const message = await prisma.message.create({
-      data: {
-        id: messageId,
-        orgId,
-        title,
-        body,
-        audience,
-        channel,
-        status: 'DRAFT',
-        targets: JSON.stringify(targetsData),
-        createdAt: new Date(),
-        updatedAt: new Date()
+      },
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        name: true
       }
     })
-    console.log('[API] Message created successfully:', message.id)
-    
-    // Send messages (only if not saveOnly)
-    let successCount = 0
-    let failureCount = 0
-    
-    if (!saveOnly) {
-      for (const recipient of recipients) {
-        try {
-          if (channel === 'EMAIL' && recipient.email) {
-            const { generateEmailTemplate } = await import('@/lib/email-template')
-            const html = await generateEmailTemplate({
-              title,
-              description: body,
-              footerText: 'Best regards, The Madrasah Team'
-            })
-            
-            await sendEmail({
-              to: recipient.email,
-              subject: title,
-              html,
-              text: `${title}\n\n${body}\n\nBest regards,\nThe Madrasah Team`
-            })
-            successCount++
-          } else if (channel === 'WHATSAPP' && recipient.phone) {
-            // WhatsApp sending is disabled - admin will copy and send manually
-            // Just count as success since message is saved to DB
-            successCount++
-          }
-        } catch (error) {
-          console.error(`Failed to send ${channel} to ${recipient.email || recipient.phone}:`, error)
-          failureCount++
-        }
+    recipients = parents
+    audienceDisplayName = classData?.name || 'Specific class'
+  } else if (audience === 'INDIVIDUAL' && parentId) {
+    // Get individual parent
+    const parent = await prisma.user.findUnique({
+      where: { id: parentId },
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        name: true
       }
-    } else {
-      // If saveOnly, mark all as success since we're just saving to DB
-      successCount = recipients.length
+    })
+    if (parent) {
+      recipients = [parent]
+      audienceDisplayName = parent.name || parent.email || 'Individual parent'
     }
-    
-    // Always mark as SENT if message is saved to database (so it appears in parent portal)
-    // Even if email delivery fails, the message is still available in the portal
-    const finalStatus = 'SENT'
-    
-    const existingTargetsData = JSON.parse(message.targets || '{}')
-    await prisma.message.update({
-      where: { id: message.id },
-      data: {
-        status: finalStatus,
-        targets: JSON.stringify({
-          ...existingTargetsData,
-          recipients: recipients.length,
-          successCount,
-          failureCount,
-          emailDeliveryStatus: failureCount === 0 ? 'success' : failureCount === recipients.length ? 'failed' : 'partial'
-        }),
-        updatedAt: new Date()
-      }
-    })
-    
-    // Log the action
-    await prisma.auditLog.create({
-      data: {
-        id: `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        orgId,
-        actorUserId: session.user.id,
-        action: 'SEND_MESSAGE',
-        targetType: 'Message',
-        targetId: message.id,
-        data: JSON.stringify({
-          title,
-          channel,
-          audience,
-          recipients: recipients.length,
-          successCount,
-          failureCount
-        })
-      }
-    })
-    
-    return NextResponse.json({
-      success: true,
-      messageId: message.id,
-      recipients: recipients.length,
-      successCount,
-      failureCount
-    })
-  } catch (error: any) {
-    console.error('Send message error:', error)
-    
-    // Return more specific error messages
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Validation error', details: error.errors },
-        { status: 400 }
-      )
-    }
-    
-    // Return the actual error message if available
-    const errorMessage = error?.message || 'Failed to send message'
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: 500 }
-    )
   }
+  
+  // Get org name for WhatsApp formatting
+  const org = await prisma.org.findUnique({
+    where: { id: orgId },
+    select: { name: true }
+  })
+  
+  // Generate unique message ID
+  const messageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  
+  // Prepare targets data
+  const targetsData: any = {
+    audienceDisplayName,
+    recipientCount: recipients.length,
+    orgName: org?.name || 'Madrasah'
+  }
+  
+  if (targets && typeof targets === 'object') {
+    Object.assign(targetsData, targets)
+  }
+  
+  if (audience === 'BY_CLASS' && classIds) {
+    targetsData.classIds = classIds
+  }
+  
+  if (audience === 'INDIVIDUAL' && parentId) {
+    targetsData.parentId = parentId
+  }
+  
+  // Create message record
+  const message = await prisma.message.create({
+    data: {
+      id: messageId,
+      orgId,
+      title,
+      body,
+      audience,
+      channel,
+      status: 'DRAFT',
+      targets: JSON.stringify(targetsData),
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
+  })
+  
+  // Send messages (only if not saveOnly)
+  let successCount = 0
+  let failureCount = 0
+  
+  if (!saveOnly) {
+    for (const recipient of recipients) {
+      try {
+        if (channel === 'EMAIL' && recipient.email) {
+          const { generateEmailTemplate } = await import('@/lib/email-template')
+          const html = await generateEmailTemplate({
+            title,
+            description: body,
+            footerText: 'Best regards, The Madrasah Team'
+          })
+          
+          await sendEmail({
+            to: recipient.email,
+            subject: title,
+            html,
+            text: `${title}\n\n${body}\n\nBest regards,\nThe Madrasah Team`
+          })
+          successCount++
+        } else if (channel === 'WHATSAPP' && recipient.phone) {
+          // WhatsApp sending is disabled - admin will copy and send manually
+          // Just count as success since message is saved to DB
+          successCount++
+        }
+      } catch (error) {
+        logger.error(`Failed to send ${channel}`, error, {
+          recipient: recipient.email || recipient.phone
+        })
+        failureCount++
+      }
+    }
+  } else {
+    // If saveOnly, mark all as success since we're just saving to DB
+    successCount = recipients.length
+  }
+  
+  // Always mark as SENT if message is saved to database (so it appears in parent portal)
+  // Even if email delivery fails, the message is still available in the portal
+  const finalStatus = 'SENT'
+  
+  const existingTargetsData = JSON.parse(message.targets || '{}')
+  await prisma.message.update({
+    where: { id: message.id },
+    data: {
+      status: finalStatus,
+      targets: JSON.stringify({
+        ...existingTargetsData,
+        recipients: recipients.length,
+        successCount,
+        failureCount,
+        emailDeliveryStatus: failureCount === 0 ? 'success' : failureCount === recipients.length ? 'failed' : 'partial'
+      }),
+      updatedAt: new Date()
+    }
+  })
+  
+  // Log the action
+  await prisma.auditLog.create({
+    data: {
+      id: `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      orgId,
+      actorUserId: session.user.id,
+      action: 'SEND_MESSAGE',
+      targetType: 'Message',
+      targetId: message.id,
+      data: JSON.stringify({
+        title,
+        channel,
+        audience,
+        recipients: recipients.length,
+        successCount,
+        failureCount
+      })
+    }
+  })
+  
+  return NextResponse.json({
+    success: true,
+    messageId: message.id,
+    recipients: recipients.length,
+    successCount,
+    failureCount
+  })
 }
+
+export const POST = withRateLimit(handlePOST, { strict: true })

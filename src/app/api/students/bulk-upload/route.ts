@@ -49,6 +49,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Validate file upload
+    const { validateFileUpload, MAX_FILE_SIZE, ALLOWED_CSV_TYPES } = await import('@/lib/input-validation')
+    const fileValidation = validateFileUpload(file, ALLOWED_CSV_TYPES, MAX_FILE_SIZE)
+    if (!fileValidation.valid) {
+      return NextResponse.json(
+        { error: fileValidation.error || 'Invalid file' },
+        { status: 400 }
+      )
+    }
+
     // Read file content
     const fileContent = await file.text()
 
@@ -75,9 +85,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get all existing students to check for duplicates
+    // Optimize duplicate checking: Create a Map for O(1) lookup instead of O(n) find
+    // Only fetch what we need for duplicate checking (exclude archived)
     const existingStudents = await prisma.student.findMany({
-      where: { orgId: org.id },
+      where: { orgId: org.id, isArchived: false },
       select: {
         id: true,
         firstName: true,
@@ -88,6 +99,13 @@ export async function POST(request: NextRequest) {
           }
         }
       }
+    })
+
+    // Create a Map for fast duplicate lookup: key = "firstName|lastName|parentEmail"
+    const duplicateMap = new Map<string, { id: string }>()
+    existingStudents.forEach(student => {
+      const key = `${student.firstName.toLowerCase().trim()}|${student.lastName.toLowerCase().trim()}|${student.primaryParent?.email?.toLowerCase().trim() || ''}`
+      duplicateMap.set(key, { id: student.id })
     })
 
     // Validate each row
@@ -127,12 +145,9 @@ export async function POST(request: NextRequest) {
 
       // parentPhone is optional
 
-      // Check for duplicates (by firstName + lastName + parentEmail)
-      const duplicate = existingStudents.find(s => 
-        s.firstName.toLowerCase().trim() === (row.firstName || '').toLowerCase().trim() &&
-        s.lastName.toLowerCase().trim() === (row.lastName || '').toLowerCase().trim() &&
-        s.primaryParent?.email?.toLowerCase().trim() === (row.parentEmail || '').toLowerCase().trim()
-      )
+      // Check for duplicates using optimized Map lookup (O(1) instead of O(n))
+      const duplicateKey = `${(row.firstName || '').toLowerCase().trim()}|${(row.lastName || '').toLowerCase().trim()}|${(row.parentEmail || '').toLowerCase().trim()}`
+      const duplicate = duplicateMap.get(duplicateKey)
 
       if (duplicate) {
         validated.isDuplicate = true

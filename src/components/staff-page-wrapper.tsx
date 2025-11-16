@@ -48,6 +48,13 @@ export function StaffPageWrapper({ initialTeachers }: StaffPageWrapperProps) {
       _count: { classes: 0 }
     }
     setTeachers(prev => [...prev, newTeacher])
+    
+    // Trigger dashboard refresh
+    window.dispatchEvent(new CustomEvent('refresh-dashboard'))
+    if (window.location.pathname.startsWith('/owner/')) {
+      window.dispatchEvent(new CustomEvent('refresh-owner-dashboard'))
+    }
+    
     setIsAddModalOpen(false)
   }
 

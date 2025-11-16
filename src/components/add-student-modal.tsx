@@ -83,6 +83,13 @@ export function AddStudentModal({ isOpen, onClose, onSave, classes }: AddStudent
       }
 
       const data = await response.json()
+      
+      // Trigger dashboard refresh
+      window.dispatchEvent(new CustomEvent('refresh-dashboard'))
+      if (window.location.pathname.startsWith('/owner/')) {
+        window.dispatchEvent(new CustomEvent('refresh-owner-dashboard'))
+      }
+      
       onSave(data.student)
       onClose()
     } catch (err) {

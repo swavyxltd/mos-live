@@ -82,6 +82,17 @@ export function DashboardContent() {
 
   useEffect(() => {
     fetchDashboardStats()
+    
+    // Listen for refresh events
+    const handleRefresh = () => {
+      fetchDashboardStats()
+    }
+    
+    window.addEventListener('refresh-dashboard', handleRefresh)
+    
+    return () => {
+      window.removeEventListener('refresh-dashboard', handleRefresh)
+    }
   }, [])
 
   const fetchDashboardStats = async () => {

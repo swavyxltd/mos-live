@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 export async function GET(request: NextRequest) {
   try {
@@ -34,11 +35,13 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(safeSettings)
   } catch (error: any) {
-    console.error('Error fetching platform settings:', error)
-    console.error('Error stack:', error?.stack)
-    console.error('Error details:', JSON.stringify(error, null, 2))
+    logger.error('Error fetching platform settings', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to fetch platform settings', details: error?.message || String(error), stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined },
+      { 
+        error: 'Failed to fetch platform settings',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }

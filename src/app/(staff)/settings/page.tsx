@@ -280,6 +280,16 @@ export default function SettingsPage() {
       
       if (response.ok) {
         toast.success('Organization settings saved successfully')
+        // Trigger refresh of org name everywhere
+        window.dispatchEvent(new CustomEvent('refresh-org-name'))
+        // Also refresh owner dashboard if org name changed
+        if (window.location.pathname.startsWith('/owner/')) {
+          window.dispatchEvent(new CustomEvent('refresh-owner-dashboard'))
+        }
+        // Reload page to update org name in sidebar and all components
+        setTimeout(() => {
+          window.location.reload()
+        }, 500)
       } else {
         throw new Error('Failed to save organization settings')
       }

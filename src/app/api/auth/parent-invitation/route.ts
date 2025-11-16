@@ -1,8 +1,10 @@
 export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
+import { withRateLimit } from '@/lib/api-middleware'
 
-export async function GET(request: NextRequest) {
+async function handleGET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const token = searchParams.get('token')
@@ -124,11 +126,13 @@ export async function GET(request: NextRequest) {
       }
     })
   } catch (error: any) {
-    console.error('Error fetching parent invitation:', error)
+    logger.error('Error fetching parent invitation', error)
     return NextResponse.json(
       { error: 'Failed to fetch invitation details' },
       { status: 500 }
     )
   }
 }
+
+export const GET = withRateLimit(handleGET)
 

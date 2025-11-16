@@ -144,7 +144,7 @@ export default function OwnerOverviewPage() {
 
   // Auto-refresh every 30 seconds
   useEffect(() => {
-    const interval = setInterval(() => {
+    const refreshDashboard = () => {
       fetch('/api/owner/dashboard')
         .then(res => res.json())
         .then(data => {
@@ -154,8 +154,9 @@ export default function OwnerOverviewPage() {
         .catch(err => {
           console.error('Error refreshing dashboard data:', err)
         })
-      
-      // Refresh system health
+    }
+    
+    const refreshSystemHealth = () => {
       fetch('/api/owner/system-health')
         .then(res => res.json())
         .then(data => {
@@ -171,9 +172,21 @@ export default function OwnerOverviewPage() {
         .catch(err => {
           console.error('Error refreshing system health:', err)
         })
+    }
+    
+    // Listen for manual refresh events
+    window.addEventListener('refresh-owner-dashboard', refreshDashboard)
+    
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(() => {
+      refreshDashboard()
+      refreshSystemHealth()
     }, 30000)
 
-    return () => clearInterval(interval)
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('refresh-owner-dashboard', refreshDashboard)
+    }
   }, [])
 
   // Button handlers

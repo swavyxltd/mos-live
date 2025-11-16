@@ -4,9 +4,12 @@ import { requireRole, requireOrg } from '@/lib/roles'
 import { prisma } from '@/lib/prisma'
 import { sendParentOnboardingEmail } from '@/lib/mail'
 import { checkPaymentMethod } from '@/lib/payment-check'
+import { logger } from '@/lib/logger'
+import { sanitizeText, isValidEmail, MAX_STRING_LENGTHS } from '@/lib/input-validation'
+import { withRateLimit } from '@/lib/api-middleware'
 import crypto from 'crypto'
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     const session = await requireRole(['ADMIN', 'OWNER'])(request)
     if (session instanceof NextResponse) return session
@@ -34,14 +37,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(parentEmail)) {
+    // Validate and sanitize email format
+    const sanitizedParentEmail = parentEmail.toLowerCase().trim()
+    if (!isValidEmail(sanitizedParentEmail)) {
       return NextResponse.json(
         { error: 'Invalid email format' },
         { status: 400 }
       )
     }
+    
+    // Sanitize name fields
+    const sanitizedFirstName = sanitizeText(firstName, MAX_STRING_LENGTHS.name)
+    const sanitizedLastName = sanitizeText(lastName, MAX_STRING_LENGTHS.name)
 
     // Validate start month format (YYYY-MM)
     const monthRegex = /^\d{4}-\d{2}$/
@@ -94,8 +101,8 @@ export async function POST(request: NextRequest) {
         data: {
           id: studentId,
           orgId,
-          firstName,
-          lastName,
+          firstName: sanitizedFirstName,
+          lastName: sanitizedLastName,
           isArchived: status === 'ARCHIVED'
         }
       })
@@ -118,7 +125,7 @@ export async function POST(request: NextRequest) {
         data: {
           orgId,
           studentId: student.id,
-          parentEmail: parentEmail.toLowerCase(),
+          parentEmail: sanitizedParentEmail,
           token,
           expiresAt
         }
@@ -161,13 +168,13 @@ export async function POST(request: NextRequest) {
 
     try {
       await sendParentOnboardingEmail({
-        to: parentEmail,
+        to: sanitizedParentEmail,
         orgName: org.name,
-        studentName: `${firstName} ${lastName}`,
+        studentName: `${sanitizedFirstName} ${sanitizedLastName}`,
         setupUrl
       })
     } catch (emailError) {
-      console.error('Failed to send parent onboarding email:', emailError)
+      logger.error('Failed to send parent onboarding email', emailError)
       // Don't fail the request if email fails, but log it
     }
 
@@ -181,11 +188,13 @@ export async function POST(request: NextRequest) {
       invitationSent: true
     }, { status: 201 })
   } catch (error: any) {
-    console.error('Error creating student with invite:', error)
+    logger.error('Error creating student with invite', error)
     return NextResponse.json(
       { error: error.message || 'Failed to create student and send invitation' },
       { status: 500 }
     )
   }
 }
+
+export const POST = withRateLimit(handlePOST, { strict: true })
 

@@ -5,9 +5,12 @@ import { authOptions } from '@/lib/auth'
 import { getActiveOrg } from '@/lib/org'
 import { prisma } from '@/lib/prisma'
 import { randomUUID } from 'crypto'
+import { logger } from '@/lib/logger'
+import { sanitizeText, isValidEmail, isValidPhone, MAX_STRING_LENGTHS } from '@/lib/input-validation'
+import { withRateLimit } from '@/lib/api-middleware'
 
 // GET /api/applications - Get all applications for the current org
-export async function GET() {
+async function handleGET() {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -35,13 +38,13 @@ export async function GET() {
 
     return NextResponse.json(applications)
   } catch (error) {
-    console.error('Error fetching applications:', error)
+    logger.error('Error fetching applications', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 // POST /api/applications - Create a new application
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     const body = await request.json()
     const { 
@@ -62,10 +65,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    // Validate children have required fields
-    const validChildren = children.filter((child: any) => child.firstName && child.lastName)
+    // Sanitize and validate input
+    const sanitizedGuardianName = sanitizeText(guardianName, MAX_STRING_LENGTHS.name)
+    const sanitizedGuardianEmail = guardianEmail.toLowerCase().trim()
+    const sanitizedGuardianPhone = sanitizeText(guardianPhone, MAX_STRING_LENGTHS.phone)
+    
+    if (!isValidEmail(sanitizedGuardianEmail)) {
+      return NextResponse.json({ error: 'Invalid guardian email address' }, { status: 400 })
+    }
+    
+    if (!isValidPhone(sanitizedGuardianPhone)) {
+      return NextResponse.json({ error: 'Invalid guardian phone number' }, { status: 400 })
+    }
+
+    // Validate children have required fields and sanitize
+    const validChildren = children
+      .filter((child: any) => child.firstName && child.lastName)
+      .map((child: any) => ({
+        ...child,
+        firstName: sanitizeText(child.firstName, MAX_STRING_LENGTHS.name),
+        lastName: sanitizeText(child.lastName, MAX_STRING_LENGTHS.name)
+      }))
+    
     if (validChildren.length === 0) {
       return NextResponse.json({ error: 'At least one child with first and last name is required' }, { status: 400 })
+    }
+    
+    // Verify org exists
+    const org = await prisma.org.findUnique({ where: { id: orgId } })
+    if (!org) {
+      return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
     }
 
     // Create the application
@@ -75,14 +104,14 @@ export async function POST(request: NextRequest) {
         id: randomUUID(),
         orgId,
         status: 'NEW', // Default status for new applications
-        guardianName,
-        guardianPhone,
-        guardianEmail,
-        guardianAddress,
-        preferredClass,
-        preferredTerm,
+        guardianName: sanitizedGuardianName,
+        guardianPhone: sanitizedGuardianPhone,
+        guardianEmail: sanitizedGuardianEmail,
+        guardianAddress: guardianAddress ? sanitizeText(guardianAddress, MAX_STRING_LENGTHS.address) : null,
+        preferredClass: preferredClass ? sanitizeText(preferredClass, MAX_STRING_LENGTHS.name) : null,
+        preferredTerm: preferredTerm ? sanitizeText(preferredTerm, MAX_STRING_LENGTHS.name) : null,
         preferredStartDate: preferredStartDate ? new Date(preferredStartDate) : undefined,
-        additionalNotes,
+        additionalNotes: additionalNotes ? sanitizeText(additionalNotes, MAX_STRING_LENGTHS.notes) : null,
         submittedAt: now, // Set submittedAt to current time
         updatedAt: now,
         ApplicationChild: {
@@ -91,7 +120,7 @@ export async function POST(request: NextRequest) {
             firstName: child.firstName,
             lastName: child.lastName,
             dob: child.dob ? new Date(child.dob) : undefined,
-            gender: child.gender,
+            gender: child.gender ? sanitizeText(child.gender, 50) : null,
             updatedAt: now
           }))
         }
@@ -106,7 +135,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(application, { status: 201 })
   } catch (error) {
-    console.error('Error creating application:', error)
+    logger.error('Error creating application', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
+export const GET = withRateLimit(handleGET)
+export const POST = withRateLimit(handlePOST, { strict: true })

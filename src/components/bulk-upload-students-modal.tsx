@@ -223,6 +223,12 @@ export function BulkUploadStudentsModal({
       setStep('complete')
       toast.success(`Successfully created ${data.summary.created} students and updated ${data.summary.updated} students!`)
       
+      // Trigger dashboard refresh
+      window.dispatchEvent(new CustomEvent('refresh-dashboard'))
+      if (window.location.pathname.startsWith('/owner/')) {
+        window.dispatchEvent(new CustomEvent('refresh-owner-dashboard'))
+      }
+      
       // Refresh after 2 seconds
       setTimeout(() => {
         onSuccess()

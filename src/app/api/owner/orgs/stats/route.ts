@@ -2,27 +2,22 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
-    console.log('🔐 Session check:', {
-      hasSession: !!session,
-      hasUserId: !!session?.user?.id,
-      isSuperAdmin: session?.user?.isSuperAdmin
-    })
-    
     // Only allow super admins (owners)
     if (!session?.user?.id || !session.user.isSuperAdmin) {
-      console.log('❌ Unauthorized access attempt')
+      logger.warn('Unauthorized access attempt to owner orgs stats', {
+        userId: session?.user?.id
+      })
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
-
-    console.log('✅ Authorized, fetching organizations...')
 
     // Get all organizations with detailed stats (including city field and status)
     // Get all organizations (status filter removed to include all, including those with null status)
@@ -48,7 +43,6 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' }
     })
 
-    console.log(`📊 Found ${orgs.length} organizations in database`)
 
     // Get admin user for each org and calculate stats
     const orgsWithStats = await Promise.all(

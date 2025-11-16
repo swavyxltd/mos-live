@@ -3,6 +3,11 @@ import { generateEmailTemplate } from './email-template'
 
 // Check if we're in demo mode
 const isDemoMode = () => {
+  // Allow forcing email sending even in development if FORCE_EMAIL_SEND is set
+  if (process.env.FORCE_EMAIL_SEND === 'true') {
+    return false
+  }
+  
   const result = {
     isDevelopment: process.env.NODE_ENV === 'development',
     noDatabase: !process.env.DATABASE_URL,
