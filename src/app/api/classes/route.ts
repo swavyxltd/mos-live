@@ -6,7 +6,7 @@ import { checkPaymentMethod } from '@/lib/payment-check'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
 
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
   try {
     const session = await requireRole(['ADMIN', 'OWNER'])(request)
     if (session instanceof NextResponse) return session
