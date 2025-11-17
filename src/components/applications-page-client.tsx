@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { ApplicationDetailModal } from '@/components/application-detail-modal'
 import { CopyApplicationLinkModal } from '@/components/copy-application-link-modal'
+import { TableSkeleton } from '@/components/loading/skeleton'
 
 interface Application {
   id: string
