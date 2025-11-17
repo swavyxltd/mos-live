@@ -28,17 +28,23 @@ export function InitialAppLoader() {
       return
     }
 
-    // Check if this is the first load after sign-in
+    // Detect if this is a browser refresh
+    const isRefresh = performance.getEntriesByType('navigation')[0]?.type === 'reload'
+    
+    // Check if this is the first load after sign-in or a browser refresh
     // Use a combination of session user ID and hasVisitedApp to detect new session
     const sessionKey = `hasVisitedApp_${session.user.id}`
     const hasVisitedBefore = sessionStorage.getItem(sessionKey)
     
-    if (hasVisitedBefore) {
+    // Show loader on refresh OR first visit
+    const shouldShowLoader = isRefresh || !hasVisitedBefore
+
+    if (!shouldShowLoader) {
       setShowLoader(false)
       return
     }
 
-    // Mark as visited for this user session
+    // Mark as visited for this user session (but will be cleared on refresh)
     sessionStorage.setItem(sessionKey, 'true')
 
     // Check payment status in the background (no visible loader, silent operation)
@@ -84,7 +90,7 @@ export function InitialAppLoader() {
       // Silent error handling
     })
 
-    // Animate progress bar over 2 seconds
+    // Always show loader for minimum 2 seconds
     const duration = 2000
     const startTime = Date.now()
     
@@ -96,15 +102,33 @@ export function InitialAppLoader() {
       if (newProgress < 100) {
         requestAnimationFrame(animate)
       } else {
-        // Hide loader after 2 seconds
+        // Ensure minimum 2 seconds have passed before hiding
+        const timeElapsed = Date.now() - startTime
+        const remainingTime = Math.max(0, duration - timeElapsed)
+        
         setTimeout(() => {
           setShowLoader(false)
-        }, 100)
+        }, remainingTime + 100) // Small buffer
       }
     }
     
     requestAnimationFrame(animate)
   }, [pathname, session])
+
+  // Clear the visited flag on page unload (refresh detection)
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (session?.user?.id) {
+        const sessionKey = `hasVisitedApp_${session.user.id}`
+        sessionStorage.removeItem(sessionKey)
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  }, [session])
 
   if (!showLoader) return null
 
