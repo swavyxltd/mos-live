@@ -64,7 +64,6 @@ export default function CreateUserPage() {
         }
       })
       .catch(err => {
-        console.error('Error fetching organizations:', err)
       })
   }, [])
 

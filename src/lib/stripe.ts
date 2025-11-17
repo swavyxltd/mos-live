@@ -93,7 +93,6 @@ export async function createPlatformSetupIntent(orgId: string) {
     try {
       await stripe.customers.retrieve(billing.stripeCustomerId)
     } catch (customerError: any) {
-      console.error('Failed to retrieve Stripe customer:', customerError)
       throw new Error(`Cannot connect to Stripe customer: ${customerError.message}`)
     }
 
@@ -109,7 +108,6 @@ export async function createPlatformSetupIntent(orgId: string) {
     
     return setupIntent
   } catch (error: any) {
-    console.error('Stripe API error creating setup intent:', error)
     
     // Provide more specific error messages
     if (error.type === 'StripeConnectionError' || error.type === 'StripeAPIError') {
@@ -283,7 +281,6 @@ export async function cancelStripeSubscription(subscriptionId: string) {
     await stripe.subscriptions.cancel(subscriptionId)
     return true
   } catch (error: any) {
-    console.error('Error canceling Stripe subscription:', error)
     throw new Error(`Failed to cancel subscription: ${error.message}`)
   }
 }
@@ -371,7 +368,6 @@ export async function attemptOffSessionPayment(orgId: string, parentUserId: stri
     
     return paymentIntent
   } catch (error) {
-    console.error('Off-session payment failed:', error)
     return null
   }
 }

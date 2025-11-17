@@ -13,7 +13,6 @@ export function EditClassForm({ classId, initialData }: EditClassFormProps) {
 
   const handleSubmit = async (data: any) => {
     // In a real application, you would update the database here
-    console.log('Updating class:', classId, data)
     
     // For demo purposes, we'll just simulate a successful update
     // In production, you would use prisma.class.update()

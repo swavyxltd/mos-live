@@ -96,7 +96,6 @@ export default function ManualPaymentsPage() {
         throw new Error('Failed to fetch invoices')
       }
     } catch (error) {
-      console.error('Error fetching invoices:', error)
       toast.error('Failed to load invoices')
     } finally {
       setLoading(false)
@@ -156,7 +155,6 @@ export default function ManualPaymentsPage() {
         throw new Error(error.error || 'Failed to record payment')
       }
     } catch (error) {
-      console.error('Error recording payment:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to record payment')
     } finally {
       setSaving(false)

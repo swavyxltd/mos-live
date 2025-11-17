@@ -73,7 +73,7 @@ export function PaymentRequiredModal({ isOpen, onClose, action, userRole }: Paym
   return (
     <>
       <div 
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
+        className="fixed inset-0 bg-white/20 backdrop-blur-md flex items-center justify-center z-50 p-4 overflow-y-auto"
         onClick={(e) => {
           if (e.target === e.currentTarget) {
             onClose()

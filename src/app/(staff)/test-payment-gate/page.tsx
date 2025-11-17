@@ -17,9 +17,7 @@ export default function TestPaymentGatePage() {
   const [testModalOpen, setTestModalOpen] = useState(false)
 
   const handleDirectTest = () => {
-    console.log('Direct test button clicked')
     const canProceed = checkAction('direct-test')
-    console.log('Direct test - can proceed:', canProceed)
   }
 
   return (

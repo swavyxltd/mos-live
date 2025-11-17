@@ -78,11 +78,9 @@ export function AddEventModal({ onEventAdded, trigger }: AddEventModalProps) {
           setOpen(false)
           resetForm()
         } else {
-          console.error('Failed to create event')
         }
       }
     } catch (error) {
-      console.error('Error creating event:', error)
     } finally {
       setLoading(false)
     }

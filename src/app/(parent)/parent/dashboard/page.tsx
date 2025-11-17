@@ -141,7 +141,6 @@ export default async function ParentDashboardPage() {
     // Get upcoming events (mock for now - can be added later)
     upcomingEvents = []
   } catch (error: any) {
-    console.error('[ParentDashboard] Error fetching data:', error?.message || error)
     // Keep empty arrays if database query fails
   }
 

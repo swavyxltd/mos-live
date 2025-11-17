@@ -57,7 +57,6 @@ export function ClassesList({ classes }: ClassesListProps) {
               ? JSON.parse(cls.schedule) 
               : cls.schedule
           } catch (e) {
-            console.error('Error parsing schedule:', e)
             schedule = {}
           }
         }
@@ -131,8 +130,8 @@ export function ClassesList({ classes }: ClassesListProps) {
                     <Badge 
                       variant="outline"
                       className={cls._count.StudentClass > 0 
-                        ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-200 dark:border-green-800' 
-                        : 'bg-gray-50 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700'}
+                        ? 'text-green-600 bg-green-50 border-0 dark:bg-green-950 dark:text-green-200' 
+                        : 'bg-gray-50 text-gray-600 border-0 dark:bg-gray-800 dark:text-gray-200'}
                     >
                       {cls._count.StudentClass > 0 ? 'Active' : 'Empty'}
                     </Badge>

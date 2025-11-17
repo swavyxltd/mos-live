@@ -24,11 +24,8 @@ export function validateEnv() {
   const missing = required.filter(key => !process.env[key])
   
   if (missing.length > 0) {
-    console.warn('⚠️  Missing environment variables:')
-    missing.forEach(key => console.warn(`   - ${key}`))
-    console.warn('\nPlease add these to your .env.local file')
+    missing.forEach(key => )
   } else {
-    console.log('✅ All required environment variables are set')
   }
 
   // Optional WhatsApp dev config
@@ -40,7 +37,7 @@ export function validateEnv() {
 
   const missingOptional = optionalWhatsapp.filter(key => !process.env[key])
   if (missingOptional.length > 0) {
-    console.log('ℹ️  Optional WhatsApp dev config missing (for testing)')
+    ')
   }
 
   return missing.length === 0

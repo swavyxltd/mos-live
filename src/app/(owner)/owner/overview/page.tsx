@@ -92,11 +92,9 @@ export default function OwnerOverviewPage() {
           setDashboardData(data)
           setLastUpdated(new Date())
         } else {
-          console.error('Invalid dashboard data received:', data)
         }
       })
       .catch(err => {
-        console.error('Error fetching dashboard data:', err)
         // Set default empty data to prevent crashes
         setDashboardData({
           totalOrgs: 0,
@@ -138,7 +136,6 @@ export default function OwnerOverviewPage() {
         }
       })
       .catch(err => {
-        console.error('Error fetching system health:', err)
       })
   }, [])
 
@@ -152,7 +149,6 @@ export default function OwnerOverviewPage() {
           setLastUpdated(new Date())
         })
         .catch(err => {
-          console.error('Error refreshing dashboard data:', err)
         })
     }
     
@@ -170,7 +166,6 @@ export default function OwnerOverviewPage() {
           }
         })
         .catch(err => {
-          console.error('Error refreshing system health:', err)
         })
     }
     
@@ -210,7 +205,6 @@ export default function OwnerOverviewPage() {
         })
       }
     } catch (err) {
-      console.error('Error refreshing dashboard data:', err)
     } finally {
       setIsRefreshing(false)
     }

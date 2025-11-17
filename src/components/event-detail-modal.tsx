@@ -126,7 +126,6 @@ export function EventDetailModal({
         }
       }
     } catch (error) {
-      console.error('Error updating event:', error)
     } finally {
       setLoading(false)
     }
@@ -154,7 +153,6 @@ export function EventDetailModal({
           }
         }
       } catch (error) {
-        console.error('Error deleting event:', error)
       } finally {
         setLoading(false)
       }

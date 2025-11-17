@@ -181,7 +181,6 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
       toast.success('Student updated successfully!')
       onClose()
     } catch (error: any) {
-      console.error('Error updating student:', error)
       toast.error(`Failed to update student: ${error.message}`)
     } finally {
       setIsLoading(false)
@@ -192,7 +191,7 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
 
   return (
     <div 
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
+      className="fixed inset-0 bg-white/20 backdrop-blur-md flex items-center justify-center z-50 p-4 overflow-y-auto"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onClose()

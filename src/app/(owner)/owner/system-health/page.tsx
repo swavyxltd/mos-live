@@ -41,11 +41,9 @@ export default function OwnerSystemHealthPage() {
         const data = await response.json()
         setSystemHealth(data)
       } else {
-        console.error('Failed to fetch system health:', response.statusText)
         toast.error('Failed to load system health data')
       }
     } catch (error) {
-      console.error('Error fetching system health:', error)
       toast.error('Failed to load system health data')
     } finally {
       setLoading(false)
@@ -327,7 +325,7 @@ export default function OwnerSystemHealthPage() {
                   <Shield className="h-4 w-4 text-green-600" />
                   <span className="text-sm font-medium">Firewall Status</span>
                 </div>
-                <Badge variant="outline" className="text-green-600">Active</Badge>
+                <Badge variant="outline" className="text-green-600 bg-green-50 border-0 dark:bg-green-950 dark:text-green-200">Active</Badge>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">

@@ -30,7 +30,6 @@ export async function getPlatformSettings() {
 
     return settings
   } catch (error: any) {
-    console.error('Error fetching platform settings:', error)
     // Return default settings on error
     return {
       id: '',

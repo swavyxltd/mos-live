@@ -35,7 +35,6 @@ export function MaintenanceNotificationBanner() {
         setNotification(data)
       }
     } catch (error) {
-      console.error('Error fetching maintenance notification:', error)
     } finally {
       setLoading(false)
     }

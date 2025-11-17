@@ -95,7 +95,6 @@ export function StaffDetailModal({
       setIsArchiveDialogOpen(false)
       onClose()
     } catch (error) {
-      console.error('Error archiving staff:', error)
     } finally {
       setIsArchiving(false)
     }
@@ -104,7 +103,7 @@ export function StaffDetailModal({
   return (
     <>
       <div 
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
+        className="fixed inset-0 bg-white/20 backdrop-blur-md flex items-center justify-center z-50 p-4 overflow-y-auto"
         onClick={(e) => {
           if (e.target === e.currentTarget) {
             onClose()
@@ -278,7 +277,12 @@ export function StaffDetailModal({
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-[var(--muted-foreground)]">Account Status</span>
-                        <Badge variant={staff.isActive ? 'default' : 'secondary'}>
+                        <Badge 
+                          variant="outline"
+                          className={staff.isActive 
+                            ? 'text-green-600 bg-green-50 border-0 dark:bg-green-950 dark:text-green-200' 
+                            : 'bg-gray-50 text-gray-600 border-0 dark:bg-gray-800 dark:text-gray-200'}
+                        >
                           {staff.isActive ? 'Active' : 'Inactive'}
                         </Badge>
                       </div>

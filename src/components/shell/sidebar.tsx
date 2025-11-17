@@ -140,7 +140,7 @@ export function Sidebar({ user: initialUser, org, userRole, staffSubrole }: Side
     currentNavigation = parentNavigation
   } else {
     // For staff users, filter navigation based on permissions
-    // console.log('Shell Sidebar - staffSubrole:', staffSubrole, 'userRole:', userRole) // Debug log
+    // // Debug log
     if (staffSubrole && userRole === 'STAFF') {
       const permissions = useStaffPermissions({
         id: user.id,
@@ -162,10 +162,10 @@ export function Sidebar({ user: initialUser, org, userRole, staffSubrole }: Side
         }
         return permissions.hasPermission(item.permission || 'view_all_data')
       })
-      // console.log('Shell Sidebar - filtered navigation:', currentNavigation.map(item => item.name)) // Debug log
+      // ) // Debug log
     } else {
       currentNavigation = staffNavigation
-      // console.log('Shell Sidebar - using full navigation (no subrole)') // Debug log
+      // ') // Debug log
     }
   }
 

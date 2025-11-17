@@ -76,7 +76,6 @@ export function PaymentMethodsTab() {
         throw new Error('Failed to fetch payment settings')
       }
     } catch (error) {
-      console.error('Error fetching payment settings:', error)
       toast.error('Failed to load payment settings')
     } finally {
       setLoading(false)
@@ -113,7 +112,6 @@ export function PaymentMethodsTab() {
         throw new Error(error.error || 'Failed to save payment settings')
       }
     } catch (error) {
-      console.error('Error saving payment settings:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to save payment settings')
     } finally {
       setSaving(false)

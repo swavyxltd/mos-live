@@ -91,7 +91,6 @@ export default function PaymentRecordsPage() {
       const data = await response.json()
       setRecords(data)
     } catch (error) {
-      console.error('Error fetching payment records:', error)
       toast.error('Failed to load payment records')
     } finally {
       setLoading(false)
@@ -106,7 +105,6 @@ export default function PaymentRecordsPage() {
         setClasses(data)
       }
     } catch (error) {
-      console.error('Error fetching classes:', error)
     }
   }
 
@@ -156,7 +154,6 @@ export default function PaymentRecordsPage() {
       setShowEditModal(false)
       setSelectedRecord(null)
     } catch (error) {
-      console.error('Error marking payment as paid:', error)
       toast.error('Failed to update payment')
     } finally {
       setMarkingPaid(false)
@@ -186,7 +183,6 @@ export default function PaymentRecordsPage() {
       setShowEditModal(false)
       setSelectedRecord(null)
     } catch (error) {
-      console.error('Error updating notes:', error)
       toast.error('Failed to update notes')
     }
   }

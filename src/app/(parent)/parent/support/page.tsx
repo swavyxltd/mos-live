@@ -42,7 +42,6 @@ export default function ParentSupportPage() {
           setLoading(false)
         })
         .catch(err => {
-          console.error('Error fetching contact info:', err)
           setLoading(false)
         })
     }

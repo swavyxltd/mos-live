@@ -110,10 +110,8 @@ export function FinanceDashboardContent({ initialStats }: FinanceDashboardConten
           collectionRate: Number(collectionRate.toFixed(1))
         })
       } else {
-        console.error('Failed to fetch finance stats')
       }
     } catch (error) {
-      console.error('Error fetching finance stats:', error)
     } finally {
       setLoading(false)
     }
@@ -172,11 +170,9 @@ export function FinanceDashboardContent({ initialStats }: FinanceDashboardConten
         document.body.removeChild(a)
       } else {
         const errorData = await response.json()
-        console.error('Failed to generate CSV report:', errorData)
         alert(`Failed to generate CSV report: ${errorData.error || 'Unknown error'}`)
       }
     } catch (error) {
-      console.error('Error generating CSV report:', error)
       alert(`Error generating CSV report: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
@@ -348,7 +344,6 @@ export function FinanceDashboardContent({ initialStats }: FinanceDashboardConten
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    console.log('Show More button clicked')
                     setIsActivityModalOpen(true)
                   }}
                   className="w-full hover:bg-gray-50"

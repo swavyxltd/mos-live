@@ -137,7 +137,6 @@ export function TeacherForm({ initialData, isEditing = false, onSubmit, onCancel
     try {
       await onSubmit(formData)
     } catch (error) {
-      console.error('Error submitting form:', error)
     } finally {
       setIsSubmitting(false)
     }

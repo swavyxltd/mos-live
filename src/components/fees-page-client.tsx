@@ -96,7 +96,6 @@ export function FeesPageClient({ classes, summary }: FeesPageClientProps) {
       // Refresh page to update summary
       window.location.reload()
     } catch (error: any) {
-      console.error('Error updating fee:', error)
       toast.error(error.message || 'Failed to update fee')
     } finally {
       setIsSaving(false)

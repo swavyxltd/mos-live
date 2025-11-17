@@ -44,7 +44,6 @@ export function ArchiveButton({
       onArchiveChange(id, !isArchived)
       toast.success(data.message)
     } catch (error) {
-      console.error('Archive error:', error)
       toast.error(`Failed to ${isArchived ? 'unarchive' : 'archive'} ${type}`)
     } finally {
       setIsLoading(false)

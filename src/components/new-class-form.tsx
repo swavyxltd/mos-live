@@ -43,7 +43,6 @@ export function NewClassForm() {
       toast.success('Class created successfully')
       router.push('/classes')
     } catch (error: any) {
-      console.error('Error creating class:', error)
       toast.error(error.message || 'Failed to create class')
       throw error
     }

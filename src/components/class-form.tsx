@@ -109,7 +109,6 @@ export function ClassForm({ initialData, isEditing = false, onSubmit, onCancel }
       await onSubmit(formData)
       router.push('/classes')
     } catch (error) {
-      console.error('Error submitting form:', error)
     } finally {
       setIsSubmitting(false)
     }

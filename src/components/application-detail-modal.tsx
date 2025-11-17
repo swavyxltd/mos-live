@@ -64,7 +64,6 @@ export function ApplicationDetailModal({
 
   const handleSendInvite = async () => {
     // TODO: Implement email sending logic
-    console.log('Sending invite email to:', application.guardianEmail)
     setShowSuccessModal(false)
     onClose()
   }

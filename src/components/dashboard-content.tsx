@@ -15,6 +15,18 @@ import dynamic from 'next/dynamic'
 const GenerateReportModal = dynamic(() => import('@/components/generate-report-modal'), {
   ssr: false,
 })
+const AddStudentModal = dynamic(() => import('@/components/add-student-modal').then(mod => ({ default: mod.AddStudentModal })), {
+  ssr: false,
+})
+const AddTeacherModal = dynamic(() => import('@/components/add-teacher-modal').then(mod => ({ default: mod.AddTeacherModal })), {
+  ssr: false,
+})
+const AddClassModal = dynamic(() => import('@/components/add-class-modal').then(mod => ({ default: mod.AddClassModal })), {
+  ssr: false,
+})
+const ActivityModal = dynamic(() => import('@/components/activity-modal').then(mod => ({ default: mod.ActivityModal })), {
+  ssr: false,
+})
 
 // Lazy load WaveChart to reduce initial bundle size
 const WaveChart = dynamic(() => import('@/components/ui/wave-chart').then(mod => ({ default: mod.WaveChart })), {
@@ -45,7 +57,8 @@ import {
   Target,
   Activity,
   Eye,
-  FileText
+  FileText,
+  MessageSquare
 } from 'lucide-react'
 import type { DashboardStats as DashboardStatsType } from '@/lib/dashboard-stats'
 
@@ -73,6 +86,14 @@ interface DashboardContentProps {
 
 export function DashboardContent({ initialStats }: DashboardContentProps) {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
+  const [isAddStudentModalOpen, setIsAddStudentModalOpen] = useState(false)
+  const [isAddTeacherModalOpen, setIsAddTeacherModalOpen] = useState(false)
+  const [isAddClassModalOpen, setIsAddClassModalOpen] = useState(false)
+  const [isActivityModalOpen, setIsActivityModalOpen] = useState(false)
+  const [classes, setClasses] = useState<Array<{ id: string; name: string; grade: string }>>([])
+  const [recentActivity, setRecentActivity] = useState<any[]>([])
+  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([])
+  const [topPerformingClasses, setTopPerformingClasses] = useState<any[]>([])
   const [loading, setLoading] = useState(!initialStats) // Only loading if no initial stats
   const [stats, setStats] = useState<DashboardStats>(
     initialStats || {
@@ -98,9 +119,21 @@ export function DashboardContent({ initialStats }: DashboardContentProps) {
       fetchDashboardStats()
     }
     
+    // Fetch classes for AddStudentModal
+    fetchClasses()
+    
+    // Fetch dynamic dashboard sections
+    fetchRecentActivity()
+    fetchUpcomingEvents()
+    fetchTopPerformingClasses()
+    
     // Listen for refresh events
     const handleRefresh = () => {
       fetchDashboardStats()
+      fetchClasses()
+      fetchRecentActivity()
+      fetchUpcomingEvents()
+      fetchTopPerformingClasses()
     }
     
     window.addEventListener('refresh-dashboard', handleRefresh)
@@ -109,6 +142,113 @@ export function DashboardContent({ initialStats }: DashboardContentProps) {
       window.removeEventListener('refresh-dashboard', handleRefresh)
     }
   }, [initialStats])
+
+  const fetchClasses = async () => {
+    try {
+      const response = await fetch('/api/classes')
+      if (response.ok) {
+        const data = await response.json()
+        const classList = data.classes?.map((cls: any) => ({
+          id: cls.id,
+          name: cls.name,
+          grade: cls.grade || ''
+        })) || []
+        setClasses(classList)
+      }
+    } catch (error) {
+      // Error fetching classes
+    }
+  }
+
+  const fetchRecentActivity = async () => {
+    try {
+      // Fetch recent activity from audit logs (admin/staff only)
+      const response = await fetch('/api/activity?page=1&limit=3')
+      if (response.ok) {
+        const data = await response.json()
+        const logs = data.logs || []
+        
+        // Format for display - only show latest 3
+        const activities = logs.slice(0, 3).map((log: any) => ({
+          id: log.id,
+          type: log.action.toLowerCase().includes('payment') ? 'payment' :
+                log.action.toLowerCase().includes('student') ? 'enrollment' :
+                log.action.toLowerCase().includes('message') ? 'message' :
+                log.action.toLowerCase().includes('attendance') ? 'attendance' : 'activity',
+          action: log.actionText,
+          user: log.user?.name || log.user?.email || 'System',
+          timestamp: log.timestamp,
+          time: log.createdAt
+        }))
+        
+        setRecentActivity(activities)
+      } else {
+        setRecentActivity([])
+      }
+    } catch (error) {
+      setRecentActivity([])
+    }
+  }
+
+  const fetchUpcomingEvents = async () => {
+    try {
+      const now = new Date()
+      const next30Days = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+      
+      const response = await fetch(`/api/events?startDate=${now.toISOString()}&endDate=${next30Days.toISOString()}`)
+      if (response.ok) {
+        const events = await response.json()
+        const upcoming = events
+          .filter((event: any) => {
+            const eventDate = new Date(event.date)
+            return eventDate >= now && eventDate <= next30Days
+          })
+          .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
+          .slice(0, 5)
+          .map((event: any) => ({
+            id: event.id,
+            title: event.title,
+            date: new Date(event.date).toLocaleDateString(),
+            description: event.description || event.Class?.name || '',
+            type: event.type || 'event'
+          }))
+        setUpcomingEvents(upcoming)
+      } else {
+        setUpcomingEvents([])
+      }
+    } catch (error) {
+      setUpcomingEvents([])
+    }
+  }
+
+  const fetchTopPerformingClasses = async () => {
+    try {
+      const response = await fetch('/api/classes')
+      if (response.ok) {
+        const classesData = await response.json()
+        const classes = classesData.classes || classesData || []
+        
+        // Get classes with student counts and basic info
+        const classesWithInfo = classes
+          .filter((cls: any) => cls._count?.StudentClass > 0)
+          .map((cls: any) => ({
+            id: cls.id,
+            name: cls.name,
+            teacher: cls.User?.name || cls.User?.email || 'Unassigned',
+            students: cls._count?.StudentClass || 0,
+            attendance: 95 // Default attendance - can be calculated from actual data later
+          }))
+          .sort((a: any, b: any) => b.students - a.students) // Sort by student count
+          .slice(0, 5)
+        
+        setTopPerformingClasses(classesWithInfo)
+      } else {
+        setTopPerformingClasses([])
+      }
+    } catch (error) {
+      setTopPerformingClasses([])
+    }
+  }
 
   const fetchDashboardStats = async () => {
     try {
@@ -122,10 +262,8 @@ export function DashboardContent({ initialStats }: DashboardContentProps) {
       if (response.ok) {
         const data = await response.json()
         setStats(data)
-      } else {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-        console.error('Failed to fetch dashboard stats:', response.status, errorData)
-        // Set default stats to prevent UI errors
+                  } else {
+                    // Set default stats to prevent UI errors
         setStats({
           totalStudents: 0,
           newStudentsThisMonth: 0,
@@ -142,11 +280,10 @@ export function DashboardContent({ initialStats }: DashboardContentProps) {
           attendanceTrend: [],
           paidThisMonth: 0,
           averagePaymentTime: 0
-        })
-      }
-    } catch (error) {
-      console.error('Error fetching dashboard stats:', error)
-      // Set default stats to prevent UI errors
+                })
+              }
+            } catch (error) {
+              // Set default stats to prevent UI errors
       setStats({
         totalStudents: 0,
         newStudentsThisMonth: 0,
@@ -189,8 +326,7 @@ export function DashboardContent({ initialStats }: DashboardContentProps) {
   
   // Handle filter changes
   const handleFilterChange = (filter: string) => {
-    console.log('Filter changed to:', filter)
-    // You can add additional logic here if needed
+    // Filter change handler
   }
 
   // Handle report generation
@@ -218,24 +354,17 @@ export function DashboardContent({ initialStats }: DashboardContentProps) {
         // Clean up
         window.URL.revokeObjectURL(url)
         document.body.removeChild(a)
-      } else {
-        const errorData = await response.json()
-        console.error('Failed to generate report:', errorData)
-        alert(`Failed to generate report: ${errorData.details || errorData.error}`)
-      }
-    } catch (error) {
-      console.error('Error generating report:', error)
-      alert(`Error generating report: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    }
+                  } else {
+                    const errorData = await response.json()
+                    alert(`Failed to generate report: ${errorData.details || errorData.error}`)
+                  }
+                } catch (error) {
+                  alert(`Error generating report: ${error instanceof Error ? error.message : 'Unknown error'}`)
+                }
   }
   
   // Use real attendance trend data from API (no fallback demo data)
   const attendanceData = attendanceTrend
-  
-  // Empty arrays - will be populated from real data when available
-  const recentActivity: any[] = []
-  const upcomingEvents: any[] = []
-  const topPerformingClasses: any[] = []
 
   return (
     <div className="space-y-6">
@@ -246,7 +375,11 @@ export function DashboardContent({ initialStats }: DashboardContentProps) {
               <p className="text-sm sm:text-base text-muted-foreground">Comprehensive insights into your Islamic education center</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-          <QuickAddMenu />
+          <QuickAddMenu 
+            onAddStudent={() => setIsAddStudentModalOpen(true)}
+            onAddTeacher={() => setIsAddTeacherModalOpen(true)}
+            onAddClass={() => setIsAddClassModalOpen(true)}
+          />
           <RestrictedAction action="reports">
             <Button 
               variant="outline" 
@@ -359,51 +492,71 @@ export function DashboardContent({ initialStats }: DashboardContentProps) {
           {/* Bottom Row */}
           <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-3">
         {/* Recent Activity */}
-        <Link href="/dashboard" className="block lg:col-span-2">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer">
+        <div className="lg:col-span-2 flex">
+          <Card className="hover:shadow-md transition-shadow cursor-pointer flex flex-col w-full" onClick={() => setIsActivityModalOpen(true)}>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="h-5 w-5" />
-                Recent Activity
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  Recent Activity
+                </CardTitle>
+                <Button variant="ghost" size="sm" className="text-xs">
+                  View All
+                </Button>
+              </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1 flex flex-col">
               {recentActivity.length > 0 ? (
-                <div className="space-y-4">
-                  {recentActivity.map((activity, index) => (
-                    <div key={index} className="flex items-start gap-3">
-                      <div className={`w-2 h-2 rounded-full mt-2 ${
-                        activity.type === 'enrollment' ? 'bg-green-500' :
-                        activity.type === 'payment' ? 'bg-blue-500' :
-                        activity.type === 'attendance' ? 'bg-purple-500' :
-                        'bg-gray-500'
-                      }`} />
+                <div className="space-y-3">
+                  {recentActivity.map((activity) => (
+                    <div key={activity.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-[var(--muted)]/50 transition-colors">
+                      <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${
+                        activity.type === 'enrollment' ? 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-200' :
+                        activity.type === 'payment' ? 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-200' :
+                        activity.type === 'attendance' ? 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-200' :
+                        activity.type === 'message' ? 'bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-200' :
+                        'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200'
+                      }`}>
+                        {activity.type === 'enrollment' ? <Users className="h-4 w-4" /> :
+                         activity.type === 'payment' ? <DollarSign className="h-4 w-4" /> :
+                         activity.type === 'attendance' ? <UserCheck className="h-4 w-4" /> :
+                         activity.type === 'message' ? <MessageSquare className="h-4 w-4" /> :
+                         <Activity className="h-4 w-4" />}
+                      </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium">{activity.action}</p>
-                        <p className="text-xs text-muted-foreground">{activity.timestamp}</p>
+                        <p className="text-sm font-medium text-[var(--foreground)]">
+                          {activity.user}
+                        </p>
+                        <p className="text-sm text-[var(--foreground)] mt-0.5">
+                          {activity.action}
+                        </p>
+                        <p className="text-xs text-[var(--muted-foreground)] mt-1">
+                          {activity.timestamp}
+                        </p>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-center py-8 text-[var(--muted-foreground)]">
+                  <Activity className="h-12 w-12 mx-auto mb-4 text-[var(--muted-foreground)] opacity-50" />
                   <p className="text-sm">No recent activity</p>
                 </div>
               )}
             </CardContent>
           </Card>
-        </Link>
+        </div>
 
         {/* Upcoming Events */}
-        <Link href="/calendar" className="block">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer">
+        <Link href="/calendar" className="block flex">
+          <Card className="hover:shadow-md transition-shadow cursor-pointer flex flex-col w-full">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
                 Upcoming Events
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1 flex flex-col">
               {upcomingEvents.length > 0 ? (
                 <div className="space-y-4">
                   {upcomingEvents.map((event, index) => (
@@ -501,6 +654,44 @@ export function DashboardContent({ initialStats }: DashboardContentProps) {
         isOpen={isReportModalOpen}
         onClose={() => setIsReportModalOpen(false)}
         onGenerateReport={handleGenerateReport}
+      />
+
+      {/* Add Student Modal */}
+      <AddStudentModal
+        isOpen={isAddStudentModalOpen}
+        onClose={() => setIsAddStudentModalOpen(false)}
+        onSave={() => {
+          setIsAddStudentModalOpen(false)
+          fetchDashboardStats()
+        }}
+        classes={classes}
+      />
+
+      {/* Add Teacher Modal */}
+      <AddTeacherModal
+        isOpen={isAddTeacherModalOpen}
+        onClose={() => setIsAddTeacherModalOpen(false)}
+        onSave={() => {
+          setIsAddTeacherModalOpen(false)
+          fetchDashboardStats()
+        }}
+      />
+
+      {/* Add Class Modal */}
+      <AddClassModal
+        isOpen={isAddClassModalOpen}
+        onClose={() => setIsAddClassModalOpen(false)}
+        onSave={() => {
+          setIsAddClassModalOpen(false)
+          fetchDashboardStats()
+          fetchClasses()
+        }}
+      />
+
+      {/* Activity Modal */}
+      <ActivityModal
+        isOpen={isActivityModalOpen}
+        onClose={() => setIsActivityModalOpen(false)}
       />
     </div>
   )

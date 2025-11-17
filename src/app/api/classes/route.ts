@@ -116,6 +116,17 @@ async function handleGET(request: NextRequest) {
           name: true,
           email: true
         }
+      },
+      _count: {
+        select: {
+          StudentClass: {
+            where: {
+              Student: {
+                isArchived: false
+              }
+            }
+          }
+        }
       }
     },
     orderBy: { name: 'asc' }

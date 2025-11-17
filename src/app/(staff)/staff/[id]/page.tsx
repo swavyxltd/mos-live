@@ -184,7 +184,12 @@ export default async function StaffDetailsPage({ params }: StaffDetailsPageProps
                 <div className="flex-1 min-w-0">
                   <h3 className="text-lg sm:text-xl font-semibold text-[var(--foreground)] truncate">{teacherData.name}</h3>
                   <div className="flex flex-wrap items-center gap-2 mt-1">
-                    <Badge variant={teacherData.isActive ? 'default' : 'secondary'} className="text-xs">
+                    <Badge 
+                      variant="outline"
+                      className={`text-xs ${teacherData.isActive 
+                        ? 'text-green-600 bg-green-50 border-0 dark:bg-green-950 dark:text-green-200' 
+                        : 'bg-gray-50 text-gray-600 border-0 dark:bg-gray-800 dark:text-gray-200'}`}
+                    >
                       {teacherData.isActive ? 'Active' : 'Inactive'}
                     </Badge>
                     <span className="text-xs sm:text-sm text-gray-500 hidden sm:inline">ID: {teacherData.id}</span>
@@ -325,7 +330,12 @@ export default async function StaffDetailsPage({ params }: StaffDetailsPageProps
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Account Status</span>
-                <Badge variant={teacherData.isActive ? 'default' : 'secondary'}>
+                <Badge 
+                  variant="outline"
+                  className={teacherData.isActive 
+                    ? 'text-green-600 bg-green-50 border-0 dark:bg-green-950 dark:text-green-200' 
+                    : 'bg-gray-50 text-gray-600 border-0 dark:bg-gray-800 dark:text-gray-200'}
+                >
                   {teacherData.isActive ? 'Active' : 'Inactive'}
                 </Badge>
               </div>

@@ -55,7 +55,6 @@ export default function OwnerStudentsPage() {
 
   const fetchStudents = async () => {
     try {
-      console.log('📥 Fetching students from API...')
       const response = await fetch('/api/owner/students/stats')
       if (response.ok) {
         const data = await response.json()
@@ -78,12 +77,9 @@ export default function OwnerStudentsPage() {
         })
         setAllClasses(Array.from(classesMap.values()))
       } else {
-        console.error('❌ API response not OK:', response.status, response.statusText)
         const errorData = await response.json().catch(() => null)
-        console.error('Error details:', errorData)
       }
     } catch (err) {
-      console.error('❌ Error fetching student data:', err)
     } finally {
       setDataLoading(false)
     }
@@ -145,11 +141,8 @@ export default function OwnerStudentsPage() {
     setRefreshing(true)
     setDataLoading(true)
     try {
-      console.log('🔄 Refreshing students list...')
       await fetchStudents()
-      console.log('✅ Students list refreshed, count:', studentData?.allStudents?.length || 0)
     } catch (error) {
-      console.error('❌ Error refreshing data:', error)
     } finally {
       setRefreshing(false)
       setDataLoading(false)
@@ -186,7 +179,6 @@ export default function OwnerStudentsPage() {
         toast.error('Failed to load student details')
       }
     } catch (error) {
-      console.error('Error fetching student details:', error)
       toast.error('Failed to load student details')
     }
   }
@@ -203,7 +195,6 @@ export default function OwnerStudentsPage() {
         toast.error('Failed to load student details')
       }
     } catch (error) {
-      console.error('Error fetching student details:', error)
       toast.error('Failed to load student details')
     }
   }
@@ -228,9 +219,9 @@ export default function OwnerStudentsPage() {
 
   const getStatusBadge = (status: string) => {
     return status === 'ACTIVE' ? (
-      <Badge variant="outline" className="text-green-600">Active</Badge>
+      <Badge variant="outline" className="text-green-600 bg-green-50 border-0 dark:bg-green-950 dark:text-green-200">Active</Badge>
     ) : (
-      <Badge variant="outline" className="text-red-600">Inactive</Badge>
+      <Badge variant="outline" className="text-red-600 bg-red-50 border-0 dark:bg-red-950 dark:text-red-200">Inactive</Badge>
     )
   }
 

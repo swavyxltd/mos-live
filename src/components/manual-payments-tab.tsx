@@ -95,7 +95,6 @@ export function ManualPaymentsTab() {
         throw new Error('Failed to fetch invoices')
       }
     } catch (error) {
-      console.error('Error fetching invoices:', error)
       toast.error('Failed to load invoices')
     } finally {
       setLoading(false)
@@ -157,7 +156,6 @@ export function ManualPaymentsTab() {
         throw new Error(error.error || 'Failed to record payment')
       }
     } catch (error) {
-      console.error('Error recording payment:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to record payment')
     } finally {
       setSaving(false)
@@ -305,7 +303,7 @@ export function ManualPaymentsTab() {
 
       {/* Payment Form Modal */}
       {showPaymentForm && selectedInvoice && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-white/20 backdrop-blur-md flex items-center justify-center z-50">
           <Card className="w-full max-w-md mx-4">
             <CardHeader>
               <CardTitle>Record Payment</CardTitle>

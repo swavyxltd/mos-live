@@ -68,7 +68,6 @@ export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent }: Sen
         setClasses(data)
       }
     } catch (error) {
-      console.error('Error fetching classes:', error)
     } finally {
       setLoadingClasses(false)
     }
@@ -83,7 +82,6 @@ export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent }: Sen
         setParents(data)
       }
     } catch (error) {
-      console.error('Error fetching parents:', error)
     } finally {
       setLoadingParents(false)
     }
@@ -99,7 +97,6 @@ export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent }: Sen
         orgName = data.name || orgName
       }
     } catch (error) {
-      console.error('Error fetching org name:', error)
     }
     
     return `📢 *Madrasah Announcement*\n\n*${formData.title}*\n\n${formData.message}\n\nJazakAllah Khair\n\n– ${orgName}`
@@ -156,7 +153,6 @@ export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent }: Sen
           const errorData = await response.json()
           errorMessage = errorData.error || errorMessage
           if (errorData.details) {
-            console.error('Validation details:', errorData.details)
           }
         } catch (e) {
           // If response is not JSON, use status text
@@ -187,7 +183,6 @@ export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent }: Sen
         parentId: ''
       })
     } catch (error: any) {
-      console.error('Error saving message:', error)
       const errorMessage = error?.message || 'Failed to save message. Please try again.'
       toast.error(errorMessage)
     } finally {
@@ -258,7 +253,6 @@ export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent }: Sen
       
       toast.success('Email sent successfully!')
     } catch (error) {
-      console.error('Error sending email:', error)
       toast.error('Failed to send email. Please try again.')
     } finally {
       setLoading(false)
@@ -395,7 +389,7 @@ export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent }: Sen
       <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
         {/* Backdrop */}
         <div 
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+          className="fixed inset-0 bg-white/20 backdrop-blur-md"
           onClick={() => setShowWhatsAppModal(false)}
         />
         

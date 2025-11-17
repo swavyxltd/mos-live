@@ -19,7 +19,6 @@ const isDemoMode = () => {
   const inDemoMode = result.isDevelopment || result.noDatabase || result.databaseHasDemo || result.noApiKey || result.isDemoKey
   
   if (inDemoMode) {
-    console.log('⚠️  DEMO MODE ACTIVE:', result)
   }
   
   return inDemoMode
@@ -40,7 +39,7 @@ export async function sendEmail({
 }) {
   // In demo mode, just log the email instead of sending
   if (isDemoMode()) {
-    console.log('⚠️  DEMO MODE - Email not sent (logged only):', {
+    :', {
       to: Array.isArray(to) ? to : [to],
       subject,
       reason: {
@@ -96,7 +95,6 @@ export async function sendEmail({
       throw new Error(`Failed to send email: ${error.message}`)
     }
     
-    console.log('✅ Email sent successfully:', data)
     return data
   } catch (error: any) {
     console.error('❌ Email send error:', {

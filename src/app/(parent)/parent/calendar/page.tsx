@@ -344,7 +344,6 @@ export default function ParentCalendarPage() {
         setEvents(dbEvents)
         setLoading(false)
       }).catch(err => {
-        console.error('Error fetching calendar data:', err)
         setLoading(false)
       })
     }
@@ -455,7 +454,6 @@ export default function ParentCalendarPage() {
           }))}
           onEventClick={(event) => {
             // Handle event click - could open a modal or navigate to event details
-            console.log('Event clicked:', event)
           }}
         />
 

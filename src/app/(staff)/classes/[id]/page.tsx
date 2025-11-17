@@ -86,7 +86,6 @@ export default async function ClassDetailsPage({ params }: ClassDetailsPageProps
         ? JSON.parse(classData.schedule) 
         : classData.schedule
     } catch (e) {
-      console.error('Error parsing schedule:', e)
       parsedSchedule = {}
     }
   }
@@ -306,7 +305,12 @@ export default async function ClassDetailsPage({ params }: ClassDetailsPageProps
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Status</span>
-                <Badge variant={transformedClassData._count.studentClasses > 0 ? 'default' : 'secondary'}>
+                <Badge 
+                  variant="outline"
+                  className={transformedClassData._count.studentClasses > 0 
+                    ? 'text-green-600 bg-green-50 border-0 dark:bg-green-950 dark:text-green-200' 
+                    : 'bg-gray-50 text-gray-600 border-0 dark:bg-gray-800 dark:text-gray-200'}
+                >
                   {transformedClassData._count.studentClasses > 0 ? 'Active' : 'Empty'}
                 </Badge>
               </div>

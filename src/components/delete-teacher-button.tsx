@@ -23,14 +23,12 @@ export function DeleteTeacherButton({ teacherId, teacherName }: DeleteTeacherBut
   const handleConfirmArchive = async () => {
     setIsArchiving(true)
     try {
-      console.log(`Archiving staff member: ${teacherId}`)
       // TODO: Implement actual archive API call
       // For now, just log the action and redirect
-      console.log(`Staff member ${teacherName} would be archived (demo mode)`)
+      `)
       setIsDialogOpen(false)
       router.push('/staff')
     } catch (error) {
-      console.error('Error archiving staff member:', error)
     } finally {
       setIsArchiving(false)
     }

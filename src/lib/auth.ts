@@ -55,7 +55,6 @@ async function getUserRoleHints(userId: string) {
   } catch (error) {
     // Log error server-side only (not to console in production)
     if (process.env.NODE_ENV === 'development') {
-    console.error('Error getting user role hints:', error)
     }
     // Return default role hints on error to allow authentication
     // Layouts will handle blocking if needed
@@ -207,7 +206,6 @@ export const authOptions: NextAuthOptions = {
         } catch (error: any) {
           // Log error server-side only (not to console in production)
           if (process.env.NODE_ENV === 'development') {
-          console.error('Database error during authentication:', error?.message || error)
           }
           // If database connection fails, don't fall back - return null to show error
           return null
@@ -259,7 +257,6 @@ export const authOptions: NextAuthOptions = {
           } catch (error) {
             // Log error server-side only (not to console in production)
             if (process.env.NODE_ENV === 'development') {
-              console.error('Error fetching user data in JWT callback on update:', error)
             }
           }
         }
@@ -288,7 +285,6 @@ export const authOptions: NextAuthOptions = {
           } catch (error) {
             // Log error server-side only (not to console in production)
             if (process.env.NODE_ENV === 'development') {
-              console.error('Error fetching user data in JWT callback:', error)
             }
           }
         }
@@ -298,7 +294,6 @@ export const authOptions: NextAuthOptions = {
         } catch (error) {
           // Log error server-side only (not to console in production)
           if (process.env.NODE_ENV === 'development') {
-          console.error('Error getting role hints in JWT callback:', error)
           }
           // Set default role hints on error to allow authentication
           token.roleHints = {

@@ -34,7 +34,6 @@ export async function checkPaymentMethod(): Promise<boolean> {
 
     return !!billing?.defaultPaymentMethodId
   } catch (error) {
-    console.error('Error checking payment method:', error)
     return false
   }
 }

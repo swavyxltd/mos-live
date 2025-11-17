@@ -184,7 +184,6 @@ export function StudentDetailModal({
         setMonthlyAttendance(attendanceDays)
       }
     } catch (error) {
-      console.error('Error fetching monthly attendance:', error)
     } finally {
       setIsLoadingAttendance(false)
     }
@@ -343,7 +342,6 @@ export function StudentDetailModal({
       toast.success('Student archived successfully')
       setIsArchiveDialogOpen(false)
     } catch (error) {
-      console.error('Error archiving student:', error)
       toast.error('Failed to archive student')
     } finally {
       setIsArchiving(false)
@@ -353,7 +351,7 @@ export function StudentDetailModal({
   return (
     <>
       <div 
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
+        className="fixed inset-0 bg-white/20 backdrop-blur-md flex items-center justify-center z-50 p-4 overflow-y-auto"
         onClick={(e) => {
           if (e.target === e.currentTarget) {
             onClose()

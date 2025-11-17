@@ -143,7 +143,7 @@ export async function verifyWebhook(token: string): Promise<boolean> {
 
 export async function handleWebhook(body: any): Promise<void> {
   // Log webhook events for debugging
-  console.log('WhatsApp webhook received:', JSON.stringify(body, null, 2))
+  )
   
   // Handle different webhook events
   if (body.entry) {
@@ -153,7 +153,6 @@ export async function handleWebhook(body: any): Promise<void> {
           if (change.value?.messages) {
             // Handle incoming messages
             for (const message of change.value.messages) {
-              console.log('Incoming message:', message)
               // You could implement auto-replies or message processing here
             }
           }
@@ -161,7 +160,6 @@ export async function handleWebhook(body: any): Promise<void> {
           if (change.value?.statuses) {
             // Handle message status updates
             for (const status of change.value.statuses) {
-              console.log('Message status update:', status)
               // You could update message status in your database here
             }
           }

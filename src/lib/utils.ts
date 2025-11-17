@@ -20,7 +20,6 @@ export function formatDate(date: Date | string | null | undefined): string {
   
   // Check if date is valid
   if (isNaN(dateObj.getTime())) {
-    console.error('Invalid date:', date)
     return 'Invalid Date'
   }
   
@@ -40,7 +39,6 @@ export function formatDateTime(date: Date | string | null | undefined): string {
   
   // Check if date is valid
   if (isNaN(dateObj.getTime())) {
-    console.error('Invalid date:', date)
     return 'Invalid Date'
   }
   

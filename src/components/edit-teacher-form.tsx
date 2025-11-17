@@ -13,7 +13,6 @@ export function EditTeacherForm({ teacherId, initialData }: EditTeacherFormProps
 
   const handleSubmit = async (data: any) => {
     // In a real application, you would update the database here
-    console.log('Updating staff member:', teacherId, data)
     
     // For demo purposes, we'll just simulate a successful update
     // In production, you would use prisma.staff.update()

@@ -118,7 +118,6 @@ export class OrganizationStatusManager {
       }
 
     } catch (error) {
-      console.error('Error handling payment failure:', error)
       throw error
     }
   }
@@ -159,7 +158,6 @@ export class OrganizationStatusManager {
       }
 
     } catch (error) {
-      console.error('Error handling payment success:', error)
       throw error
     }
   }
@@ -203,7 +201,6 @@ export class OrganizationStatusManager {
       return { shouldDeactivate: false, reason: `Only ${failureCount} failures (need 3+)` }
 
     } catch (error) {
-      console.error('Error checking auto-deactivate conditions:', error)
       return { shouldDeactivate: false, reason: 'Error checking conditions' }
     }
   }

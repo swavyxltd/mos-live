@@ -75,7 +75,6 @@ export default function OwnerUsersPage() {
 
   const fetchUsers = async () => {
     try {
-      console.log('📥 Fetching users from API...')
       const response = await fetch('/api/owner/users/stats')
       if (response.ok) {
         const data = await response.json()
@@ -85,12 +84,9 @@ export default function OwnerUsersPage() {
         })
         setUserData(data)
       } else {
-        console.error('❌ API response not OK:', response.status, response.statusText)
         const errorData = await response.json().catch(() => null)
-        console.error('Error details:', errorData)
       }
     } catch (err) {
-      console.error('❌ Error fetching user data:', err)
     } finally {
       setDataLoading(false)
     }
@@ -154,11 +150,8 @@ export default function OwnerUsersPage() {
     setRefreshing(true)
     setDataLoading(true)
     try {
-      console.log('🔄 Refreshing users list...')
       await fetchUsers()
-      console.log('✅ Users list refreshed, count:', userData?.allUsers?.length || 0)
     } catch (error) {
-      console.error('❌ Error refreshing data:', error)
     } finally {
       setRefreshing(false)
       setDataLoading(false)
@@ -257,9 +250,9 @@ export default function OwnerUsersPage() {
 
   const getStatusBadge = (status: string) => {
     return status === 'active' ? (
-      <Badge variant="outline" className="text-green-600">Active</Badge>
+      <Badge variant="outline" className="text-green-600 bg-green-50 border-0 dark:bg-green-950 dark:text-green-200">Active</Badge>
     ) : (
-      <Badge variant="outline" className="text-red-600">Inactive</Badge>
+      <Badge variant="outline" className="text-red-600 bg-red-50 border-0 dark:bg-red-950 dark:text-red-200">Inactive</Badge>
     )
   }
 

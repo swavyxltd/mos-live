@@ -37,14 +37,12 @@ export function EditTeacherModal({ isOpen, onClose, onSave, teacher }: EditTeach
     
     try {
       // In a real application, you would update the database here
-      console.log('Updating teacher:', teacher.id, data)
       
       // For demo purposes, we'll just simulate a successful update
       await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API call
       
       onSave(data)
     } catch (error) {
-      console.error('Error updating teacher:', error)
     } finally {
       setIsSubmitting(false)
     }

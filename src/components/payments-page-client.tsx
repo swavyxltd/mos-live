@@ -145,7 +145,6 @@ export function PaymentsPageClient({ classes }: PaymentsPageClientProps) {
         toast.error('Failed to load student details')
       }
     } catch (error) {
-      console.error('Error fetching student details:', error)
       toast.error('Failed to load student details')
     }
   }
@@ -205,7 +204,6 @@ export function PaymentsPageClient({ classes }: PaymentsPageClientProps) {
       setSelectedRecord(null)
       setPaymentReference('')
     } catch (error: any) {
-      console.error('Error marking payment as paid:', error)
       toast.error(error.message || 'Failed to mark payment as paid')
     } finally {
       setIsMarkingPaid(false)
@@ -253,7 +251,6 @@ export function PaymentsPageClient({ classes }: PaymentsPageClientProps) {
       setPaymentReference('')
       setEditingNotes('')
     } catch (error: any) {
-      console.error('Error updating payment record:', error)
       toast.error(error.message || 'Failed to update payment record')
     } finally {
       setIsSaving(false)

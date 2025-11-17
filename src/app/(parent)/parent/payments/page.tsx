@@ -59,7 +59,6 @@ export default function ParentInvoicesPage() {
         setPreferredPaymentMethod(paymentData.preferredPaymentMethod)
       }
     } catch (error) {
-      console.error('Error fetching payment settings:', error)
     }
   }
 
@@ -131,7 +130,6 @@ export default function ParentInvoicesPage() {
           setLoading(false)
         })
         .catch(err => {
-          console.error('Error fetching fees:', err)
           setLoading(false)
         })
     }
@@ -149,12 +147,9 @@ export default function ParentInvoicesPage() {
       })
       
       if (response.ok) {
-        console.log('Payment method preference saved')
       } else {
-        console.error('Failed to save payment method preference')
       }
     } catch (error) {
-      console.error('Error saving payment method preference:', error)
     }
   }
 

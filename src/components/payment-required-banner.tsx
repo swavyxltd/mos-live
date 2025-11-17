@@ -49,7 +49,6 @@ export function PaymentRequiredBanner() {
           }
         }
       } catch (error) {
-        console.error('Error checking payment status:', error)
       }
       
       if (i < 4) { // Don't wait after the last check

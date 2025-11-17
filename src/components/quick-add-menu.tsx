@@ -9,9 +9,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Plus, UserPlus, GraduationCap, BookOpen } from 'lucide-react'
-import Link from 'next/link'
 
-export function QuickAddMenu() {
+interface QuickAddMenuProps {
+  onAddStudent?: () => void
+  onAddTeacher?: () => void
+  onAddClass?: () => void
+}
+
+export function QuickAddMenu({ onAddStudent, onAddTeacher, onAddClass }: QuickAddMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -21,23 +26,17 @@ export function QuickAddMenu() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56 bg-white border border-gray-200 shadow-lg rounded-md">
-        <DropdownMenuItem asChild>
-          <Link href="/students?action=add">
-            <UserPlus className="mr-2 h-4 w-4" />
-            <span>Add Student</span>
-          </Link>
+        <DropdownMenuItem onClick={onAddStudent}>
+          <UserPlus className="mr-2 h-4 w-4" />
+          <span>Add Student</span>
         </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/settings?action=add-teacher">
-            <GraduationCap className="mr-2 h-4 w-4" />
-            <span>Add Teacher</span>
-          </Link>
+        <DropdownMenuItem onClick={onAddTeacher}>
+          <GraduationCap className="mr-2 h-4 w-4" />
+          <span>Add Staff</span>
         </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/classes?action=add">
-            <BookOpen className="mr-2 h-4 w-4" />
-            <span>Add Class</span>
-          </Link>
+        <DropdownMenuItem onClick={onAddClass}>
+          <BookOpen className="mr-2 h-4 w-4" />
+          <span>Add Class</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

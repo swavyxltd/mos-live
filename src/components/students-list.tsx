@@ -86,15 +86,32 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'ACTIVE':
-        return 'bg-green-100 text-green-800'
+        return 'text-green-600 bg-green-50 border-0 dark:bg-green-950 dark:text-green-200'
       case 'INACTIVE':
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-gray-50 text-gray-600 border-0 dark:bg-gray-800 dark:text-gray-200'
       case 'DEACTIVATED':
-        return 'bg-red-100 text-red-800'
+        return 'bg-red-50 text-red-600 border-0 dark:bg-red-950 dark:text-red-200'
       case 'GRADUATED':
-        return 'bg-blue-100 text-blue-800'
+        return 'bg-blue-50 text-blue-600 border-0 dark:bg-blue-950 dark:text-blue-200'
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-gray-50 text-gray-600 border-0 dark:bg-gray-800 dark:text-gray-200'
+    }
+  }
+
+  const formatStatus = (status: string) => {
+    switch (status) {
+      case 'ACTIVE':
+        return 'Active'
+      case 'INACTIVE':
+        return 'Inactive'
+      case 'DEACTIVATED':
+        return 'Deactivated'
+      case 'GRADUATED':
+        return 'Graduated'
+      case 'ARCHIVED':
+        return 'Archived'
+      default:
+        return status.charAt(0) + status.slice(1).toLowerCase()
     }
   }
 
@@ -186,7 +203,6 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
 
   const handleDeleteStudent = (studentId: string) => {
     // TODO: Implement delete functionality
-    console.log('Delete student:', studentId)
     setIsDetailModalOpen(false)
     setSelectedStudent(null)
   }
@@ -485,8 +501,13 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
                     </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
-                    <Badge className={student.isArchived ? 'bg-gray-100 text-gray-800' : getStatusColor(student.status)}>
-                      {student.isArchived ? 'ARCHIVED' : student.status}
+                    <Badge 
+                      variant="outline"
+                      className={student.isArchived 
+                        ? 'bg-gray-50 text-gray-600 border-0 dark:bg-gray-800 dark:text-gray-200' 
+                        : getStatusColor(student.status)}
+                    >
+                      {student.isArchived ? 'Archived' : formatStatus(student.status)}
                     </Badge>
                   </TableCell>
                   <TableCell>

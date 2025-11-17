@@ -68,7 +68,6 @@ export default function OwnerSettingsPage() {
       setSettings(data)
       setFormData(data)
     } catch (error: any) {
-      console.error('Error fetching settings:', error)
       toast({
         title: 'Error',
         description: 'Failed to load settings',
@@ -86,7 +85,6 @@ export default function OwnerSettingsPage() {
       const data = await response.json()
       setBillingStats(data)
     } catch (error: any) {
-      console.error('Error fetching billing stats:', error)
     }
   }
 
@@ -118,7 +116,6 @@ export default function OwnerSettingsPage() {
         fetchBillingStats()
       }
     } catch (error: any) {
-      console.error('Error saving settings:', error)
       toast({
         title: 'Error',
         description: error.message || 'Failed to save settings',

@@ -56,11 +56,9 @@ export default function CalendarPage() {
           }))
           setEvents(transformed)
         } else {
-          console.error('Failed to fetch events')
           setEvents([])
         }
       } catch (error) {
-        console.error('Error fetching events:', error)
         setEvents([])
       } finally {
         setLoading(false)

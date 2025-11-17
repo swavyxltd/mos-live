@@ -194,11 +194,9 @@ export function InvoicesPageClient({ initialInvoices = [] }: InvoicesPageClientP
           setPaymentRecords(paymentRecords)
         }
       } else {
-        console.error('Failed to fetch invoices')
         setInvoices([])
       }
     } catch (error) {
-      console.error('Error fetching invoices:', error)
       setInvoices([])
     } finally {
       setLoading(false)
@@ -215,7 +213,6 @@ export function InvoicesPageClient({ initialInvoices = [] }: InvoicesPageClientP
           setClasses(classesData)
         }
       } catch (error) {
-        console.error('Error fetching classes:', error)
       }
     }
     fetchClasses()
@@ -263,7 +260,6 @@ export function InvoicesPageClient({ initialInvoices = [] }: InvoicesPageClientP
         alert('Failed to record payment: ' + result.error)
       }
     } catch (error) {
-      console.error('Error recording payment:', error)
       alert('Failed to record payment')
     }
   }

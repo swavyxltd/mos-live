@@ -41,7 +41,6 @@ export default async function ParentLayout({
         }
       }
     } catch (error: any) {
-      console.error('[ParentLayout] Error setting active org:', error?.message || error)
     }
   }
   
@@ -54,7 +53,6 @@ export default async function ParentLayout({
   try {
     userRole = await getUserRoleInOrg(session.user.id, org.id)
   } catch (error: any) {
-    console.error('[ParentLayout] Error getting user role:', error?.message || error)
     redirect('/auth/signin?portal=parent&error=NotParent')
   }
   

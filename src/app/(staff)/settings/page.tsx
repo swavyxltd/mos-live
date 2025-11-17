@@ -125,7 +125,6 @@ export default function SettingsPage() {
         })
       }
     } catch (error) {
-      console.error('Error fetching user settings:', error)
     }
   }
 
@@ -150,7 +149,6 @@ export default function SettingsPage() {
         })
       }
     } catch (error) {
-      console.error('Error fetching platform billing:', error)
     } finally {
       setLoadingBilling(false)
     }
@@ -178,7 +176,6 @@ export default function SettingsPage() {
         })
       }
     } catch (error) {
-      console.error('Error fetching organization settings:', error)
     } finally {
       setLoadingOrgSettings(false)
     }
@@ -193,7 +190,6 @@ export default function SettingsPage() {
         setStudentCount(activeCount)
       }
     } catch (error) {
-      console.error('Error fetching student count:', error)
     }
   }
 
@@ -226,7 +222,6 @@ export default function SettingsPage() {
         setBillingRecords(records)
       }
     } catch (error) {
-      console.error('Error fetching billing records:', error)
     } finally {
       setLoadingBillingRecords(false)
     }
@@ -353,10 +348,8 @@ export default function SettingsPage() {
       } else {
         const errorMessage = data.error || 'Failed to save user settings'
         toast.error(errorMessage)
-        console.error('Error saving user settings:', errorMessage, data)
       }
     } catch (error) {
-      console.error('Error saving user settings:', error)
       toast.error('Failed to save user settings. Please try again.')
     } finally {
       setLoading(false)
@@ -404,7 +397,6 @@ export default function SettingsPage() {
         toast.error('Failed to create payment setup')
       }
     } catch (error) {
-      console.error('Error creating setup intent:', error)
       toast.error('Failed to create payment setup')
     }
   }
@@ -480,11 +472,9 @@ export default function SettingsPage() {
         document.body.removeChild(a)
       } else {
         const errorData = await response.json()
-        console.error('Failed to generate subscription payments CSV:', errorData)
         toast.error(`Failed to generate subscription payments CSV: ${errorData.error || 'Unknown error'}`)
       }
     } catch (error) {
-      console.error('Error generating subscription payments CSV:', error)
       toast.error(`Error generating subscription payments CSV: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }

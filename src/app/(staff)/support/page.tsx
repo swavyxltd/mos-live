@@ -81,11 +81,9 @@ export default function SupportPage() {
         }))
         setTickets(transformed)
       } else {
-        console.error('Failed to fetch tickets')
         setTickets([])
       }
     } catch (error) {
-      console.error('Error fetching tickets:', error)
       setTickets([])
     } finally {
       setLoading(false)
@@ -114,7 +112,6 @@ export default function SupportPage() {
         alert('Failed to create support ticket')
       }
     } catch (error) {
-      console.error('Error creating ticket:', error)
       alert('Failed to create support ticket')
     }
   }

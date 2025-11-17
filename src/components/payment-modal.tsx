@@ -116,7 +116,6 @@ export function PaymentModal({ isOpen, onClose, overdueAmount, onPaymentSuccess 
         throw new Error(result.error || 'Payment failed')
       }
     } catch (error) {
-      console.error('Payment error:', error)
       setPaymentStatus('error')
       setErrorMessage(error instanceof Error ? error.message : 'Payment failed. Please try again.')
     } finally {
@@ -146,7 +145,7 @@ export function PaymentModal({ isOpen, onClose, overdueAmount, onPaymentSuccess 
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-white/20 backdrop-blur-md flex items-center justify-center z-50 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <CardTitle className="text-lg font-semibold">Pay Overdue Amount</CardTitle>

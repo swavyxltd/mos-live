@@ -64,16 +64,14 @@ export function TeachersList({ teachers, onEditTeacher }: TeachersListProps) {
     
     setIsArchiving(true)
     try {
-      console.log(`Archiving teacher: ${teacherToArchive.id}`)
       // TODO: Implement actual archive API call
       // For now, just log the action
-      console.log(`Teacher ${teacherToArchive.name} would be archived (demo mode)`)
+      `)
       
       // Close dialogs and reset state
       setIsArchiveDialogOpen(false)
       setTeacherToArchive(null)
     } catch (error) {
-      console.error('Error archiving teacher:', error)
     } finally {
       setIsArchiving(false)
     }
@@ -188,7 +186,12 @@ export function TeachersList({ teachers, onEditTeacher }: TeachersListProps) {
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
                     <div className="flex items-center">
-                      <Badge variant={teacher.isActive ? 'default' : 'secondary'}>
+                      <Badge 
+                        variant="outline"
+                        className={teacher.isActive 
+                          ? 'text-green-600 bg-green-50 border-0 dark:bg-green-950 dark:text-green-200' 
+                          : 'bg-gray-50 text-gray-600 border-0 dark:bg-gray-800 dark:text-gray-200'}
+                      >
                         {teacher.isActive ? 'Active' : 'Inactive'}
                       </Badge>
                     </div>

@@ -85,7 +85,6 @@ export function AttendanceMarking() {
 
   const handleSaveAttendance = () => {
     // Here you would typically save to your backend
-    console.log('Saving attendance for class:', selectedClass)
     setIsOpen(false)
     setSelectedClass(null)
   }
@@ -151,7 +150,7 @@ export function AttendanceMarking() {
 
       {/* Attendance Marking Modal */}
       {isOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4">
+        <div className="fixed inset-0 bg-white/20 backdrop-blur-md flex items-center justify-center z-50 p-2 sm:p-4">
           <div className="bg-[var(--card)] rounded-lg shadow-xl border border-[var(--border)] w-full max-w-4xl max-h-[95vh] overflow-y-auto">
             <div className="p-3 sm:p-6">
               <div className="flex justify-between items-center mb-4 sm:mb-6">

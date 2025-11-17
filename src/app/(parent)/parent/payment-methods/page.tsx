@@ -64,7 +64,6 @@ export default function PaymentMethodsPage() {
         })
       }
     } catch (error) {
-      console.error('Error fetching payment settings:', error)
       toast.error('Failed to load payment settings')
     } finally {
       setLoading(false)
@@ -95,7 +94,6 @@ export default function PaymentMethodsPage() {
         throw new Error('Failed to update auto-pay settings')
       }
     } catch (error) {
-      console.error('Error updating auto-pay:', error)
       toast.error('Failed to update auto-pay settings')
     } finally {
       setSaving(false)
@@ -121,7 +119,6 @@ export default function PaymentMethodsPage() {
         throw new Error('Failed to update default payment method')
       }
     } catch (error) {
-      console.error('Error updating default payment method:', error)
       toast.error('Failed to update default payment method')
     } finally {
       setSaving(false)
@@ -153,7 +150,6 @@ export default function PaymentMethodsPage() {
         throw new Error('Failed to delete payment method')
       }
     } catch (error) {
-      console.error('Error deleting payment method:', error)
       toast.error('Failed to delete payment method')
     } finally {
       setSaving(false)

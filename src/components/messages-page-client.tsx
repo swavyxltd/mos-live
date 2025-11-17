@@ -48,11 +48,9 @@ export function MessagesPageClient() {
         setMessages(data.messages || [])
         setPagination(data.pagination || { page: 1, limit: 10, total: 0, totalPages: 0 })
       } else {
-        console.error('Failed to fetch messages')
         setMessages([])
       }
     } catch (error) {
-      console.error('Error fetching messages:', error)
       setMessages([])
     } finally {
       setLoading(false)
@@ -115,11 +113,9 @@ export function MessagesPageClient() {
         await fetchMessages(page)
         setIsModalOpen(false)
       } else {
-        console.error('Failed to send message')
         alert('Failed to send message. Please try again.')
       }
     } catch (error) {
-      console.error('Error sending message:', error)
       alert('Error sending message. Please try again.')
     }
   }

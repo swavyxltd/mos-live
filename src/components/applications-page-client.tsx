@@ -82,11 +82,9 @@ export function ApplicationsPageClient({ orgSlug }: ApplicationsPageClientProps)
         }))
         setApplications(transformed)
       } else {
-        console.error('Failed to fetch applications')
         setApplications([])
       }
     } catch (error) {
-      console.error('Error fetching applications:', error)
       setApplications([])
     } finally {
       setLoading(false)
@@ -224,7 +222,6 @@ export function ApplicationsPageClient({ orgSlug }: ApplicationsPageClientProps)
         setShowDetailModal(false)
       }
     } catch (error) {
-      console.error('Error updating application status:', error)
     }
   }
 

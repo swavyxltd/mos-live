@@ -8,7 +8,6 @@ export function NewTeacherForm() {
 
   const handleSubmit = async (data: any) => {
     // In a real application, you would save to the database here
-    console.log('Creating new staff member:', data)
     
     // For demo purposes, we'll just simulate a successful creation
     // In production, you would use prisma.staff.create()

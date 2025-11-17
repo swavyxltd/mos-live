@@ -23,15 +23,11 @@ export function RestrictedAction({
   const handleClick = (e: MouseEvent) => {
     if (disabled) return
     
-    console.log('RestrictedAction: Clicked action:', action)
     const canProceed = checkAction(action)
-    console.log('RestrictedAction: Can proceed:', canProceed)
     
     if (canProceed && onClick) {
-      console.log('RestrictedAction: Executing onClick')
       onClick(e)
     } else {
-      console.log('RestrictedAction: Action blocked or no onClick handler')
     }
   }
 

@@ -177,11 +177,9 @@ export function PublicApplicationForm({ org, classes }: PublicApplicationFormPro
         setIsSubmitted(true)
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-        console.error('Error submitting application:', errorData)
         throw new Error(errorData.error || 'Failed to submit application')
       }
     } catch (error: any) {
-      console.error('Error submitting application:', error)
       const errorMessage = error.message || 'There was an error submitting your application. Please try again.'
       alert(errorMessage)
     } finally {

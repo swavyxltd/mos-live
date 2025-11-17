@@ -75,7 +75,7 @@ export function StaffSidebar({ user, org, userRole, staffSubrole }: StaffSidebar
   const isOwner = user.isSuperAdmin || userRole === 'OWNER'
   
   // Use permissions to filter navigation items
-  console.log('StaffSidebar - staffSubrole:', staffSubrole, 'userRole:', userRole) // Debug log
+  // Debug log
   const permissions = useStaffPermissions({
     id: user.id,
     email: user.email || '',
@@ -85,7 +85,7 @@ export function StaffSidebar({ user, org, userRole, staffSubrole }: StaffSidebar
   const filteredNavigation = navigation.filter(item => 
     permissions.hasPermission(item.permission || 'view_all_data')
   )
-  console.log('StaffSidebar - filteredNavigation:', filteredNavigation.map(item => item.name)) // Debug log
+  ) // Debug log
   
   const currentNavigation = isOwner ? ownerNavigation : filteredNavigation
 

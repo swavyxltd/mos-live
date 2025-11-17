@@ -57,7 +57,6 @@ export function RecordPaymentModal({
       setNotes('')
       onClose()
     } catch (error) {
-      console.error('Error recording payment:', error)
       alert('Failed to record payment')
     } finally {
       setLoading(false)

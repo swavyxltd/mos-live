@@ -49,7 +49,6 @@ export default async function OwnerAnalyticsPage() {
       analyticsData = await analyticsRes.json()
     }
   } catch (error) {
-    console.error('Error fetching analytics data:', error)
   }
 
   return (

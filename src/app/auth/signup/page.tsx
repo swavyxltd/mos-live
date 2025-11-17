@@ -38,7 +38,6 @@ function SignUpForm() {
       })
       .catch(err => {
         setError('Failed to load invitation')
-        console.error(err)
       })
       .finally(() => {
         setIsLoadingInvitation(false)

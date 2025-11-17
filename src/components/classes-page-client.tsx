@@ -1,10 +1,12 @@
 'use client'
 
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
-import Link from 'next/link'
 import { ClassesList } from '@/components/classes-list'
 import { RestrictedAction } from '@/components/restricted-action'
+import { AddClassModal } from '@/components/add-class-modal'
+import { useRouter } from 'next/navigation'
 
 interface Class {
   id: string
@@ -35,6 +37,15 @@ interface ClassesPageClientProps {
 }
 
 export function ClassesPageClient({ classes }: ClassesPageClientProps) {
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const router = useRouter()
+
+  const handleAddClass = (classData: any) => {
+    // Refresh the page to show the new class
+    router.refresh()
+    setIsAddModalOpen(false)
+  }
+
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
@@ -45,16 +56,20 @@ export function ClassesPageClient({ classes }: ClassesPageClientProps) {
           </p>
         </div>
         <RestrictedAction action="create-class">
-          <Link href="/classes/new">
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              New Class
-            </Button>
-          </Link>
+          <Button size="sm" onClick={() => setIsAddModalOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            New Class
+          </Button>
         </RestrictedAction>
       </div>
 
       <ClassesList classes={classes} />
+
+      <AddClassModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSave={handleAddClass}
+      />
     </div>
   )
 }

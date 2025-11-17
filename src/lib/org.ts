@@ -54,7 +54,6 @@ export async function setActiveOrgId(orgId: string): Promise<void> {
   }
 
   if (typeof cookieStore.set !== 'function') {
-    console.warn('[org] setActiveOrgId called in a read-only cookies context; skipping cookie write')
     return
   }
 
@@ -109,7 +108,6 @@ export async function getActiveOrg(userId?: string) {
       }
     })
   } catch (error) {
-    console.error('Error getting active org:', error)
     return null
   }
 }
@@ -140,7 +138,6 @@ export async function getUserRoleInOrg(userId: string, orgId: string): Promise<R
 
     return membership?.role || null
   } catch (error) {
-    console.error('Error getting user role in org:', error)
     return null
   }
 }

@@ -64,7 +64,6 @@ export default function OwnerRevenuePage() {
         setLoading(false)
       })
       .catch(err => {
-        console.error('Error fetching revenue data:', err)
         setLoading(false)
       })
   }, [])
@@ -77,7 +76,6 @@ export default function OwnerRevenuePage() {
       const data = await res.json()
       setRevenueData(data)
     } catch (err) {
-      console.error('Error refreshing revenue data:', err)
     } finally {
       setRefreshing(false)
     }
@@ -169,7 +167,6 @@ export default function OwnerRevenuePage() {
         })
       }
     } catch (error) {
-      console.error('Error retrying payment:', error)
       addToast({
         type: 'error',
         title: 'System Error',
@@ -574,7 +571,6 @@ export default function OwnerRevenuePage() {
               Cancel
             </Button>
             <Button onClick={() => {
-              console.log('Exporting data...')
               setIsExportModalOpen(false)
             }}>
               <Download className="h-4 w-4 mr-2" />

@@ -35,7 +35,6 @@ export function RecentActivityModal({ isOpen, onClose, activities }: RecentActiv
   const [searchTerm, setSearchTerm] = useState('')
   const [filterType, setFilterType] = useState<string>('all')
   
-  console.log('RecentActivityModal props:', { isOpen, activitiesLength: activities.length })
   
   const itemsPerPage = 10
   
@@ -86,7 +85,7 @@ export function RecentActivityModal({ isOpen, onClose, activities }: RecentActiv
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+        className="fixed inset-0 bg-white/20 backdrop-blur-md"
         onClick={onClose}
       />
       

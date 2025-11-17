@@ -99,7 +99,6 @@ export default async function OwnerSupportPage() {
       }
     }
   } catch (error) {
-    console.error('Error fetching support tickets:', error)
   }
 
   const getStatusBadge = (status: string) => {

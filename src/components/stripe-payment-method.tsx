@@ -80,7 +80,6 @@ function PaymentMethodForm({ onSuccess, onCancel, clientSecret: propClientSecret
         }
       })
       .catch((error) => {
-        console.error('Setup intent error:', error)
         toast.error(error.message || 'Failed to create setup intent. Please check your Stripe configuration.')
       })
       .finally(() => {
@@ -229,7 +228,7 @@ function PaymentMethodForm({ onSuccess, onCancel, clientSecret: propClientSecret
 export function StripePaymentMethodModal({ onSuccess, onCancel, clientSecret, isPlatformBilling = true }: StripePaymentMethodProps) {
   return (
     <div 
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
+      className="fixed inset-0 bg-white/20 backdrop-blur-md flex items-center justify-center z-50 p-4 overflow-y-auto"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onCancel?.()

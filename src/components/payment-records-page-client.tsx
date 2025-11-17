@@ -84,7 +84,6 @@ export default function PaymentRecordsPageClient() {
       const data = await response.json()
       setRecords(data)
     } catch (error) {
-      console.error('Error fetching payment records:', error)
       toast.error('Failed to load payment records')
     } finally {
       setLoading(false)
@@ -99,7 +98,6 @@ export default function PaymentRecordsPageClient() {
         setClasses(data)
       }
     } catch (error) {
-      console.error('Error fetching classes:', error)
     }
   }
 
@@ -149,7 +147,6 @@ export default function PaymentRecordsPageClient() {
       setShowEditModal(false)
       setSelectedRecord(null)
     } catch (error) {
-      console.error('Error marking payment as paid:', error)
       toast.error('Failed to update payment')
     } finally {
       setMarkingPaid(false)
@@ -180,7 +177,6 @@ export default function PaymentRecordsPageClient() {
       setShowEditModal(false)
       setSelectedRecord(null)
     } catch (error) {
-      console.error('Error updating notes:', error)
       toast.error('Failed to update notes')
     } finally {
       setSavingNotes(false)
@@ -420,7 +416,7 @@ export default function PaymentRecordsPageClient() {
 
       {/* Edit Modal */}
       {showEditModal && selectedRecord && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-white/20 backdrop-blur-md flex items-center justify-center z-50 p-4">
           <Card className="w-full max-w-md">
             <CardHeader>
               <div className="flex items-center justify-between">

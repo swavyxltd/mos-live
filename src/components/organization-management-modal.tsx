@@ -238,19 +238,16 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
 
   const handleSaveOrganization = () => {
     // TODO: Implement save functionality
-    console.log('Saving organization changes')
     setIsEditingOrg(false)
   }
 
   const handleSaveStudent = (studentId: string) => {
     // TODO: Implement save student functionality
-    console.log('Saving student changes for:', studentId)
     setIsEditingStudent(null)
   }
 
   const handleSaveTeacher = (teacherId: string) => {
     // TODO: Implement save teacher functionality
-    console.log('Saving teacher changes for:', teacherId)
     setIsEditingTeacher(null)
   }
 
@@ -264,13 +261,11 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
 
   const handleSaveNewStudent = () => {
     // TODO: Implement save new student functionality
-    console.log('Saving new student')
     setIsAddingStudent(false)
   }
 
   const handleSaveNewTeacher = () => {
     // TODO: Implement save new teacher functionality
-    console.log('Saving new teacher')
     setIsAddingTeacher(false)
   }
 
@@ -297,7 +292,6 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
       const result = await response.json()
       
       if (!response.ok) {
-        console.error('Pause API error:', result)
         toast.error(result.error || result.details || 'Failed to pause account')
         return
       }
@@ -311,7 +305,6 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
         toast.error(result.error || result.details || 'Failed to pause account')
       }
     } catch (error: any) {
-      console.error('Error pausing account:', error)
       toast.error(`Error pausing account: ${error?.message || 'Please try again.'}`)
     } finally {
       setIsChangingStatus(false)
@@ -345,7 +338,6 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
         toast.error(result.error || 'Failed to reactivate account')
       }
     } catch (error) {
-      console.error('Error reactivating account:', error)
       toast.error('Error reactivating account. Please try again.')
     } finally {
       setIsChangingStatus(false)
@@ -382,7 +374,6 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
         toast.error(result.error || 'Failed to deactivate account')
       }
     } catch (error) {
-      console.error('Error deactivating account:', error)
       toast.error('Error deactivating account. Please try again.')
     } finally {
       setIsChangingStatus(false)

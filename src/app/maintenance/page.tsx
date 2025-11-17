@@ -24,7 +24,6 @@ export default function MaintenancePage() {
         setDomain(data.domain || null)
       }
     } catch (error) {
-      console.error('Error fetching maintenance info:', error)
     } finally {
       setLoading(false)
     }

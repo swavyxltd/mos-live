@@ -62,7 +62,6 @@ export function SetPasswordModal({
       await onSetPassword(newPassword)
       handleClose()
     } catch (error) {
-      console.error('Error setting password:', error)
     }
   }
 

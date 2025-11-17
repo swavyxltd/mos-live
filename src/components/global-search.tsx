@@ -93,7 +93,7 @@ export function GlobalSearch() {
         setShowResults(true)
       }
     } catch (error) {
-      console.error('Search error:', error)
+      // Search error handled silently
     } finally {
       setIsLoading(false)
     }
@@ -113,6 +113,28 @@ export function GlobalSearch() {
       handleSearch(value)
     }, 300)
   }
+
+  // Keyboard shortcut handler (⌘K or Ctrl+K)
+  React.useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Check for ⌘K (Mac) or Ctrl+K (Windows/Linux)
+      if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+        event.preventDefault()
+        setIsOpen(true)
+        setIsMobileSearchOpen(true)
+      }
+      // Close on Escape
+      if (event.key === 'Escape' && (isOpen || isMobileSearchOpen)) {
+        setIsOpen(false)
+        setShowResults(false)
+        setQuery('')
+        setIsMobileSearchOpen(false)
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, isMobileSearchOpen])
 
   // Close search when clicking outside
   React.useEffect(() => {
@@ -152,9 +174,11 @@ export function GlobalSearch() {
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'student': return 'bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800'
+      case 'parent': return 'bg-cyan-50 dark:bg-cyan-950 text-cyan-700 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800'
       case 'class': return 'bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800'
       case 'staff': return 'bg-purple-50 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800'
       case 'payment': return 'bg-yellow-50 dark:bg-yellow-950 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800'
+      case 'invoice': return 'bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
       case 'message': return 'bg-pink-50 dark:bg-pink-950 text-pink-700 dark:text-pink-300 border-pink-200 dark:border-pink-800'
       case 'event': return 'bg-orange-50 dark:bg-orange-950 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800'
       case 'application': return 'bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800'
@@ -196,7 +220,7 @@ export function GlobalSearch() {
         <>
           {/* Backdrop */}
           <div 
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+            className="fixed inset-0 bg-white/20 backdrop-blur-md z-40"
             onClick={() => {
               setIsMobileSearchOpen(false)
               setQuery('')
@@ -209,30 +233,37 @@ export function GlobalSearch() {
             <div className="w-full max-w-3xl pointer-events-auto">
               {/* Search Input */}
               <div className="relative mb-4">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input
-                  value={query}
-                  onChange={handleInputChange}
-                  onFocus={() => setIsOpen(true)}
-                  placeholder="Search students, classes, staff, invoices..."
-                  className="pl-12 pr-12 h-14 text-lg rounded-xl border-2 border-[var(--border)] bg-[var(--background)] shadow-xl focus:border-[var(--ring)] focus:ring-2 focus:ring-[var(--ring)]"
-                  autoFocus
-                />
-                {query && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleClear}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                )}
+                <div className="relative">
+                  <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 h-5 w-5 text-[var(--muted-foreground)] z-10" />
+                  <Input
+                    value={query}
+                    onChange={handleInputChange}
+                    onFocus={() => setIsOpen(true)}
+                    placeholder="Search students, classes, staff, invoices..."
+                    className="pl-14 pr-24 h-16 text-lg rounded-2xl border-0 bg-[var(--card)] shadow-2xl focus:ring-4 focus:ring-[var(--primary)]/20 transition-all duration-200 placeholder:text-[var(--muted-foreground)]"
+                    autoFocus
+                  />
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
+                    {query && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleClear}
+                        className="h-8 w-8 p-0 hover:bg-[var(--muted)] rounded-lg"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <kbd className="hidden sm:inline-flex h-7 select-none items-center gap-1 rounded-lg border border-[var(--border)] bg-[var(--muted)] px-2 font-mono text-xs font-medium text-[var(--muted-foreground)] opacity-60">
+                      <span className="text-xs">⌘</span>K
+                    </kbd>
+                  </div>
+                </div>
               </div>
               
               {/* Search Results */}
               {isOpen && showResults && (
-                <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-lg max-h-[60vh] overflow-y-auto">
+                <div className="bg-[var(--card)] border border-[var(--border)] rounded-2xl shadow-2xl max-h-[60vh] overflow-y-auto backdrop-blur-sm">
                   {isLoading ? (
                     <div className="p-8 text-center text-[var(--muted-foreground)]">
                       <div className="animate-pulse">Searching...</div>
@@ -247,9 +278,9 @@ export function GlobalSearch() {
                             handleResultClick()
                             setIsMobileSearchOpen(false)
                           }}
-                          className="flex items-center gap-3 px-4 py-3 hover:bg-[var(--accent)] transition-colors border-b border-[var(--border)] last:border-b-0"
+                          className="flex items-center gap-3 px-5 py-4 hover:bg-[var(--accent)] transition-all duration-150 border-b border-[var(--border)] last:border-b-0 cursor-pointer group"
                         >
-                          <div className="w-10 h-10 bg-[var(--muted)] rounded-lg flex items-center justify-center flex-shrink-0">
+                          <div className="w-11 h-11 bg-[var(--muted)] rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-[var(--primary)]/10 group-hover:scale-105 transition-all duration-150">
                             {getIcon(result.icon)}
                           </div>
                           <div className="flex-1 min-w-0">
