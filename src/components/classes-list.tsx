@@ -129,8 +129,10 @@ export function ClassesList({ classes }: ClassesListProps) {
                       </span>
                     )}
                     <Badge 
-                      variant={cls._count.StudentClass > 0 ? 'default' : 'secondary'}
-                      className={cls._count.StudentClass > 0 ? 'bg-green-100 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-200 dark:border-green-800' : ''}
+                      variant="outline"
+                      className={cls._count.StudentClass > 0 
+                        ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-200 dark:border-green-800' 
+                        : 'bg-gray-50 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700'}
                     >
                       {cls._count.StudentClass > 0 ? 'Active' : 'Empty'}
                     </Badge>
