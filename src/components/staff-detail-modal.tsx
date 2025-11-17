@@ -134,8 +134,8 @@ export function StaffDetailModal({
                       variant="outline"
                       className={
                         staff.isActive
-                          ? 'bg-[#e8f5e9] text-[#1b5e20] border border-[#c8e6c9] dark:bg-green-950 dark:text-green-200 dark:border-green-800'
-                          : 'bg-[#f5f5f5] text-[#374151] border border-[#e5e7eb] dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700'
+                          ? 'bg-[#e8f5e9] text-[#1b5e20] border border-[#c8e6c9]'
+                          : 'bg-[#f5f5f5] text-[#374151] border border-[#e5e7eb]'
                       }
                     >
                       {staff.isActive ? 'ACTIVE' : 'INACTIVE'}

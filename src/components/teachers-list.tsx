@@ -187,8 +187,8 @@ export function TeachersList({ teachers, onEditTeacher }: TeachersListProps) {
                       <Badge 
                         variant="outline"
                         className={teacher.isActive 
-                          ? 'text-green-600 bg-green-50 border-0 dark:bg-green-950 dark:text-green-200' 
-                          : 'bg-gray-50 text-gray-600 border-0 dark:bg-gray-800 dark:text-gray-200'}
+                          ? 'text-green-600 bg-green-50 border-0' 
+                          : 'bg-gray-50 text-gray-600 border-0'}
                       >
                         {teacher.isActive ? 'Active' : 'Inactive'}
                       </Badge>

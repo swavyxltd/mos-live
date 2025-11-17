@@ -308,8 +308,8 @@ export default async function ClassDetailsPage({ params }: ClassDetailsPageProps
                 <Badge 
                   variant="outline"
                   className={transformedClassData._count.studentClasses > 0 
-                    ? 'text-green-600 bg-green-50 border-0 dark:bg-green-950 dark:text-green-200' 
-                    : 'bg-gray-50 text-gray-600 border-0 dark:bg-gray-800 dark:text-gray-200'}
+                    ? 'text-green-600 bg-green-50 border-0' 
+                    : 'bg-gray-50 text-gray-600 border-0'}
                 >
                   {transformedClassData._count.studentClasses > 0 ? 'Active' : 'Empty'}
                 </Badge>

@@ -86,15 +86,15 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'ACTIVE':
-        return 'text-green-600 bg-green-50 border-0 dark:bg-green-950 dark:text-green-200'
+        return 'text-green-600 bg-green-50 border-0'
       case 'INACTIVE':
-        return 'bg-gray-50 text-gray-600 border-0 dark:bg-gray-800 dark:text-gray-200'
+        return 'bg-gray-50 text-gray-600 border-0'
       case 'DEACTIVATED':
-        return 'bg-red-50 text-red-600 border-0 dark:bg-red-950 dark:text-red-200'
+        return 'bg-red-50 text-red-600 border-0'
       case 'GRADUATED':
-        return 'bg-blue-50 text-blue-600 border-0 dark:bg-blue-950 dark:text-blue-200'
+        return 'bg-blue-50 text-blue-600 border-0'
       default:
-        return 'bg-gray-50 text-gray-600 border-0 dark:bg-gray-800 dark:text-gray-200'
+        return 'bg-gray-50 text-gray-600 border-0'
     }
   }
 

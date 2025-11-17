@@ -325,7 +325,7 @@ export default function OwnerSystemHealthPage() {
                   <Shield className="h-4 w-4 text-green-600" />
                   <span className="text-sm font-medium">Firewall Status</span>
                 </div>
-                <Badge variant="outline" className="text-green-600 bg-green-50 border-0 dark:bg-green-950 dark:text-green-200">Active</Badge>
+                <Badge variant="outline" className="text-green-600 bg-green-50 border-0">Active</Badge>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
