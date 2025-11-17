@@ -22,11 +22,6 @@ export function validateEnv() {
   ]
 
   const missing = required.filter(key => !process.env[key])
-  
-  if (missing.length > 0) {
-    missing.forEach(key => )
-  } else {
-  }
 
   // Optional WhatsApp dev config
   const optionalWhatsapp = [
@@ -36,9 +31,6 @@ export function validateEnv() {
   ]
 
   const missingOptional = optionalWhatsapp.filter(key => !process.env[key])
-  if (missingOptional.length > 0) {
-    ')
-  }
 
   return missing.length === 0
 }
