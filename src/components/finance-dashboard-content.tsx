@@ -189,7 +189,7 @@ export function FinanceDashboardContent({ initialStats }: FinanceDashboardConten
   // Show skeleton loaders while data is loading
   if (loading) {
     return (
-      <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Header with Quick Actions */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-2">
@@ -222,7 +222,7 @@ export function FinanceDashboardContent({ initialStats }: FinanceDashboardConten
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header with Quick Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
