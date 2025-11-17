@@ -9,6 +9,7 @@ import Link from 'next/link'
 import GenerateReportModal from '@/components/generate-report-modal'
 import { RecentActivityModal } from '@/components/recent-activity-modal'
 import { useState, useEffect } from 'react'
+import { StatCardSkeleton, CardSkeleton } from '@/components/loading/skeleton'
 import { 
   Users, 
   DollarSign, 
@@ -26,7 +27,7 @@ import {
   PieChart
 } from 'lucide-react'
 
-interface FinanceStats {
+export interface FinanceStats {
   totalStudents: number
   monthlyRevenue: number
   pendingInvoices: number
@@ -37,37 +38,48 @@ interface FinanceStats {
   collectionRate: number
 }
 
-export function FinanceDashboardContent() {
+interface FinanceDashboardContentProps {
+  initialStats: FinanceStats | null
+}
+
+const defaultStats: FinanceStats = {
+  totalStudents: 0,
+  monthlyRevenue: 0,
+  pendingInvoices: 0,
+  overduePayments: 0,
+  paidThisMonth: 0,
+  totalOutstanding: 0,
+  averagePaymentTime: 0,
+  collectionRate: 0
+}
+
+export function FinanceDashboardContent({ initialStats }: FinanceDashboardContentProps) {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [stats, setStats] = useState<FinanceStats>({
-    totalStudents: 0,
-    monthlyRevenue: 0,
-    pendingInvoices: 0,
-    overduePayments: 0,
-    paidThisMonth: 0,
-    totalOutstanding: 0,
-    averagePaymentTime: 0,
-    collectionRate: 0
-  })
+  const [loading, setLoading] = useState(!initialStats)
+  const [stats, setStats] = useState<FinanceStats>(initialStats ?? defaultStats)
 
   useEffect(() => {
-    fetchFinanceStats()
-    
+    if (!initialStats) {
+      fetchFinanceStats()
+    } else {
+      setLoading(false)
+    }
+
     // Listen for refresh events
     const handleRefresh = () => {
       fetchFinanceStats()
     }
-    
+
     window.addEventListener('refresh-dashboard', handleRefresh)
     
     return () => {
       window.removeEventListener('refresh-dashboard', handleRefresh)
     }
-  }, [])
+  }, [initialStats])
 
   const fetchFinanceStats = async () => {
+    setLoading(true)
     try {
       const response = await fetch('/api/dashboard/stats')
       if (response.ok) {
@@ -117,9 +129,6 @@ export function FinanceDashboardContent() {
     averagePaymentTime,
     collectionRate
   } = stats
-
-  // Loading state is handled by loading.tsx file
-  
 
   // Handle CSV export generation with month/year filters
   const handleGenerateReport = async (month: number, year: number) => {
@@ -176,6 +185,41 @@ export function FinanceDashboardContent() {
   // Empty arrays - will be populated from real data when available
   const recentFinancialActivity: any[] = []
   const allRevenueClasses: any[] = []
+
+  // Show skeleton loaders while data is loading
+  if (loading) {
+    return (
+      <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">
+        {/* Header with Quick Actions */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-2">
+            <div className="h-8 w-48 bg-[var(--muted)]/80 rounded-[var(--radius)] relative overflow-hidden">
+              <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent dark:via-white/10 motion-safe:animate-[shimmer_1.6s_infinite] motion-reduce:hidden" />
+            </div>
+            <div className="h-4 w-96 bg-[var(--muted)]/80 rounded-[var(--radius)] relative overflow-hidden">
+              <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent dark:via-white/10 motion-safe:animate-[shimmer_1.6s_infinite] motion-reduce:hidden" />
+            </div>
+          </div>
+          <div className="h-10 w-40 bg-[var(--muted)]/80 rounded-[var(--radius)] relative overflow-hidden">
+            <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent dark:via-white/10 motion-safe:animate-[shimmer_1.6s_infinite] motion-reduce:hidden" />
+          </div>
+        </div>
+
+        {/* Financial Metrics Grid Skeleton */}
+        <div className="grid gap-3 sm:gap-4 lg:gap-6 grid-cols-2 lg:grid-cols-4 auto-rows-fr">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <StatCardSkeleton key={i} />
+          ))}
+        </div>
+
+        {/* Recent Financial Activity Skeleton */}
+        <CardSkeleton className="h-64" />
+
+        {/* All Revenue Classes Skeleton */}
+        <CardSkeleton className="h-64" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6 p-4 sm:p-6">

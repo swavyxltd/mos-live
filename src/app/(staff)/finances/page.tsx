@@ -1,5 +1,61 @@
-import { FinanceDashboardContent } from '@/components/finance-dashboard-content'
+import { FinanceDashboardContent, FinanceStats } from '@/components/finance-dashboard-content'
+import { getDashboardStats } from '@/lib/dashboard-stats'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { getActiveOrg } from '@/lib/org'
+import { prisma } from '@/lib/prisma'
 
-export default function FinanceDashboardPage() {
-  return <FinanceDashboardContent />
+async function getInitialFinanceStats(): Promise<FinanceStats | null> {
+  const [stats, session] = await Promise.all([
+    getDashboardStats(),
+    getServerSession(authOptions)
+  ])
+
+  if (!stats) {
+    return null
+  }
+
+  const paidThisMonth = stats.paidThisMonth || 0
+  const pendingInvoicesCount = stats.pendingInvoices || 0
+  const overduePayments = stats.overduePayments || 0
+  const totalInvoices = paidThisMonth + pendingInvoicesCount + overduePayments
+  const collectionRate = totalInvoices > 0
+    ? Number(((paidThisMonth / totalInvoices) * 100).toFixed(1))
+    : 0
+
+  let totalOutstanding = 0
+
+  if (session?.user?.id) {
+    const org = await getActiveOrg(session.user.id)
+
+    if (org) {
+      const pendingInvoices = await prisma.invoice.findMany({
+        where: {
+          orgId: org.id,
+          status: 'PENDING'
+        },
+        select: { amountP: true }
+      })
+
+      totalOutstanding = pendingInvoices.reduce((sum, invoice) => {
+        return sum + Number(invoice.amountP || 0) / 100
+      }, 0)
+    }
+  }
+
+  return {
+    totalStudents: stats.totalStudents || 0,
+    monthlyRevenue: stats.monthlyRevenue || 0,
+    pendingInvoices: pendingInvoicesCount,
+    overduePayments,
+    paidThisMonth,
+    totalOutstanding,
+    averagePaymentTime: stats.averagePaymentTime || 0,
+    collectionRate
+  }
+}
+
+export default async function FinanceDashboardPage() {
+  const initialStats = await getInitialFinanceStats()
+  return <FinanceDashboardContent initialStats={initialStats} />
 }
