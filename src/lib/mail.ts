@@ -118,7 +118,7 @@ export async function sendParentInvite({
   inviteUrl: string
 }) {
   const html = await generateEmailTemplate({
-    title: 'Assalamu'alaikum!',
+    title: "Assalamu'alaikum!",
     description: `You've been invited to join <strong>${orgName}</strong> on Madrasah OS. Click below to complete your account setup.`,
     buttonText: 'Complete Setup',
     buttonUrl: inviteUrl,
@@ -314,7 +314,7 @@ export async function sendOrgSetupInvitation({
   const html = await generateEmailTemplate({
     title: 'Welcome to Madrasah OS',
     description: [
-      'Assalamu'alaikum!',
+      "Assalamu'alaikum!",
       `You've been invited to set up <strong>${orgName}</strong> on Madrasah OS. Click below to create your account and complete the setup.`
     ],
     buttonText: 'Set Up Organization',
@@ -471,7 +471,7 @@ export async function sendParentOnboardingEmail({
   `
   
   const html = await generateEmailTemplate({
-    title: 'Assalamu'alaikum!',
+    title: "Assalamu'alaikum!",
     description: '',
     content,
     footerText: `This link will expire in 7 days. If you have any questions, please contact ${orgName} directly.`
@@ -509,7 +509,7 @@ export async function sendStaffInvitation({
   const html = await generateEmailTemplate({
     title: "You've Been Invited",
     description: [
-      'Assalamu'alaikum!',
+      "Assalamu'alaikum!",
       `You've been invited to join <strong>${orgName}</strong> as a <strong>${roleLabel}</strong>. Click below to create your account and get started.`
     ],
     buttonText: 'Create Account',
@@ -595,7 +595,7 @@ export async function sendPaymentConfirmationEmail({
   
   const html = await generateEmailTemplate({
     title: 'Payment Confirmation',
-    description: 'Assalamu'alaikum! This email confirms that your payment has been received and processed.',
+    description: "Assalamu'alaikum! This email confirms that your payment has been received and processed.",
     content
   })
   
