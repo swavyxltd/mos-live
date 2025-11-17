@@ -19,15 +19,12 @@ export function usePaymentGate() {
   const [blockedAction, setBlockedAction] = useState<string>('')
 
   useEffect(() => {
-    if (session?.user?.id) {
-      checkPaymentStatus()
+    if (!session?.user?.id) {
+      return
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session])
 
-  const checkPaymentStatus = async () => {
     // Owner accounts don't need payment checks
-    if (session?.user?.isSuperAdmin) {
+    if (session.user.isSuperAdmin) {
       setPaymentStatus({
         hasPaymentMethod: true, // Always allow owners
         autoPayEnabled: true,
@@ -37,32 +34,63 @@ export function usePaymentGate() {
       return
     }
 
-    try {
-      // Check platform billing (org must have card on file)
-      const response = await fetch('/api/settings/platform-payment')
-      if (response.ok) {
-        const data = await response.json()
-        setPaymentStatus({
-          hasPaymentMethod: !!data.paymentMethodId,
-          autoPayEnabled: true, // Platform billing is always auto
-          lastUpdated: data.trialEndDate || undefined
-        })
-      } else {
+    // First, try to get payment status from sessionStorage (set during initial load)
+    const storedStatus = sessionStorage.getItem('hasPaymentMethod')
+    if (storedStatus !== null) {
+      // Use cached value immediately - no loading state
+      setPaymentStatus({
+        hasPaymentMethod: storedStatus === 'true',
+        autoPayEnabled: true,
+        lastUpdated: undefined
+      })
+      setLoading(false)
+    } else {
+      // If not in sessionStorage, assume true (shouldn't happen, but be permissive)
+      setPaymentStatus({
+        hasPaymentMethod: true,
+        autoPayEnabled: true,
+        lastUpdated: undefined
+      })
+      setLoading(false)
+    }
+
+    // Check payment status in background (non-blocking, updates sessionStorage)
+    const checkPaymentStatus = async () => {
+      try {
+        // Check platform billing (org must have card on file)
+        const response = await fetch('/api/settings/platform-payment')
+        if (response.ok) {
+          const data = await response.json()
+          const hasPayment = !!data.paymentMethodId
+          sessionStorage.setItem('hasPaymentMethod', hasPayment ? 'true' : 'false')
+          setPaymentStatus({
+            hasPaymentMethod: hasPayment,
+            autoPayEnabled: true, // Platform billing is always auto
+            lastUpdated: data.trialEndDate || undefined
+          })
+        } else {
+          sessionStorage.setItem('hasPaymentMethod', 'false')
+          setPaymentStatus({
+            hasPaymentMethod: false,
+            autoPayEnabled: false
+          })
+        }
+      } catch (error) {
+        // Silent error - don't show to user
+        sessionStorage.setItem('hasPaymentMethod', 'false')
         setPaymentStatus({
           hasPaymentMethod: false,
           autoPayEnabled: false
         })
       }
-    } catch (error) {
-      console.error('Error checking payment status:', error)
-      setPaymentStatus({
-        hasPaymentMethod: false,
-        autoPayEnabled: false
-      })
-    } finally {
-      setLoading(false)
     }
-  }
+
+    // Run check in background (non-blocking)
+    checkPaymentStatus().catch(() => {
+      // Silent error handling
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session])
 
   const checkAction = (action: string): boolean => {
     // Owner accounts bypass all payment checks
@@ -70,29 +98,19 @@ export function usePaymentGate() {
       return true
     }
 
-    // If still loading, block the action to be safe
-    if (loading) {
-      console.log('Payment gate: Still loading, blocking action')
-      return false
-    }
-    
-    // If no payment status yet, block the action
+    // If no payment status yet, allow action (payment check happens in background)
+    // We'll show the modal if payment is actually missing when they try to perform the action
     if (!paymentStatus) {
-      console.log('Payment gate: No payment status, blocking action')
-      setBlockedAction(action)
-      setShowModal(true)
-      return false
+      return true
     }
     
     // If no payment method, show modal
     if (!paymentStatus.hasPaymentMethod) {
-      console.log('Payment gate: No payment method, showing modal for action:', action)
       setBlockedAction(action)
       setShowModal(true)
       return false
     }
     
-    console.log('Payment gate: Payment method exists, allowing action:', action)
     return true
   }
 
