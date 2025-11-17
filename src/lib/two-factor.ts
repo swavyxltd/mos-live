@@ -34,14 +34,14 @@ export async function sendTwoFactorCode(email: string, code: string, userName?: 
   
   const html = await generateEmailTemplate({
     title: 'Your Verification Code',
-    description: `Assalamu alaikum ${name}!<br><br>You're signing in to your Madrasah OS account. Use this verification code to complete your login:`,
+    description: `Assalamu'alaikum ${name}!<br><br>You're signing in to your Madrasah OS account. Use this verification code to complete your login:`,
     content
   })
 
   const text = `
 Madrasah OS - Verification Code
 
-Assalamu alaikum ${name}!
+Assalamu'alaikum ${name}!
 
 You're signing in to your Madrasah OS account. Use this verification code to complete your login:
 

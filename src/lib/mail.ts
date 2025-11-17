@@ -118,7 +118,7 @@ export async function sendParentInvite({
   inviteUrl: string
 }) {
   const html = await generateEmailTemplate({
-    title: 'Assalamu alaikum!',
+    title: 'Assalamu'alaikum!',
     description: `You've been invited to join <strong>${orgName}</strong> on Madrasah OS. Click below to complete your account setup.`,
     buttonText: 'Complete Setup',
     buttonUrl: inviteUrl,
@@ -129,7 +129,7 @@ export async function sendParentInvite({
     to,
     subject: `Welcome to ${orgName} - Complete Your Setup`,
     html,
-    text: `Assalamu alaikum! You've been invited to join ${orgName} on Madrasah OS. Complete your setup: ${inviteUrl}`
+    text: `Assalamu'alaikum! You've been invited to join ${orgName} on Madrasah OS. Complete your setup: ${inviteUrl}`
   })
 }
 
@@ -314,7 +314,7 @@ export async function sendOrgSetupInvitation({
   const html = await generateEmailTemplate({
     title: 'Welcome to Madrasah OS',
     description: [
-      'Assalamu alaikum!',
+      'Assalamu'alaikum!',
       `You've been invited to set up <strong>${orgName}</strong> on Madrasah OS. Click below to create your account and complete the setup.`
     ],
     buttonText: 'Set Up Organization',
@@ -471,7 +471,7 @@ export async function sendParentOnboardingEmail({
   `
   
   const html = await generateEmailTemplate({
-    title: 'Assalamu alaikum!',
+    title: 'Assalamu'alaikum!',
     description: '',
     content,
     footerText: `This link will expire in 7 days. If you have any questions, please contact ${orgName} directly.`
@@ -481,7 +481,7 @@ export async function sendParentOnboardingEmail({
     to,
     subject: `Complete your ${orgName} account setup`,
     html,
-    text: `Assalamu alaikum!\n\nWe're delighted to welcome you and ${studentName} to ${orgName}!\n\nYour child's madrasah is now using Madrasah OS to enhance their Islamic education experience. Inshallah, this platform will help us work together to support your child's journey in learning the Quran and Islamic knowledge.\n\nComplete your account setup: ${safeSetupUrl}\n\nWhat is Madrasah OS?\n\nMadrasah OS is a comprehensive platform designed specifically for Islamic education. It helps parents stay connected with their child's learning journey, making it easier to track progress, manage payments, and communicate with teachers—all in one place.\n\nHow We Support Your Child's Education:\n\n• Track Progress - Monitor your child's academic progress and achievements\n• Stay Connected - Direct communication with teachers and staff\n• View Schedule - See class timings and important dates\n• Easy Payments - Pay fees securely online anytime\n• Attendance - Real-time attendance tracking\n• Reports - Access detailed progress reports\n\nJazakallahu Khairan for entrusting us with your child's Islamic education. We're here to support you every step of the way, inshallah.\n\nThis link will expire in 7 days.`
+    text: `Assalamu'alaikum!\n\nWe're delighted to welcome you and ${studentName} to ${orgName}!\n\nYour child's madrasah is now using Madrasah OS to enhance their Islamic education experience. Inshallah, this platform will help us work together to support your child's journey in learning the Quran and Islamic knowledge.\n\nComplete your account setup: ${safeSetupUrl}\n\nWhat is Madrasah OS?\n\nMadrasah OS is a comprehensive platform designed specifically for Islamic education. It helps parents stay connected with their child's learning journey, making it easier to track progress, manage payments, and communicate with teachers—all in one place.\n\nHow We Support Your Child's Education:\n\n• Track Progress - Monitor your child's academic progress and achievements\n• Stay Connected - Direct communication with teachers and staff\n• View Schedule - See class timings and important dates\n• Easy Payments - Pay fees securely online anytime\n• Attendance - Real-time attendance tracking\n• Reports - Access detailed progress reports\n\nJazakallahu Khairan for entrusting us with your child's Islamic education. We're here to support you every step of the way, inshallah.\n\nThis link will expire in 7 days.`
   })
 }
 
@@ -509,7 +509,7 @@ export async function sendStaffInvitation({
   const html = await generateEmailTemplate({
     title: "You've Been Invited",
     description: [
-      'Assalamu alaikum!',
+      'Assalamu'alaikum!',
       `You've been invited to join <strong>${orgName}</strong> as a <strong>${roleLabel}</strong>. Click below to create your account and get started.`
     ],
     buttonText: 'Create Account',
@@ -595,7 +595,7 @@ export async function sendPaymentConfirmationEmail({
   
   const html = await generateEmailTemplate({
     title: 'Payment Confirmation',
-    description: 'Assalamu alaikum! This email confirms that your payment has been received and processed.',
+    description: 'Assalamu'alaikum! This email confirms that your payment has been received and processed.',
     content
   })
   
@@ -603,7 +603,7 @@ export async function sendPaymentConfirmationEmail({
     to,
     subject: `Payment Confirmation - ${orgName}`,
     html,
-    text: `Payment Confirmation - ${orgName}\n\nAssalamu alaikum!\n\nThis email confirms that your payment has been received and processed.\n\nStudent: ${studentName}\nClass: ${className}\nMonth: ${month}\nPayment Method: ${methodLabel}\n${reference ? `Reference: ${reference}\n` : ''}Amount Paid: ${amountFormatted}\n\nJazakallahu Khairan\nThank you for your payment. We appreciate your continued support.\n\nBest regards,\n${orgName}`
+    text: `Payment Confirmation - ${orgName}\n\nAssalamu'alaikum!\n\nThis email confirms that your payment has been received and processed.\n\nStudent: ${studentName}\nClass: ${className}\nMonth: ${month}\nPayment Method: ${methodLabel}\n${reference ? `Reference: ${reference}\n` : ''}Amount Paid: ${amountFormatted}\n\nJazakallahu Khairan\nThank you for your payment. We appreciate your continued support.\n\nBest regards,\n${orgName}`
   })
 }
 
@@ -648,7 +648,7 @@ export async function sendApplicationAcceptanceEmail({
     
     <!-- Welcome Message -->
     <p style="margin: 0 0 16px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">
-      Assalamu alaikum <strong>${parentName}</strong>,
+      Assalamu'alaikum <strong>${parentName}</strong>,
     </p>
     
     <p style="margin: 0 0 24px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">
@@ -742,7 +742,7 @@ Alhamdulillah!
 
 We are delighted to inform you that your application has been ACCEPTED!
 
-Assalamu alaikum ${parentName},
+Assalamu'alaikum ${parentName},
 
 We are thrilled to welcome ${childrenList} to ${orgName}. We look forward to supporting ${childrenNames.length === 1 ? 'their' : 'their'} journey in learning the Quran and Islamic knowledge, inshallah.
 
