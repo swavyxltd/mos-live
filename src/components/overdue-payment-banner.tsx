@@ -14,11 +14,26 @@ interface OverdueData {
 
 export function OverduePaymentBanner() {
   const [overdueData, setOverdueData] = useState<OverdueData | null>(null)
-  const [loading, setLoading] = useState(true)
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
 
   useEffect(() => {
-    fetchOverdueData()
+    // Get overdue data from sessionStorage (set during initial load)
+    const hasOverdue = sessionStorage.getItem('hasOverduePayments')
+    if (hasOverdue === 'true') {
+      const overdueAmount = parseFloat(sessionStorage.getItem('overdueAmount') || '0')
+      const overdueCount = parseInt(sessionStorage.getItem('overdueCount') || '0')
+      setOverdueData({
+        hasOverdue: true,
+        overdueAmount,
+        overdueCount
+      })
+    } else if (hasOverdue === 'false') {
+      setOverdueData({
+        hasOverdue: false,
+        overdueAmount: 0,
+        overdueCount: 0
+      })
+    }
   }, [])
 
   const handlePayNow = () => {
@@ -26,34 +41,16 @@ export function OverduePaymentBanner() {
   }
 
   const handlePaymentSuccess = () => {
-    // Refresh overdue data after successful payment
-    fetchOverdueData()
+    // Update sessionStorage after successful payment
+    sessionStorage.setItem('hasOverduePayments', 'false')
+    sessionStorage.setItem('overdueAmount', '0')
+    sessionStorage.setItem('overdueCount', '0')
+    setOverdueData({
+      hasOverdue: false,
+      overdueAmount: 0,
+      overdueCount: 0
+    })
     setIsPaymentModalOpen(false)
-  }
-
-  const fetchOverdueData = async () => {
-    try {
-      const lastPaymentTime = localStorage.getItem('lastPaymentTime')
-      const headers: HeadersInit = {}
-      
-      if (lastPaymentTime) {
-        headers['x-last-payment-time'] = lastPaymentTime
-      }
-      
-      const response = await fetch('/api/payments/overdue', { headers })
-      if (response.ok) {
-        const data = await response.json()
-        setOverdueData(data)
-      }
-    } catch (error) {
-      console.error('Error fetching overdue data:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  if (loading) {
-    return null
   }
 
   if (!overdueData?.hasOverdue) {

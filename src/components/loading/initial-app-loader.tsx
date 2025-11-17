@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import Image from 'next/image'
 
 export function InitialAppLoader() {
   const [showLoader, setShowLoader] = useState(true)
   const [progress, setProgress] = useState(0)
   const pathname = usePathname()
+  const { data: session } = useSession()
 
   useEffect(() => {
     // Only show on initial app load (dashboard routes after sign-in)
@@ -32,6 +34,47 @@ export function InitialAppLoader() {
     // Mark as visited
     sessionStorage.setItem('hasVisitedApp', 'true')
 
+    // Check payment status while loader is showing (only on initial login)
+    const checkPaymentStatus = async () => {
+      if (!session?.user?.id || session.user.isSuperAdmin) {
+        return
+      }
+
+      try {
+        // Check platform payment method (for staff/admin)
+        const response = await fetch('/api/settings/platform-payment')
+        if (response.ok) {
+          const data = await response.json()
+          sessionStorage.setItem('hasPaymentMethod', data.paymentMethodId ? 'true' : 'false')
+        } else {
+          sessionStorage.setItem('hasPaymentMethod', 'false')
+        }
+      } catch (error) {
+        console.error('Error checking payment status:', error)
+        sessionStorage.setItem('hasPaymentMethod', 'false')
+      }
+
+      // Check overdue payments (for parents)
+      if (pathname?.includes('/parent')) {
+        try {
+          const overdueResponse = await fetch('/api/payments/overdue')
+          if (overdueResponse.ok) {
+            const overdueData = await overdueResponse.json()
+            sessionStorage.setItem('hasOverduePayments', overdueData.hasOverdue ? 'true' : 'false')
+            if (overdueData.hasOverdue) {
+              sessionStorage.setItem('overdueAmount', overdueData.overdueAmount?.toString() || '0')
+              sessionStorage.setItem('overdueCount', overdueData.overdueCount?.toString() || '0')
+            }
+          }
+        } catch (error) {
+          console.error('Error checking overdue payments:', error)
+        }
+      }
+    }
+
+    // Start checking payment status
+    checkPaymentStatus()
+
     // Animate progress bar over 2 seconds
     const duration = 2000
     const startTime = Date.now()
@@ -52,7 +95,7 @@ export function InitialAppLoader() {
     }
     
     requestAnimationFrame(animate)
-  }, [pathname])
+  }, [pathname, session])
 
   if (!showLoader) return null
 

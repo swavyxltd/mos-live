@@ -7,50 +7,27 @@ import { CreditCard, X, AlertCircle } from 'lucide-react'
 import { StripePaymentMethodModal } from '@/components/stripe-payment-method'
 
 export function PaymentRequiredBanner() {
-  const { data: session, status } = useSession()
+  const { data: session } = useSession()
   const [hasPaymentMethod, setHasPaymentMethod] = useState(true)
-  const [loading, setLoading] = useState(true)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [dismissed, setDismissed] = useState(false)
 
   useEffect(() => {
-    if (status === 'loading') return
-
     // Owner accounts don't need payment checks
     if (session?.user?.isSuperAdmin) {
       setHasPaymentMethod(true)
-      setLoading(false)
       return
     }
 
-    checkPaymentStatus()
-    
-    // Poll payment status every 5 seconds if no payment method (for webhook delay)
-    const interval = setInterval(() => {
-      if (!hasPaymentMethod && !loading) {
-        checkPaymentStatus()
-      }
-    }, 5000)
-    
-    return () => clearInterval(interval)
-  }, [session, status, hasPaymentMethod, loading])
-
-  const checkPaymentStatus = async () => {
-    try {
-      const response = await fetch('/api/settings/platform-payment')
-      if (response.ok) {
-        const data = await response.json()
-        setHasPaymentMethod(!!data.paymentMethodId)
-      } else {
-        setHasPaymentMethod(false)
-      }
-    } catch (error) {
-      console.error('Error checking payment status:', error)
-      setHasPaymentMethod(false)
-    } finally {
-      setLoading(false)
+    // Get payment status from sessionStorage (set during initial load)
+    const storedStatus = sessionStorage.getItem('hasPaymentMethod')
+    if (storedStatus !== null) {
+      setHasPaymentMethod(storedStatus === 'true')
+    } else {
+      // Fallback: if not in sessionStorage, assume true (shouldn't happen on initial load)
+      setHasPaymentMethod(true)
     }
-  }
+  }, [session])
 
   const handlePaymentSuccess = async () => {
     setShowPaymentModal(false)
@@ -66,6 +43,7 @@ export function PaymentRequiredBanner() {
           const data = await response.json()
           if (data.paymentMethodId) {
             setHasPaymentMethod(true)
+            sessionStorage.setItem('hasPaymentMethod', 'true')
             foundPaymentMethod = true
             break
           }
@@ -85,8 +63,8 @@ export function PaymentRequiredBanner() {
     }
   }
 
-  // Don't show if loading, already has payment, owner account, or dismissed
-  if (loading || hasPaymentMethod || session?.user?.isSuperAdmin || dismissed) {
+  // Don't show if already has payment, owner account, or dismissed
+  if (hasPaymentMethod || session?.user?.isSuperAdmin || dismissed) {
     return null
   }
 
