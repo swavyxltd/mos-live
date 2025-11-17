@@ -9,7 +9,6 @@ import Link from 'next/link'
 import GenerateReportModal from '@/components/generate-report-modal'
 import { RecentActivityModal } from '@/components/recent-activity-modal'
 import { useState, useEffect } from 'react'
-import { Loader2 } from 'lucide-react'
 import { 
   Users, 
   DollarSign, 
@@ -119,13 +118,7 @@ export function FinanceDashboardContent() {
     collectionRate
   } = stats
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
-      </div>
-    )
-  }
+  // Loading state is handled by loading.tsx file
   
 
   // Handle CSV export generation with month/year filters

@@ -1,6 +1,6 @@
-import { FullScreenLoader } from '@/components/loading/full-screen-loader'
+import { PageSkeleton } from '@/components/loading/skeleton'
 
 export default function Loading() {
-  return <FullScreenLoader />
+  return <PageSkeleton />
 }
 

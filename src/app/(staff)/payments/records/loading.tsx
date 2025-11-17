@@ -1,0 +1,14 @@
+import { TableSkeleton } from '@/components/loading/skeleton'
+
+export default function Loading() {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="h-8 w-48 bg-[var(--muted)] rounded-[var(--radius)] animate-pulse" />
+        <div className="h-10 w-32 bg-[var(--muted)] rounded-[var(--radius)] animate-pulse" />
+      </div>
+      <TableSkeleton rows={8} />
+    </div>
+  )
+}
+

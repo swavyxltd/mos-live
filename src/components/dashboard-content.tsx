@@ -25,8 +25,8 @@ const WaveChart = dynamic(() => import('@/components/ui/wave-chart').then(mod =>
         <CardTitle>Attendance Trend</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-80 flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+        <div className="h-80">
+          <div className="h-full w-full bg-[var(--muted)] rounded-[var(--radius)] animate-pulse" />
         </div>
       </CardContent>
     </Card>
@@ -45,8 +45,7 @@ import {
   Target,
   Activity,
   Eye,
-  FileText,
-  Loader2
+  FileText
 } from 'lucide-react'
 import type { DashboardStats as DashboardStatsType } from '@/lib/dashboard-stats'
 
@@ -186,13 +185,7 @@ export function DashboardContent({ initialStats }: DashboardContentProps) {
     attendanceTrend
   } = stats
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
-      </div>
-    )
-  }
+  // Loading state is handled by loading.tsx file
   
   // Handle filter changes
   const handleFilterChange = (filter: string) => {

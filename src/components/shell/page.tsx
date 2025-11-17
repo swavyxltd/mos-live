@@ -7,6 +7,7 @@ import { Topbar } from './topbar'
 import { OverduePaymentBanner } from '@/components/overdue-payment-banner'
 import { PaymentRequiredBanner } from '@/components/payment-required-banner'
 import { MaintenanceNotificationBanner } from '@/components/maintenance-notification-banner'
+import { InitialAppLoader } from '@/components/loading/initial-app-loader'
 
 interface PageProps {
   children: React.ReactNode
@@ -31,6 +32,7 @@ interface PageProps {
 export function Page({ children, user, org, userRole, staffSubrole, title, breadcrumbs }: PageProps) {
   return (
     <div className="min-h-screen bg-[var(--background)] w-full overflow-x-hidden">
+      <InitialAppLoader />
       <Sidebar user={user} org={org} userRole={userRole} staffSubrole={staffSubrole} />
       <div className="sm:pl-64 w-full min-w-0">
         <Topbar title={title} breadcrumbs={breadcrumbs} user={user} userRole={userRole} />
