@@ -228,17 +228,14 @@ export function ApplicationsPageClient({ orgSlug }: ApplicationsPageClientProps)
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-[var(--foreground)]">Applications</h1>
-            <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-              Manage student applications for your madrasah.
-            </p>
+        <div className="flex items-center justify-between">
+          <div className="h-8 w-48 bg-[var(--muted)] rounded-[var(--radius)] animate-pulse" />
+          <div className="flex gap-2">
+            <div className="h-10 w-24 bg-[var(--muted)] rounded-[var(--radius)] animate-pulse" />
+            <div className="h-10 w-24 bg-[var(--muted)] rounded-[var(--radius)] animate-pulse" />
           </div>
         </div>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-gray-500">Loading applications...</div>
-        </div>
+        <TableSkeleton rows={6} />
       </div>
     )
   }
@@ -438,3 +435,4 @@ export function ApplicationsPageClient({ orgSlug }: ApplicationsPageClientProps)
     </div>
   )
 }
+
