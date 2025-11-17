@@ -5,6 +5,7 @@ import { Toaster } from 'sonner'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { ReactNode } from 'react'
+import { TopProgressBar } from '@/components/loading/top-progress-bar'
 
 interface ProvidersProps {
   children: ReactNode
@@ -17,6 +18,7 @@ export function Providers({ children }: ProvidersProps) {
       refetchOnWindowFocus={true}
       refetchWhenOffline={false}
     >
+      <TopProgressBar />
       {children}
       <Toaster />
       <Analytics />
