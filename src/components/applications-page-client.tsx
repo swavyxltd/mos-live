@@ -241,49 +241,55 @@ export function ApplicationsPageClient({ orgSlug }: ApplicationsPageClientProps)
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--foreground)]">Applications</h1>
-          <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+          <h1 className="text-xl sm:text-2xl font-bold text-[var(--foreground)]">Applications</h1>
+          <p className="mt-1 text-xs sm:text-sm text-[var(--muted-foreground)]">
             Manage student applications for your madrasah.
           </p>
         </div>
-        <div className="flex space-x-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <Button
             variant="outline"
             onClick={() => setShowCopyLinkModal(true)}
+            className="w-full sm:w-auto text-sm sm:text-base"
+            size="sm"
           >
-            <Copy className="h-4 w-4 mr-2" />
-            Copy Application Link
+            <Copy className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+            <span className="sm:hidden">Copy Link</span>
+            <span className="hidden sm:inline">Copy Application Link</span>
           </Button>
           <Button
             variant="outline"
             onClick={() => window.open(`/apply/${orgSlug}`, '_blank')}
+            className="w-full sm:w-auto text-sm sm:text-base"
+            size="sm"
           >
-            <ExternalLink className="h-4 w-4 mr-2" />
-            View Public Form
+            <ExternalLink className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+            <span className="sm:hidden">View Form</span>
+            <span className="hidden sm:inline">View Public Form</span>
           </Button>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3 sm:gap-4">
         <div className="flex-1">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-3.5 w-3.5 sm:h-4 sm:w-4" />
             <Input
               placeholder="Search by guardian name, email, or phone..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-9 sm:pl-10 text-sm sm:text-base h-9 sm:h-10"
             />
           </div>
         </div>
         
         {/* Status Filter Buttons and Date Filter */}
-        <div className="flex flex-wrap gap-2 items-center justify-between">
-          <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:gap-2 sm:items-center sm:justify-between">
+          <div className="flex flex-wrap gap-1.5 sm:gap-2 overflow-x-auto sm:overflow-visible pb-1 sm:pb-0 -mx-1 px-1 sm:mx-0 sm:px-0">
             <Button
               variant="outline"
               size="sm"
@@ -351,13 +357,13 @@ export function ApplicationsPageClient({ orgSlug }: ApplicationsPageClientProps)
           </div>
           
           {/* Date Filter Dropdown */}
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-[var(--muted-foreground)]">Sort by:</label>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <label className="text-xs sm:text-sm font-medium text-[var(--muted-foreground)] whitespace-nowrap">Sort by:</label>
             <Select
               value={dateFilter}
               onValueChange={(value: 'MOST_RECENT' | 'OLDEST') => setDateFilter(value)}
             >
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-full sm:w-40 text-sm sm:text-base h-9 sm:h-10">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -370,7 +376,7 @@ export function ApplicationsPageClient({ orgSlug }: ApplicationsPageClientProps)
       </div>
 
       {/* Applications List */}
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         {filteredApplications.length === 0 ? (
           <Card className="p-8 text-center">
             <div className="text-gray-500">
