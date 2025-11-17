@@ -23,25 +23,32 @@ export function InitialAppLoader() {
       return
     }
 
-    // Check if this is the first load (no previous pathname in session)
-    const hasVisitedBefore = sessionStorage.getItem('hasVisitedApp')
+    // Wait for session to be available (important for 2FA flow)
+    if (!session?.user?.id) {
+      return
+    }
+
+    // Check if this is the first load after sign-in
+    // Use a combination of session user ID and hasVisitedApp to detect new session
+    const sessionKey = `hasVisitedApp_${session.user.id}`
+    const hasVisitedBefore = sessionStorage.getItem(sessionKey)
     
     if (hasVisitedBefore) {
       setShowLoader(false)
       return
     }
 
-    // Mark as visited
-    sessionStorage.setItem('hasVisitedApp', 'true')
+    // Mark as visited for this user session
+    sessionStorage.setItem(sessionKey, 'true')
 
-    // Check payment status while loader is showing (only on initial login)
+    // Check payment status in the background (no visible loader, silent operation)
     const checkPaymentStatus = async () => {
       if (!session?.user?.id || session.user.isSuperAdmin) {
         return
       }
 
       try {
-        // Check platform payment method (for staff/admin)
+        // Check platform payment method (for staff/admin) - background fetch
         const response = await fetch('/api/settings/platform-payment')
         if (response.ok) {
           const data = await response.json()
@@ -50,11 +57,11 @@ export function InitialAppLoader() {
           sessionStorage.setItem('hasPaymentMethod', 'false')
         }
       } catch (error) {
-        console.error('Error checking payment status:', error)
+        // Silent error - don't show to user
         sessionStorage.setItem('hasPaymentMethod', 'false')
       }
 
-      // Check overdue payments (for parents)
+      // Check overdue payments (for parents) - background fetch
       if (pathname?.includes('/parent')) {
         try {
           const overdueResponse = await fetch('/api/payments/overdue')
@@ -67,13 +74,15 @@ export function InitialAppLoader() {
             }
           }
         } catch (error) {
-          console.error('Error checking overdue payments:', error)
+          // Silent error - don't show to user
         }
       }
     }
 
-    // Start checking payment status
-    checkPaymentStatus()
+    // Start checking payment status in background (non-blocking)
+    checkPaymentStatus().catch(() => {
+      // Silent error handling
+    })
 
     // Animate progress bar over 2 seconds
     const duration = 2000

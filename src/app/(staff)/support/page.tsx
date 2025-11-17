@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Search, BookOpen, Video, HelpCircle, MessageSquare, Mail, Filter, MoreHorizontal } from 'lucide-react'
 import Link from 'next/link'
 import { format } from 'date-fns'
+import { PageSkeleton } from '@/components/loading/skeleton'
 
 interface SupportTicket {
   id: string
@@ -135,7 +136,7 @@ export default function SupportPage() {
   }
 
   if (loading) {
-    return <div>Loading...</div>
+    return <PageSkeleton />
   }
 
   return (

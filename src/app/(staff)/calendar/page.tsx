@@ -12,6 +12,7 @@ import { CalendarFilters } from '@/components/calendar-filters'
 import { isDemoMode } from '@/lib/demo-mode'
 import { Plus, Download, Calendar, Clock, MapPin, Users } from 'lucide-react'
 import { RestrictedAction } from '@/components/restricted-action'
+import { PageSkeleton } from '@/components/loading/skeleton'
 
 export default function CalendarPage() {
   const { data: session, status } = useSession()
@@ -123,7 +124,7 @@ export default function CalendarPage() {
   }, [events, filters])
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading calendar...</div>
+    return <PageSkeleton />
   }
 
   if (!session?.user && status !== 'loading') {
