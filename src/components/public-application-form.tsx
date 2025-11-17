@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { PhoneLink } from './phone-link'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -242,7 +243,7 @@ export function PublicApplicationForm({ org, classes }: PublicApplicationFormPro
                   {(org as any).publicPhone && (
                     <div className="flex items-center gap-1">
                       <Phone className="h-4 w-4" />
-                      <span>{(org as any).publicPhone}</span>
+                      <PhoneLink phone={(org as any).publicPhone} />
                     </div>
                   )}
                   {(org as any).publicEmail && (

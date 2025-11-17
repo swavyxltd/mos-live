@@ -206,31 +206,35 @@ export function TeacherForm({ initialData, isEditing = false, onSubmit, onCancel
               value={formData.staffSubrole}
               onValueChange={(value: 'ADMIN' | 'TEACHER' | 'FINANCE_OFFICER') => handleInputChange('staffSubrole', value)}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full h-11 sm:h-10">
                 <SelectValue placeholder="Select account type" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ADMIN">
-                  <div className="flex items-center gap-2">
-                    <UserCheck className="h-4 w-4" />
-                    Admin - Full access to all features
+              <SelectContent 
+                position="popper" 
+                className="w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)] max-h-[300px] sm:max-h-[400px] z-[100]"
+                sideOffset={4}
+              >
+                <SelectItem value="ADMIN" className="pl-8 pr-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <UserCheck className="h-4 w-4 flex-shrink-0 text-gray-600" />
+                    <span className="text-sm">Admin - Full access to all features</span>
                   </div>
                 </SelectItem>
-                <SelectItem value="TEACHER">
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    Teacher - Teaching and student management
+                <SelectItem value="TEACHER" className="pl-8 pr-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <User className="h-4 w-4 flex-shrink-0 text-gray-600" />
+                    <span className="text-sm">Teacher - Teaching and student management</span>
                   </div>
                 </SelectItem>
-                <SelectItem value="FINANCE_OFFICER">
-                  <div className="flex items-center gap-2">
-                    <Shield className="h-4 w-4" />
-                    Finance Officer - Financial data and payments
+                <SelectItem value="FINANCE_OFFICER" className="pl-8 pr-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Shield className="h-4 w-4 flex-shrink-0 text-gray-600" />
+                    <span className="text-sm">Finance Officer - Financial data and payments</span>
                   </div>
                 </SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-sm text-gray-600">
+            <p className="text-xs sm:text-sm text-gray-600">
               Choose the appropriate access level for this staff member
             </p>
           </div>

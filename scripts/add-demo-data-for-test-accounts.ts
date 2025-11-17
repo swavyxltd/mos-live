@@ -150,9 +150,9 @@ async function main() {
         name: classNames[i],
         description: `Demo class for ${classNames[i]}`,
         schedule: JSON.stringify({
-          days: ['Monday', 'Wednesday', 'Friday'],
-          startTime: `${4 + i}:00 PM`,
-          endTime: `${5 + i}:30 PM`
+          days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+          startTime: '5:00 PM',
+          endTime: '7:00 PM'
         }),
         monthlyFeeP: 2500 + (i * 500), // £25, £30, £35, £40, £45
         feeDueDay: 1, // 1st of each month
@@ -467,9 +467,9 @@ async function main() {
       })
       const classStudents = studentClasses.map(sc => sc.Student)
 
-      // Get class schedule days (Monday, Wednesday, Friday)
+      // Get class schedule days (Monday-Friday)
       const schedule = JSON.parse(classItem.schedule)
-      const classDays = schedule.days || ['Monday', 'Wednesday', 'Friday']
+      const classDays = schedule.days || ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 
       // Generate attendance for the last 1 month
       for (let monthOffset = 0; monthOffset < 1; monthOffset++) {

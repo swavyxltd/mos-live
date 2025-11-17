@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { X, Save, User, Mail, Phone, MapPin, Heart, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -27,6 +26,7 @@ interface Student {
   status: 'ACTIVE' | 'INACTIVE' | 'DEACTIVATED' | 'GRADUATED'
   isArchived: boolean
   archivedAt?: string
+  classes?: Array<{ id: string }>
 }
 
 interface Class {
@@ -61,6 +61,19 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
   })
 
   const [isLoading, setIsLoading] = useState(false)
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isOpen])
 
   // Initialize form data when student changes
   useEffect(() => {
@@ -179,260 +192,277 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
 
   return (
     <div 
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-      onClick={onClose}
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose()
+        }
+      }}
     >
-      <div 
-        className="bg-white rounded-lg shadow-xl border border-gray-200 w-full max-w-4xl max-h-[90vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="p-6">
+      <div className="w-full max-w-4xl my-8">
+        <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-md overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <User className="h-5 w-5 text-blue-600" />
+          <div className="p-4 sm:p-6 border-b border-[var(--border)]">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-[#eef2ff] dark:bg-blue-950">
+                      <User className="h-5 w-5 text-[#1d4ed8] dark:text-blue-300" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-lg sm:text-xl font-semibold text-[var(--foreground)] truncate">
+                      Edit Student
+                    </h2>
+                    <p className="text-sm text-[var(--muted-foreground)]">
+                      Update student information
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">Edit Student</h2>
-                <p className="text-sm text-gray-600">Update student information</p>
+              <button
+                onClick={onClose}
+                className="p-1 rounded-md hover:bg-[var(--accent)] transition-colors flex-shrink-0"
+              >
+                <X className="h-4 w-4 text-[var(--muted-foreground)]" />
+              </button>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="p-4 sm:p-6 space-y-6 max-h-[calc(90vh-120px)] overflow-y-auto">
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Student Information */}
+              <div className="border border-[var(--border)] rounded-lg p-4">
+                <div className="flex items-start gap-3 mb-4">
+                  <User className="h-5 w-5 text-[var(--muted-foreground)] flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <h3 className="text-sm font-semibold text-[var(--foreground)] mb-3">Student Information</h3>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="firstName" className="text-xs text-[var(--muted-foreground)]">First Name *</Label>
+                          <Input
+                            id="firstName"
+                            value={formData.firstName}
+                            onChange={(e) => handleInputChange('firstName', e.target.value)}
+                            placeholder="Enter first name"
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="lastName" className="text-xs text-[var(--muted-foreground)]">Last Name *</Label>
+                          <Input
+                            id="lastName"
+                            value={formData.lastName}
+                            onChange={(e) => handleInputChange('lastName', e.target.value)}
+                            placeholder="Enter last name"
+                            className="mt-1"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="dateOfBirth" className="text-xs text-[var(--muted-foreground)]">Date of Birth</Label>
+                          <Input
+                            id="dateOfBirth"
+                            type="date"
+                            value={formData.dateOfBirth}
+                            onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="grade" className="text-xs text-[var(--muted-foreground)]">Grade</Label>
+                          <Input
+                            id="grade"
+                            value={formData.grade}
+                            onChange={(e) => handleInputChange('grade', e.target.value)}
+                            placeholder="Enter grade"
+                            className="mt-1"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="address" className="text-xs text-[var(--muted-foreground)]">Address</Label>
+                        <div className="relative mt-1">
+                          <MapPin className="absolute left-3 top-3 h-4 w-4 text-[var(--muted-foreground)]" />
+                          <Input
+                            id="address"
+                            value={formData.address}
+                            onChange={(e) => handleInputChange('address', e.target.value)}
+                            placeholder="Enter address"
+                            className="pl-10"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="status" className="text-xs text-[var(--muted-foreground)]">Status</Label>
+                        <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="ACTIVE">Active</SelectItem>
+                            <SelectItem value="INACTIVE">Inactive</SelectItem>
+                            <SelectItem value="DEACTIVATED">Deactivated</SelectItem>
+                            <SelectItem value="GRADUATED">Graduated</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Parent Information */}
+              <div className="border border-[var(--border)] rounded-lg p-4">
+                <div className="flex items-start gap-3 mb-4">
+                  <User className="h-5 w-5 text-[var(--muted-foreground)] flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <h3 className="text-sm font-semibold text-[var(--foreground)] mb-3">Parent Information</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="parentName" className="text-xs text-[var(--muted-foreground)]">Parent Name *</Label>
+                        <Input
+                          id="parentName"
+                          value={formData.parentName}
+                          onChange={(e) => handleInputChange('parentName', e.target.value)}
+                          placeholder="Enter parent name"
+                          className="mt-1"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="parentEmail" className="text-xs text-[var(--muted-foreground)]">Parent Email *</Label>
+                        <div className="relative mt-1">
+                          <Mail className="absolute left-3 top-3 h-4 w-4 text-[var(--muted-foreground)]" />
+                          <Input
+                            id="parentEmail"
+                            type="email"
+                            value={formData.parentEmail}
+                            onChange={(e) => handleInputChange('parentEmail', e.target.value)}
+                            placeholder="Enter parent email"
+                            className="pl-10"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="parentPhone" className="text-xs text-[var(--muted-foreground)]">Parent Phone</Label>
+                        <div className="relative mt-1">
+                          <Phone className="absolute left-3 top-3 h-4 w-4 text-[var(--muted-foreground)]" />
+                          <Input
+                            id="parentPhone"
+                            value={formData.parentPhone}
+                            onChange={(e) => handleInputChange('parentPhone', e.target.value)}
+                            placeholder="Enter parent phone"
+                            className="pl-10"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="emergencyContact" className="text-xs text-[var(--muted-foreground)]">Emergency Contact</Label>
+                        <Input
+                          id="emergencyContact"
+                          value={formData.emergencyContact}
+                          onChange={(e) => handleInputChange('emergencyContact', e.target.value)}
+                          placeholder="Enter emergency contact"
+                          className="mt-1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Medical Information */}
+              <div className="border border-[var(--border)] rounded-lg p-4">
+                <div className="flex items-start gap-3 mb-4">
+                  <Heart className="h-5 w-5 text-[var(--muted-foreground)] flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <h3 className="text-sm font-semibold text-[var(--foreground)] mb-3">Medical Information</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="allergies" className="text-xs text-[var(--muted-foreground)]">Allergies</Label>
+                        <Input
+                          id="allergies"
+                          value={formData.allergies}
+                          onChange={(e) => handleInputChange('allergies', e.target.value)}
+                          placeholder="Enter allergies or 'None'"
+                          className="mt-1"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="medicalNotes" className="text-xs text-[var(--muted-foreground)]">Medical Notes</Label>
+                        <Textarea
+                          id="medicalNotes"
+                          value={formData.medicalNotes}
+                          onChange={(e) => handleInputChange('medicalNotes', e.target.value)}
+                          placeholder="Enter any medical notes"
+                          rows={3}
+                          className="mt-1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Class Enrollment */}
+              <div className="border border-[var(--border)] rounded-lg p-4">
+                <div className="flex items-start gap-3 mb-4">
+                  <AlertTriangle className="h-5 w-5 text-[var(--muted-foreground)] flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <h3 className="text-sm font-semibold text-[var(--foreground)] mb-3">Class Enrollment</h3>
+                    <div className="space-y-2">
+                      {classes.map((cls) => (
+                        <div key={cls.id} className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id={`class-${cls.id}`}
+                            checked={formData.selectedClasses.includes(cls.id)}
+                            onChange={() => handleClassToggle(cls.id)}
+                            className="rounded border-gray-300"
+                          />
+                          <Label htmlFor={`class-${cls.id}`} className="text-sm">
+                            {cls.name} ({cls.grade})
+                          </Label>
+                        </div>
+                      ))}
+                      {classes.length === 0 && (
+                        <p className="text-sm text-[var(--muted-foreground)]">No classes available</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Student Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5 text-blue-600" />
-                  Student Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="firstName">First Name *</Label>
-                    <Input
-                      id="firstName"
-                      value={formData.firstName}
-                      onChange={(e) => handleInputChange('firstName', e.target.value)}
-                      placeholder="Enter first name"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="lastName">Last Name *</Label>
-                    <Input
-                      id="lastName"
-                      value={formData.lastName}
-                      onChange={(e) => handleInputChange('lastName', e.target.value)}
-                      placeholder="Enter last name"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                    <Input
-                      id="dateOfBirth"
-                      type="date"
-                      value={formData.dateOfBirth}
-                      onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="grade">Grade</Label>
-                    <Input
-                      id="grade"
-                      value={formData.grade}
-                      onChange={(e) => handleInputChange('grade', e.target.value)}
-                      placeholder="Enter grade"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="address">Address</Label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="address"
-                      value={formData.address}
-                      onChange={(e) => handleInputChange('address', e.target.value)}
-                      placeholder="Enter address"
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="status">Status</Label>
-                  <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ACTIVE">Active</SelectItem>
-                      <SelectItem value="INACTIVE">Inactive</SelectItem>
-                      <SelectItem value="DEACTIVATED">Deactivated</SelectItem>
-                      <SelectItem value="GRADUATED">Graduated</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Parent Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5 text-green-600" />
-                  Parent Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="parentName">Parent Name *</Label>
-                  <Input
-                    id="parentName"
-                    value={formData.parentName}
-                    onChange={(e) => handleInputChange('parentName', e.target.value)}
-                    placeholder="Enter parent name"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="parentEmail">Parent Email *</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="parentEmail"
-                      type="email"
-                      value={formData.parentEmail}
-                      onChange={(e) => handleInputChange('parentEmail', e.target.value)}
-                      placeholder="Enter parent email"
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="parentPhone">Parent Phone</Label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="parentPhone"
-                      value={formData.parentPhone}
-                      onChange={(e) => handleInputChange('parentPhone', e.target.value)}
-                      placeholder="Enter parent phone"
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="emergencyContact">Emergency Contact</Label>
-                  <Input
-                    id="emergencyContact"
-                    value={formData.emergencyContact}
-                    onChange={(e) => handleInputChange('emergencyContact', e.target.value)}
-                    placeholder="Enter emergency contact"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Medical Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Heart className="h-5 w-5 text-red-600" />
-                  Medical Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="allergies">Allergies</Label>
-                  <Input
-                    id="allergies"
-                    value={formData.allergies}
-                    onChange={(e) => handleInputChange('allergies', e.target.value)}
-                    placeholder="Enter allergies or 'None'"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="medicalNotes">Medical Notes</Label>
-                  <Textarea
-                    id="medicalNotes"
-                    value={formData.medicalNotes}
-                    onChange={(e) => handleInputChange('medicalNotes', e.target.value)}
-                    placeholder="Enter any medical notes"
-                    rows={3}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Class Enrollment */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-yellow-600" />
-                  Class Enrollment
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {classes.map((cls) => (
-                    <div key={cls.id} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id={`class-${cls.id}`}
-                        checked={formData.selectedClasses.includes(cls.id)}
-                        onChange={() => handleClassToggle(cls.id)}
-                        className="rounded border-gray-300"
-                      />
-                      <Label htmlFor={`class-${cls.id}`} className="text-sm">
-                        {cls.name} ({cls.grade})
-                      </Label>
-                    </div>
-                  ))}
-                  {classes.length === 0 && (
-                    <p className="text-sm text-gray-500">No classes available</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
-            <Button variant="outline" onClick={onClose} disabled={isLoading}>
-              Cancel
-            </Button>
-            <Button onClick={handleSave} disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Changes
-                </>
-              )}
-            </Button>
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-[var(--border)]">
+              <Button variant="outline" onClick={onClose} disabled={isLoading} className="w-full sm:w-auto">
+                Cancel
+              </Button>
+              <Button onClick={handleSave} disabled={isLoading} className="w-full sm:w-auto">
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Changes
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       </div>

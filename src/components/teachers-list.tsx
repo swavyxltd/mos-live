@@ -123,16 +123,16 @@ export function TeachersList({ teachers, onEditTeacher }: TeachersListProps) {
       {/* Teachers Table */}
       <Card>
         <CardHeader>
-          <CardTitle>All Teachers</CardTitle>
+          <CardTitle>All Staff</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Teacher</TableHead>
-                <TableHead>Classes</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead className="hidden sm:table-cell">Classes</TableHead>
                 <TableHead>Students</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead className="hidden sm:table-cell">Status</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -141,19 +141,19 @@ export function TeachersList({ teachers, onEditTeacher }: TeachersListProps) {
                 <TableRow key={teacher.id}>
                   <TableCell>
                     <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
+                      <div className="flex-shrink-0 h-10 w-10 hidden sm:block">
                         <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
                           <span className="text-sm font-medium text-gray-700">
                             {teacher.name.split(' ').map(n => n[0]).join('')}
                           </span>
                         </div>
                       </div>
-                      <div className="ml-4">
+                      <div className="sm:ml-4">
                         <div className="text-sm font-medium text-gray-900">{teacher.name}</div>
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden sm:table-cell">
                     <div className="flex items-center">
                       <GraduationCap className="h-4 w-4 mr-2 text-gray-400" />
                       <span className="text-sm text-gray-900">{teacher._count.classes} classes</span>
@@ -171,11 +171,12 @@ export function TeachersList({ teachers, onEditTeacher }: TeachersListProps) {
                     <div className="flex items-center">
                       <User className="h-4 w-4 mr-2 text-gray-400" />
                       <span className="text-sm font-semibold text-gray-900">
-                        {teacher._count.students || 0} students
+                        {teacher._count.students || 0}
+                        <span className="hidden sm:inline"> students</span>
                       </span>
                     </div>
                     {teacher._count.students > 0 && (
-                      <div className="mt-1">
+                      <div className="mt-1 hidden sm:block">
                         <div className="text-xs text-gray-500">
                           {teacher.classes.length > 0 
                             ? `Across ${teacher.classes.length} class${teacher.classes.length > 1 ? 'es' : ''}`
@@ -185,7 +186,7 @@ export function TeachersList({ teachers, onEditTeacher }: TeachersListProps) {
                       </div>
                     )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden sm:table-cell">
                     <div className="flex items-center">
                       <Badge variant={teacher.isActive ? 'default' : 'secondary'}>
                         {teacher.isActive ? 'Active' : 'Inactive'}
@@ -205,12 +206,13 @@ export function TeachersList({ teachers, onEditTeacher }: TeachersListProps) {
                         <Button 
                           variant="ghost" 
                           size="sm"
+                          className="hidden sm:inline-flex"
                           onClick={() => onEditTeacher(teacher.id)}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
                       ) : (
-                        <Link href={`/staff/${teacher.id}/edit`}>
+                        <Link href={`/staff/${teacher.id}/edit`} className="hidden sm:inline-flex">
                           <Button variant="ghost" size="sm">
                             <Edit className="h-4 w-4" />
                           </Button>

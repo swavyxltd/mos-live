@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react'
 import { Card } from '@/components/ui/card'
 import { MapPin, Phone, Clock, AlertCircle } from 'lucide-react'
 import { isDemoMode } from '@/lib/demo-mode'
+import { PhoneLink } from '@/components/phone-link'
 
 interface OrgContactInfo {
   name: string
@@ -96,7 +97,9 @@ export default function ParentSupportPage() {
               </div>
               <h4 className="font-semibold text-[var(--foreground)] mb-2">Call Us</h4>
               <div className="text-sm text-[var(--muted-foreground)] space-y-1">
-                <p className="font-medium text-[var(--primary)]">{contactInfo.phone}</p>
+                <p className="font-medium text-[var(--primary)]">
+                  <PhoneLink phone={contactInfo.phone} />
+                </p>
                 <p className="text-xs">General inquiries</p>
               </div>
             </div>

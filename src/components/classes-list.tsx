@@ -51,7 +51,18 @@ export function ClassesList({ classes }: ClassesListProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {classes.map((cls) => {
-        const schedule = cls.schedule as any
+        // Parse schedule from JSON string if needed
+        let schedule: any = {}
+        if (cls.schedule) {
+          try {
+            schedule = typeof cls.schedule === 'string' 
+              ? JSON.parse(cls.schedule) 
+              : cls.schedule
+          } catch (e) {
+            console.error('Error parsing schedule:', e)
+            schedule = {}
+          }
+        }
         const days = schedule?.days || []
         const startTime = schedule?.startTime || 'TBD'
         const endTime = schedule?.endTime || 'TBD'

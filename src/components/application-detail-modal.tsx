@@ -22,6 +22,7 @@ import {
   FileText
 } from 'lucide-react'
 import { ApplicationAcceptanceSuccessModal } from './application-acceptance-success-modal'
+import { PhoneLink } from './phone-link'
 
 interface Application {
   id: string
@@ -164,7 +165,9 @@ export function ApplicationDetailModal({
                     <Phone className="h-4 w-4 mr-1" />
                     Phone
                   </label>
-                  <p className="text-gray-900">{application.guardianPhone}</p>
+                  <p className="text-gray-900">
+                    <PhoneLink phone={application.guardianPhone} />
+                  </p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-700 flex items-center">
@@ -193,7 +196,7 @@ export function ApplicationDetailModal({
               </h3>
               <div className="space-y-3">
                 {application.children.map((child, index) => (
-                  <div key={index} className="border rounded-lg p-3">
+                  <div key={index} className="border border-gray-200 rounded-lg p-3">
                     <div className="flex justify-between items-start">
                       <div>
                         <p className="font-medium text-gray-900">

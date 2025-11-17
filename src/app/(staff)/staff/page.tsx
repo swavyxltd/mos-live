@@ -70,8 +70,8 @@ export default async function StaffPage() {
       username: membership.User.email?.split('@')[0] || '',
       isActive: !membership.User.isArchived,
       role: membership.role,
-      createdAt: membership.User.createdAt,
-      updatedAt: membership.User.updatedAt,
+      createdAt: membership.User.createdAt ? membership.User.createdAt.toISOString() : new Date().toISOString(),
+      updatedAt: membership.User.updatedAt ? membership.User.updatedAt.toISOString() : new Date().toISOString(),
       classes: classes.map(cls => ({
         id: cls.id,
         name: cls.name,

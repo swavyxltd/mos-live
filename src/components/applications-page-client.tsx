@@ -20,6 +20,7 @@ import {
 import { ApplicationDetailModal } from '@/components/application-detail-modal'
 import { CopyApplicationLinkModal } from '@/components/copy-application-link-modal'
 import { TableSkeleton } from '@/components/loading/skeleton'
+import { PhoneLink } from '@/components/phone-link'
 
 interface Application {
   id: string
@@ -408,7 +409,12 @@ export function ApplicationsPageClient({ orgSlug }: ApplicationsPageClientProps)
                         Parent: {application.guardianName}
                       </p>
                       <p className="text-xs sm:text-sm text-[var(--muted-foreground)] mt-0.5 break-words">
-                        {application.guardianEmail} • {application.guardianPhone}
+                        <span className="sm:hidden">
+                          <PhoneLink phone={application.guardianPhone} />
+                        </span>
+                        <span className="hidden sm:inline">
+                          {application.guardianEmail} • <PhoneLink phone={application.guardianPhone} />
+                        </span>
                       </p>
                       <p className="text-xs sm:text-sm text-gray-500 mt-1.5 sm:mt-1">
                         {application.children.length} child{application.children.length !== 1 ? 'ren' : ''} • 
@@ -419,7 +425,7 @@ export function ApplicationsPageClient({ orgSlug }: ApplicationsPageClientProps)
                 </div>
                 <div className="flex items-center gap-2 sm:space-x-4 flex-shrink-0">
                   {getStatusBadge(application.status)}
-                  <Button variant="ghost" size="sm" className="flex-shrink-0">
+                  <Button variant="ghost" size="sm" className="hidden sm:flex flex-shrink-0">
                     <Eye className="h-4 w-4 sm:h-5 sm:w-5 text-[var(--muted-foreground)]" />
                   </Button>
                 </div>

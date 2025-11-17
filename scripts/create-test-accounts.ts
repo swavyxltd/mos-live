@@ -109,9 +109,9 @@ async function main() {
         name: 'Quran Recitation - Level 1',
         description: 'Basic Quran recitation and memorization',
         schedule: JSON.stringify({
-          days: ['Monday', 'Wednesday', 'Friday'],
-          startTime: '4:00 PM',
-          endTime: '5:30 PM'
+          days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+          startTime: '5:00 PM',
+          endTime: '7:00 PM'
         }),
         monthlyFeeP: 2500, // £25.00
         updatedAt: new Date(),

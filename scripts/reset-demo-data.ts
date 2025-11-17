@@ -111,9 +111,9 @@ async function main() {
       name: 'Quran & Islamic Studies - Boys',
       description: 'Quran recitation and Islamic studies for boys',
       schedule: JSON.stringify({
-        days: ['Monday', 'Wednesday', 'Friday'],
-        startTime: '4:00 PM',
-        endTime: '5:30 PM'
+        days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+        startTime: '5:00 PM',
+        endTime: '7:00 PM'
       }),
       monthlyFeeP: 5000, // £50
       feeDueDay: 1,
@@ -131,9 +131,9 @@ async function main() {
       name: 'Quran & Islamic Studies - Girls',
       description: 'Quran recitation and Islamic studies for girls',
       schedule: JSON.stringify({
-        days: ['Monday', 'Wednesday', 'Friday'],
-        startTime: '4:00 PM',
-        endTime: '5:30 PM'
+        days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+        startTime: '5:00 PM',
+        endTime: '7:00 PM'
       }),
       monthlyFeeP: 5000, // £50
       feeDueDay: 1,
@@ -151,9 +151,9 @@ async function main() {
       name: 'Hifz Class - Boys',
       description: 'Quran memorization class for boys',
       schedule: JSON.stringify({
-        days: ['Tuesday', 'Thursday', 'Saturday'],
+        days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
         startTime: '5:00 PM',
-        endTime: '6:30 PM'
+        endTime: '7:00 PM'
       }),
       monthlyFeeP: 7000, // £70
       feeDueDay: 1,
@@ -482,8 +482,8 @@ async function main() {
   oneMonthAgo.setMonth(now.getMonth() - 1)
   
   let attendanceCount = 0
-  const classDays = ['Monday', 'Wednesday', 'Friday'] // For regular classes
-  const hifzDays = ['Tuesday', 'Thursday', 'Saturday'] // For hifz class
+  // Get class schedules dynamically
+  const classDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] // All classes now Monday-Friday
   
   // Calculate attendance rates
   const attendanceRates = []
@@ -513,7 +513,9 @@ async function main() {
     if (!studentClass) continue
     
     const classItem = studentClass.Class
-    const classDaysList = classItem.id === hifzClass.id ? hifzDays : classDays
+    // Get schedule from class, default to Monday-Friday
+    const schedule = JSON.parse(classItem.schedule)
+    const classDaysList = schedule.days || classDays
     
     // Generate attendance for last month
     for (let day = 1; day <= 28; day++) {

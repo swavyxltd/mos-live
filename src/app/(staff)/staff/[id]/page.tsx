@@ -21,6 +21,7 @@ import {
   EyeOff
 } from 'lucide-react'
 import Link from 'next/link'
+import { PhoneLink } from '@/components/phone-link'
 
 interface StaffDetailsPageProps {
   params: Promise<{
@@ -133,33 +134,37 @@ export default async function StaffDetailsPage({ params }: StaffDetailsPageProps
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div className="flex items-center gap-4">
           <Link href="/staff">
             <button className="flex items-center gap-2 text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors">
               <ArrowLeft className="h-4 w-4" />
-              Back to Staff
+              <span className="hidden sm:inline">Back to Staff</span>
+              <span className="sm:hidden">Back</span>
             </button>
           </Link>
         </div>
-        <div className="flex gap-3">
-          <Link href={`/staff/${teacherData.id}/edit`}>
-            <Button variant="outline">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+          <Link href={`/staff/${teacherData.id}/edit`} className="w-full sm:w-auto">
+            <Button variant="outline" className="w-full sm:w-auto">
               <Edit className="h-4 w-4 mr-2" />
-              Edit Staff Member
+              <span className="hidden sm:inline">Edit Staff Member</span>
+              <span className="sm:hidden">Edit</span>
             </Button>
           </Link>
-          <DeleteTeacherButton 
-            teacherId={teacherData.id} 
-            teacherName={teacherData.name} 
-          />
+          <div className="w-full sm:w-auto">
+            <DeleteTeacherButton 
+              teacherId={teacherData.id} 
+              teacherName={teacherData.name} 
+            />
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Teacher Information */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -168,40 +173,40 @@ export default async function StaffDetailsPage({ params }: StaffDetailsPageProps
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-3 sm:space-x-4">
                 <div className="flex-shrink-0">
-                  <div className="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center">
-                    <span className="text-xl font-medium text-gray-700">
+                  <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-gray-100 flex items-center justify-center">
+                    <span className="text-lg sm:text-xl font-medium text-gray-700">
                       {teacherData.name.split(' ').map(n => n[0]).join('')}
                     </span>
                   </div>
                 </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-[var(--foreground)]">{teacherData.name}</h3>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge variant={teacherData.isActive ? 'default' : 'secondary'}>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg sm:text-xl font-semibold text-[var(--foreground)] truncate">{teacherData.name}</h3>
+                  <div className="flex flex-wrap items-center gap-2 mt-1">
+                    <Badge variant={teacherData.isActive ? 'default' : 'secondary'} className="text-xs">
                       {teacherData.isActive ? 'Active' : 'Inactive'}
                     </Badge>
-                    <span className="text-sm text-gray-500">ID: {teacherData.id}</span>
+                    <span className="text-xs sm:text-sm text-gray-500 hidden sm:inline">ID: {teacherData.id}</span>
                   </div>
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pt-2 border-t">
                 <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Mail className="h-4 w-4" />
-                  <span>{teacherData.email}</span>
+                  <Mail className="h-4 w-4 flex-shrink-0" />
+                  <span className="truncate">{teacherData.email}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Phone className="h-4 w-4" />
-                  <span>{teacherData.phone}</span>
+                  <Phone className="h-4 w-4 flex-shrink-0" />
+                  <PhoneLink phone={teacherData.phone} />
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Key className="h-4 w-4" />
-                  <span className="font-mono">{teacherData.username}</span>
+                  <Key className="h-4 w-4 flex-shrink-0" />
+                  <span className="font-mono truncate">{teacherData.username}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Shield className="h-4 w-4" />
+                  <Shield className="h-4 w-4 flex-shrink-0" />
                   <span>Login: {teacherData.isActive ? 'Enabled' : 'Disabled'}</span>
                 </div>
               </div>
@@ -218,39 +223,51 @@ export default async function StaffDetailsPage({ params }: StaffDetailsPageProps
             </CardHeader>
             <CardContent>
               {teacherData.classes.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Class Name</TableHead>
-                      <TableHead>Students</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {teacherData.classes.map((classItem: any, index: number) => (
-                      <TableRow key={index}>
-                        <TableCell className="font-medium">
-                          {classItem.name}
-                        </TableCell>
-                        <TableCell>
-                          {classItem.students} students
-                        </TableCell>
-                        <TableCell>
-                          <Link href={`/classes/${classItem.id}`}>
-                            <Button variant="ghost" size="sm">
-                              View Class
-                            </Button>
-                          </Link>
-                        </TableCell>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Class Name</TableHead>
+                        <TableHead className="hidden sm:table-cell">Students</TableHead>
+                        <TableHead className="hidden sm:table-cell">Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {teacherData.classes.map((classItem: any, index: number) => (
+                        <TableRow key={index}>
+                          <TableCell className="font-medium">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                              <span>{classItem.name}</span>
+                              <div className="flex items-center gap-3 sm:hidden">
+                                <span className="text-sm text-gray-600">{classItem.students} students</span>
+                                <Link href={`/classes/${classItem.id}`}>
+                                  <Button variant="ghost" size="sm" className="h-8">
+                                    View
+                                  </Button>
+                                </Link>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="hidden sm:table-cell">
+                            {classItem.students} students
+                          </TableCell>
+                          <TableCell className="hidden sm:table-cell">
+                            <Link href={`/classes/${classItem.id}`}>
+                              <Button variant="ghost" size="sm">
+                                View Class
+                              </Button>
+                            </Link>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               ) : (
-                <div className="text-center py-8">
-                  <GraduationCap className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-[var(--foreground)] mb-2">No classes assigned</h3>
-                  <p className="text-gray-500">This teacher is not assigned to any classes yet.</p>
+                <div className="text-center py-6 sm:py-8">
+                  <GraduationCap className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+                  <h3 className="text-base sm:text-lg font-medium text-[var(--foreground)] mb-2">No classes assigned</h3>
+                  <p className="text-sm sm:text-base text-gray-500">This teacher is not assigned to any classes yet.</p>
                 </div>
               )}
             </CardContent>
@@ -258,7 +275,7 @@ export default async function StaffDetailsPage({ params }: StaffDetailsPageProps
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Login Credentials */}
           <Card>
             <CardHeader>
@@ -271,10 +288,10 @@ export default async function StaffDetailsPage({ params }: StaffDetailsPageProps
               <div>
                 <Label className="text-sm font-medium text-gray-700">Username</Label>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
+                  <span className="font-mono text-xs sm:text-sm bg-gray-100 px-2 py-1 rounded flex-1 min-w-0 truncate">
                     {teacherData.username}
                   </span>
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" className="flex-shrink-0">
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>
@@ -327,15 +344,15 @@ export default async function StaffDetailsPage({ params }: StaffDetailsPageProps
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Button variant="outline" size="sm" className="w-full justify-start">
+              <Button variant="outline" size="sm" className="w-full justify-start text-sm">
                 <Mail className="h-4 w-4 mr-2" />
                 Send Email
               </Button>
-              <Button variant="outline" size="sm" className="w-full justify-start">
+              <Button variant="outline" size="sm" className="w-full justify-start text-sm">
                 <Phone className="h-4 w-4 mr-2" />
                 Call Teacher
               </Button>
-              <Button variant="outline" size="sm" className="w-full justify-start">
+              <Button variant="outline" size="sm" className="w-full justify-start text-sm">
                 <GraduationCap className="h-4 w-4 mr-2" />
                 Assign Class
               </Button>

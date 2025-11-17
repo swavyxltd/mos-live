@@ -78,6 +78,19 @@ export default async function ClassDetailsPage({ params }: ClassDetailsPageProps
     }
   })
 
+  // Parse schedule from JSON string
+  let parsedSchedule: any = {}
+  if (classData?.schedule) {
+    try {
+      parsedSchedule = typeof classData.schedule === 'string' 
+        ? JSON.parse(classData.schedule) 
+        : classData.schedule
+    } catch (e) {
+      console.error('Error parsing schedule:', e)
+      parsedSchedule = {}
+    }
+  }
+
   // Transform the data to match the expected format
   const transformedClassData = classData ? {
     id: classData.id,
@@ -86,7 +99,7 @@ export default async function ClassDetailsPage({ params }: ClassDetailsPageProps
     grade: '', // Not stored in current schema
     maxStudents: 0, // Not stored in current schema
     room: '', // Not stored in current schema
-    schedule: classData.schedule as any,
+    schedule: parsedSchedule,
     teacher: classData.User ? {
       name: classData.User.name || '',
       email: classData.User.email || ''
@@ -124,7 +137,7 @@ export default async function ClassDetailsPage({ params }: ClassDetailsPageProps
     )
   }
 
-  const schedule = transformedClassData.schedule as any
+  const schedule = transformedClassData.schedule
   const days = schedule?.days || []
   const startTime = schedule?.startTime || 'TBD'
   const endTime = schedule?.endTime || 'TBD'

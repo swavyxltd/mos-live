@@ -48,8 +48,21 @@ export function UpcomingClasses({ classes }: UpcomingClassesProps) {
       
       return classes
         .filter(cls => {
-          const schedule = cls.schedule as any
-          return schedule?.days?.includes(dayOfWeek)
+          // Parse schedule from JSON string if needed
+          let schedule: any = {}
+          if (cls.schedule) {
+            try {
+              schedule = typeof cls.schedule === 'string' 
+                ? JSON.parse(cls.schedule) 
+                : cls.schedule
+            } catch (e) {
+              schedule = {}
+            }
+          }
+          // Normalize day names (Monday vs monday)
+          const scheduleDays = schedule?.days || []
+          const normalizedScheduleDays = scheduleDays.map((d: string) => d.toLowerCase())
+          return normalizedScheduleDays.includes(dayOfWeek)
         })
         .map(cls => ({
           ...cls,
@@ -68,7 +81,17 @@ export function UpcomingClasses({ classes }: UpcomingClassesProps) {
       <CardContent>
         <div className="space-y-4">
           {upcomingClasses.map((cls, index) => {
-            const schedule = cls.schedule as any
+            // Parse schedule from JSON string if needed
+            let schedule: any = {}
+            if (cls.schedule) {
+              try {
+                schedule = typeof cls.schedule === 'string' 
+                  ? JSON.parse(cls.schedule) 
+                  : cls.schedule
+              } catch (e) {
+                schedule = {}
+              }
+            }
             const startTime = schedule?.startTime || 'TBD'
             const endTime = schedule?.endTime || 'TBD'
             
