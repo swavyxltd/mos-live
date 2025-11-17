@@ -256,20 +256,20 @@ export function ApplicationsPageClient({ orgSlug }: ApplicationsPageClientProps)
           <Button
             variant="outline"
             onClick={() => setShowCopyLinkModal(true)}
-            className="w-full sm:w-auto text-sm sm:text-base"
+            className="w-full sm:w-auto"
             size="sm"
           >
-            <Copy className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+            <Copy className="h-4 w-4 mr-2" />
             <span className="sm:hidden">Copy Link</span>
             <span className="hidden sm:inline">Copy Application Link</span>
           </Button>
           <Button
             variant="outline"
             onClick={() => window.open(`/apply/${orgSlug}`, '_blank')}
-            className="w-full sm:w-auto text-sm sm:text-base"
+            className="w-full sm:w-auto"
             size="sm"
           >
-            <ExternalLink className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+            <ExternalLink className="h-4 w-4 mr-2" />
             <span className="sm:hidden">View Form</span>
             <span className="hidden sm:inline">View Public Form</span>
           </Button>
@@ -292,69 +292,44 @@ export function ApplicationsPageClient({ orgSlug }: ApplicationsPageClientProps)
         
         {/* Status Filter Buttons and Date Filter */}
         <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:gap-2 sm:items-center sm:justify-between">
-          <div className="flex flex-wrap gap-1.5 sm:gap-2 overflow-x-auto sm:overflow-visible pb-1 sm:pb-0 -mx-1 px-1 sm:mx-0 sm:px-0">
+          <div className="flex flex-wrap gap-2 overflow-x-auto sm:overflow-visible pb-1 sm:pb-0 -mx-1 px-1 sm:mx-0 sm:px-0">
             <Button
-              variant="outline"
+              variant={statusFilter === 'ALL' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setStatusFilter('ALL')}
-              className={`transition-all ${
-                statusFilter === 'ALL' 
-                  ? 'bg-[var(--foreground)] text-[var(--background)] border-[var(--foreground)] shadow-[var(--shadow-xs)] font-semibold' 
-                  : 'border-[var(--border)] text-[var(--muted-foreground)] hover:bg-[var(--accent)] hover:text-[var(--accent-foreground)] hover:border-[var(--foreground)]/20'
-              }`}
             >
               All Statuses
             </Button>
             <Button
-              variant="outline"
+              variant={statusFilter === 'NEW' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setStatusFilter('NEW')}
-              className={`transition-all ${
-                statusFilter === 'NEW' 
-                  ? 'bg-blue-50 text-blue-700 border-blue-200 shadow-[var(--shadow-xs)] font-semibold dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800' 
-                  : 'border-blue-200 text-blue-600 hover:bg-blue-50 hover:border-blue-300 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-950'
-              }`}
             >
-              <Clock className="h-3.5 w-3.5 mr-1.5" />
+              <Clock className="h-4 w-4 mr-1.5" />
               New
             </Button>
             <Button
-              variant="outline"
+              variant={statusFilter === 'REVIEWED' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setStatusFilter('REVIEWED')}
-              className={`transition-all ${
-                statusFilter === 'REVIEWED' 
-                  ? 'bg-amber-50 text-amber-700 border-amber-200 shadow-[var(--shadow-xs)] font-semibold dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800' 
-                  : 'border-amber-200 text-amber-600 hover:bg-amber-50 hover:border-amber-300 dark:border-amber-800 dark:text-amber-400 dark:hover:bg-amber-950'
-              }`}
             >
-              <Eye className="h-3.5 w-3.5 mr-1.5" />
+              <Eye className="h-4 w-4 mr-1.5" />
               Reviewed
             </Button>
             <Button
-              variant="outline"
+              variant={statusFilter === 'ACCEPTED' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setStatusFilter('ACCEPTED')}
-              className={`transition-all ${
-                statusFilter === 'ACCEPTED' 
-                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-[var(--shadow-xs)] font-semibold dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800' 
-                  : 'border-emerald-200 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-300 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950'
-              }`}
             >
-              <CheckCircle className="h-3.5 w-3.5 mr-1.5" />
+              <CheckCircle className="h-4 w-4 mr-1.5" />
               Accepted
             </Button>
             <Button
-              variant="outline"
+              variant={statusFilter === 'REJECTED' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setStatusFilter('REJECTED')}
-              className={`transition-all ${
-                statusFilter === 'REJECTED' 
-                  ? 'bg-red-50 text-red-700 border-red-200 shadow-[var(--shadow-xs)] font-semibold dark:bg-red-950 dark:text-red-300 dark:border-red-800' 
-                  : 'border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950'
-              }`}
             >
-              <XCircle className="h-3.5 w-3.5 mr-1.5" />
+              <XCircle className="h-4 w-4 mr-1.5" />
               Rejected
             </Button>
           </div>
