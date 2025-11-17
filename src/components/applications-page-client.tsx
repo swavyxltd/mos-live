@@ -390,30 +390,33 @@ export function ApplicationsPageClient({ orgSlug }: ApplicationsPageClientProps)
           filteredApplications.map((application) => (
             <Card 
               key={application.id} 
-              className="p-6 cursor-pointer hover:shadow-md transition-shadow"
+              className="p-4 sm:p-6 cursor-pointer hover:shadow-md transition-shadow"
               onClick={() => handleApplicationClick(application)}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-4">
-                    <div>
-                      <h3 className="text-lg font-semibold text-[var(--foreground)]">
+              <div className="flex items-start sm:items-center justify-between gap-3 sm:gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start sm:items-center space-x-3 sm:space-x-4">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-base sm:text-lg font-semibold text-[var(--foreground)] truncate">
                         {application.guardianName}
                       </h3>
-                      <p className="text-sm text-[var(--muted-foreground)]">
-                        {application.guardianEmail} • {application.guardianPhone}
+                      <p className="text-xs sm:text-sm text-[var(--muted-foreground)] mt-0.5 sm:mt-0 break-words">
+                        {application.guardianEmail}
                       </p>
-                      <p className="text-sm text-gray-500 mt-1">
+                      <p className="text-xs sm:text-sm text-[var(--muted-foreground)] mt-0.5 break-words">
+                        {application.guardianPhone}
+                      </p>
+                      <p className="text-xs sm:text-sm text-gray-500 mt-1.5 sm:mt-1">
                         {application.children.length} child{application.children.length !== 1 ? 'ren' : ''} • 
-                        Submitted {new Date(application.submittedAt).toLocaleDateString()}
+                        Submitted {new Date(application.submittedAt).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })}
                       </p>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center gap-2 sm:space-x-4 flex-shrink-0">
                   {getStatusBadge(application.status)}
-                  <Button variant="ghost" size="sm">
-                    <Eye className="h-4 w-4" />
+                  <Button variant="ghost" size="sm" className="flex-shrink-0">
+                    <Eye className="h-4 w-4 sm:h-5 sm:w-5 text-[var(--muted-foreground)]" />
                   </Button>
                 </div>
               </div>
