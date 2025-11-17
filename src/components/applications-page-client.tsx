@@ -170,10 +170,12 @@ export function ApplicationsPageClient({ orgSlug }: ApplicationsPageClientProps)
 
   const filteredApplications = applications
     .filter(app => {
+      const childNames = app.children.map(c => `${c.firstName} ${c.lastName}`).join(' ').toLowerCase()
       const matchesSearch = 
         app.guardianName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         app.guardianEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        app.guardianPhone.includes(searchTerm)
+        app.guardianPhone.includes(searchTerm) ||
+        childNames.includes(searchTerm.toLowerCase())
       
       const matchesStatus = statusFilter === 'ALL' || app.status === statusFilter
       
