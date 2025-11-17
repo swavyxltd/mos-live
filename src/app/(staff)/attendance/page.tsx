@@ -98,7 +98,7 @@ export default async function AttendancePage() {
   }, {} as Record<string, any>)
 
   // Sort students alphabetically within each attendance record
-  const attendanceData = Object.values(attendanceByClass)
+  const allAttendanceData = Object.values(attendanceByClass)
     .map((item: any) => ({
       ...item,
       students: item.students.sort((a: any, b: any) => {
@@ -107,7 +107,27 @@ export default async function AttendancePage() {
         return (a.lastName || '').localeCompare(b.lastName || '', undefined, { sensitivity: 'base' })
       })
     }))
-    .slice(0, 10) // Show most recent 10
+    .sort((a: any, b: any) => {
+      // Sort by date descending (most recent first)
+      return new Date(b.date).getTime() - new Date(a.date).getTime()
+    })
+
+  // Get only the most recent attendance record per class
+  const classMap = new Map<string, any>()
+  allAttendanceData.forEach((item: any) => {
+    const classId = item.classId
+    if (!classMap.has(classId) || new Date(item.date) > new Date(classMap.get(classId).date)) {
+      classMap.set(classId, item)
+    }
+  })
+
+  // Convert back to array and limit to 10 most recent
+  const attendanceData = Array.from(classMap.values())
+    .sort((a: any, b: any) => {
+      // Sort by date descending (most recent first)
+      return new Date(b.date).getTime() - new Date(a.date).getTime()
+    })
+    .slice(0, 10) // Show most recent 10 classes
 
   // Serialize dates for client component
   const serializedData = attendanceData.map(item => ({
