@@ -39,16 +39,6 @@ export async function sendEmail({
 }) {
   // In demo mode, just log the email instead of sending
   if (isDemoMode()) {
-    :', {
-      to: Array.isArray(to) ? to : [to],
-      subject,
-      reason: {
-        isDevelopment: process.env.NODE_ENV === 'development',
-        hasDatabase: !!process.env.DATABASE_URL,
-        hasApiKey: !!process.env.RESEND_API_KEY,
-        apiKeyValue: process.env.RESEND_API_KEY === 're_demo_key' ? 'demo_key' : 'set'
-      }
-    })
     return { id: 'demo-email-' + Date.now() }
   }
 

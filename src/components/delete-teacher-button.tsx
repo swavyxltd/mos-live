@@ -24,8 +24,6 @@ export function DeleteTeacherButton({ teacherId, teacherName }: DeleteTeacherBut
     setIsArchiving(true)
     try {
       // TODO: Implement actual archive API call
-      // For now, just log the action and redirect
-      `)
       setIsDialogOpen(false)
       router.push('/staff')
     } catch (error) {

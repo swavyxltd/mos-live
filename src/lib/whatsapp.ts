@@ -142,9 +142,6 @@ export async function verifyWebhook(token: string): Promise<boolean> {
 }
 
 export async function handleWebhook(body: any): Promise<void> {
-  // Log webhook events for debugging
-  )
-  
   // Handle different webhook events
   if (body.entry) {
     for (const entry of body.entry) {

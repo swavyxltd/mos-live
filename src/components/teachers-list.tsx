@@ -65,8 +65,6 @@ export function TeachersList({ teachers, onEditTeacher }: TeachersListProps) {
     setIsArchiving(true)
     try {
       // TODO: Implement actual archive API call
-      // For now, just log the action
-      `)
       
       // Close dialogs and reset state
       setIsArchiveDialogOpen(false)
