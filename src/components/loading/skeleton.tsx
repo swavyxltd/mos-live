@@ -13,7 +13,7 @@ export function Skeleton({ className, ...props }: SkeletonProps) {
     >
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent dark:via-white/10 motion-safe:animate-[shimmer_1.6s_infinite] motion-reduce:hidden"
+        className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent motion-safe:animate-[shimmer_1.6s_infinite] motion-reduce:hidden"
       />
     </div>
   )

@@ -504,7 +504,7 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
                     <Badge 
                       variant="outline"
                       className={student.isArchived 
-                        ? 'bg-gray-50 text-gray-600 border-0 dark:bg-gray-800 dark:text-gray-200' 
+                        ? 'bg-gray-50 text-gray-600 border-0' 
                         : getStatusColor(student.status)}
                     >
                       {student.isArchived ? 'Archived' : formatStatus(student.status)}

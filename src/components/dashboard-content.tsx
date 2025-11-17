@@ -511,11 +511,11 @@ export function DashboardContent({ initialStats }: DashboardContentProps) {
                   {recentActivity.map((activity) => (
                     <div key={activity.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-[var(--muted)]/50 transition-colors">
                       <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${
-                        activity.type === 'enrollment' ? 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-200' :
-                        activity.type === 'payment' ? 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-200' :
-                        activity.type === 'attendance' ? 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-200' :
-                        activity.type === 'message' ? 'bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-200' :
-                        'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200'
+                        activity.type === 'enrollment' ? 'bg-green-100 text-green-700' :
+                        activity.type === 'payment' ? 'bg-blue-100 text-blue-700' :
+                        activity.type === 'attendance' ? 'bg-purple-100 text-purple-700' :
+                        activity.type === 'message' ? 'bg-orange-100 text-orange-700' :
+                        'bg-gray-100 text-gray-700'
                       }`}>
                         {activity.type === 'enrollment' ? <Users className="h-4 w-4" /> :
                          activity.type === 'payment' ? <DollarSign className="h-4 w-4" /> :

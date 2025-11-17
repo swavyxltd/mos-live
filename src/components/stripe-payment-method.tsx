@@ -144,8 +144,8 @@ function PaymentMethodForm({ onSuccess, onCancel, clientSecret: propClientSecret
       <div className="space-y-6">
         <div className="border border-[var(--border)] rounded-lg p-8 bg-[var(--muted)]">
           <div className="flex flex-col items-center justify-center py-4">
-            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mb-4">
-              <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+              <CheckCircle className="h-8 w-8 text-green-600" />
             </div>
             <h3 className="text-lg font-semibold text-[var(--foreground)] mb-2">Payment Method Added</h3>
             <p className="text-sm text-[var(--muted-foreground)] text-center">

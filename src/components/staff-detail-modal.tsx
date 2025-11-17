@@ -117,8 +117,8 @@ export function StaffDetailModal({
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-[#eef2ff] dark:bg-blue-950">
-                      <User className="h-5 w-5 text-[#1d4ed8] dark:text-blue-300" />
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-[#eef2ff]">
+                      <User className="h-5 w-5 text-[#1d4ed8]" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h2 className="text-lg sm:text-xl font-semibold text-[var(--foreground)] truncate">

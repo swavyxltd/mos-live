@@ -190,14 +190,14 @@ export function FinanceDashboardContent({ initialStats }: FinanceDashboardConten
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-2">
             <div className="h-8 w-48 bg-[var(--muted)]/80 rounded-[var(--radius)] relative overflow-hidden">
-              <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent dark:via-white/10 motion-safe:animate-[shimmer_1.6s_infinite] motion-reduce:hidden" />
+              <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent motion-safe:animate-[shimmer_1.6s_infinite] motion-reduce:hidden" />
             </div>
             <div className="h-4 w-96 bg-[var(--muted)]/80 rounded-[var(--radius)] relative overflow-hidden">
-              <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent dark:via-white/10 motion-safe:animate-[shimmer_1.6s_infinite] motion-reduce:hidden" />
+              <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent motion-safe:animate-[shimmer_1.6s_infinite] motion-reduce:hidden" />
             </div>
           </div>
           <div className="h-10 w-40 bg-[var(--muted)]/80 rounded-[var(--radius)] relative overflow-hidden">
-            <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent dark:via-white/10 motion-safe:animate-[shimmer_1.6s_infinite] motion-reduce:hidden" />
+            <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent motion-safe:animate-[shimmer_1.6s_infinite] motion-reduce:hidden" />
           </div>
         </div>
 

@@ -252,7 +252,7 @@ export default function OwnerUsersPage() {
     return status === 'active' ? (
       <Badge variant="outline" className="text-green-600 bg-green-50 border-0">Active</Badge>
     ) : (
-      <Badge variant="outline" className="text-red-600 bg-red-50 border-0 dark:bg-red-950 dark:text-red-200">Inactive</Badge>
+      <Badge variant="outline" className="text-red-600 bg-red-50 border-0">Inactive</Badge>
     )
   }
 

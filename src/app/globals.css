@@ -168,7 +168,7 @@ table {
 
 /* Target Stripe's iframe content */
 .stripe-card-element iframe {
-  color-scheme: light dark;
+  color-scheme: light;
 }
 
 /* Shimmer animation for skeleton loaders */

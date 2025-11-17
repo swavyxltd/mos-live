@@ -365,8 +365,8 @@ export function StudentDetailModal({
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-[#eef2ff] dark:bg-blue-950">
-                      <User className="h-5 w-5 text-[#1d4ed8] dark:text-blue-300" />
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-[#eef2ff]">
+                      <User className="h-5 w-5 text-[#1d4ed8]" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h2 className="text-lg sm:text-xl font-semibold text-[var(--foreground)] truncate">
@@ -567,15 +567,15 @@ export function StudentDetailModal({
                     
                     {/* Attendance Overview - Show metrics first */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                      <div className="p-5 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <div className="p-5 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
                         <div className="flex items-center justify-between mb-2">
-                          <div className="text-xs font-medium text-blue-700 dark:text-blue-300 uppercase tracking-wide">Overall</div>
+                          <div className="text-xs font-medium text-blue-700 uppercase tracking-wide">Overall</div>
                           {getTrendIcon(student.recentTrend)}
                         </div>
-                        <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-1">
+                        <div className="text-4xl font-bold text-blue-600 mb-1">
                           {student.overallAttendance}%
                         </div>
-                        <div className="text-sm text-blue-600/70 dark:text-blue-400/70">Attendance Rate</div>
+                        <div className="text-sm text-blue-600/70">Attendance Rate</div>
                         <div className={`flex items-center gap-1 mt-3 text-xs ${getTrendColor(student.recentTrend)}`}>
                           <span>
                             {student.recentTrend === 'up' ? '↗ Improving' : 
@@ -584,9 +584,9 @@ export function StudentDetailModal({
                         </div>
                       </div>
                       
-                      <div className="p-5 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 rounded-lg border border-green-200 dark:border-green-800">
-                        <div className="text-xs font-medium text-green-700 dark:text-green-300 uppercase tracking-wide mb-2">This Week</div>
-                        <div className="text-4xl font-bold text-green-600 dark:text-green-400 mb-1">
+                      <div className="p-5 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200">
+                        <div className="text-xs font-medium text-green-700 uppercase tracking-wide mb-2">This Week</div>
+                        <div className="text-4xl font-bold text-green-600 mb-1">
                           {(() => {
                             const weekStart = new Date(selectedWeek)
                             const dayOfWeek = weekStart.getDay()
@@ -606,8 +606,8 @@ export function StudentDetailModal({
                             return weekData.filter(d => d.status === 'PRESENT' || d.status === 'LATE').length
                           })()}
                         </div>
-                        <div className="text-sm text-green-600/70 dark:text-green-400/70">Days Present</div>
-                        <div className="text-xs text-green-600/60 dark:text-green-400/60 mt-3">
+                        <div className="text-sm text-green-600/70">Days Present</div>
+                        <div className="text-xs text-green-600/60 mt-3">
                           {(() => {
                             const weekStart = new Date(selectedWeek)
                             const dayOfWeek = weekStart.getDay()

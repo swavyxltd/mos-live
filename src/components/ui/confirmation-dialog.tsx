@@ -69,13 +69,13 @@ export function ConfirmationDialog({
   const getIconBgColor = () => {
     switch (variant) {
       case 'destructive':
-        return 'bg-red-50 dark:bg-red-950'
+        return 'bg-red-50'
       case 'warning':
-        return 'bg-yellow-50 dark:bg-yellow-950'
+        return 'bg-yellow-50'
       case 'info':
-        return 'bg-blue-50 dark:bg-blue-950'
+        return 'bg-blue-50'
       default:
-        return 'bg-green-50 dark:bg-green-950'
+        return 'bg-green-50'
     }
   }
 

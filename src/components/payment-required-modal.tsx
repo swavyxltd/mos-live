@@ -123,7 +123,7 @@ export function PaymentRequiredModal({ isOpen, onClose, action, userRole }: Paym
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 ml-8">
                   {getBlockedFeatures().map((feature, index) => (
                     <div key={index} className="flex items-center gap-2 text-sm text-[var(--foreground)]">
-                      <div className="w-1.5 h-1.5 bg-red-600 dark:bg-red-400 rounded-full flex-shrink-0"></div>
+                      <div className="w-1.5 h-1.5 bg-red-600 rounded-full flex-shrink-0"></div>
                       <span>{feature}</span>
                     </div>
                   ))}

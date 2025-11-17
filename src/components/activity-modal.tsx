@@ -104,17 +104,17 @@ export function ActivityModal({ isOpen, onClose }: ActivityModalProps) {
 
   const getActionColor = (action: string) => {
     if (action.includes('PAYMENT') || action.includes('INVOICE')) {
-      return 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-200'
+      return 'bg-blue-100 text-blue-700'
     } else if (action.includes('STUDENT')) {
-      return 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-200'
+      return 'bg-green-100 text-green-700'
     } else if (action.includes('CLASS')) {
-      return 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-200'
+      return 'bg-purple-100 text-purple-700'
     } else if (action.includes('MESSAGE')) {
-      return 'bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-200'
+      return 'bg-orange-100 text-orange-700'
     } else if (action.includes('ATTENDANCE')) {
-      return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-200'
+      return 'bg-indigo-100 text-indigo-700'
     }
-    return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200'
+    return 'bg-gray-100 text-gray-700'
   }
 
   const formatActionDetails = (log: ActivityLog) => {
