@@ -398,13 +398,15 @@ export function ApplicationsPageClient({ orgSlug }: ApplicationsPageClientProps)
                   <div className="flex items-start sm:items-center space-x-3 sm:space-x-4">
                     <div className="flex-1 min-w-0">
                       <h3 className="text-base sm:text-lg font-semibold text-[var(--foreground)] truncate">
-                        {application.guardianName}
+                        {application.children.length > 0 
+                          ? application.children.map(c => `${c.firstName} ${c.lastName}`).join(', ')
+                          : 'No child name'}
                       </h3>
                       <p className="text-xs sm:text-sm text-[var(--muted-foreground)] mt-0.5 sm:mt-0 break-words">
-                        {application.guardianEmail}
+                        Parent: {application.guardianName}
                       </p>
                       <p className="text-xs sm:text-sm text-[var(--muted-foreground)] mt-0.5 break-words">
-                        {application.guardianPhone}
+                        {application.guardianEmail} • {application.guardianPhone}
                       </p>
                       <p className="text-xs sm:text-sm text-gray-500 mt-1.5 sm:mt-1">
                         {application.children.length} child{application.children.length !== 1 ? 'ren' : ''} • 
