@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
 
-export function TopProgressBar() {
+function TopProgressBarContent() {
   const [isLoading, setIsLoading] = useState(false)
   const [progress, setProgress] = useState(0)
   const pathname = usePathname()
@@ -69,6 +69,14 @@ export function TopProgressBar() {
         style={{ width: `${progress}%` }}
       />
     </div>
+  )
+}
+
+export function TopProgressBar() {
+  return (
+    <Suspense fallback={null}>
+      <TopProgressBarContent />
+    </Suspense>
   )
 }
 
