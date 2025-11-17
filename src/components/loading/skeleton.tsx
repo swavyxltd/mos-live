@@ -6,27 +6,22 @@ export function Skeleton({ className, ...props }: SkeletonProps) {
   return (
     <div
       className={cn(
-        'animate-pulse rounded-[var(--radius)] bg-[var(--muted)]',
-        className
-      )}
-      {...props}
-    />
-  )
-}
-
-// Shimmer effect using CSS
-export function ShimmerSkeleton({ className, ...props }: SkeletonProps) {
-  return (
-    <div
-      className={cn(
-        'relative overflow-hidden rounded-[var(--radius)] bg-[var(--muted)]',
+        'relative overflow-hidden rounded-[var(--radius)] bg-[var(--muted)]/80',
         className
       )}
       {...props}
     >
-      <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent dark:via-white/10 motion-safe:animate-[shimmer_1.6s_infinite] motion-reduce:hidden"
+      />
     </div>
   )
+}
+
+// Backwards compatible alias
+export function ShimmerSkeleton({ className, ...props }: SkeletonProps) {
+  return <Skeleton className={className} {...props} />
 }
 
 // Card skeleton
