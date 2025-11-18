@@ -360,7 +360,7 @@ export default function SupportPage() {
         isOpen={showCreateTicket} 
         onClose={() => setShowCreateTicket(false)} 
         title="Create Support Ticket"
-        className="max-w-4xl"
+        className="max-w-lg"
       >
         <form onSubmit={handleCreateTicket} className="space-y-6">
           <div className="space-y-2">
