@@ -115,7 +115,7 @@ export function AddEventModal({ onEventAdded, trigger }: AddEventModalProps) {
           Add Event
         </Button>
       )}
-      <Modal isOpen={open} onClose={() => setOpen(false)} title="Add New Event">
+      <Modal isOpen={open} onClose={() => setOpen(false)} title="Add New Event" className="!max-w-xl">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

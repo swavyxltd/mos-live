@@ -310,6 +310,7 @@ export function FeesPageClient({ classes, summary }: FeesPageClientProps) {
         isOpen={isEditModalOpen}
         onClose={handleCancelEdit}
         title={`Edit Fee - ${editingClass?.name || ''}`}
+        className="!max-w-xl"
       >
         <div className="space-y-4">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">

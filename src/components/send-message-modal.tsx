@@ -272,7 +272,7 @@ export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent }: Sen
 
   return (
     <>
-    <Modal isOpen={isOpen} onClose={handleCancel} title="New Message">
+    <Modal isOpen={isOpen} onClose={handleCancel} title="New Message" className="!max-w-xl">
       <div className="space-y-6">
         <div>
           <Label htmlFor="title">Title</Label>
