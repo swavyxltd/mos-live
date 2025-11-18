@@ -25,17 +25,17 @@ export function Modal({ isOpen, onClose, title, children, className }: ModalProp
       
       {/* Modal */}
       <div className={cn(
-        "relative bg-white border border-gray-100 rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col",
+        "relative bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col",
         className
       )}>
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-100 flex-shrink-0">
-          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+        <div className="flex items-center justify-between p-6 border-b border-[var(--border)] flex-shrink-0">
+          <h2 className="text-lg font-semibold text-[var(--foreground)]">{title}</h2>
           <button
             onClick={onClose}
-            className="p-1 rounded-md hover:bg-gray-100 transition-colors"
+            className="p-1 rounded-md hover:bg-[var(--accent)] transition-colors"
           >
-            <X className="h-4 w-4 text-gray-500" />
+            <X className="h-4 w-4 text-[var(--muted-foreground)]" />
           </button>
         </div>
         

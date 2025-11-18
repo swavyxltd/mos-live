@@ -6,7 +6,10 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Modal } from '@/components/ui/modal'
 import { Plus, Search, BookOpen, Video, HelpCircle, MessageSquare, Mail, Filter, MoreHorizontal } from 'lucide-react'
 import Link from 'next/link'
 import { format } from 'date-fns'
@@ -353,51 +356,48 @@ export default function SupportPage() {
       </div>
 
       {/* Create Ticket Modal */}
-      {showCreateTicket && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-2xl mx-4 p-6">
-            <h3 className="text-lg font-semibold mb-4">Create Support Ticket</h3>
-            <form onSubmit={handleCreateTicket} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Subject
-                </label>
-                <Input
-                  value={newTicket.subject}
-                  onChange={(e) => setNewTicket({ ...newTicket, subject: e.target.value })}
-                  placeholder="Brief description of your issue"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
-                </label>
-                <textarea
-                  value={newTicket.body}
-                  onChange={(e) => setNewTicket({ ...newTicket, body: e.target.value })}
-                  placeholder="Provide detailed information about your issue..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows={4}
-                  required
-                />
-              </div>
-              <div className="flex justify-end space-x-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowCreateTicket(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit">
-                  Create Ticket
-                </Button>
-              </div>
-            </form>
-          </Card>
-        </div>
-      )}
+      <Modal 
+        isOpen={showCreateTicket} 
+        onClose={() => setShowCreateTicket(false)} 
+        title="Create Support Ticket"
+        className="max-w-2xl"
+      >
+        <form onSubmit={handleCreateTicket} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="subject">Subject</Label>
+            <Input
+              id="subject"
+              value={newTicket.subject}
+              onChange={(e) => setNewTicket({ ...newTicket, subject: e.target.value })}
+              placeholder="Brief description of your issue"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={newTicket.body}
+              onChange={(e) => setNewTicket({ ...newTicket, body: e.target.value })}
+              placeholder="Provide detailed information about your issue..."
+              rows={6}
+              required
+            />
+          </div>
+          <div className="flex justify-end space-x-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowCreateTicket(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit">
+              Create Ticket
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   )
 }
