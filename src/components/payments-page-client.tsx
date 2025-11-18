@@ -589,7 +589,6 @@ export function PaymentsPageClient({ classes }: PaymentsPageClientProps) {
           setEditingNotes('')
         }}
         title={`Edit Payment Record`}
-        className="!max-w-xl"
       >
         <div className="space-y-5">
           <div className={`border rounded-lg p-4 ${selectedRecord ? getStatusBoxClasses(selectedRecord.status) : 'bg-gray-50 border-gray-200'}`}>
