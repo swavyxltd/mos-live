@@ -151,7 +151,7 @@ export function AttendanceMarking() {
       {/* Attendance Marking Modal */}
       {isOpen && (
         <div className="fixed inset-0 bg-white/20 backdrop-blur-md flex items-center justify-center z-50 p-2 sm:p-4">
-          <div className="bg-[var(--card)] rounded-lg shadow-xl border border-[var(--border)] w-full max-w-4xl max-h-[95vh] overflow-y-auto">
+          <div className="bg-[var(--card)] rounded-lg shadow-xl border border-[var(--border)] w-[50vw] max-h-[95vh] overflow-y-auto">
             <div className="p-3 sm:p-6">
               <div className="flex justify-between items-center mb-4 sm:mb-6">
                 <h2 className="text-xl sm:text-2xl font-bold text-[var(--foreground)]">Mark Attendance</h2>
