@@ -36,6 +36,11 @@ export interface FinanceStats {
   totalOutstanding: number
   averagePaymentTime: number
   collectionRate: number
+  studentGrowth?: number
+  revenueGrowth?: number
+  paidGrowth?: number
+  pendingGrowth?: number
+  overdueGrowth?: number
 }
 
 interface FinanceDashboardContentProps {
@@ -50,7 +55,12 @@ const defaultStats: FinanceStats = {
   paidThisMonth: 0,
   totalOutstanding: 0,
   averagePaymentTime: 0,
-  collectionRate: 0
+  collectionRate: 0,
+  studentGrowth: 0,
+  revenueGrowth: 0,
+  paidGrowth: 0,
+  pendingGrowth: 0,
+  overdueGrowth: 0
 }
 
 export function FinanceDashboardContent({ initialStats }: FinanceDashboardContentProps) {
@@ -58,6 +68,8 @@ export function FinanceDashboardContent({ initialStats }: FinanceDashboardConten
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false)
   const [loading, setLoading] = useState(!initialStats)
   const [stats, setStats] = useState<FinanceStats>(initialStats ?? defaultStats)
+  const [recentFinancialActivity, setRecentFinancialActivity] = useState<any[]>([])
+  const [allRevenueClasses, setAllRevenueClasses] = useState<any[]>([])
 
   useEffect(() => {
     if (!initialStats) {
@@ -66,9 +78,15 @@ export function FinanceDashboardContent({ initialStats }: FinanceDashboardConten
       setLoading(false)
     }
 
+    // Fetch dynamic sections
+    fetchRecentFinancialActivity()
+    fetchRevenueClasses()
+
     // Listen for refresh events
     const handleRefresh = () => {
       fetchFinanceStats()
+      fetchRecentFinancialActivity()
+      fetchRevenueClasses()
     }
 
     window.addEventListener('refresh-dashboard', handleRefresh)
@@ -99,6 +117,36 @@ export function FinanceDashboardContent({ initialStats }: FinanceDashboardConten
           ? (((data.paidThisMonth || 0) / totalInvoices) * 100)
           : 0
 
+        // Calculate growth percentages (comparing to previous period)
+        const now = new Date()
+        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+        const lastMonthStr = lastMonth.toISOString().substring(0, 7)
+
+        // Fetch previous month payment records for growth calculations
+        let paidGrowth = 0
+        let pendingGrowth = 0
+        let overdueGrowth = 0
+
+        try {
+          const prevMonthResponse = await fetch(`/api/payments/records?month=${lastMonthStr}`)
+          if (prevMonthResponse.ok) {
+            const prevMonthData = await prevMonthResponse.json()
+            const prevPaid = prevMonthData.filter((r: any) => r.status === 'PAID').length
+            const prevPending = prevMonthData.filter((r: any) => r.status === 'PENDING').length
+            const prevOverdue = prevMonthData.filter((r: any) => r.status === 'OVERDUE' || r.status === 'LATE').length
+
+            const currentPaid = data.paidThisMonth || 0
+            const currentPending = data.pendingInvoices || 0
+            const currentOverdue = data.overduePayments || 0
+
+            paidGrowth = prevPaid > 0 ? ((currentPaid - prevPaid) / prevPaid) * 100 : (currentPaid > 0 && prevPaid === 0 ? 100 : 0)
+            pendingGrowth = prevPending > 0 ? ((currentPending - prevPending) / prevPending) * 100 : (currentPending > 0 && prevPending === 0 ? 100 : 0)
+            overdueGrowth = prevOverdue > 0 ? ((currentOverdue - prevOverdue) / prevOverdue) * 100 : (currentOverdue > 0 && prevOverdue === 0 ? 100 : 0)
+          }
+        } catch (error) {
+          // If we can't fetch previous month data, growth will remain 0
+        }
+
         setStats({
           totalStudents: data.totalStudents || 0,
           monthlyRevenue: data.monthlyRevenue || 0,
@@ -107,13 +155,120 @@ export function FinanceDashboardContent({ initialStats }: FinanceDashboardConten
           paidThisMonth: data.paidThisMonth || 0,
           totalOutstanding,
           averagePaymentTime: data.averagePaymentTime || 0,
-          collectionRate: Number(collectionRate.toFixed(1))
+          collectionRate: Number(collectionRate.toFixed(1)),
+          studentGrowth: data.studentGrowth || 0,
+          revenueGrowth: data.revenueGrowth || 0,
+          paidGrowth,
+          pendingGrowth,
+          overdueGrowth
         })
       } else {
       }
     } catch (error) {
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchRecentFinancialActivity = async () => {
+    try {
+      // Fetch recent payments and invoices
+      const [paymentsResponse, invoicesResponse] = await Promise.all([
+        fetch('/api/payments'),
+        fetch('/api/invoices')
+      ])
+
+      const activities: any[] = []
+
+      if (paymentsResponse.ok) {
+        const payments = await paymentsResponse.json()
+        // Filter for paid payments and take most recent
+        const paidPayments = payments
+          .filter((p: any) => p.status === 'PAID' && p.paidDate)
+          .sort((a: any, b: any) => new Date(b.paidDate || b.createdAt).getTime() - new Date(a.paidDate || a.createdAt).getTime())
+          .slice(0, 5)
+        
+        paidPayments.forEach((payment: any) => {
+          activities.push({
+            id: payment.id,
+            type: 'payment',
+            action: `Payment received from ${payment.studentName || 'Student'}`,
+            amount: `£${payment.amount?.toFixed(2) || '0.00'}`,
+            timestamp: new Date(payment.paidDate || payment.createdAt).toLocaleDateString('en-GB', {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            }),
+            time: new Date(payment.paidDate || payment.createdAt)
+          })
+        })
+      }
+
+      if (invoicesResponse.ok) {
+        const invoices = await invoicesResponse.json()
+        // Get recent pending/overdue invoices
+        const recentInvoices = invoices
+          .filter((inv: any) => inv.status === 'PENDING' || inv.status === 'OVERDUE')
+          .sort((a: any, b: any) => new Date(b.createdAt || b.dueDate).getTime() - new Date(a.createdAt || a.dueDate).getTime())
+          .slice(0, 5)
+        
+        recentInvoices.forEach((invoice: any) => {
+          activities.push({
+            id: invoice.id,
+            type: invoice.status === 'OVERDUE' ? 'reminder' : 'invoice',
+            action: `Invoice ${invoice.status === 'OVERDUE' ? 'overdue' : 'issued'} for ${invoice.studentName || 'Student'}`,
+            amount: `£${invoice.amount?.toFixed(2) || '0.00'}`,
+            timestamp: new Date(invoice.dueDate || invoice.createdAt).toLocaleDateString('en-GB', {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            }),
+            time: new Date(invoice.dueDate || invoice.createdAt)
+          })
+        })
+      }
+
+      // Sort by timestamp (most recent first) and limit to 10
+      activities.sort((a, b) => (b.time?.getTime() || 0) - (a.time?.getTime() || 0))
+      setRecentFinancialActivity(activities.slice(0, 10))
+    } catch (error) {
+      setRecentFinancialActivity([])
+    }
+  }
+
+  const fetchRevenueClasses = async () => {
+    try {
+      const response = await fetch('/api/classes')
+      if (response.ok) {
+        const classes = await response.json()
+        
+        const revenueClasses = classes
+          .filter((cls: any) => cls._count?.StudentClass > 0)
+          .map((cls: any) => {
+            const monthlyFee = cls.monthlyFeeP ? Number(cls.monthlyFeeP) / 100 : 0
+            const studentCount = cls._count?.StudentClass || 0
+            const revenue = monthlyFee * studentCount
+            
+            return {
+              id: cls.id,
+              name: cls.name,
+              students: studentCount,
+              avgFee: monthlyFee.toFixed(2),
+              revenue: revenue.toFixed(2)
+            }
+          })
+          .sort((a: any, b: any) => parseFloat(b.revenue) - parseFloat(a.revenue))
+        
+        setAllRevenueClasses(revenueClasses)
+      } else {
+        setAllRevenueClasses([])
+      }
+    } catch (error) {
+      setAllRevenueClasses([])
     }
   }
 
@@ -125,7 +280,12 @@ export function FinanceDashboardContent({ initialStats }: FinanceDashboardConten
     paidThisMonth,
     totalOutstanding,
     averagePaymentTime,
-    collectionRate
+    collectionRate,
+    studentGrowth,
+    revenueGrowth,
+    paidGrowth,
+    pendingGrowth,
+    overdueGrowth
   } = stats
 
   // Handle CSV export generation with month/year filters
@@ -176,12 +336,6 @@ export function FinanceDashboardContent({ initialStats }: FinanceDashboardConten
       alert(`Error generating CSV report: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
-  
-  
-  // Empty arrays - will be populated from real data when available
-  const recentFinancialActivity: any[] = []
-  const allRevenueClasses: any[] = []
-
   // Show skeleton loaders while data is loading
   if (loading) {
     return (
@@ -244,6 +398,10 @@ export function FinanceDashboardContent({ initialStats }: FinanceDashboardConten
           <StatCard
             title="Total Students"
             value={totalStudents}
+            change={studentGrowth && studentGrowth !== 0 ? { 
+              value: `${studentGrowth > 0 ? '+' : ''}${studentGrowth.toFixed(1)}%`, 
+              type: studentGrowth > 0 ? "positive" : "negative" 
+            } : undefined}
             description="Active enrollments"
             icon={<Users className="h-4 w-4" />}
           />
@@ -252,6 +410,10 @@ export function FinanceDashboardContent({ initialStats }: FinanceDashboardConten
           <StatCard
             title="Monthly Revenue"
             value={`£${monthlyRevenue.toLocaleString()}`}
+            change={revenueGrowth && revenueGrowth !== 0 ? { 
+              value: `${revenueGrowth > 0 ? '+' : ''}${revenueGrowth.toFixed(1)}%`, 
+              type: revenueGrowth > 0 ? "positive" : "negative" 
+            } : undefined}
             description="Recurring revenue"
             icon={<DollarSign className="h-4 w-4" />}
           />
@@ -260,6 +422,10 @@ export function FinanceDashboardContent({ initialStats }: FinanceDashboardConten
           <StatCard
             title="Paid This Month"
             value={paidThisMonth}
+            change={paidGrowth && paidGrowth !== 0 ? { 
+              value: `${paidGrowth > 0 ? '+' : ''}${paidGrowth.toFixed(1)}%`, 
+              type: paidGrowth > 0 ? "positive" : "negative" 
+            } : undefined}
             description="Successful payments"
             icon={<CheckCircle className="h-4 w-4" />}
           />
@@ -268,8 +434,12 @@ export function FinanceDashboardContent({ initialStats }: FinanceDashboardConten
           <StatCard
             title="Pending Invoices"
             value={pendingInvoices}
+            change={pendingGrowth && pendingGrowth !== 0 ? { 
+              value: `${pendingGrowth > 0 ? '+' : ''}${pendingGrowth.toFixed(1)}%`, 
+              type: pendingGrowth > 0 ? "negative" : "positive" 
+            } : undefined}
             description="Awaiting payment"
-            detail="£1,250 total value"
+            detail={`£${totalOutstanding.toLocaleString()} total value`}
             icon={<Receipt className="h-4 w-4" />}
           />
         </Link>
@@ -277,6 +447,10 @@ export function FinanceDashboardContent({ initialStats }: FinanceDashboardConten
           <StatCard
             title="Overdue Payments"
             value={overduePayments}
+            change={overdueGrowth && overdueGrowth !== 0 ? { 
+              value: `${overdueGrowth > 0 ? '+' : ''}${overdueGrowth.toFixed(1)}%`, 
+              type: overdueGrowth > 0 ? "negative" : "positive" 
+            } : undefined}
             description="Past due amounts"
             detail="Urgent attention needed"
             icon={<AlertCircle className="h-4 w-4" />}

@@ -51,7 +51,13 @@ async function getInitialFinanceStats(): Promise<FinanceStats | null> {
     paidThisMonth,
     totalOutstanding,
     averagePaymentTime: stats.averagePaymentTime || 0,
-    collectionRate
+    collectionRate,
+    studentGrowth: stats.studentGrowth || 0,
+    revenueGrowth: stats.revenueGrowth || 0,
+    // paidGrowth, pendingGrowth, overdueGrowth will be calculated client-side
+    paidGrowth: 0,
+    pendingGrowth: 0,
+    overdueGrowth: 0
   }
 }
 
