@@ -42,7 +42,9 @@ export function AddTeacherModal({ isOpen, onClose, onSave }: AddTeacherModalProp
           orgId: activeOrg.id,
           role: 'STAFF',
           sendInvitation: true, // Always send invitation for staff
-          isActive: data.isActive !== false
+          isActive: data.isActive !== false,
+          staffSubrole: data.staffSubrole,
+          permissionKeys: data.permissionKeys || []
         })
       })
 
@@ -77,17 +79,15 @@ export function AddTeacherModal({ isOpen, onClose, onSave }: AddTeacherModalProp
 
   return (
     <Modal isOpen={isOpen} onClose={handleCancel} title="Add New Staff">
-      <div className="max-h-[80vh] overflow-y-auto">
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm mb-4">
-            {error}
-          </div>
-        )}
-        <TeacherForm
-          onSubmit={handleSubmit}
-          onCancel={handleCancel}
-        />
-      </div>
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm mb-4">
+          {error}
+        </div>
+      )}
+      <TeacherForm
+        onSubmit={handleSubmit}
+        onCancel={handleCancel}
+      />
     </Modal>
   )
 }

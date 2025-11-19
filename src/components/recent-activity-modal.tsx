@@ -90,7 +90,7 @@ export function RecentActivityModal({ isOpen, onClose, activities }: RecentActiv
       />
       
       {/* Modal */}
-      <div className="relative bg-white border border-gray-200 rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+      <div className="relative bg-white border border-gray-200 rounded-xl shadow-xl w-[75vw] max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
           <h2 className="text-lg font-semibold text-gray-900">Recent Financial Activity</h2>

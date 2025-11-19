@@ -1,7 +1,26 @@
 // Staff subrole types within the staff portal
 export type StaffSubrole = 'ADMIN' | 'TEACHER' | 'FINANCE_OFFICER'
 
-// Permission types for staff subroles
+// Permission keys that map to sidebar pages and actions
+// These correspond to StaffPermission.key in the database
+export type StaffPermissionKey = 
+  // Page-level permissions (sidebar pages)
+  | 'access_dashboard'
+  | 'access_classes'
+  | 'access_students'
+  | 'access_applications'
+  | 'access_staff'
+  | 'access_attendance'
+  | 'access_finances'
+  | 'access_fees'
+  | 'access_payments'
+  | 'access_messages'
+  | 'access_calendar'
+  | 'access_support'
+  | 'access_settings'
+
+// Legacy permission types (kept for backward compatibility)
+// These are now mapped to the new permission keys
 export type StaffPermission = 
   // Admin permissions
   | 'manage_staff'
@@ -32,64 +51,176 @@ export type StaffPermission =
   | 'view_all_data'
   | 'view_calendar'
 
-// Permission mapping for each staff subrole
-export const STAFF_ROLE_PERMISSIONS: Record<StaffSubrole, StaffPermission[]> = {
+// Map sidebar pages to permission keys
+export const SIDEBAR_PAGE_PERMISSIONS: Record<string, StaffPermissionKey> = {
+  '/dashboard': 'access_dashboard',
+  '/classes': 'access_classes',
+  '/students': 'access_students',
+  '/applications': 'access_applications',
+  '/staff': 'access_staff',
+  '/attendance': 'access_attendance',
+  '/finances': 'access_finances',
+  '/fees': 'access_fees',
+  '/payments': 'access_payments',
+  '/messages': 'access_messages',
+  '/calendar': 'access_calendar',
+  '/support': 'access_support',
+  '/settings': 'access_settings',
+}
+
+// All available permission keys with their display names
+export const PERMISSION_DEFINITIONS: Record<StaffPermissionKey, { name: string; description: string }> = {
+  access_dashboard: {
+    name: 'Dashboard',
+    description: 'Access to the main dashboard'
+  },
+  access_classes: {
+    name: 'Classes',
+    description: 'View and manage classes'
+  },
+  access_students: {
+    name: 'Students',
+    description: 'View and manage students'
+  },
+  access_applications: {
+    name: 'Applications',
+    description: 'View and process student applications'
+  },
+  access_staff: {
+    name: 'Staff Management',
+    description: 'View and manage staff members'
+  },
+  access_attendance: {
+    name: 'Attendance',
+    description: 'Mark and view attendance records'
+  },
+  access_finances: {
+    name: 'Finances',
+    description: 'View financial overview and reports'
+  },
+  access_fees: {
+    name: 'Fees',
+    description: 'Manage fee plans and structures'
+  },
+  access_payments: {
+    name: 'Payments',
+    description: 'View and manage payment records'
+  },
+  access_messages: {
+    name: 'Messages',
+    description: 'Send and manage messages'
+  },
+  access_calendar: {
+    name: 'Calendar',
+    description: 'View and create calendar events'
+  },
+  access_support: {
+    name: 'Support',
+    description: 'Access support tickets'
+  },
+  access_settings: {
+    name: 'Settings',
+    description: 'Access organization settings'
+  },
+}
+
+// Permission mapping for each staff subrole (preset templates)
+// These map to the new permission keys
+export const STAFF_ROLE_PERMISSIONS: Record<StaffSubrole, StaffPermissionKey[]> = {
   ADMIN: [
     // Full access to everything
-    'manage_staff',
-    'manage_classes',
-    'manage_students',
-    'manage_payments',
-    'assign_roles',
-    'view_reports',
-    'view_invoices',
-    'view_applications',
-    'send_messages',
-    'send_announcements',
-    'create_events',
+    'access_dashboard',
+    'access_classes',
+    'access_students',
+    'access_applications',
+    'access_staff',
+    'access_attendance',
+    'access_finances',
+    'access_fees',
+    'access_payments',
+    'access_messages',
+    'access_calendar',
+    'access_support',
     'access_settings',
-    'view_all_classes',
-    'mark_attendance',
-    'update_student_info',
-    'create_class_events',
-    'send_class_messages',
-    'view_students_billing',
-    'manage_invoices',
-    'reconcile_payments',
-    'mark_cash_payments',
-    'generate_financial_reports',
-    'view_all_data'
   ],
   TEACHER: [
     // Teaching-focused permissions
-    'view_all_classes',
-    'mark_attendance',
-    'update_student_info',
-    'create_class_events',
-    'send_class_messages',
-    'view_all_data'
+    'access_dashboard',
+    'access_classes',
+    'access_students',
+    'access_attendance',
+    'access_messages',
+    'access_calendar',
+    'access_support',
   ],
   FINANCE_OFFICER: [
     // Financial data focused
-    'view_students_billing',
-    'manage_invoices',
-    'view_invoices',
-    'reconcile_payments',
-    'mark_cash_payments',
-    'generate_financial_reports',
+    'access_dashboard',
+    'access_finances',
+    'access_fees',
+    'access_payments',
+    'access_support',
     'access_settings',
-    'view_all_data'
   ],
 }
 
-// Helper function to check if a staff subrole has a specific permission
-export function hasStaffPermission(subrole: StaffSubrole, permission: StaffPermission): boolean {
-  return STAFF_ROLE_PERMISSIONS[subrole].includes(permission)
+// Legacy permission to new permission key mapping
+// Used for backward compatibility
+export const LEGACY_PERMISSION_MAP: Record<string, StaffPermissionKey[]> = {
+  'view_all_data': ['access_dashboard', 'access_students', 'access_support'],
+  'view_all_classes': ['access_classes'],
+  'mark_attendance': ['access_attendance'],
+  'view_applications': ['access_applications'],
+  'manage_staff': ['access_staff'],
+  'view_invoices': ['access_finances', 'access_payments'],
+  'manage_invoices': ['access_fees'],
+  'send_messages': ['access_messages'],
+  'view_calendar': ['access_calendar'],
+  'create_events': ['access_calendar'],
+  'access_settings': ['access_settings'],
 }
 
-// Helper function to get all permissions for a staff subrole
+// Helper function to check if a staff subrole has a specific permission (legacy)
+export function hasStaffPermission(subrole: StaffSubrole, permission: StaffPermission): boolean {
+  // Map legacy permission to new permission keys
+  const mappedPermissions = LEGACY_PERMISSION_MAP[permission] || []
+  const rolePermissions = STAFF_ROLE_PERMISSIONS[subrole] || []
+  
+  // Check if any of the mapped permissions are in the role permissions
+  return mappedPermissions.some(mapped => rolePermissions.includes(mapped))
+}
+
+// Helper function to get all permissions for a staff subrole (legacy)
 export function getStaffPermissions(subrole: StaffSubrole): StaffPermission[] {
-  return STAFF_ROLE_PERMISSIONS[subrole]
+  // Return legacy permissions for backward compatibility
+  // This is mainly used for display purposes
+  const rolePermissions = STAFF_ROLE_PERMISSIONS[subrole] || []
+  
+  // Map back to legacy permissions (simplified)
+  const legacyPermissions: StaffPermission[] = []
+  if (rolePermissions.includes('access_dashboard')) legacyPermissions.push('view_all_data')
+  if (rolePermissions.includes('access_classes')) legacyPermissions.push('view_all_classes')
+  if (rolePermissions.includes('access_attendance')) legacyPermissions.push('mark_attendance')
+  if (rolePermissions.includes('access_applications')) legacyPermissions.push('view_applications')
+  if (rolePermissions.includes('access_staff')) legacyPermissions.push('manage_staff')
+  if (rolePermissions.includes('access_finances') || rolePermissions.includes('access_payments')) legacyPermissions.push('view_invoices')
+  if (rolePermissions.includes('access_fees')) legacyPermissions.push('manage_invoices')
+  if (rolePermissions.includes('access_messages')) legacyPermissions.push('send_messages')
+  if (rolePermissions.includes('access_calendar')) legacyPermissions.push('view_calendar', 'create_events')
+  if (rolePermissions.includes('access_settings')) legacyPermissions.push('access_settings')
+  
+  return legacyPermissions
+}
+
+// Helper function to get permission keys for a staff subrole (new)
+export function getStaffPermissionKeys(subrole: StaffSubrole): StaffPermissionKey[] {
+  return STAFF_ROLE_PERMISSIONS[subrole] || []
+}
+
+// Helper function to check if a staff subrole has a specific permission key (new)
+export function hasStaffPermissionKey(subrole: StaffSubrole, permissionKey: StaffPermissionKey): boolean {
+  const rolePermissions = STAFF_ROLE_PERMISSIONS[subrole] || []
+  return rolePermissions.includes(permissionKey)
 }
 
 // Helper function to check if a staff subrole can perform an action

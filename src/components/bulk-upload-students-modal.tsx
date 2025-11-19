@@ -262,7 +262,6 @@ export function BulkUploadStudentsModal({
       isOpen={isOpen}
       onClose={handleClose}
       title="Bulk Add Students"
-      className="max-w-6xl"
     >
       <div className="space-y-6">
         {/* Step 1: Menu */}

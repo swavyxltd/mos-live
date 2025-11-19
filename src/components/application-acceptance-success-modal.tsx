@@ -56,7 +56,7 @@ export function ApplicationAcceptanceSuccessModal({
       isOpen={isOpen}
       onClose={onClose}
       title={currentStep === 1 ? "Application Accepted Successfully" : "Send Sign-up Email"}
-      className="max-w-lg max-h-[90vh] overflow-hidden"
+      className="max-h-[90vh] overflow-hidden"
     >
       <div className="space-y-4">
         {currentStep === 1 ? (

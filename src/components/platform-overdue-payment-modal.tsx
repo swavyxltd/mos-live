@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { CreditCard, Loader2, Check, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
@@ -200,17 +199,20 @@ export function PlatformOverduePaymentModal({
         }
       }}
     >
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center pb-4">
-          <div className="mx-auto w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-3">
-            <CreditCard className="h-6 w-6 text-blue-600" />
+      <div className="w-[75vw]">
+        <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-md overflow-hidden">
+          <div className="p-6 border-b border-[var(--border)]">
+            <div className="text-center">
+              <div className="mx-auto w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-3">
+                <CreditCard className="h-6 w-6 text-blue-600" />
+              </div>
+              <h2 className="text-xl font-semibold text-[var(--foreground)]">Pay Overdue Balance</h2>
+              <p className="text-sm text-[var(--muted-foreground)] mt-2">
+                Pay your overdue balance to reactivate your account
+              </p>
+            </div>
           </div>
-          <CardTitle className="text-xl">Pay Overdue Balance</CardTitle>
-          <CardDescription className="text-sm">
-            Pay your overdue balance to reactivate your account
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+          <div className="p-6">
           {loading && !requiresPaymentMethod ? (
             <div className="flex flex-col items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-blue-600 mb-4" />
@@ -239,8 +241,9 @@ export function PlatformOverduePaymentModal({
               />
             </Elements>
           ) : null}
-        </CardContent>
-      </Card>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

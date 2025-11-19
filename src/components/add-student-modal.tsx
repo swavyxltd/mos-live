@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { 
@@ -117,7 +116,6 @@ export function AddStudentModal({ isOpen, onClose, onSave, classes }: AddStudent
       isOpen={isOpen} 
       onClose={handleClose}
       title="Add New Student"
-      className="max-w-4xl"
     >
       <div className="space-y-6">
         {/* Error message */}
@@ -128,14 +126,7 @@ export function AddStudentModal({ isOpen, onClose, onSave, classes }: AddStudent
         )}
 
         {/* Student Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Student Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-900">First Name *</label>
@@ -158,18 +149,10 @@ export function AddStudentModal({ isOpen, onClose, onSave, classes }: AddStudent
                 />
               </div>
             </div>
-          </CardContent>
-        </Card>
+        </div>
 
         {/* Parent Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Parent Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-900">Parent Email *</label>
               <Input
@@ -182,18 +165,10 @@ export function AddStudentModal({ isOpen, onClose, onSave, classes }: AddStudent
               />
               <p className="text-xs text-gray-500">An invitation email will be sent to this address for the parent to complete setup.</p>
             </div>
-          </CardContent>
-        </Card>
+        </div>
 
         {/* Class & Enrollment */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5" />
-              Class & Enrollment
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-900">Class *</label>
               <select
@@ -221,8 +196,7 @@ export function AddStudentModal({ isOpen, onClose, onSave, classes }: AddStudent
               />
               <p className="text-xs text-gray-500">The first payment record will be created for this month.</p>
             </div>
-          </CardContent>
-        </Card>
+        </div>
 
         {/* Actions */}
         <div className="flex items-center justify-end space-x-3 pt-4 border-t">

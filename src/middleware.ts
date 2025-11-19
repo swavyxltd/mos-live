@@ -56,23 +56,30 @@ export async function middleware(request: NextRequest) {
     if (correctPortal === '/owner') {
       return NextResponse.redirect(new URL('/owner/overview', request.url))
     } else if (correctPortal === '/staff') {
-      // Check if user is a Finance Officer and redirect to finance dashboard
+      // Check user subrole and redirect to appropriate page
       const token = await getToken({ req: request })
       if (token?.staffSubrole === 'FINANCE_OFFICER') {
         return NextResponse.redirect(new URL('/finances', request.url))
       }
+      if (token?.staffSubrole === 'TEACHER') {
+        return NextResponse.redirect(new URL('/classes', request.url))
+      }
+      // Default to dashboard for ADMIN subrole
       return NextResponse.redirect(new URL('/dashboard', request.url))
     } else if (correctPortal === '/parent') {
       return NextResponse.redirect(new URL('/parent/dashboard', request.url))
     }
   }
   
-  // Redirect Finance Officers from regular dashboard to finance dashboard
+  // Redirect Finance Officers and Teachers from regular dashboard
   if (pathname === '/dashboard' && roleHints.orgStaffOf.length > 0) {
-    // Check if user is a Finance Officer (we'll need to get this from the token)
+    // Check if user is a Finance Officer or Teacher (we'll need to get this from the token)
     const token = await getToken({ req: request })
     if (token?.staffSubrole === 'FINANCE_OFFICER') {
       return NextResponse.redirect(new URL('/finances', request.url))
+    }
+    if (token?.staffSubrole === 'TEACHER') {
+      return NextResponse.redirect(new URL('/classes', request.url))
     }
   }
   
@@ -110,7 +117,11 @@ export async function middleware(request: NextRequest) {
         }
   }
   
-  return NextResponse.next()
+  // Add pathname as a header for server components to use
+  const response = NextResponse.next()
+  response.headers.set('x-pathname', pathname)
+  
+  return response
 }
 
 export const config = {

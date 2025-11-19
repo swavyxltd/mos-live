@@ -22,7 +22,32 @@ export interface DashboardStats {
   averagePaymentTime?: number
 }
 
-export async function getDashboardStats(): Promise<DashboardStats | null> {
+// Helper function to retry database operations on connection pool errors
+async function retryOnPoolError<T>(
+  operation: () => Promise<T>,
+  maxRetries = 2,
+  delay = 1000
+): Promise<T> {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await operation()
+    } catch (error: any) {
+      const isPoolError = error?.message?.includes('connection pool') || 
+                         error?.code === 'P1001' ||
+                         error?.code === 'P1017'
+      
+      if (isPoolError && i < maxRetries - 1) {
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, delay * (i + 1)))
+        continue
+      }
+      throw error
+    }
+  }
+  throw new Error('Max retries exceeded')
+}
+
+export async function getDashboardStats(teacherId?: string): Promise<DashboardStats | null> {
   try {
     const session = await getServerSession(authOptions)
     
@@ -41,49 +66,111 @@ export async function getDashboardStats(): Promise<DashboardStats | null> {
     const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
     const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0)
 
-    // Run parallel queries for better performance
+    // If teacherId is provided, get their classes first to filter all queries
+    let teacherClassIds: string[] | undefined = undefined
+    if (teacherId) {
+      const teacherClasses = await prisma.class.findMany({
+        where: {
+          orgId: org.id,
+          teacherId: teacherId,
+          isArchived: false
+        },
+        select: { id: true }
+      })
+      teacherClassIds = teacherClasses.map(c => c.id)
+      
+      // If teacher has no classes, return empty stats
+      if (teacherClassIds.length === 0) {
+        return {
+          totalStudents: 0,
+          newStudentsThisMonth: 0,
+          studentGrowth: 0,
+          activeClasses: 0,
+          staffMembers: 0,
+          attendanceRate: 0,
+          attendanceGrowth: 0,
+          monthlyRevenue: 0,
+          revenueGrowth: 0,
+          pendingInvoices: 0,
+          overduePayments: 0,
+          pendingApplications: 0,
+          attendanceTrend: []
+        }
+      }
+    }
+
+    // Run queries in smaller batches to avoid connection pool exhaustion
+    // Batch 1: Student counts (with retry on pool errors)
+    // For teachers, only count students in their classes
     const [
       totalStudents,
       newStudentsThisMonth,
-      lastMonthStudents,
-      activeClasses,
-      staffMembers
+      lastMonthStudents
     ] = await Promise.all([
-      prisma.student.count({
-        where: {
-          orgId: org.id,
-          isArchived: false
-        }
-      }),
-      prisma.student.count({
+      retryOnPoolError(() => prisma.student.count({
         where: {
           orgId: org.id,
           isArchived: false,
-          createdAt: { gte: thisMonth }
+          ...(teacherClassIds && {
+            StudentClass: {
+              some: {
+                classId: { in: teacherClassIds }
+              }
+            }
+          })
         }
-      }),
-      prisma.student.count({
+      })),
+      retryOnPoolError(() => prisma.student.count({
+        where: {
+          orgId: org.id,
+          isArchived: false,
+          createdAt: { gte: thisMonth },
+          ...(teacherClassIds && {
+            StudentClass: {
+              some: {
+                classId: { in: teacherClassIds }
+              }
+            }
+          })
+        }
+      })),
+      retryOnPoolError(() => prisma.student.count({
         where: {
           orgId: org.id,
           isArchived: false,
           createdAt: {
             gte: lastMonthStart,
             lte: lastMonthEnd
-          }
+          },
+          ...(teacherClassIds && {
+            StudentClass: {
+              some: {
+                classId: { in: teacherClassIds }
+              }
+            }
+          })
         }
-      }),
-      prisma.class.count({
+      }))
+    ])
+
+    // Batch 2: Classes and staff
+    const [
+      activeClasses,
+      staffMembers
+    ] = await Promise.all([
+      retryOnPoolError(() => prisma.class.count({
         where: {
           orgId: org.id,
-          isArchived: false
+          isArchived: false,
+          ...(teacherId && { teacherId })
         }
-      }),
-      prisma.userOrgMembership.count({
+      })),
+      retryOnPoolError(() => prisma.userOrgMembership.count({
         where: {
           orgId: org.id,
           role: { in: ['ADMIN', 'STAFF'] }
         }
-      })
+      }))
     ])
 
     const studentGrowth = lastMonthStudents > 0
@@ -108,21 +195,24 @@ export async function getDashboardStats(): Promise<DashboardStats | null> {
       prisma.attendance.findMany({
         where: {
           orgId: org.id,
-          date: { gte: weekStart }
+          date: { gte: weekStart },
+          ...(teacherClassIds && { classId: { in: teacherClassIds } })
         },
         select: { status: true }
       }),
       prisma.attendance.findMany({
         where: {
           orgId: org.id,
-          date: { gte: lastWeekStart, lte: lastWeekEnd }
+          date: { gte: lastWeekStart, lte: lastWeekEnd },
+          ...(teacherClassIds && { classId: { in: teacherClassIds } })
         },
         select: { status: true }
       }),
       prisma.attendance.findMany({
         where: {
           orgId: org.id,
-          date: { gte: last7Days }
+          date: { gte: last7Days },
+          ...(teacherClassIds && { classId: { in: teacherClassIds } })
         },
         select: { status: true }
       })
@@ -146,16 +236,23 @@ export async function getDashboardStats(): Promise<DashboardStats | null> {
       ? attendanceRate - lastWeekRate
       : 0
 
-    // Calculate monthly revenue
+    // Calculate monthly revenue (filtered by teacher classes if applicable)
     const classes = await prisma.class.findMany({
       where: {
         orgId: org.id,
-        isArchived: false
+        isArchived: false,
+        ...(teacherId && { teacherId })
       },
       include: {
         _count: {
           select: {
-            StudentClass: true
+            StudentClass: {
+              ...(teacherClassIds && {
+                where: {
+                  classId: { in: teacherClassIds }
+                }
+              })
+            }
           }
         }
       }
@@ -178,14 +275,24 @@ export async function getDashboardStats(): Promise<DashboardStats | null> {
         where: {
           orgId: org.id,
           status: 'PENDING',
-          month: currentMonthStr
+          month: currentMonthStr,
+          ...(teacherClassIds && {
+            Class: {
+              id: { in: teacherClassIds }
+            }
+          })
         }
       }),
       prisma.monthlyPaymentRecord.count({
         where: {
           orgId: org.id,
           status: { in: ['OVERDUE', 'LATE'] },
-          month: currentMonthStr
+          month: currentMonthStr,
+          ...(teacherClassIds && {
+            Class: {
+              id: { in: teacherClassIds }
+            }
+          })
         }
       }),
       prisma.application.count({
@@ -196,15 +303,19 @@ export async function getDashboardStats(): Promise<DashboardStats | null> {
       })
     ])
 
-    // Calculate last month revenue
+    // Calculate last month revenue (filtered by teacher classes if applicable)
     const lastMonthClasses = await prisma.class.findMany({
       where: {
         orgId: org.id,
         isArchived: false,
-        createdAt: { lte: lastMonthEnd }
+        createdAt: { lte: lastMonthEnd },
+        ...(teacherId && { teacherId })
       },
       include: {
         StudentClass: {
+          where: {
+            ...(teacherClassIds && { classId: { in: teacherClassIds } })
+          },
           include: {
             Student: {
               select: {
@@ -231,7 +342,12 @@ export async function getDashboardStats(): Promise<DashboardStats | null> {
         orgId: org.id,
         status: 'PAID',
         month: currentMonthStr,
-        paidAt: { not: null }
+        paidAt: { not: null },
+        ...(teacherClassIds && {
+          Class: {
+            id: { in: teacherClassIds }
+          }
+        })
       }
     })
 
@@ -239,7 +355,12 @@ export async function getDashboardStats(): Promise<DashboardStats | null> {
       where: {
         orgId: org.id,
         status: 'PAID',
-        paidAt: { not: null }
+        paidAt: { not: null },
+        ...(teacherClassIds && {
+          Class: {
+            id: { in: teacherClassIds }
+          }
+        })
       },
       select: {
         createdAt: true,
@@ -263,7 +384,7 @@ export async function getDashboardStats(): Promise<DashboardStats | null> {
       }
     }
 
-    // Get attendance trend for last 14 days
+    // Get attendance trend for last 14 days (filtered by teacher classes if applicable)
     const trendStartDate = new Date(now)
     trendStartDate.setDate(now.getDate() - 13)
     trendStartDate.setHours(0, 0, 0, 0)
@@ -271,7 +392,8 @@ export async function getDashboardStats(): Promise<DashboardStats | null> {
     const allAttendance = await prisma.attendance.findMany({
       where: {
         orgId: org.id,
-        date: { gte: trendStartDate }
+        date: { gte: trendStartDate },
+        ...(teacherClassIds && { classId: { in: teacherClassIds } })
       },
       select: { 
         date: true,

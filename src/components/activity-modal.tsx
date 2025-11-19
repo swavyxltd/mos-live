@@ -135,7 +135,6 @@ export function ActivityModal({ isOpen, onClose }: ActivityModalProps) {
       isOpen={isOpen} 
       onClose={onClose}
       title="Activity Log"
-      className="max-w-4xl"
     >
       <div className="space-y-4">
         {/* Filters */}

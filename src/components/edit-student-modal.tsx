@@ -198,7 +198,7 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
         }
       }}
     >
-      <div className="w-full max-w-4xl my-8">
+      <div className="w-[75vw] my-8">
         <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-md overflow-hidden">
           {/* Header */}
           <div className="p-4 sm:p-6 border-b border-[var(--border)]">

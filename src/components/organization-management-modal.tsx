@@ -382,7 +382,7 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
 
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={`Manage ${organization.name}`} size="xl">
+    <Modal isOpen={isOpen} onClose={onClose} title={`Manage ${organization.name}`}>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">

@@ -49,7 +49,7 @@ async function handlePOST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { email, name, password, phone, isSuperAdmin, orgId, role, sendInvitation } = body
+    const { email, name, password, phone, isSuperAdmin, orgId, role, sendInvitation, staffSubrole, permissionKeys } = body
 
     // Only check payment for non-owner accounts (staff/teachers)
     if (!isSuperAdmin && (role === 'STAFF' || role === 'ADMIN')) {
@@ -161,7 +161,16 @@ async function handlePOST(request: NextRequest) {
 
     // If orgId and role provided, create membership
     if (orgId && role && !isSuperAdmin) {
-      await prisma.userOrgMembership.upsert({
+      // Determine if this is the initial admin (first ADMIN in the org)
+      const existingAdmins = await prisma.userOrgMembership.findMany({
+        where: {
+          orgId,
+          role: 'ADMIN',
+        },
+      })
+      const isInitialAdmin = role === 'ADMIN' && existingAdmins.length === 0
+
+      const membership = await prisma.userOrgMembership.upsert({
         where: {
           userId_orgId: {
             userId: user.id,
@@ -169,14 +178,46 @@ async function handlePOST(request: NextRequest) {
           }
         },
         update: {
-          role
+          role,
+          ...(staffSubrole !== undefined && { staffSubrole }),
+          ...(isInitialAdmin && { isInitialAdmin: true }),
         },
         create: {
+          id: `membership-${user.id}-${orgId}-${Date.now()}`,
           userId: user.id,
           orgId,
-          role
+          role,
+          staffSubrole: staffSubrole || null,
+          isInitialAdmin,
         }
       })
+
+      // Set permissions if provided
+      if (role === 'STAFF' || role === 'ADMIN') {
+        const { setStaffPermissions, ensurePermissionsExist } = await import('@/lib/staff-permissions-db')
+        const { getStaffPermissionKeys, StaffSubrole } = await import('@/types/staff-roles')
+        
+        await ensurePermissionsExist()
+        
+        let finalPermissionKeys = permissionKeys || []
+        
+        // If ADMIN role, give all permissions
+        if (role === 'ADMIN') {
+          const { PERMISSION_DEFINITIONS } = await import('@/types/staff-roles')
+          finalPermissionKeys = Object.keys(PERMISSION_DEFINITIONS) as any[]
+        } else if (!permissionKeys && staffSubrole) {
+          // Use preset permissions based on subrole (base permissions)
+          finalPermissionKeys = getStaffPermissionKeys(staffSubrole as StaffSubrole)
+        } else if (permissionKeys && staffSubrole) {
+          // Ensure base permissions are always included
+          const basePermissions = getStaffPermissionKeys(staffSubrole as StaffSubrole)
+          finalPermissionKeys = [...new Set([...basePermissions, ...permissionKeys])]
+        }
+        
+        if (finalPermissionKeys.length > 0) {
+          await setStaffPermissions(membership.id, finalPermissionKeys, staffSubrole)
+        }
+      }
 
       // Send invitation email if requested
       if (shouldSendInvitation) {

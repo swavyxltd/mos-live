@@ -71,7 +71,6 @@ export default function GenerateReportModal({
       isOpen={isOpen} 
       onClose={onClose}
       title="Generate Monthly Report"
-      className="max-w-4xl"
     >
       <div className="space-y-6">
         {/* Year Navigation */}

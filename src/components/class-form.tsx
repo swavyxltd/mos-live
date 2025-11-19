@@ -45,17 +45,17 @@ const TIME_SLOTS = [
   '8:00 PM', '8:30 PM'
 ]
 
-// Demo staff data
-const DEMO_STAFF = [
-  { id: 'teacher-1', name: 'Moulana Omar', email: 'omar@demo.com' },
-  { id: 'teacher-2', name: 'Apa Aisha', email: 'aisha@demo.com' },
-  { id: 'teacher-3', name: 'Ahmed Hassan', email: 'ahmed@demo.com' },
-  { id: 'teacher-4', name: 'Fatima Ali', email: 'fatima@demo.com' }
-]
+interface Teacher {
+  id: string
+  name: string
+  email: string
+}
 
 export function ClassForm({ initialData, isEditing = false, onSubmit, onCancel }: ClassFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = React.useState(false)
+  const [teachers, setTeachers] = React.useState<Teacher[]>([])
+  const [isLoadingTeachers, setIsLoadingTeachers] = React.useState(false)
   const [formData, setFormData] = React.useState<ClassFormData>({
     name: initialData?.name || '',
     description: initialData?.description || '',
@@ -71,6 +71,30 @@ export function ClassForm({ initialData, isEditing = false, onSubmit, onCancel }
     monthlyFee: initialData?.monthlyFee || 0,
     feeDueDay: initialData?.feeDueDay || null
   })
+
+  // Fetch teachers on mount
+  React.useEffect(() => {
+    const fetchTeachers = async () => {
+      setIsLoadingTeachers(true)
+      try {
+        // Fetch all users (not just staff) for teacher assignment
+        const response = await fetch('/api/staff?allUsers=true')
+        if (response.ok) {
+          const data = await response.json()
+          const teacherList = data.teachers || data.map((t: any) => ({
+            id: t.id,
+            name: t.name || `${t.firstName || ''} ${t.lastName || ''}`.trim(),
+            email: t.email || ''
+          })).filter((t: Teacher) => t.name && t.id)
+          setTeachers(teacherList)
+        }
+      } catch (err) {
+      } finally {
+        setIsLoadingTeachers(false)
+      }
+    }
+    fetchTeachers()
+  }, [])
 
   const handleInputChange = (field: keyof ClassFormData, value: any) => {
     setFormData(prev => ({
@@ -161,18 +185,24 @@ export function ClassForm({ initialData, isEditing = false, onSubmit, onCancel }
           {/* Teacher Assignment */}
           <div className="space-y-2">
             <Label htmlFor="teacher">Assigned Teacher *</Label>
-            <Select value={formData.teacherId} onValueChange={(value) => handleInputChange('teacherId', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a teacher" />
-              </SelectTrigger>
-              <SelectContent>
-                {DEMO_STAFF.map((teacher) => (
-                  <SelectItem key={teacher.id} value={teacher.id}>
-                    {teacher.name} ({teacher.email})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {isLoadingTeachers ? (
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <span>Loading teachers...</span>
+              </div>
+            ) : (
+              <Select value={formData.teacherId} onValueChange={(value) => handleInputChange('teacherId', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a teacher" />
+                </SelectTrigger>
+                <SelectContent>
+                  {teachers.map((teacher) => (
+                    <SelectItem key={teacher.id} value={teacher.id}>
+                      {teacher.name} {teacher.email ? `(${teacher.email})` : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           {/* Class Capacity and Room */}

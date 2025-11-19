@@ -25,7 +25,6 @@ export function AddStudentSuccessModal({
       isOpen={isOpen}
       onClose={onClose}
       title="Student Added Successfully"
-      className="max-w-md"
     >
       <div className="space-y-6">
         {/* Success Icon and Message */}

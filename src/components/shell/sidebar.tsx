@@ -55,22 +55,23 @@ interface SidebarProps {
   }
   userRole: string
   staffSubrole?: string
+  permissions?: string[]
 }
 
 const staffNavigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: Home, permission: 'view_all_data' },
-  { name: 'Classes', href: '/classes', icon: GraduationCap, permission: 'view_all_classes' },
-  { name: 'Students', href: '/students', icon: Users, permission: 'view_all_data' },
-  { name: 'Applications', href: '/applications', icon: FileCheck, permission: 'view_applications' },
-  { name: 'Staff', href: '/staff', icon: UserCheck, permission: 'manage_staff' },
-  { name: 'Attendance', href: '/attendance', icon: ClipboardList, permission: 'mark_attendance' },
-  { name: 'Finances', href: '/finances', icon: Home, permission: 'view_invoices' },
-  { name: 'Fees', href: '/fees', icon: CreditCard, permission: 'manage_invoices' },
-  { name: 'Payments', href: '/payments', icon: FileText, permission: 'view_invoices' },
-  { name: 'Messages', href: '/messages', icon: MessageSquare, permission: 'send_messages' },
-  { name: 'Calendar', href: '/calendar', icon: Calendar, permission: 'view_calendar' },
-  { name: 'Support', href: '/support', icon: HelpCircle, permission: 'view_all_data' },
-  { name: 'Settings', href: '/settings', icon: Settings, permission: 'access_settings' },
+  { name: 'Dashboard', href: '/dashboard', icon: Home, permissionKey: 'access_dashboard' },
+  { name: 'Classes', href: '/classes', icon: GraduationCap, permissionKey: 'access_classes' },
+  { name: 'Students', href: '/students', icon: Users, permissionKey: 'access_students' },
+  { name: 'Applications', href: '/applications', icon: FileCheck, permissionKey: 'access_applications' },
+  { name: 'Staff', href: '/staff', icon: UserCheck, permissionKey: 'access_staff' },
+  { name: 'Attendance', href: '/attendance', icon: ClipboardList, permissionKey: 'access_attendance' },
+  { name: 'Finances', href: '/finances', icon: Home, permissionKey: 'access_finances' },
+  { name: 'Fees', href: '/fees', icon: CreditCard, permissionKey: 'access_fees' },
+  { name: 'Payments', href: '/payments', icon: FileText, permissionKey: 'access_payments' },
+  { name: 'Messages', href: '/messages', icon: MessageSquare, permissionKey: 'access_messages' },
+  { name: 'Calendar', href: '/calendar', icon: Calendar, permissionKey: 'access_calendar' },
+  { name: 'Support', href: '/support', icon: HelpCircle, permissionKey: 'access_support' },
+  { name: 'Settings', href: '/settings', icon: Settings, permissionKey: 'access_settings' },
 ]
 
 const ownerNavigation = [
@@ -96,7 +97,7 @@ const parentNavigation = [
   { name: 'Support', href: '/parent/support', icon: HelpCircle },
 ]
 
-export function Sidebar({ user: initialUser, org, userRole, staffSubrole }: SidebarProps) {
+export function Sidebar({ user: initialUser, org, userRole, staffSubrole, permissions }: SidebarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
   const { data: session, status } = useSession()
   
@@ -139,33 +140,45 @@ export function Sidebar({ user: initialUser, org, userRole, staffSubrole }: Side
   } else if (isParent) {
     currentNavigation = parentNavigation
   } else {
-    // For staff users, filter navigation based on permissions
-    // // Debug log
-    if (staffSubrole && userRole === 'STAFF') {
-      const permissions = useStaffPermissions({
-        id: user.id,
-        email: user.email || '',
-        name: user.name || '',
-        isSuperAdmin: user.isSuperAdmin
-      }, staffSubrole as StaffSubrole)
-      currentNavigation = staffNavigation.filter(item => {
-        // Handle special cases where multiple permissions can grant access
-        if (item.name === 'Calendar') {
-          return permissions.hasPermission('create_events') || permissions.hasPermission('view_calendar')
-        }
-        // Show appropriate dashboard based on subrole
-        if (item.name === 'Dashboard' && staffSubrole === 'FINANCE_OFFICER') {
-          return false // Hide regular dashboard for Finance Officers
-        }
-        if (item.name === 'Finances' && staffSubrole !== 'FINANCE_OFFICER' && staffSubrole !== 'ADMIN') {
-          return false // Hide finances for non-Finance Officers and non-Admins
-        }
-        return permissions.hasPermission(item.permission || 'view_all_data')
-      })
-      // ) // Debug log
+    // For staff users, filter navigation based on permissions from database
+    if (userRole === 'STAFF' || userRole === 'ADMIN') {
+      // Use permissions from database if available
+      if (permissions && permissions.length > 0) {
+        currentNavigation = staffNavigation.filter(item => {
+          return permissions.includes(item.permissionKey)
+        })
+      } else {
+        // Fallback to subrole-based permissions
+        const permissionsHook = useStaffPermissions({
+          id: user.id,
+          email: user.email || '',
+          name: user.name || '',
+          isSuperAdmin: user.isSuperAdmin
+        }, (staffSubrole || 'TEACHER') as StaffSubrole)
+        
+        currentNavigation = staffNavigation.filter(item => {
+          // Map permission key to legacy permission for backward compatibility
+          const legacyPermissionMap: Record<string, string> = {
+            'access_dashboard': 'view_all_data',
+            'access_classes': 'view_all_classes',
+            'access_students': 'view_all_data',
+            'access_applications': 'view_applications',
+            'access_staff': 'manage_staff',
+            'access_attendance': 'mark_attendance',
+            'access_finances': 'view_invoices',
+            'access_fees': 'manage_invoices',
+            'access_payments': 'view_invoices',
+            'access_messages': 'send_messages',
+            'access_calendar': 'view_calendar',
+            'access_support': 'view_all_data',
+            'access_settings': 'access_settings',
+          }
+          const legacyPermission = legacyPermissionMap[item.permissionKey] || 'view_all_data'
+          return permissionsHook.hasPermission(legacyPermission)
+        })
+      }
     } else {
       currentNavigation = staffNavigation
-      // ') // Debug log
     }
   }
 

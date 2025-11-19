@@ -82,9 +82,11 @@ interface DashboardStats {
 
 interface DashboardContentProps {
   initialStats?: DashboardStatsType | null
+  userRole?: string | null
+  staffSubrole?: string | null
 }
 
-export function DashboardContent({ initialStats }: DashboardContentProps) {
+export function DashboardContent({ initialStats, userRole, staffSubrole }: DashboardContentProps) {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
   const [isAddStudentModalOpen, setIsAddStudentModalOpen] = useState(false)
   const [isAddTeacherModalOpen, setIsAddTeacherModalOpen] = useState(false)
@@ -366,13 +368,23 @@ export function DashboardContent({ initialStats }: DashboardContentProps) {
   // Use real attendance trend data from API (no fallback demo data)
   const attendanceData = attendanceTrend
 
+  // Dashboard type is determined by subrole template, not individual permissions
+  const isTeacher = staffSubrole === 'TEACHER'
+  const isAdmin = userRole === 'ADMIN' || staffSubrole === 'ADMIN'
+
   return (
     <div className="space-y-6">
           {/* Header with Quick Actions */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Madrasah Overview</h1>
-              <p className="text-sm sm:text-base text-muted-foreground">Comprehensive insights into your Islamic education center</p>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                {isTeacher ? 'My Classes Overview' : 'Madrasah Overview'}
+              </h1>
+              <p className="text-sm sm:text-base text-muted-foreground">
+                {isTeacher 
+                  ? 'Insights and statistics for your assigned classes'
+                  : 'Comprehensive insights into your Islamic education center'}
+              </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
           <QuickAddMenu 

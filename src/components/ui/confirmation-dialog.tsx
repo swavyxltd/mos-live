@@ -101,7 +101,7 @@ export function ConfirmationDialog({
         className="fixed inset-0 flex items-center justify-center z-[51] p-4 overflow-y-auto pointer-events-none"
       >
         <div 
-          className="w-full max-w-lg my-8 pointer-events-auto"
+          className="w-[75vw] my-8 pointer-events-auto"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-md overflow-hidden">

@@ -492,12 +492,15 @@ model User {
 }
 
 model UserOrgMembership {
-  id     String @id
-  userId String
-  orgId  String
-  role   String
-  Org    Org    @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  User   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String                      @id
+  userId         String
+  orgId          String
+  role           String
+  staffSubrole   String?                     // ADMIN, TEACHER, FINANCE_OFFICER, or null for custom
+  isInitialAdmin Boolean                     @default(false)
+  Org            Org                         @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  User           User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Permissions    StaffPermissionAssignment[]
 
   @@unique([userId, orgId])
 }
@@ -508,6 +511,29 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model StaffPermission {
+  id          String                      @id
+  key         String                      @unique // e.g., 'access_dashboard', 'access_classes'
+  name        String                      // Display name
+  description String?                     // Optional description
+  category    String?                     // Group permissions (e.g., 'pages', 'actions')
+  createdAt   DateTime                    @default(now())
+  updatedAt   DateTime
+  Assignments StaffPermissionAssignment[]
+}
+
+model StaffPermissionAssignment {
+  id           String           @id
+  membershipId String
+  permissionId String
+  createdAt    DateTime         @default(now())
+  Membership   UserOrgMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  Permission   StaffPermission  @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([membershipId, permissionId])
+  @@index([membershipId])
 }
 
 model platform_settings {

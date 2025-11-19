@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
@@ -76,7 +75,8 @@ export function AddClassModal({ isOpen, onClose, onSave }: AddClassModalProps) {
   const fetchTeachers = async () => {
     setIsLoadingTeachers(true)
     try {
-      const response = await fetch('/api/staff')
+      // Fetch all users (not just staff) for teacher assignment
+      const response = await fetch('/api/staff?allUsers=true')
       if (response.ok) {
         const data = await response.json()
         const teacherList = data.teachers || data.map((t: any) => ({
@@ -204,7 +204,6 @@ export function AddClassModal({ isOpen, onClose, onSave }: AddClassModalProps) {
       isOpen={isOpen} 
       onClose={handleClose}
       title="Add New Class"
-      className="max-w-4xl"
     >
       <div className="space-y-6">
         {/* Error message */}
@@ -215,14 +214,7 @@ export function AddClassModal({ isOpen, onClose, onSave }: AddClassModalProps) {
         )}
 
         {/* Basic Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5" />
-              Class Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Class Name *</Label>
@@ -254,18 +246,10 @@ export function AddClassModal({ isOpen, onClose, onSave }: AddClassModalProps) {
                 rows={3}
               />
             </div>
-          </CardContent>
-        </Card>
+        </div>
 
         {/* Teacher Assignment */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <GraduationCap className="h-5 w-5" />
-              Teacher Assignment
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="teacher">Assigned Teacher *</Label>
               {isLoadingTeachers ? (
@@ -310,18 +294,10 @@ export function AddClassModal({ isOpen, onClose, onSave }: AddClassModalProps) {
                 />
               </div>
             </div>
-          </CardContent>
-        </Card>
+        </div>
 
         {/* Schedule */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Schedule
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <div className="space-y-4">
             <div className="space-y-2">
               <Label>Days of Week *</Label>
               <div className="flex flex-wrap gap-2">
@@ -377,18 +353,10 @@ export function AddClassModal({ isOpen, onClose, onSave }: AddClassModalProps) {
                 </Select>
               </div>
             </div>
-          </CardContent>
-        </Card>
+        </div>
 
         {/* Fees */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5" />
-              Fees
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="monthlyFee">Monthly Fee (£) *</Label>
               <Input
@@ -417,8 +385,7 @@ export function AddClassModal({ isOpen, onClose, onSave }: AddClassModalProps) {
               />
               <p className="text-xs text-gray-500">Day of the month when fees are due. Payments not received within 48 hours will be marked as late, and after 96 hours as overdue.</p>
             </div>
-          </CardContent>
-        </Card>
+        </div>
 
         {/* Actions */}
         <div className="flex items-center justify-end space-x-3 pt-4 border-t">

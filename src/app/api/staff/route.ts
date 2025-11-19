@@ -14,16 +14,59 @@ async function handleGET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { searchParams } = new URL(request.url)
+    const userId = searchParams.get('userId')
+    const orgId = searchParams.get('orgId')
+
+    // If specific user and org requested, return membership info
+    if (userId && orgId) {
+      const membership = await prisma.userOrgMembership.findUnique({
+        where: {
+          userId_orgId: {
+            userId,
+            orgId,
+          },
+        },
+        include: {
+          User: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+            },
+          },
+        },
+      })
+
+      if (!membership) {
+        return NextResponse.json({ error: 'Membership not found' }, { status: 404 })
+      }
+
+      return NextResponse.json({
+        membership: {
+          id: membership.id,
+          role: membership.role,
+          staffSubrole: membership.staffSubrole,
+          isInitialAdmin: membership.isInitialAdmin,
+          user: membership.User,
+        },
+      })
+    }
+
+    // Otherwise, get all staff members (or all users if allUsers param is set)
     const org = await getActiveOrg()
     if (!org) {
       return NextResponse.json({ error: 'No organization found' }, { status: 404 })
     }
 
-    // Get staff members (ADMIN and STAFF roles)
+    const allUsers = searchParams.get('allUsers') === 'true'
+
+    // Get members - either all users or just staff (ADMIN and STAFF roles)
     const memberships = await prisma.userOrgMembership.findMany({
       where: {
         orgId: org.id,
-        role: { in: ['ADMIN', 'STAFF'] },
+        ...(allUsers ? {} : { role: { in: ['ADMIN', 'STAFF'] } }),
         User: {
           isArchived: false
         }

@@ -1,11 +1,13 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 import { getActiveOrg, getUserRoleInOrg, getUserOrgs, setActiveOrgId } from '@/lib/org'
 import { Page } from '@/components/shell/page'
 import { StaffLayoutWrapper } from '@/components/staff-layout-wrapper'
 import { Role } from '@prisma/client'
 import { getPlatformSettings } from '@/lib/platform-settings'
+import { SIDEBAR_PAGE_PERMISSIONS, StaffPermissionKey } from '@/types/staff-roles'
 
 export default async function StaffLayout({
   children,
@@ -86,19 +88,100 @@ export default async function StaffLayout({
     redirect('/auth/signin?error=NotMember')
   }
   
-  // Set staffSubrole based on userRole
-  // ADMIN role -> ADMIN subrole
-  // STAFF role -> TEACHER subrole (default for staff)
-  // If user has staffSubrole in session, use that (from User model if stored)
+  // Get staffSubrole and permissions from database
   let staffSubrole = null
-  if (userRole === 'ADMIN') {
-    staffSubrole = 'ADMIN'
-  } else if (userRole === 'STAFF') {
-    // Check if user has staffSubrole stored (from User model if we add it later)
-    // For now, default STAFF to TEACHER instead of ADMIN
-    staffSubrole = (session.user as any)?.staffSubrole || 'TEACHER'
+  let permissions: string[] = []
+  
+  if (userRole === 'ADMIN' || userRole === 'STAFF') {
+    const { prisma } = await import('@/lib/prisma')
+    const { getStaffPermissionsFromDb } = await import('@/lib/staff-permissions-db')
+    
+    // Get membership with subrole
+    const membership = await prisma.userOrgMembership.findUnique({
+      where: {
+        userId_orgId: {
+          userId: session.user.id,
+          orgId: org.id,
+        },
+      },
+    })
+    
+    if (membership) {
+      staffSubrole = membership.staffSubrole || (userRole === 'ADMIN' ? 'ADMIN' : 'TEACHER')
+      
+      // Get permissions from database
+      permissions = await getStaffPermissionsFromDb(session.user.id, org.id)
+      
+      // For ADMIN role or initial admin, ensure they have all permissions
+      if (userRole === 'ADMIN' || membership.isInitialAdmin) {
+        // If they don't have all permissions, they should (this is a safety check)
+        const allPermissionKeys = Object.keys(SIDEBAR_PAGE_PERMISSIONS).map(
+          route => SIDEBAR_PAGE_PERMISSIONS[route]
+        ) as StaffPermissionKey[]
+        const hasAllPermissions = allPermissionKeys.every(key => permissions.includes(key))
+        if (!hasAllPermissions) {
+          // Admin should have all permissions - this shouldn't happen, but if it does, grant them
+          permissions = allPermissionKeys
+        }
+      }
+    } else {
+      staffSubrole = userRole === 'ADMIN' ? 'ADMIN' : 'TEACHER'
+    }
+    
+    // Check route permissions (only for STAFF role, ADMIN always has access)
+    if (userRole === 'STAFF' && !session.user.isSuperAdmin) {
+      const headersList = await headers()
+      const pathname = headersList.get('x-pathname') || ''
+      
+      if (pathname) {
+        // Normalize the path (remove /staff prefix if present)
+        let normalizedPath = pathname.replace(/^\/staff/, '') || '/dashboard'
+        
+        // Handle nested routes (e.g., /classes/[id], /classes/new, /staff/[id]/edit)
+        // Extract the base route (e.g., /classes from /classes/123 or /classes/new)
+        const pathSegments = normalizedPath.split('/').filter(Boolean)
+        if (pathSegments.length > 1) {
+          // Check if second segment is a UUID (likely an ID) or a known nested route
+          const secondSegment = pathSegments[1]
+          const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(secondSegment)
+          const isKnownNestedRoute = ['new', 'edit', 'create', 'update'].includes(secondSegment)
+          
+          if (isUUID || isKnownNestedRoute) {
+            // Use the base route for permission check (e.g., /classes)
+            normalizedPath = `/${pathSegments[0]}`
+          }
+        }
+        
+        // Get the required permission for this route
+        const requiredPermission = SIDEBAR_PAGE_PERMISSIONS[normalizedPath]
+        
+        // Block teachers and finance officers from accessing main dashboard
+        if (normalizedPath === '/dashboard') {
+          if (staffSubrole === 'TEACHER') {
+            redirect('/classes')
+          }
+          if (staffSubrole === 'FINANCE_OFFICER') {
+            redirect('/finances')
+          }
+        }
+        
+        // Only check if this route requires a specific permission
+        // Dashboard is not accessible to teachers/finance officers (handled above)
+        if (requiredPermission && normalizedPath !== '/dashboard') {
+          if (!permissions.includes(requiredPermission)) {
+            // User doesn't have permission for this route - redirect based on subrole
+            if (staffSubrole === 'TEACHER') {
+              redirect('/classes')
+            } else if (staffSubrole === 'FINANCE_OFFICER') {
+              redirect('/finances')
+            } else {
+              redirect('/dashboard')
+            }
+          }
+        }
+      }
+    }
   }
-  // PARENT role doesn't use staffSubrole
   
   // Ensure org has all required fields for Page component
   // slug is optional - if missing, use org name as fallback
@@ -114,6 +197,7 @@ export default async function StaffLayout({
       org={orgForPage}
       userRole={userRole as string}
       staffSubrole={staffSubrole}
+      permissions={permissions}
       title={staffSubrole === 'FINANCE_OFFICER' ? "Finance Dashboard" : "Staff Portal"}
       breadcrumbs={[{ label: staffSubrole === 'FINANCE_OFFICER' ? 'Finance Dashboard' : 'Dashboard' }]}
     >
