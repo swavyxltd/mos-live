@@ -75,8 +75,8 @@ export function AddClassModal({ isOpen, onClose, onSave }: AddClassModalProps) {
   const fetchTeachers = async () => {
     setIsLoadingTeachers(true)
     try {
-      // Fetch all users (not just staff) for teacher assignment
-      const response = await fetch('/api/staff?allUsers=true')
+      // Fetch only staff members for teacher assignment
+      const response = await fetch('/api/staff')
       if (response.ok) {
         const data = await response.json()
         const teacherList = data.teachers || data.map((t: any) => ({

@@ -5,6 +5,8 @@ import { authOptions } from '@/lib/auth'
 import { requireRole } from '@/lib/roles'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
+import { prisma } from '@/lib/prisma'
+import { getActiveOrg } from '@/lib/org'
 
 async function handlePOST(request: NextRequest) {
   try {
@@ -24,150 +26,91 @@ async function handlePOST(request: NextRequest) {
     const body = await request.json()
     const { startDate, endDate, classId } = body
 
-    // Demo payment data - in a real app, this would come from your database
-    const allPayments = [
-      // October 2025 payments
-      {
-        studentName: 'Ahmed Hassan',
-        parentName: 'Mohammed Hassan',
-        parentEmail: 'mohammed.hassan@example.com',
-        parentPhone: '+44 7700 900123',
-        paymentMethod: 'Bank Transfer',
-        paymentDate: '2025-10-01',
-        amount: 50.00,
-        class: 'Quran Recitation - Level 1'
-      },
-      {
-        studentName: 'Fatima Ali',
-        parentName: 'Aisha Ali',
-        parentEmail: 'aisha.ali@example.com',
-        parentPhone: '+44 7700 900124',
-        paymentMethod: 'Cash',
-        paymentDate: '2025-10-02',
-        amount: 50.00,
-        class: 'Islamic Studies - Level 2'
-      },
-      {
-        studentName: 'Yusuf Patel',
-        parentName: 'Priya Patel',
-        parentEmail: 'priya.patel@example.com',
-        parentPhone: '+44 7700 900125',
-        paymentMethod: 'Card Payment',
-        paymentDate: '2025-10-03',
-        amount: 25.00,
-        class: 'Arabic Grammar'
-      },
-      {
-        studentName: 'Aisha Khan',
-        parentName: 'Sarah Khan',
-        parentEmail: 'sarah.khan@example.com',
-        parentPhone: '+44 7700 900126',
-        paymentMethod: 'Bank Transfer',
-        paymentDate: '2025-10-04',
-        amount: 50.00,
-        class: 'Quran Recitation - Level 1'
-      },
-      {
-        studentName: 'Omar Ahmed',
-        parentName: 'Hassan Ahmed',
-        parentEmail: 'hassan.ahmed@example.com',
-        parentPhone: '+44 7700 900127',
-        paymentMethod: 'Cash',
-        paymentDate: '2025-10-05',
-        amount: 50.00,
-        class: 'Islamic Studies - Level 2'
-      },
-      {
-        studentName: 'Maryam Ali',
-        parentName: 'Fatima Ali',
-        parentEmail: 'fatima.ali@example.com',
-        parentPhone: '+44 7700 900128',
-        paymentMethod: 'Card Payment',
-        paymentDate: '2025-10-06',
-        amount: 50.00,
-        class: 'Arabic Grammar'
-      },
-      {
-        studentName: 'Ibrahim Khan',
-        parentName: 'Mohammed Khan',
-        parentEmail: 'mohammed.khan@example.com',
-        parentPhone: '+44 7700 900129',
-        paymentMethod: 'Bank Transfer',
-        paymentDate: '2025-10-07',
-        amount: 50.00,
-        class: 'Quran Recitation - Level 1'
-      },
-      {
-        studentName: 'Zainab Patel',
-        parentName: 'Ahmed Patel',
-        parentEmail: 'ahmed.patel@example.com',
-        parentPhone: '+44 7700 900130',
-        paymentMethod: 'Cash',
-        paymentDate: '2025-10-08',
-        amount: 50.00,
-        class: 'Islamic Studies - Level 2'
-      },
-      // September 2025 payments
-      {
-        studentName: 'Hassan Ali',
-        parentName: 'Mohammed Ali',
-        parentEmail: 'mohammed.ali@example.com',
-        parentPhone: '+44 7700 900131',
-        paymentMethod: 'Bank Transfer',
-        paymentDate: '2025-09-15',
-        amount: 50.00,
-        class: 'Quran Recitation - Level 1'
-      },
-      {
-        studentName: 'Amina Khan',
-        parentName: 'Sarah Khan',
-        parentEmail: 'sarah.khan@example.com',
-        parentPhone: '+44 7700 900132',
-        paymentMethod: 'Card Payment',
-        paymentDate: '2025-09-20',
-        amount: 50.00,
-        class: 'Islamic Studies - Level 2'
-      },
-      // August 2025 payments
-      {
-        studentName: 'Khalid Ahmed',
-        parentName: 'Omar Ahmed',
-        parentEmail: 'omar.ahmed@example.com',
-        parentPhone: '+44 7700 900133',
-        paymentMethod: 'Cash',
-        paymentDate: '2025-08-10',
-        amount: 50.00,
-        class: 'Arabic Grammar'
-      },
-      {
-        studentName: 'Layla Patel',
-        parentName: 'Priya Patel',
-        parentEmail: 'priya.patel@example.com',
-        parentPhone: '+44 7700 900134',
-        paymentMethod: 'Bank Transfer',
-        paymentDate: '2025-08-25',
-        amount: 50.00,
-        class: 'Quran Recitation - Level 1'
-      }
-    ]
+    const org = await getActiveOrg()
+    if (!org) {
+      return NextResponse.json({ error: 'No organization found' }, { status: 404 })
+    }
 
-    // Filter payments based on date range if provided
-    let filteredPayments = allPayments
+    // Fetch payments from database
+    const whereClause: any = {
+      orgId: org.id,
+      status: 'SUCCEEDED'
+    }
+
     if (startDate && endDate) {
-      filteredPayments = allPayments.filter(payment => {
-        const paymentDate = new Date(payment.paymentDate)
-        const start = new Date(startDate)
-        const end = new Date(endDate)
-        return paymentDate >= start && paymentDate <= end
-      })
+      whereClause.createdAt = {
+        gte: new Date(startDate),
+        lte: new Date(endDate)
+      }
     }
 
-    // Filter by class if provided
     if (classId) {
-      filteredPayments = filteredPayments.filter(payment => 
-        payment.class.toLowerCase().includes(classId.toLowerCase())
-      )
+      whereClause.Invoice = {
+        Student: {
+          StudentClass: {
+            some: {
+              classId: classId
+            }
+          }
+        }
+      }
     }
+
+    const payments = await prisma.payment.findMany({
+      where: whereClause,
+      include: {
+        Invoice: {
+          include: {
+            Student: {
+              include: {
+                User: {
+                  select: {
+                    name: true,
+                    email: true,
+                    phone: true
+                  }
+                },
+                StudentClass: {
+                  include: {
+                    Class: {
+                      select: {
+                        name: true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    })
+
+    // Transform payments to match expected format
+    const allPayments = payments.map(payment => {
+      const student = payment.Invoice?.Student
+      const parent = student?.User
+      const classNames = student?.StudentClass?.map(sc => sc.Class.name).join(', ') || 'N/A'
+      
+      return {
+        studentName: student ? `${student.firstName} ${student.lastName}` : 'Unknown',
+        parentName: parent?.name || 'Unknown',
+        parentEmail: parent?.email || '',
+        parentPhone: parent?.phone || '',
+        paymentMethod: payment.method === 'STRIPE' ? 'Card Payment' : payment.method === 'BANK_TRANSFER' ? 'Bank Transfer' : payment.method === 'CASH' ? 'Cash' : payment.method,
+        paymentDate: payment.createdAt.toISOString().split('T')[0],
+        amount: payment.amountP / 100, // Convert from pence to pounds
+        class: classNames
+      }
+    })
+
+    // All payments now come from database - no hardcoded data
+
+    // Payments are already filtered by the database query
+    const filteredPayments = allPayments
 
     // Generate CSV content
     const csvHeaders = [

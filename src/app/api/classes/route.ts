@@ -132,7 +132,35 @@ async function handleGET(request: NextRequest) {
     orderBy: { name: 'asc' }
   })
   
-  return NextResponse.json(classes)
+  // Calculate actual attendance rates for each class
+  const now = new Date()
+  const weekStart = new Date(now)
+  weekStart.setDate(now.getDate() - now.getDay()) // Start of week (Sunday)
+  weekStart.setHours(0, 0, 0, 0)
+  
+  const classesWithAttendance = await Promise.all(classes.map(async (cls) => {
+    // Get attendance records for this class in the current week
+    const attendanceRecords = await prisma.attendance.findMany({
+      where: {
+        classId: cls.id,
+        date: { gte: weekStart }
+      },
+      select: { status: true }
+    })
+    
+    const presentCount = attendanceRecords.filter(a => a.status === 'PRESENT' || a.status === 'LATE').length
+    const totalRecords = attendanceRecords.length
+    const attendanceRate = totalRecords > 0
+      ? Math.round((presentCount / totalRecords) * 100)
+      : 0
+    
+    return {
+      ...cls,
+      attendance: attendanceRate
+    }
+  }))
+  
+  return NextResponse.json(classesWithAttendance)
 }
 
 export const GET = withRateLimit(handleGET)

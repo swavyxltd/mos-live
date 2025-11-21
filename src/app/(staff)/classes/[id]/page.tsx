@@ -1,23 +1,4 @@
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { getActiveOrg } from '@/lib/org'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { 
-  ArrowLeft, 
-  Edit, 
-  Users, 
-  Calendar, 
-  Clock, 
-  MapPin, 
-  BookOpen, 
-  User,
-  Mail,
-  Trash2
-} from 'lucide-react'
-import Link from 'next/link'
+import { redirect } from 'next/navigation'
 
 interface ClassDetailsPageProps {
   params: {
@@ -26,6 +7,8 @@ interface ClassDetailsPageProps {
 }
 
 export default async function ClassDetailsPage({ params }: ClassDetailsPageProps) {
+  // Redirect to classes page - viewing is now done via modal
+  redirect('/classes')
   const session = await getServerSession(authOptions)
   const org = await getActiveOrg()
   

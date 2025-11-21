@@ -20,6 +20,33 @@ export default async function AttendancePage() {
   fourWeeksAgo.setDate(now.getDate() - 28) // 4 weeks ago
   fourWeeksAgo.setHours(0, 0, 0, 0)
   
+  // Get actual student counts per class from database
+  const classesWithStudentCounts = await prisma.class.findMany({
+    where: {
+      orgId: org.id,
+      isArchived: false
+    },
+    select: {
+      id: true,
+      _count: {
+        select: {
+          StudentClass: {
+            where: {
+              Student: {
+                isArchived: false
+              }
+            }
+          }
+        }
+      }
+    }
+  })
+  
+  const classStudentCounts = new Map<string, number>()
+  classesWithStudentCounts.forEach(cls => {
+    classStudentCounts.set(cls.id, cls._count.StudentClass)
+  })
+  
   const attendanceRecords = await prisma.attendance.findMany({
     where: {
       orgId: org.id,
@@ -62,21 +89,21 @@ export default async function AttendancePage() {
     const key = `${classId}-${dateKey}`
     
     if (!acc[key]) {
+      // Use actual student count from database, not attendance record count
+      const actualStudentCount = classStudentCounts.get(classId) || 0
       acc[key] = {
         id: key,
         classId: classId,
         name: record.Class?.name || 'No Class',
         teacher: record.Class?.User?.name || 'No Teacher',
         date: record.date,
-        totalStudents: 0,
+        totalStudents: actualStudentCount, // Use actual enrolled student count
         present: 0,
         absent: 0,
         late: 0,
         students: []
       }
     }
-    
-    acc[key].totalStudents++
     if (record.status === 'PRESENT') {
       acc[key].present++
     } else if (record.status === 'ABSENT') {

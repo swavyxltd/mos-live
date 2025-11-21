@@ -287,6 +287,25 @@ model Org {
   SupportTicket        SupportTicket[]
   Term                 Term[]
   UserOrgMembership    UserOrgMembership[]
+  GiftAidSubmission    GiftAidSubmission[]
+}
+
+model GiftAidSubmission {
+  id            String   @id @default(cuid())
+  orgId         String
+  generatedById String
+  startDate     DateTime
+  endDate       DateTime
+  totalAmount   Float
+  totalCount    Int
+  filename      String
+  createdAt     DateTime @default(now())
+  Org           Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  GeneratedBy   User     @relation(fields: [generatedById], references: [id])
+
+  @@index([orgId])
+  @@index([generatedById])
+  @@index([createdAt])
 }
 
 model ParentBillingProfile {
@@ -465,6 +484,11 @@ model User {
   image                  String?
   phone                  String?
   password               String?
+  address                String?
+  postcode               String?
+  title                  String?                 // Title (Mr, Mrs, Miss, Ms, Dr, etc.) for Gift Aid
+  giftAidStatus          String?                 // 'YES', 'NO', 'NOT_SURE'
+  giftAidDeclaredAt      DateTime?
   isSuperAdmin           Boolean                 @default(false)
   isArchived             Boolean                 @default(false)
   archivedAt             DateTime?
@@ -489,6 +513,7 @@ model User {
   SupportTicket          SupportTicket[]
   SupportTicketResponse  SupportTicketResponse[]
   UserOrgMembership      UserOrgMembership[]
+      GiftAidSubmission      GiftAidSubmission[]
 }
 
 model UserOrgMembership {

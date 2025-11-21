@@ -20,26 +20,19 @@ export default async function ClassesPage() {
       orgId: org.id,
       isArchived: false
     },
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      schedule: true,
-      teacherId: true,
-      monthlyFeeP: true,
-      createdAt: true,
+    include: {
       User: {
         select: { name: true, email: true }
       },
       StudentClass: {
-        include: {
-          Student: {
-            select: { firstName: true, lastName: true, isArchived: true }
-          }
-        },
         where: {
           Student: {
             isArchived: false
+          }
+        },
+        include: {
+          Student: {
+            select: { firstName: true, lastName: true, isArchived: true }
           }
         }
       },
@@ -58,5 +51,19 @@ export default async function ClassesPage() {
     orderBy: { createdAt: 'desc' }
   })
 
-  return <ClassesPageClient classes={classes} />
+  // Transform to match expected format
+  const filteredClasses = classes.map(cls => ({
+    id: cls.id,
+    name: cls.name,
+    description: cls.description,
+    schedule: cls.schedule,
+    teacherId: cls.teacherId,
+    monthlyFeeP: cls.monthlyFeeP,
+    createdAt: cls.createdAt,
+    User: cls.User,
+    StudentClass: cls.StudentClass,
+    _count: cls._count
+  }))
+
+  return <ClassesPageClient classes={filteredClasses} />
 }

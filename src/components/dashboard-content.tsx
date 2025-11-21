@@ -225,20 +225,22 @@ export function DashboardContent({ initialStats, userRole, staffSubrole }: Dashb
 
   const fetchTopPerformingClasses = async () => {
     try {
-      const response = await fetch('/api/classes')
+      const response = await fetch('/api/classes', {
+        cache: 'no-store' // Always fetch fresh data
+      })
       if (response.ok) {
-        const classesData = await response.json()
-        const classes = classesData.classes || classesData || []
+        const classes = await response.json()
+        // API returns array directly, not wrapped in classes property
         
         // Get classes with student counts and basic info
-        const classesWithInfo = classes
+        const classesWithInfo = (Array.isArray(classes) ? classes : [])
           .filter((cls: any) => cls._count?.StudentClass > 0)
           .map((cls: any) => ({
             id: cls.id,
             name: cls.name,
             teacher: cls.User?.name || cls.User?.email || 'Unassigned',
             students: cls._count?.StudentClass || 0,
-            attendance: 95 // Default attendance - can be calculated from actual data later
+            attendance: cls.attendance || 0 // Use calculated attendance from API
           }))
           .sort((a: any, b: any) => b.students - a.students) // Sort by student count
           .slice(0, 5)

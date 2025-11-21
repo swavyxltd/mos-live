@@ -74,7 +74,8 @@ export default async function PaymentsPage() {
         },
         orderBy: {
           month: 'desc'
-        }
+        },
+        take: 1000 // Get all records (increase if needed)
       }
     },
     orderBy: { name: 'asc' }
@@ -82,15 +83,8 @@ export default async function PaymentsPage() {
 
   // Transform classes with payment statistics
   const classesWithStats = classes.map(cls => {
-    // Get payment records for current and recent months (last 6 months)
-    const sixMonthsAgo = new Date(now)
-    sixMonthsAgo.setMonth(now.getMonth() - 6)
-    const sixMonthsAgoStr = `${sixMonthsAgo.getFullYear()}-${String(sixMonthsAgo.getMonth() + 1).padStart(2, '0')}`
-    
-    const recentRecords = cls.MonthlyPaymentRecord.filter(record => {
-      // Include records from last 6 months or any unpaid records
-      return record.month >= sixMonthsAgoStr || record.status !== 'PAID'
-    })
+    // Include all payment records (no filtering by date)
+    const recentRecords = cls.MonthlyPaymentRecord
 
     // Update payment statuses based on due dates before calculating stats
     const updatedRecords = recentRecords.map(record => {

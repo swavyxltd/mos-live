@@ -6,6 +6,7 @@ import { Plus } from 'lucide-react'
 import { ClassesList } from '@/components/classes-list'
 import { RestrictedAction } from '@/components/restricted-action'
 import { AddClassModal } from '@/components/add-class-modal'
+import { ClassDetailModal } from '@/components/class-detail-modal'
 import { useRouter } from 'next/navigation'
 
 interface Class {
@@ -38,12 +39,28 @@ interface ClassesPageClientProps {
 
 export function ClassesPageClient({ classes }: ClassesPageClientProps) {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [selectedClassId, setSelectedClassId] = useState<string | null>(null)
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const router = useRouter()
 
   const handleAddClass = (classData: any) => {
     // Refresh the page to show the new class
     router.refresh()
     setIsAddModalOpen(false)
+  }
+
+  const handleClassClick = (classId: string) => {
+    setSelectedClassId(classId)
+    setIsDetailModalOpen(true)
+  }
+
+  const handleCloseDetailModal = () => {
+    setIsDetailModalOpen(false)
+    setSelectedClassId(null)
+  }
+
+  const handleClassUpdate = () => {
+    router.refresh()
   }
 
   return (
@@ -63,12 +80,19 @@ export function ClassesPageClient({ classes }: ClassesPageClientProps) {
         </RestrictedAction>
       </div>
 
-      <ClassesList classes={classes} />
+      <ClassesList classes={classes} onClassClick={handleClassClick} />
 
       <AddClassModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onSave={handleAddClass}
+      />
+
+      <ClassDetailModal
+        classId={selectedClassId}
+        isOpen={isDetailModalOpen}
+        onClose={handleCloseDetailModal}
+        onClassUpdate={handleClassUpdate}
       />
     </div>
   )

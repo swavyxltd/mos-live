@@ -11,7 +11,8 @@ import {
   HelpCircle,
   Users,
   ClipboardList,
-  MessageSquare
+  MessageSquare,
+  Gift
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -35,6 +36,7 @@ const navigation = [
   { name: 'Announcements', href: '/parent/announcements', icon: MessageSquare },
   { name: 'Attendance', href: '/parent/attendance', icon: ClipboardList },
   { name: 'Payments', href: '/parent/payments', icon: CreditCard },
+  { name: 'Gift Aid', href: '/parent/gift-aid', icon: Gift },
   { name: 'Calendar', href: '/parent/calendar', icon: Calendar },
   { name: 'Support', href: '/parent/support', icon: HelpCircle },
 ]

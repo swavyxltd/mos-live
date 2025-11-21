@@ -37,7 +37,8 @@ import {
   HeadphonesIcon,
   Search,
   Moon,
-  Sun
+  Sun,
+  Receipt
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -68,6 +69,7 @@ const staffNavigation = [
   { name: 'Finances', href: '/finances', icon: Home, permissionKey: 'access_finances' },
   { name: 'Fees', href: '/fees', icon: CreditCard, permissionKey: 'access_fees' },
   { name: 'Payments', href: '/payments', icon: FileText, permissionKey: 'access_payments' },
+  { name: 'Gift Aid', href: '/gift-aid', icon: Receipt, permissionKey: 'access_payments' },
   { name: 'Messages', href: '/messages', icon: MessageSquare, permissionKey: 'access_messages' },
   { name: 'Calendar', href: '/calendar', icon: Calendar, permissionKey: 'access_calendar' },
   { name: 'Support', href: '/support', icon: HelpCircle, permissionKey: 'access_support' },

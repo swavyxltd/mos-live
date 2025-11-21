@@ -69,6 +69,33 @@ interface PaymentsPageClientProps {
 }
 
 export function PaymentsPageClient({ classes }: PaymentsPageClientProps) {
+  // Get current month in YYYY-MM format
+  const getCurrentMonth = () => {
+    const now = new Date()
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  }
+
+  // Get unique months from all payment records across all classes
+  const getAllUniqueMonthsFromProps = () => {
+    const allMonths = new Set<string>()
+    classes.forEach(cls => {
+      cls.paymentRecords.forEach(record => {
+        allMonths.add(record.month)
+      })
+    })
+    return Array.from(allMonths).sort().reverse()
+  }
+
+  // Get initial month filter - use current month if available, otherwise use first available month
+  const getInitialMonth = () => {
+    const currentMonth = getCurrentMonth()
+    const availableMonths = getAllUniqueMonthsFromProps()
+    if (availableMonths.includes(currentMonth)) {
+      return currentMonth
+    }
+    return availableMonths.length > 0 ? availableMonths[0] : 'all'
+  }
+
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null)
   const [localClasses, setLocalClasses] = useState(classes)
   const [markPaidModalOpen, setMarkPaidModalOpen] = useState(false)
@@ -79,7 +106,9 @@ export function PaymentsPageClient({ classes }: PaymentsPageClientProps) {
   const [editingNotes, setEditingNotes] = useState<string>('')
   const [isMarkingPaid, setIsMarkingPaid] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const [monthFilter, setMonthFilter] = useState<string>('all')
+  const initialMonth = getInitialMonth()
+  const [monthFilter, setMonthFilter] = useState<string>(initialMonth)
+  const [overviewMonthFilter, setOverviewMonthFilter] = useState<string>(initialMonth)
   const [selectedStudent, setSelectedStudent] = useState<any>(null)
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false)
 
@@ -87,12 +116,45 @@ export function PaymentsPageClient({ classes }: PaymentsPageClientProps) {
     ? localClasses.find(c => c.id === selectedClassId) 
     : null
 
-  // Get unique months from payment records
+  // Get unique months from all payment records across all classes
+  const getAllUniqueMonths = () => {
+    const allMonths = new Set<string>()
+    localClasses.forEach(cls => {
+      cls.paymentRecords.forEach(record => {
+        allMonths.add(record.month)
+      })
+    })
+    return Array.from(allMonths).sort().reverse()
+  }
+
+  // Get unique months from payment records for selected class
   const getUniqueMonths = () => {
     if (!selectedClass) return []
     const months = selectedClass.paymentRecords.map(r => r.month)
     const unique = Array.from(new Set(months)).sort().reverse()
     return unique
+  }
+
+  // Filter classes by month for overview stats
+  const getFilteredClassesForOverview = () => {
+    if (overviewMonthFilter === 'all') return localClasses
+    
+    return localClasses.map(cls => {
+      const filteredRecords = cls.paymentRecords.filter(r => r.month === overviewMonthFilter)
+      
+      // Recalculate stats based on filtered records
+      const paid = filteredRecords.filter(r => r.status === 'PAID').length
+      const late = filteredRecords.filter(r => r.status === 'LATE').length
+      const overdue = filteredRecords.filter(r => r.status === 'OVERDUE').length
+      
+      return {
+        ...cls,
+        paid,
+        late,
+        overdue,
+        paymentRecords: filteredRecords
+      }
+    })
   }
 
   // Filter payment records by month
@@ -325,18 +387,42 @@ export function PaymentsPageClient({ classes }: PaymentsPageClientProps) {
 
   // Overview: Show class tiles
   if (!selectedClassId) {
+    const filteredClasses = getFilteredClassesForOverview()
+    
     return (
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--foreground)]">Payments</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Manage payments for students by class. Click on a class to view payment records.
-          </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-[var(--foreground)]">Payments</h1>
+            <p className="mt-1 text-sm text-gray-500">
+              Manage payments for students by class. Click on a class to view payment records.
+            </p>
+          </div>
+          
+          {/* Month Filter */}
+          <div className="flex items-center gap-2">
+            <Label htmlFor="overview-month-filter" className="text-sm text-gray-600 whitespace-nowrap">
+              Filter by month:
+            </Label>
+            <Select value={overviewMonthFilter} onValueChange={setOverviewMonthFilter}>
+              <SelectTrigger id="overview-month-filter" className="w-[180px] h-9">
+                <SelectValue placeholder="All months" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All months</SelectItem>
+                {getAllUniqueMonths().map((month) => (
+                  <SelectItem key={month} value={month}>
+                    {formatMonth(month)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Class Payment Tiles */}
-        {classes.length === 0 ? (
+        {filteredClasses.length === 0 ? (
           <Card>
             <CardContent className="py-12">
               <div className="text-center">
@@ -350,7 +436,7 @@ export function PaymentsPageClient({ classes }: PaymentsPageClientProps) {
           </Card>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-            {classes.map((classItem) => (
+            {filteredClasses.map((classItem) => (
               <Card 
                 key={classItem.id} 
                 className="hover:shadow-lg transition-shadow cursor-pointer"

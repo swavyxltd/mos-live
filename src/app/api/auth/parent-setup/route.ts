@@ -12,6 +12,7 @@ async function handlePOST(request: NextRequest) {
     const {
       token,
       password,
+      parentTitle,
       parentName,
       parentPhone,
       emergencyContact,
@@ -20,12 +21,22 @@ async function handlePOST(request: NextRequest) {
       studentDob,
       studentAllergies,
       studentMedicalNotes,
-      paymentMethod
+      paymentMethod,
+      parentAddress,
+      parentPostcode,
+      giftAidStatus
     } = body
 
-    if (!token || !password || !parentName || !paymentMethod) {
+    if (!token || !password || !parentName || !paymentMethod || !giftAidStatus) {
       return NextResponse.json(
-        { error: 'Missing required fields: token, password, parentName, paymentMethod' },
+        { error: 'Missing required fields: token, password, parentName, paymentMethod, giftAidStatus' },
+        { status: 400 }
+      )
+    }
+
+    if (giftAidStatus === 'YES' && (!parentAddress || !parentPostcode)) {
+      return NextResponse.json(
+        { error: 'Address and postcode are required when selecting Gift Aid' },
         { status: 400 }
       )
     }
@@ -39,6 +50,7 @@ async function handlePOST(request: NextRequest) {
     }
 
     // Sanitize and validate inputs
+    const sanitizedParentTitle = parentTitle ? sanitizeText(parentTitle, 10) : null // Max 10 chars for title (Mr, Mrs, etc.)
     const sanitizedParentName = sanitizeText(parentName, MAX_STRING_LENGTHS.name)
     const sanitizedParentPhone = parentPhone ? sanitizeText(parentPhone, MAX_STRING_LENGTHS.phone) : null
     const sanitizedStudentFirstName = studentFirstName ? sanitizeText(studentFirstName, MAX_STRING_LENGTHS.name) : null
@@ -127,13 +139,22 @@ async function handlePOST(request: NextRequest) {
         where: { email: invitation.parentEmail.toLowerCase() }
       })
 
+      // Sanitize Gift Aid fields
+      const sanitizedAddress = parentAddress ? sanitizeText(parentAddress, MAX_STRING_LENGTHS.text) : null
+      const sanitizedPostcode = parentPostcode ? sanitizeText(parentPostcode.toUpperCase().trim(), 10) : null
+
       if (!parentUser) {
         parentUser = await tx.user.create({
           data: {
             email: invitation.parentEmail.toLowerCase(),
             name: sanitizedParentName,
             phone: sanitizedParentPhone,
-            password: hashedPassword
+            password: hashedPassword,
+            title: sanitizedParentTitle,
+            address: sanitizedAddress,
+            postcode: sanitizedPostcode,
+            giftAidStatus: giftAidStatus,
+            giftAidDeclaredAt: new Date()
           }
         })
       } else {
@@ -143,7 +164,12 @@ async function handlePOST(request: NextRequest) {
           data: {
             name: sanitizedParentName,
             phone: sanitizedParentPhone,
-            password: hashedPassword
+            password: hashedPassword,
+            title: sanitizedParentTitle,
+            address: sanitizedAddress,
+            postcode: sanitizedPostcode,
+            giftAidStatus: giftAidStatus,
+            giftAidDeclaredAt: new Date()
           }
         })
       }

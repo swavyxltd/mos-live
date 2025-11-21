@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 interface InvitationData {
   invitation: {
@@ -63,6 +64,7 @@ function ParentSetupForm() {
   // Form data
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [parentTitle, setParentTitle] = useState('')
   const [parentName, setParentName] = useState('')
   const [parentPhone, setParentPhone] = useState('')
   const [emergencyContact, setEmergencyContact] = useState('')
@@ -72,6 +74,9 @@ function ParentSetupForm() {
   const [studentAllergies, setStudentAllergies] = useState('')
   const [studentMedicalNotes, setStudentMedicalNotes] = useState('')
   const [paymentMethod, setPaymentMethod] = useState<string>('')
+  const [parentAddress, setParentAddress] = useState('')
+  const [parentPostcode, setParentPostcode] = useState('')
+  const [giftAidStatus, setGiftAidStatus] = useState<string>('')
 
   useEffect(() => {
     if (!token) {
@@ -135,10 +140,20 @@ function ParentSetupForm() {
     setStep(3)
   }
 
-  const handleStep3Submit = async (e: React.FormEvent) => {
+  const handleStep3Submit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!paymentMethod) {
       setError('Please select a payment method')
+      return
+    }
+    setError('')
+    setStep(4)
+  }
+
+  const handleStep4Submit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!giftAidStatus) {
+      setError('Please select a Gift Aid status')
       return
     }
 
@@ -152,6 +167,7 @@ function ParentSetupForm() {
         body: JSON.stringify({
           token,
           password,
+          parentTitle: parentTitle || null,
           parentName,
           parentPhone,
           emergencyContact,
@@ -160,7 +176,10 @@ function ParentSetupForm() {
           studentDob: studentDob || null,
           studentAllergies: studentAllergies || null,
           studentMedicalNotes: studentMedicalNotes || null,
-          paymentMethod
+          paymentMethod,
+          parentAddress,
+          parentPostcode,
+          giftAidStatus
         })
       })
 
@@ -238,20 +257,20 @@ function ParentSetupForm() {
           <CardHeader className="text-center">
             <CardTitle className="text-xl">Welcome to {invitationData.org.name}</CardTitle>
             <CardDescription>
-              Complete your account setup in 3 simple steps
+              Complete your account setup in 4 simple steps
             </CardDescription>
           </CardHeader>
           <CardContent>
             {/* Progress indicator */}
             <div className="mb-6 flex items-center justify-between">
-              {[1, 2, 3].map((s) => (
+              {[1, 2, 3, 4].map((s) => (
                 <div key={s} className="flex items-center flex-1">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                     step >= s ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-400'
                   }`}>
                     {s}
                   </div>
-                  {s < 3 && (
+                  {s < 4 && (
                     <div className={`flex-1 h-0.5 mx-2 ${
                       step > s ? 'bg-neutral-900' : 'bg-neutral-200'
                     }`} />
@@ -377,6 +396,23 @@ function ParentSetupForm() {
                   <div className="pt-4 border-t border-neutral-200">
                     <h3 className="text-lg font-semibold text-neutral-900 mb-4">Parent Information</h3>
                     <div className="flex flex-col gap-4">
+                      <div className="flex flex-col gap-2">
+                        <Label htmlFor="parentTitle">Title (Optional)</Label>
+                        <Select value={parentTitle} onValueChange={setParentTitle}>
+                          <SelectTrigger id="parentTitle">
+                            <SelectValue placeholder="Select title" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">None</SelectItem>
+                            <SelectItem value="Mr">Mr</SelectItem>
+                            <SelectItem value="Mrs">Mrs</SelectItem>
+                            <SelectItem value="Miss">Miss</SelectItem>
+                            <SelectItem value="Ms">Ms</SelectItem>
+                            <SelectItem value="Dr">Dr</SelectItem>
+                            <SelectItem value="Prof">Prof</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                       <div className="flex flex-col gap-2">
                         <Label htmlFor="parentName">Parent Name *</Label>
                         <div className="relative">
@@ -511,9 +547,122 @@ function ParentSetupForm() {
                     >
                       Back
                     </Button>
+                    <Button type="submit" className="flex-1">
+                      Continue
+                    </Button>
+                  </div>
+                </div>
+              </form>
+            )}
+
+            {/* Step 4: Gift Aid Declaration */}
+            {step === 4 && (
+              <form onSubmit={handleStep4Submit}>
+                <div className="flex flex-col gap-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-neutral-900 mb-2">Gift Aid Declaration</h3>
+                    <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <h4 className="font-semibold text-blue-900 mb-2">What is Gift Aid?</h4>
+                      <p className="text-sm text-blue-800 mb-2">
+                        Gift Aid allows the madrasah to claim back 25% of the tax you've already paid on your payments. 
+                        This means for every £100 you pay, the madrasah can claim an extra £25 from HMRC at no extra cost to you.
+                      </p>
+                      <p className="text-sm text-blue-800">
+                        By selecting "Yes", you're confirming you're a UK taxpayer and want the madrasah to claim Gift Aid on your payments. 
+                        This helps support the madrasah's educational mission.
+                      </p>
+                    </div>
+                    
+                    <div className="mb-4">
+                      <Label htmlFor="parentAddress">Address *</Label>
+                      <Input
+                        id="parentAddress"
+                        type="text"
+                        value={parentAddress}
+                        onChange={(e) => setParentAddress(e.target.value)}
+                        required
+                        placeholder="House name or number and street"
+                        className="mt-1"
+                      />
+                    </div>
+                    
+                    <div className="mb-4">
+                      <Label htmlFor="parentPostcode">Postcode *</Label>
+                      <Input
+                        id="parentPostcode"
+                        type="text"
+                        value={parentPostcode}
+                        onChange={(e) => setParentPostcode(e.target.value.toUpperCase().trim())}
+                        required
+                        placeholder="e.g., M1 1AA"
+                        className="mt-1"
+                        maxLength={10}
+                      />
+                    </div>
+
+                    <div className="mb-4">
+                      <Label className="mb-3 block">
+                        <span className="text-sm font-semibold text-neutral-900 uppercase">SELECT YOUR GIFT AID STATUS</span>
+                        <span className="text-xs text-green-600 ml-2 uppercase">*REQUIRED FIELD</span>
+                      </Label>
+                      <div className="space-y-3">
+                        <label className="flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer hover:bg-neutral-50 transition-colors">
+                          <input
+                            type="radio"
+                            name="giftAidStatus"
+                            value="YES"
+                            checked={giftAidStatus === 'YES'}
+                            onChange={(e) => setGiftAidStatus(e.target.value)}
+                            className="mt-1 w-4 h-4 text-neutral-900 border-neutral-300 focus:ring-neutral-900"
+                          />
+                          <span className="text-sm font-medium text-neutral-900 uppercase">
+                            I AM A UK TAXPAYER, I WOULD LIKE TO GIFT AID TO BE CLAIMED ON MY PAYMENTS TO {invitationData.org.name.toUpperCase()}
+                          </span>
+                        </label>
+                        
+                        <label className="flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer hover:bg-neutral-50 transition-colors">
+                          <input
+                            type="radio"
+                            name="giftAidStatus"
+                            value="NO"
+                            checked={giftAidStatus === 'NO'}
+                            onChange={(e) => setGiftAidStatus(e.target.value)}
+                            className="mt-1 w-4 h-4 text-neutral-900 border-neutral-300 focus:ring-neutral-900"
+                          />
+                          <span className="text-sm font-medium text-neutral-900 uppercase">
+                            I AM NOT A UK TAXPAYER, I WOULD NOT LIKE TO GIFT AID TO BE CLAIMED AT THE MOMENT
+                          </span>
+                        </label>
+                        
+                        <label className="flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer hover:bg-neutral-50 transition-colors">
+                          <input
+                            type="radio"
+                            name="giftAidStatus"
+                            value="NOT_SURE"
+                            checked={giftAidStatus === 'NOT_SURE'}
+                            onChange={(e) => setGiftAidStatus(e.target.value)}
+                            className="mt-1 w-4 h-4 text-neutral-900 border-neutral-300 focus:ring-neutral-900"
+                          />
+                          <span className="text-sm font-medium text-neutral-900 uppercase">
+                            I AM NOT SURE AT THE MOMENT
+                          </span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 pt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setStep(3)}
+                      className="flex-1"
+                    >
+                      Back
+                    </Button>
                     <Button
                       type="submit"
-                      disabled={submitting || !paymentMethod}
+                      disabled={submitting || !giftAidStatus || !parentAddress || !parentPostcode}
                       className="flex-1"
                     >
                       {submitting ? (

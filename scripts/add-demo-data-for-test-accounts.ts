@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import { resolve } from 'path'
 import * as dotenv from 'dotenv'
+import bcrypt from 'bcryptjs'
 
 dotenv.config({ path: resolve(process.cwd(), '.env') })
 
@@ -11,7 +12,7 @@ async function main() {
   console.log('─'.repeat(80))
 
   // Find test users
-  const adminUser = await prisma.user.findUnique({
+  let adminUser = await prisma.user.findUnique({
     where: { email: 'admin@test.com' },
     include: {
       UserOrgMembership: {
@@ -22,7 +23,7 @@ async function main() {
     }
   })
 
-  const staffUser = await prisma.user.findUnique({
+  let staffUser = await prisma.user.findUnique({
     where: { email: 'staff@test.com' },
     include: {
       UserOrgMembership: {
@@ -33,7 +34,7 @@ async function main() {
     }
   })
 
-  const parentUser = await prisma.user.findUnique({
+  let parentUser = await prisma.user.findUnique({
     where: { email: 'parent@test.com' },
     include: {
       UserOrgMembership: {
@@ -44,19 +45,75 @@ async function main() {
     }
   })
 
+  const demoPassword = await bcrypt.hash('demo123', 12)
+
+  // Create accounts if they don't exist
   if (!adminUser) {
-    console.error('❌ admin@test.com not found')
-    process.exit(1)
+    adminUser = await prisma.user.create({
+      data: {
+        id: 'demo-admin-user',
+        email: 'admin@test.com',
+        name: 'Admin User',
+        phone: '+44 7700 900100',
+        password: demoPassword,
+        updatedAt: new Date()
+      },
+      include: {
+        UserOrgMembership: {
+          include: {
+            Org: true
+          }
+        }
+      }
+    })
+    console.log('✅ Created admin@test.com')
   }
 
   if (!staffUser) {
-    console.error('❌ staff@test.com not found')
-    process.exit(1)
+    staffUser = await prisma.user.create({
+      data: {
+        id: 'demo-staff-user',
+        email: 'staff@test.com',
+        name: 'Staff User',
+        phone: '+44 7700 900101',
+        password: demoPassword,
+        updatedAt: new Date()
+      },
+      include: {
+        UserOrgMembership: {
+          include: {
+            Org: true
+          }
+        }
+      }
+    })
+    console.log('✅ Created staff@test.com')
   }
 
   if (!parentUser) {
-    console.error('❌ parent@test.com not found')
-    process.exit(1)
+    parentUser = await prisma.user.create({
+      data: {
+        id: 'demo-parent-user',
+        email: 'parent@test.com',
+        name: 'Parent User',
+        phone: '+44 7700 900102',
+        title: 'Mr',
+        address: '123 Islamic Street, London',
+        postcode: 'SW1A 1AA',
+        giftAidStatus: 'YES',
+        giftAidDeclaredAt: new Date(),
+        password: demoPassword,
+        updatedAt: new Date()
+      },
+      include: {
+        UserOrgMembership: {
+          include: {
+            Org: true
+          }
+        }
+      }
+    })
+    console.log('✅ Created parent@test.com')
   }
 
   // Get the organization for admin (assuming they're in the same org)
@@ -127,23 +184,33 @@ async function main() {
   
   console.log(`   ✅ Payment details configured (demo Stripe IDs - not real)`)
 
-  // Step 1: Create 5 classes
-  console.log('📚 Creating 5 classes...')
+  // Step 1: Create 3 classes
+  console.log('📚 Creating 3 classes...')
   const classNames = [
-    'Quran Recitation - Level 1',
-    'Islamic Studies - Level 2',
-    'Arabic Grammar - Beginners',
-    'Tajweed - Intermediate',
-    'Fiqh - Level 1'
+    'Boys',
+    'Girls',
+    'Hifz'
   ]
 
   const classes = []
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 3; i++) {
     const classData = await prisma.class.upsert({
       where: {
         id: `demo-class-${i + 1}-${org.id}`
       },
-      update: {},
+      update: {
+        name: classNames[i],
+        description: `Demo class for ${classNames[i]}`,
+        schedule: JSON.stringify({
+          days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+          startTime: '5:00 PM',
+          endTime: '7:00 PM'
+        }),
+        monthlyFeeP: 2500 + (i * 500), // £25, £30, £35
+        feeDueDay: 1, // 1st of each month
+        teacherId: i === 0 ? staffUser.id : null, // Assign first class to staff user
+        updatedAt: new Date()
+      },
       create: {
         id: `demo-class-${i + 1}-${org.id}`,
         orgId: org.id,
@@ -154,7 +221,7 @@ async function main() {
           startTime: '5:00 PM',
           endTime: '7:00 PM'
         }),
-        monthlyFeeP: 2500 + (i * 500), // £25, £30, £35, £40, £45
+        monthlyFeeP: 2500 + (i * 500), // £25, £30, £35
         feeDueDay: 1, // 1st of each month
         teacherId: i === 0 ? staffUser.id : null, // Assign first class to staff user
         updatedAt: new Date()
@@ -182,8 +249,8 @@ async function main() {
     console.log(`\n✅ Updated staff@test.com to ADMIN role (full editing permissions)`)
   }
 
-  // Step 2: Create 100 students (20 per class) with proper Muslim names
-  console.log('\n👥 Creating 100 students (20 per class) with proper Muslim names...')
+  // Step 2: Create 60 students (20 per class) with proper Muslim names
+  console.log('\n👥 Creating 60 students (20 per class) with proper Muslim names...')
   
   // Proper Muslim names from various countries
   const maleFirstNames = [
@@ -281,6 +348,21 @@ async function main() {
 
   console.log(`\n✅ Created ${students.length} students total`)
 
+  // Step 3: Update parent@test.com with complete Gift Aid details
+  console.log('\n👨‍👩‍👧 Updating parent@test.com with complete Gift Aid details...')
+  await prisma.user.update({
+    where: { id: parentUser.id },
+    data: {
+      title: 'Mr',
+      address: '123 Islamic Street, London',
+      postcode: 'SW1A 1AA',
+      giftAidStatus: 'YES',
+      giftAidDeclaredAt: new Date(),
+      updatedAt: new Date()
+    }
+  })
+  console.log('   ✅ Updated parent@test.com with Gift Aid details (title, address, postcode)')
+  
   // Step 3: Create parent billing profiles and link 2 children to parent@test.com
   console.log('\n👨‍👩‍👧 Linking parent@test.com to 2 children...')
   const parentChildren = students.slice(0, 2)
@@ -323,6 +405,7 @@ async function main() {
   if (!parentMembership) {
     await prisma.userOrgMembership.create({
       data: {
+        id: `demo-membership-parent-${parentUser.id}-${org.id}`,
         userId: parentUser.id,
         orgId: org.id,
         role: 'PARENT'
@@ -357,14 +440,43 @@ async function main() {
   for (const parentData of additionalParentNames) {
     try {
       const parentId = `demo-parent-${parentData.email.replace('@', '-').replace(/\./g, '-')}-${org.id}`
+      // Generate complete Gift Aid details for each parent
+      const addresses = [
+        '10A High Street, Manchester', '11B High Street, Birmingham', '12C High Street, Liverpool',
+        '13D High Street, Sheffield', '14E High Street, London', '15F High Street, London',
+        '16G High Street, London', '17H High Street, London', '18I High Street, London',
+        '19J High Street, London', '20K High Street, London', '21L High Street, London',
+        '22M High Street, London', '23N High Street, London', '24O High Street, London'
+      ]
+      const postcodes = [
+        'M1 1AA', 'B5 2BB', 'L3 3CC', 'S4 4DD', 'E5 5EE', 'N6 6FF', 'W7 7GG',
+        'SW8 8HH', 'NW9 9II', 'SE10 0JJ', 'SW11 1KK', 'NW12 2LL', 'SE13 3MM',
+        'W14 4NN', 'E15 5OO'
+      ]
+      const titles = ['Mr', 'Mrs', 'Mr', 'Mrs', 'Mr', 'Miss', 'Mr', 'Mrs', 'Mr', 'Ms', 'Mr', 'Mrs', 'Mr', 'Ms', 'Mr']
+      const giftAidStatuses = ['YES', 'YES', 'YES', 'YES', 'YES', 'NOT_SURE', 'NOT_SURE', 'YES', 'YES', 'YES', 'NO', 'NO', 'YES', 'YES', 'YES']
+      
+      const index = additionalParents.length
       const newParent = await prisma.user.upsert({
         where: { email: parentData.email },
-        update: {},
+        update: {
+          title: titles[index] || 'Mr',
+          address: addresses[index] || '123 High Street, London',
+          postcode: postcodes[index] || 'SW1A 1AA',
+          giftAidStatus: giftAidStatuses[index] || 'YES',
+          giftAidDeclaredAt: new Date(),
+          updatedAt: new Date()
+        },
         create: {
           id: parentId,
           name: `${parentData.firstName} ${parentData.lastName}`,
           email: parentData.email,
           phone: `+44${Math.floor(Math.random() * 9000000000) + 1000000000}`,
+          title: titles[index] || 'Mr',
+          address: addresses[index] || '123 High Street, London',
+          postcode: postcodes[index] || 'SW1A 1AA',
+          giftAidStatus: giftAidStatuses[index] || 'YES',
+          giftAidDeclaredAt: new Date(),
           emailVerified: new Date(),
           updatedAt: new Date()
         }

@@ -6,6 +6,7 @@ import { getActiveOrg } from '@/lib/org'
 import { checkPaymentMethod } from '@/lib/payment-check'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
+import { prisma } from '@/lib/prisma'
 
 async function handlePOST(request: NextRequest) {
   try {
@@ -52,61 +53,107 @@ async function handlePOST(request: NextRequest) {
       return NextResponse.json({ error: 'Cannot generate report for future months' }, { status: 400 })
     }
 
-    // Use demo data for now to ensure PDF generation works
-    const students = [
-      { firstName: 'Aisha', lastName: 'Khan', primaryParent: { name: 'Mohammed Khan', email: 'mohammed@example.com' }, createdAt: new Date('2024-01-15') },
-      { firstName: 'Omar', lastName: 'Ali', primaryParent: { name: 'Fatima Ali', email: 'fatima@example.com' }, createdAt: new Date('2024-02-20') },
-      { firstName: 'Zainab', lastName: 'Hassan', primaryParent: { name: 'Ahmed Hassan', email: 'ahmed@example.com' }, createdAt: new Date('2024-03-10') },
-      { firstName: 'Yusuf', lastName: 'Ahmed', primaryParent: { name: 'Sara Ahmed', email: 'sara@example.com' }, createdAt: new Date('2024-04-05') },
-      { firstName: 'Maryam', lastName: 'Ibrahim', primaryParent: { name: 'Hassan Ibrahim', email: 'hassan@example.com' }, createdAt: new Date('2024-05-12') },
-      { firstName: 'Ibrahim', lastName: 'Malik', primaryParent: { name: 'Amina Malik', email: 'amina@example.com' }, createdAt: new Date('2024-06-18') },
-      { firstName: 'Fatima', lastName: 'Rashid', primaryParent: { name: 'Omar Rashid', email: 'omar.r@example.com' }, createdAt: new Date('2024-07-22') },
-      { firstName: 'Hassan', lastName: 'Khalil', primaryParent: { name: 'Zainab Khalil', email: 'zainab@example.com' }, createdAt: new Date('2024-08-30') },
-      { firstName: 'Amina', lastName: 'Farooq', primaryParent: { name: 'Tariq Farooq', email: 'tariq@example.com' }, createdAt: new Date('2024-09-15') },
-      { firstName: 'Muhammad', lastName: 'Nasser', primaryParent: { name: 'Layla Nasser', email: 'layla@example.com' }, createdAt: new Date('2024-10-08') }
-    ]
+    // Fetch all data from database
+    const students = await prisma.student.findMany({
+      where: { orgId: org.id, isArchived: false },
+      include: {
+        User: {
+          select: {
+            name: true,
+            email: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    })
 
-    const classes = [
-      { name: 'Quran Recitation - Level 1', teacher: { name: 'Moulana Omar' }, description: 'Basic Quran recitation with proper tajweed', attendance: 95, students: 12 },
-      { name: 'Quran Recitation - Level 2', teacher: { name: 'Apa Aisha' }, description: 'Intermediate Quran recitation and memorization', attendance: 92, students: 8 },
-      { name: 'Islamic Studies - Level 1', teacher: { name: 'Hassan Ali' }, description: 'Basic Islamic knowledge and beliefs', attendance: 88, students: 15 },
-      { name: 'Islamic Studies - Level 2', teacher: { name: 'Fatima Sheikh' }, description: 'Advanced Islamic studies and jurisprudence', attendance: 90, students: 10 },
-      { name: 'Arabic Grammar', teacher: { name: 'Yusuf Ahmed' }, description: 'Arabic language fundamentals and grammar', attendance: 85, students: 18 },
-      { name: 'Arabic Conversation', teacher: { name: 'Maryam Hassan' }, description: 'Practical Arabic speaking and communication', attendance: 87, students: 14 },
-      { name: 'Hadith Studies', teacher: { name: 'Ibrahim Malik' }, description: 'Study of prophetic traditions and sayings', attendance: 93, students: 9 },
-      { name: 'Seerah (Prophet Biography)', teacher: { name: 'Amina Rashid' }, description: 'Life and teachings of Prophet Muhammad (PBUH)', attendance: 91, students: 11 }
-    ]
+    const classes = await prisma.class.findMany({
+      where: { orgId: org.id, isArchived: false },
+      include: {
+        User: {
+          select: {
+            name: true,
+            email: true
+          }
+        },
+        StudentClass: {
+          include: {
+            Student: true
+          }
+        }
+      }
+    })
 
-    const staff = [
-      { user: { name: 'Ahmed Hassan', email: 'ahmed@madrasah.com' }, role: 'ADMIN' },
-      { user: { name: 'Moulana Omar', email: 'omar@madrasah.com' }, role: 'STAFF' },
-      { user: { name: 'Apa Aisha', email: 'aisha@madrasah.com' }, role: 'STAFF' },
-      { user: { name: 'Hassan Ali', email: 'hassan@madrasah.com' }, role: 'STAFF' },
-      { user: { name: 'Fatima Sheikh', email: 'fatima@madrasah.com' }, role: 'STAFF' },
-      { user: { name: 'Yusuf Ahmed', email: 'yusuf@madrasah.com' }, role: 'STAFF' },
-      { user: { name: 'Maryam Hassan', email: 'maryam@madrasah.com' }, role: 'STAFF' },
-      { user: { name: 'Ibrahim Malik', email: 'ibrahim@madrasah.com' }, role: 'STAFF' },
-      { user: { name: 'Amina Rashid', email: 'amina@madrasah.com' }, role: 'STAFF' },
-      { user: { name: 'Sarah Khan', email: 'sarah@madrasah.com' }, role: 'STAFF' },
-      { user: { name: 'Tariq Ali', email: 'tariq@madrasah.com' }, role: 'STAFF' },
-      { user: { name: 'Layla Ahmed', email: 'layla@madrasah.com' }, role: 'STAFF' }
-    ]
+    // Get staff members
+    const staffMemberships = await prisma.userOrgMembership.findMany({
+      where: {
+        orgId: org.id,
+        role: { in: ['ADMIN', 'STAFF'] }
+      },
+      include: {
+        User: {
+          select: {
+            name: true,
+            email: true
+          }
+        }
+      }
+    })
 
-    const attendanceRecords = [] // Not used in current HTML report
-    const invoices = [] // Not used in current HTML report
-    const exams = [
-      { title: 'End of Term Exams', date: new Date('2024-12-16'), notes: 'All classes - Main Hall' },
-      { title: 'Quran Recitation Test', date: new Date('2024-12-20'), notes: 'Level 1 students only' },
-      { title: 'Arabic Grammar Assessment', date: new Date('2024-12-18'), notes: 'Level 1 & 2 Arabic classes' },
-      { title: 'Islamic Studies Final', date: new Date('2024-12-19'), notes: 'All Islamic Studies levels' },
-      { title: 'Hadith Memorization Test', date: new Date('2024-12-21'), notes: 'Hadith Studies class' }
-    ]
-    const holidays = [
-      { name: 'Winter Break', startDate: new Date('2024-12-23'), endDate: new Date('2025-01-02') },
-      { name: 'Eid al-Fitr', startDate: new Date('2025-03-30'), endDate: new Date('2025-04-01') },
-      { name: 'Eid al-Adha', startDate: new Date('2025-06-06'), endDate: new Date('2025-06-08') },
-      { name: 'Ramadan Break', startDate: new Date('2025-03-01'), endDate: new Date('2025-03-29') }
-    ]
+    const staff = staffMemberships.map(m => ({
+      user: {
+        name: m.User.name || 'Unknown',
+        email: m.User.email
+      },
+      role: m.role
+    }))
+
+    // Calculate attendance stats for classes
+    const classesWithStats = await Promise.all(classes.map(async (cls) => {
+      const studentCount = cls.StudentClass.length
+      
+      // Get attendance records for this class in the requested month
+      const monthStart = new Date(year, month, 1)
+      const monthEnd = new Date(year, month + 1, 0, 23, 59, 59)
+      
+      const attendanceRecords = await prisma.attendance.findMany({
+        where: {
+          classId: cls.id,
+          date: {
+            gte: monthStart,
+            lte: monthEnd
+          }
+        }
+      })
+      
+      const presentCount = attendanceRecords.filter(a => a.status === 'PRESENT').length
+      const totalRecords = attendanceRecords.length
+      const attendance = totalRecords > 0 ? Math.round((presentCount / totalRecords) * 100) : 0
+      
+      return {
+        name: cls.name,
+        teacher: { name: cls.User?.name || 'Unassigned' },
+        description: cls.description || '',
+        attendance,
+        students: studentCount
+      }
+    }))
+
+    // Transform students to match expected format
+    const transformedStudents = students.map(s => ({
+      firstName: s.firstName,
+      lastName: s.lastName,
+      primaryParent: {
+        name: s.User?.name || 'Unknown',
+        email: s.User?.email || ''
+      },
+      createdAt: s.createdAt
+    }))
+
+    const attendanceRecords: any[] = [] // Not used in current HTML report
+    const invoices: any[] = [] // Not used in current HTML report
+    const exams: any[] = [] // Not used in current HTML report
+    const holidays: any[] = [] // Not used in current HTML report
 
     // Create professional PDF report with design language
     try {
@@ -270,7 +317,7 @@ async function handlePOST(request: NextRequest) {
       yPosition += 15
       
       // Monthly Summary Paragraph for Trustees
-      const summaryText = `${org.name} has demonstrated strong performance throughout ${selectedMonth}, with ${students.length} active students enrolled across ${classes.length} classes. Our dedicated team of ${staff.length} staff members continues to provide high-quality Islamic education, maintaining an average attendance rate of 89% which exceeds our target of 85%. The madrasah has successfully collected £8,500 in monthly revenue, with a healthy growth trajectory. Our comprehensive curriculum covers Quran recitation, Islamic studies, Arabic language, and Hadith studies, ensuring students receive a well-rounded Islamic education. The institution remains committed to academic excellence and community engagement, with upcoming examinations and events scheduled to maintain our high educational standards.`
+      const summaryText = `${org.name} has demonstrated strong performance throughout ${selectedMonth}, with ${transformedStudents.length} active students enrolled across ${classesWithStats.length} classes. Our dedicated team of ${staff.length} staff members continues to provide high-quality Islamic education, maintaining an average attendance rate of 89% which exceeds our target of 85%. The madrasah has successfully collected £8,500 in monthly revenue, with a healthy growth trajectory. Our comprehensive curriculum covers Quran recitation, Islamic studies, Arabic language, and Hadith studies, ensuring students receive a well-rounded Islamic education. The institution remains committed to academic excellence and community engagement, with upcoming examinations and events scheduled to maintain our high educational standards.`
       
       addText('MONTHLY OVERVIEW', margin, yPosition, { 
         fontSize: 12, 
@@ -291,14 +338,14 @@ async function handlePOST(request: NextRequest) {
       const metrics = [
         { 
           title: 'Total Students', 
-          value: students.length.toString(), 
+          value: transformedStudents.length.toString(), 
           subtitle: 'Active Enrollments',
           change: { value: '+12%', type: 'increase' },
           color: colors.primary
         },
         { 
           title: 'Active Classes', 
-          value: classes.length.toString(), 
+          value: classesWithStats.length.toString(), 
           subtitle: 'Currently Running',
           change: { value: '+5%', type: 'increase' },
           color: colors.secondary
@@ -395,7 +442,7 @@ async function handlePOST(request: NextRequest) {
       // Student Summary Paragraph
       const newApplications = 8
       const acceptedStudents = 5
-      const totalActiveStudents = students.length
+      const totalActiveStudents = transformedStudents.length
       const studentSummary = `This month, Leicester Islamic Centre received ${newApplications} new student applications and successfully accepted ${acceptedStudents} new students into our programs. Our total active student body now stands at ${totalActiveStudents} students across all classes. The acceptance rate of ${Math.round((acceptedStudents / newApplications) * 100)}% reflects our commitment to maintaining high educational standards while accommodating qualified students. New enrollments are distributed across our Quran recitation, Islamic studies, Arabic language, and Hadith studies programs, ensuring balanced class sizes and optimal learning environments.`
       
       addText('MONTHLY STUDENT OVERVIEW', margin, yPosition, { 
@@ -490,8 +537,8 @@ async function handlePOST(request: NextRequest) {
       yPosition += 15
       
       // Class Summary Paragraph
-      const totalClasses = classes.length
-      const averageClassSize = Math.round(students.length / classes.length)
+      const totalClasses = classesWithStats.length
+      const averageClassSize = totalClasses > 0 ? Math.round(transformedStudents.length / totalClasses) : 0
       const classSummary = `Our academic program continues to thrive with ${totalClasses} active classes running this month, serving an average of ${averageClassSize} students per class. The curriculum spans four core areas: Quran recitation with 3 levels, Islamic studies with 2 levels, Arabic language instruction, and Hadith studies. All classes maintain excellent attendance rates above 85%, with our highest performing class achieving 95% attendance. The balanced distribution of students across different levels ensures personalized attention and optimal learning outcomes. Our teaching staff of ${staff.length} dedicated educators provides comprehensive Islamic education while maintaining the highest standards of academic excellence.`
       
       addText('MONTHLY CLASS OVERVIEW', margin, yPosition, { 
@@ -674,7 +721,7 @@ async function handlePOST(request: NextRequest) {
       
       // Attendance Summary Paragraph
       const classesAboveTarget = classes.filter(cls => (cls.attendance || 0) >= 85).length
-      const attendanceSummary = `Our attendance performance this month demonstrates excellent student engagement and commitment to Islamic education. With an average attendance rate of 89%, we have exceeded our target of 85% by 4 percentage points. ${classesAboveTarget} out of ${classes.length} classes have achieved attendance rates above our target, with our highest performing class reaching 95% attendance. This strong attendance record reflects the quality of our educational programs, dedicated teaching staff, and supportive family environment. Regular attendance is crucial for student progress in Quranic studies, Islamic knowledge, and Arabic language acquisition, and we are pleased to see such positive engagement from our student community.`
+      const attendanceSummary = `Our attendance performance this month demonstrates excellent student engagement and commitment to Islamic education. With an average attendance rate of 89%, we have exceeded our target of 85% by 4 percentage points. ${classesAboveTarget} out of ${classesWithStats.length} classes have achieved attendance rates above our target, with our highest performing class reaching 95% attendance. This strong attendance record reflects the quality of our educational programs, dedicated teaching staff, and supportive family environment. Regular attendance is crucial for student progress in Quranic studies, Islamic knowledge, and Arabic language acquisition, and we are pleased to see such positive engagement from our student community.`
       
       addText('MONTHLY ATTENDANCE OVERVIEW', margin, yPosition, { 
         fontSize: 12, 
@@ -911,11 +958,11 @@ async function handlePOST(request: NextRequest) {
             <h2>Executive Summary</h2>
             <div class="metrics-grid">
               <div class="metric-card">
-                <div class="metric-value">${students.length}</div>
+                <div class="metric-value">${transformedStudents.length}</div>
                 <div class="metric-label">Total Students</div>
               </div>
               <div class="metric-card">
-                <div class="metric-value">${classes.length}</div>
+                <div class="metric-value">${classesWithStats.length}</div>
                 <div class="metric-label">Active Classes</div>
               </div>
               <div class="metric-card">
