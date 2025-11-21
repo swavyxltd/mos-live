@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Download, Calendar, FileText, AlertCircle, CheckCircle, XCircle, Clock, History, Search, TrendingUp, Users, Mail, Filter, CheckSquare, Square, FileDown } from 'lucide-react'
+import { Download, Calendar, FileText, AlertCircle, CheckCircle, XCircle, Clock, History, Search, TrendingUp, Users, Mail, Filter, CheckSquare, Square, FileDown, Loader2, FileSpreadsheet, Info, ChevronDown, ChevronUp } from 'lucide-react'
 import { toast } from 'sonner'
+import { Modal } from '@/components/ui/modal'
 
 interface GiftAidRow {
   id: string
@@ -36,6 +37,10 @@ export function GiftAidPageClient() {
   const [declinedData, setDeclinedData] = useState<GiftAidRow[]>([])
   const [loading, setLoading] = useState(false)
   const [downloading, setDownloading] = useState(false)
+  const [downloadingTemplate, setDownloadingTemplate] = useState(false)
+  const [showProgressModal, setShowProgressModal] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const [showTutorial, setShowTutorial] = useState(false)
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null)
   const [totalAmount, setTotalAmount] = useState(0)
   const [totalCount, setTotalCount] = useState(0)
@@ -182,7 +187,77 @@ export function GiftAidPageClient() {
     }
   }
 
-  const handleDownload = async (format: 'excel' | 'csv' = 'excel') => {
+  // Calculate earliest donation date for Box 1
+  const earliestDonationDate = useMemo(() => {
+    if (data.length === 0) return null
+    const dates = data
+      .map(row => {
+        if (!row.donationDate) return null
+        const date = typeof row.donationDate === 'string' ? new Date(row.donationDate) : row.donationDate
+        return isNaN(date.getTime()) ? null : date
+      })
+      .filter((d): d is Date => d !== null)
+    
+    if (dates.length === 0) return null
+    return new Date(Math.min(...dates.map(d => d.getTime())))
+  }, [data])
+
+  const formatDateForBox1 = (date: Date | null): string => {
+    if (!date) return ''
+    const day = String(date.getDate()).padStart(2, '0')
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const year = String(date.getFullYear()).slice(-2)
+    return `${day}/${month}/${year}`
+  }
+
+  const handleDownloadTemplate = async () => {
+    setDownloadingTemplate(true)
+    try {
+      const response = await fetch('/api/giftaid/template')
+      
+      if (!response.ok) {
+        const result = await response.json()
+        if (result.downloadUrl) {
+          // Open HMRC download page in new tab
+          window.open(result.downloadUrl, '_blank')
+          toast.info('Please download the template from the HMRC website')
+        } else {
+          throw new Error(result.error || 'Failed to download template')
+        }
+        return
+      }
+
+      // Check if response is a file or JSON
+      const contentType = response.headers.get('Content-Type')
+      if (contentType?.includes('application/json')) {
+        const result = await response.json()
+        if (result.downloadUrl) {
+          window.open(result.downloadUrl, '_blank')
+          toast.info('Please download the template from the HMRC website')
+        }
+        return
+      }
+
+      // Download the file
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'HMRC_Gift_Aid_Template.ods'
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+      
+      toast.success('HMRC template downloaded successfully')
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to download template')
+    } finally {
+      setDownloadingTemplate(false)
+    }
+  }
+
+  const handleDownload = async () => {
     if (!startDate || !endDate) {
       toast.error('Please select both start and end dates')
       return
@@ -212,10 +287,20 @@ export function GiftAidPageClient() {
     }
 
     setDownloading(true)
+    setShowProgressModal(true)
+    setProgress(0)
+    
+    // Animate progress bar over 5 seconds
+    const duration = 5000
+    const startTime = Date.now()
+    const progressInterval = setInterval(() => {
+      const elapsed = Date.now() - startTime
+      const newProgress = Math.min((elapsed / duration) * 100, 95) // Stop at 95% until download completes
+      setProgress(newProgress)
+    }, 50)
+
     try {
-      const endpoint = format === 'excel' 
-        ? `/api/gift-aid/download?startDate=${startDate}&endDate=${endDate}`
-        : `/api/gift-aid/export-csv?startDate=${startDate}&endDate=${endDate}`
+      const endpoint = `/api/giftaid/csv?startDate=${startDate}&endDate=${endDate}`
       
       const response = await fetch(endpoint)
       
@@ -230,7 +315,7 @@ export function GiftAidPageClient() {
       a.href = url
       
       const contentDisposition = response.headers.get('Content-Disposition')
-      let filename = format === 'excel' ? 'Gift-Aid-Schedule.xlsx' : 'Gift-Aid-Schedule.csv'
+      let filename = 'Gift-Aid-Schedule.csv'
       if (contentDisposition) {
         const filenameMatch = contentDisposition.match(/filename="(.+)"/)
         if (filenameMatch) {
@@ -244,11 +329,21 @@ export function GiftAidPageClient() {
       window.URL.revokeObjectURL(url)
       document.body.removeChild(a)
       
-      toast.success(`Gift Aid ${format === 'excel' ? 'ODS' : 'CSV'} file downloaded successfully`)
-      if (format === 'excel') {
+      // Complete progress bar
+      clearInterval(progressInterval)
+      setProgress(100)
+      
+      // Close modal after a brief delay
+      setTimeout(() => {
+        setShowProgressModal(false)
+        setProgress(0)
+        toast.success(`Gift Aid CSV file downloaded successfully`)
         fetchAllData() // Refresh to update history
-      }
+      }, 300)
     } catch (error: any) {
+      clearInterval(progressInterval)
+      setShowProgressModal(false)
+      setProgress(0)
       toast.error(error.message || 'Failed to download file')
     } finally {
       setDownloading(false)
@@ -535,27 +630,193 @@ export function GiftAidPageClient() {
                 {loading ? 'Loading...' : 'Refresh Data'}
               </Button>
               <Button 
-                onClick={() => handleDownload('excel')} 
+                onClick={handleDownloadTemplate} 
+                disabled={downloadingTemplate}
+                variant="outline"
+              >
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                {downloadingTemplate ? 'Downloading...' : 'Download HMRC Template'}
+              </Button>
+              <Button 
+                onClick={handleDownload} 
                 disabled={downloading || !startDate || !endDate || data.length === 0 || activeTab !== 'active'}
                 className="bg-green-600 hover:bg-green-700"
               >
                 <Download className="h-4 w-4 mr-2" />
-                {downloading ? 'Generating...' : 'Download ODS File'}
-              </Button>
-              <Button 
-                onClick={() => handleDownload('csv')} 
-                disabled={downloading || !startDate || !endDate || data.length === 0 || activeTab !== 'active'}
-                variant="outline"
-              >
-                <FileDown className="h-4 w-4 mr-2" />
-                {downloading ? 'Generating...' : 'Download CSV'}
+                {downloading ? 'Generating...' : 'Download CSV Data'}
               </Button>
             </div>
+            
+            {/* Tutorial Section */}
             {data.length > 0 && activeTab === 'active' && (
+              <div className="mt-4">
+                <button
+                  onClick={() => setShowTutorial(!showTutorial)}
+                  className="w-full flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <Info className="h-4 w-4 text-blue-600" />
+                    <span className="font-medium text-sm text-blue-900">
+                      How to Submit to HMRC - Step by Step Guide
+                    </span>
+                  </div>
+                  {showTutorial ? (
+                    <ChevronUp className="h-4 w-4 text-blue-600" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-blue-600" />
+                  )}
+                </button>
+                
+                {showTutorial && (
+                  <div className="mt-2 p-4 bg-white border border-blue-200 rounded-lg">
+                    <div className="space-y-3">
+                      <div className="flex gap-3">
+                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
+                          <span className="text-xs font-bold text-blue-700">1</span>
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium text-sm text-gray-900 mb-0.5">Download Both Files</p>
+                          <p className="text-xs text-gray-600">
+                            Download both the <strong className="text-gray-900">HMRC Template (ODS)</strong> and the <strong className="text-gray-900">CSV Data</strong> files using the buttons above.
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-3">
+                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
+                          <span className="text-xs font-bold text-blue-700">2</span>
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium text-sm text-gray-900 mb-0.5">Open the CSV File</p>
+                          <p className="text-xs text-gray-600">
+                            Open the downloaded CSV file in a spreadsheet application (Excel, LibreOffice, Google Sheets, etc.).
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-3">
+                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
+                          <span className="text-xs font-bold text-blue-700">3</span>
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium text-sm text-gray-900 mb-0.5">Copy All Data</p>
+                          <p className="text-xs text-gray-600">
+                            Select all rows and columns in the CSV file (Ctrl+A or Cmd+A) and copy them (Ctrl+C or Cmd+C).
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-3">
+                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
+                          <span className="text-xs font-bold text-blue-700">4</span>
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium text-sm text-gray-900 mb-0.5">Open the HMRC Template</p>
+                          <p className="text-xs text-gray-600">
+                            Open the downloaded HMRC template ODS file in LibreOffice Calc (recommended) or Excel.
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-3">
+                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
+                          <span className="text-xs font-bold text-blue-700">5</span>
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium text-sm text-gray-900 mb-1">Fill in Box 1 (Earliest Donation Date)</p>
+                          <p className="text-xs text-gray-600 mb-2">
+                            Find the section labeled <strong className="text-gray-900">"Box 1"</strong> and enter the earliest donation date in DD/MM/YY format:
+                          </p>
+                          {earliestDonationDate ? (
+                            <div className="bg-gray-50 p-2 rounded border border-blue-300">
+                              <p className="font-mono text-base font-bold text-gray-900">
+                                {formatDateForBox1(earliestDonationDate)}
+                              </p>
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                This is the earliest payment date from your selected period
+                              </p>
+                            </div>
+                          ) : (
+                            <p className="text-xs text-gray-500 italic">
+                              No donation dates found in the selected period.
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-3">
+                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
+                          <span className="text-xs font-bold text-blue-700">6</span>
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium text-sm text-gray-900 mb-1">Paste Data into the Template</p>
+                          <p className="text-xs text-gray-600 mb-1">
+                            Navigate to the first data cell in the donations schedule table (usually below the header row). Then:
+                          </p>
+                          <ol className="list-decimal list-inside space-y-0.5 text-xs text-gray-600 ml-1">
+                            <li>Right-click on the first cell where you want to paste</li>
+                            <li>Select <strong className="text-gray-900">"Paste Special"</strong> from the context menu</li>
+                            <li>Choose <strong className="text-gray-900">"Unformatted Text"</strong> from the sub-menu</li>
+                          </ol>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-3">
+                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
+                          <span className="text-xs font-bold text-blue-700">7</span>
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium text-sm text-gray-900 mb-1">Configure Separator Options</p>
+                          <p className="text-xs text-gray-600 mb-1">
+                            When the "Separator Options" dialog appears:
+                          </p>
+                          <ol className="list-decimal list-inside space-y-0.5 text-xs text-gray-600 ml-1">
+                            <li>Select <strong className="text-gray-900">"Separated by"</strong> (radio button)</li>
+                            <li>Check the <strong className="text-gray-900">"Tab"</strong> checkbox</li>
+                            <li>Click <strong className="text-gray-900">"OK"</strong></li>
+                          </ol>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-3">
+                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
+                          <span className="text-xs font-bold text-blue-700">8</span>
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium text-sm text-gray-900 mb-1">Verify Data</p>
+                          <p className="text-xs text-gray-600 mb-1">
+                            Double-check that all data has been pasted correctly into the appropriate columns. Verify:
+                          </p>
+                          <ul className="list-disc list-inside space-y-0.5 text-xs text-gray-600 ml-1">
+                            <li>All rows are present</li>
+                            <li>Data is in the correct columns</li>
+                            <li>Dates are in DD/MM/YY format</li>
+                            <li>Amounts are numeric (no £ signs)</li>
+                          </ul>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-3">
+                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
+                          <span className="text-xs font-bold text-blue-700">9</span>
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium text-sm text-gray-900 mb-0.5">Save and Upload</p>
+                          <p className="text-xs text-gray-600">
+                            Save the ODS file and upload it to HMRC's Gift Aid submission portal. The file is now ready for submission.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {data.length > 0 && activeTab === 'active' && !showTutorial && (
               <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
                 <p className="text-xs text-green-800">
-                  <strong>HMRC Compliant:</strong> The file is generated directly in .ods format as required by HMRC. 
-                  The file follows all HMRC data entry rules (trimmed values, no blank rows, proper formatting, correct worksheet name).
+                  <strong>Important:</strong> HMRC only accepts ODS files. Download both the template and CSV, then follow the tutorial above to combine them.
                 </p>
               </div>
             )}
@@ -1059,6 +1320,41 @@ export function GiftAidPageClient() {
           </CardContent>
         </Card>
       )}
+
+      {/* Progress Modal */}
+      <Modal
+        isOpen={showProgressModal}
+        onClose={() => {}} // Prevent closing during download
+        title="Generating Gift Aid CSV"
+        className="w-[400px]"
+      >
+        <div className="space-y-6 py-4">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="h-12 w-12 text-[var(--primary)] animate-spin" />
+            <div className="text-center">
+              <p className="text-sm font-medium text-[var(--foreground)] mb-1">
+                Processing your Gift Aid data...
+              </p>
+              <p className="text-xs text-[var(--muted-foreground)]">
+                This may take a few moments
+              </p>
+            </div>
+          </div>
+          
+          {/* Progress Bar */}
+          <div className="space-y-2">
+            <div className="w-full h-2 bg-[var(--muted)] rounded-full overflow-hidden">
+              <div
+                className="h-full bg-[var(--primary)] rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <p className="text-xs text-center text-[var(--muted-foreground)]">
+              {Math.round(progress)}% complete
+            </p>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

@@ -4,9 +4,6 @@ import { requireRole, requireOrg } from '@/lib/roles'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
-import JSZip from 'jszip'
-import { readFileSync } from 'fs'
-import { join } from 'path'
 
 async function handleGET(request: NextRequest) {
   try {
@@ -238,266 +235,122 @@ async function handleGET(request: NextRequest) {
       return new Date(dateStr)
     }
     
-    // Calculate earliest donation date from the data
-    const earliestDate = giftAidRows.length > 0
-      ? giftAidRows.reduce((earliest, row) => {
-          const rowDate = parseDate(row.donationDate)
-          return rowDate < earliest ? rowDate : earliest
-        }, parseDate(giftAidRows[0].donationDate))
-      : new Date()
-    
-    // Calculate total donations
-    const totalDonations = giftAidRows.reduce((sum, row) => {
-      const amount = typeof row.amount === 'number' ? row.amount : parseFloat(String(row.amount)) || 0
-      return sum + amount
-    }, 0)
-    
-    // Load the HMRC template ODS file
-    const templatePath = join(process.cwd(), 'public', 'gift_aid_schedule__libre_.ods')
-    const templateBuffer = readFileSync(templatePath)
-    const zip = await JSZip.loadAsync(templateBuffer)
-    
-    // Read and parse content.xml
-    const contentXml = await zip.file('content.xml')?.async('string')
-    if (!contentXml) {
-      throw new Error('Template file is missing content.xml')
-    }
-    
-    // Helper to escape XML
-    const escapeXml = (str: string): string => {
+    // Helper function to escape CSV values (only quote if contains comma, newline, or quote)
+    const escapeCsvValue = (value: string | number | null | undefined): string => {
+      if (value === null || value === undefined) return ''
+      const str = String(value).trim()
+      // Quote if contains comma, newline, or double quote
+      if (str.includes(',') || str.includes('\n') || str.includes('\r') || str.includes('"')) {
+        // Escape existing quotes by doubling them
+        return `"${str.replace(/"/g, '""')}"`
+      }
       return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&apos;')
     }
     
-    // Helper to unescape XML (for reading)
-    const unescapeXml = (str: string): string => {
-      return str
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/&quot;/g, '"')
-        .replace(/&apos;/g, "'")
-    }
-    
-    // Use a more reliable string-based approach with proper cell identification
-    let modifiedContent = contentXml
-    
-    // Helper to find and update a specific cell in a row by column index (0-based)
-    function updateCellInRowByIndex(rowXml: string, columnIndex: number, newText: string, valueType?: string, officeValue?: string): string {
-      // Find all cells in the row, accounting for colspan
-      const cellMatches: Array<{ fullMatch: string; startPos: number; endPos: number; colspan: number }> = []
-      const cellRegex = /<table:table-cell([^>]*?)(?:\/>|>([\s\S]*?)<\/table:table-cell>)/g
-      let match
-      let currentColumn = 0
-      
-      while ((match = cellRegex.exec(rowXml)) !== null && currentColumn <= columnIndex + 10) {
-        const fullMatch = match[0]
-        const attrs = match[1]
-        const content = match[2] || ''
-        
-        // Check for colspan
-        const colspanMatch = attrs.match(/table:number-columns-spanned="(\d+)"/)
-        const colspan = colspanMatch ? parseInt(colspanMatch[1], 10) : 1
-        
-        // Check if this cell or any column it spans matches our target
-        if (currentColumn <= columnIndex && columnIndex < currentColumn + colspan) {
-          // This is the cell we need to update
-          let updatedCell = fullMatch
-          
-          // Remove existing text:p content
-          updatedCell = updatedCell.replace(/<text:p>[\s\S]*?<\/text:p>/g, '')
-          
-          // Build new cell with updated attributes and content
-          let newAttrs = attrs
-          
-          // Update or add value-type
-          if (valueType) {
-            if (newAttrs.includes('office:value-type=')) {
-              newAttrs = newAttrs.replace(/office:value-type="[^"]*"/, `office:value-type="${valueType}"`)
-            } else {
-              newAttrs += ` office:value-type="${valueType}"`
-            }
-          }
-          
-          // Update or add office:value for numbers
-          if (officeValue !== undefined && valueType === 'float') {
-            if (newAttrs.includes('office:value=')) {
-              newAttrs = newAttrs.replace(/office:value="[^"]*"/, `office:value="${officeValue}"`)
-            } else {
-              newAttrs += ` office:value="${officeValue}"`
-            }
-          }
-          
-          // Build the new cell
-          if (fullMatch.includes('/>')) {
-            // Self-closing cell - convert to regular cell
-            updatedCell = `<table:table-cell${newAttrs}><text:p>${escapeXml(newText)}</text:p></table:table-cell>`
-          } else {
-            // Regular cell - replace opening tag and add text
-            updatedCell = `<table:table-cell${newAttrs}><text:p>${escapeXml(newText)}</text:p>${content}</table:table-cell>`
-          }
-          
-          // Replace in row
-          return rowXml.substring(0, match.index!) + updatedCell + rowXml.substring(match.index! + fullMatch.length)
-        }
-        
-        currentColumn += colspan
-      }
-      
-      return rowXml // Cell not found, return original
-    }
-    
-    // Find all table rows
-    const rowMatches = [...modifiedContent.matchAll(/<table:table-row([^>]*)>([\s\S]*?)<\/table:table-row>/g)]
-    
-    // Find header row (contains "Item")
-    let headerRowIndex = -1
-    for (let i = 0; i < rowMatches.length; i++) {
-      const match = rowMatches[i]
-      if (!match || !match[2]) continue
-      const rowContent = match[2]
-      const cellMatch = rowContent.match(/<table:table-cell/g)
-      if (rowContent.includes('Item') && cellMatch && cellMatch.length >= 10) {
-        headerRowIndex = i
-        break
-      }
-    }
-    
-    if (headerRowIndex === -1) {
-      throw new Error('Could not find header row in template')
-    }
-    
-    // Find Box 1 row (contains "Earliest donation date")
-    for (let i = 0; i < rowMatches.length; i++) {
-      if (rowMatches[i][2].includes('Earliest donation date')) {
-        const rowContent = rowMatches[i][2]
-        const updatedRow = updateCellInRowByIndex(rowContent, 3, formatDate(earliestDate), 'string')
-        const fullRow = rowMatches[i][0]
-        const newFullRow = fullRow.replace(rowContent, updatedRow)
-        modifiedContent = modifiedContent.replace(fullRow, newFullRow)
-        break
-      }
-    }
-    
-    // Find Total donations row
-    for (let i = 0; i < rowMatches.length; i++) {
-      const rowContent = rowMatches[i][2]
-      if (rowContent.includes('Total donations')) {
-        // Find cell with office:value-type="float"
-        const floatCellRegex = /<table:table-cell([^>]*office:value-type="float"[^>]*)(?:\/>|>([\s\S]*?)<\/table:table-cell>)/g
-        const floatMatch = floatCellRegex.exec(rowContent)
-        if (floatMatch) {
-          const totalStr = totalDonations.toFixed(2)
-          let updatedCell = floatMatch[0]
-          updatedCell = updatedCell.replace(/<text:p>[\s\S]*?<\/text:p>/g, '')
-          updatedCell = updatedCell.replace(/office:value="[^"]*"/, `office:value="${totalStr}"`)
-          
-          if (updatedCell.includes('/>')) {
-            updatedCell = updatedCell.replace('/>', `><text:p>${escapeXml(totalStr)}</text:p></table:table-cell>`)
-          } else {
-            updatedCell = updatedCell.replace(/(<table:table-cell[^>]*>)/, `$1<text:p>${escapeXml(totalStr)}</text:p>`)
-          }
-          
-          const updatedRow = rowContent.replace(floatMatch[0], updatedCell)
-          const fullRow = rowMatches[i][0]
-          const newFullRow = fullRow.replace(rowContent, updatedRow)
-          modifiedContent = modifiedContent.replace(fullRow, newFullRow)
-        }
-        break
-      }
-    }
-    
-    // Re-find rows after updates
-    const updatedRowMatches = [...modifiedContent.matchAll(/<table:table-row([^>]*)>([\s\S]*?)<\/table:table-row>/g)]
-    
-    // Find data rows (rows after header with 10+ cells, not form rows)
-    const dataRowIndices: number[] = []
-    for (let i = headerRowIndex + 1; i < updatedRowMatches.length; i++) {
-      const rowContent = updatedRowMatches[i][2]
-      
-      // Skip form rows
-      if (rowContent.includes('Box 1') || rowContent.includes('Box 2') || 
-          rowContent.includes('Total donations') || rowContent.includes('Donations schedule table') ||
-          rowContent.includes('Earliest donation date') || rowContent.includes('Previously over-claimed') ||
-          rowContent.includes('Enter details from here')) {
-        continue
-      }
-      
-      // Count cells (including empty ones)
-      // Need at least 11 cells (A through K)
-      const cellCount = (rowContent.match(/<table:table-cell/g) || []).length
-      if (cellCount >= 11) {
-        dataRowIndices.push(i)
-      }
-    }
-    
-    // Fill data rows - process in reverse to avoid position shifts
-    const rowsToFill = Math.min(giftAidRows.length, dataRowIndices.length)
-    
-    for (let i = rowsToFill - 1; i >= 0; i--) {
-      const rowIndex = dataRowIndices[i]
-      const rowData = giftAidRows[i]
-      const fullRow = updatedRowMatches[rowIndex][0]
-      const rowContent = updatedRowMatches[rowIndex][2]
-      
-      let updatedRow = rowContent
-      
-      // Update each column according to HMRC template:
-      // Column A (index 0): Item
-      // Column B (index 1): (empty/not used)
-      // Column C (index 2): Title
-      // Column D (index 3): First name
-      // Column E (index 4): Last name
-      // Column F (index 5): House name or number
-      // Column G (index 6): Postcode
-      // Column H (index 7): Aggregated donations
-      // Column I (index 8): Sponsored event
-      // Column J (index 9): Donation date
-      // Column K (index 10): Amount
-      const amount = typeof rowData.amount === 'number' ? rowData.amount : parseFloat(String(rowData.amount)) || 0
-      
-      updatedRow = updateCellInRowByIndex(updatedRow, 0, String(i + 1), 'float', String(i + 1)) // Item (A)
-      // Column B is skipped (index 1)
-      updatedRow = updateCellInRowByIndex(updatedRow, 2, rowData.title || '', 'string') // Title (C)
-      updatedRow = updateCellInRowByIndex(updatedRow, 3, rowData.firstName || '', 'string') // First name (D)
-      updatedRow = updateCellInRowByIndex(updatedRow, 4, rowData.lastName || '', 'string') // Last name (E)
-      updatedRow = updateCellInRowByIndex(updatedRow, 5, rowData.houseNameOrNumber || '', 'string') // House name or number (F)
-      updatedRow = updateCellInRowByIndex(updatedRow, 6, rowData.postcode || '', 'string') // Postcode (G)
-      updatedRow = updateCellInRowByIndex(updatedRow, 7, rowData.aggregatedDonations || '', 'string') // Aggregated donations (H)
-      updatedRow = updateCellInRowByIndex(updatedRow, 8, rowData.sponsoredEvent || '', 'string') // Sponsored event (I)
-      updatedRow = updateCellInRowByIndex(updatedRow, 9, rowData.donationDate, 'string') // Donation date (J)
-      updatedRow = updateCellInRowByIndex(updatedRow, 10, amount.toFixed(2), 'float', amount.toFixed(2)) // Amount (K)
-      
-      // Replace the row
-      const newFullRow = fullRow.replace(rowContent, updatedRow)
-      modifiedContent = modifiedContent.replace(fullRow, newFullRow)
-    }
-    
-    
-    // Update the content.xml in the zip
-    zip.file('content.xml', modifiedContent)
-    
-    // Generate the ODS file
-    const buffer = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' })
-    
-    // Generate filename with date range
-    // HMRC rule: Save as .ods file (e.g., "Gift Aid Jan 2014.ods")
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-    const monthName = monthNames[end.getMonth()]
-    const year = end.getFullYear()
-    const filename = `Gift Aid ${monthName} ${year}.ods`
-    
-    // Calculate totals
+    // Calculate totals for summary
     const totalAmount = giftAidRows.length > 0 
       ? giftAidRows.reduce((sum, row) => {
           const amount = typeof row.amount === 'number' ? row.amount : parseFloat(String(row.amount)) || 0
           return sum + amount
         }, 0)
       : 0
+    
+    // Calculate earliest donation date for Box 1
+    const earliestDonationDate = giftAidRows.length > 0
+      ? giftAidRows.reduce((earliest, row) => {
+          const rowDate = parseDate(row.donationDate)
+          return rowDate < earliest ? rowDate : earliest
+        }, parseDate(giftAidRows[0].donationDate))
+      : new Date()
+    
+    // Generate CSV content matching the Excel template structure exactly
+    const csvRows: string[] = []
+    
+    // Rows 1-4: Empty rows (for branding/title area at top)
+    csvRows.push('') // Row 1
+    csvRows.push('') // Row 2
+    csvRows.push('') // Row 3
+    csvRows.push('') // Row 4
+    
+    // Row 5: "Donations schedule table" in column F (index 5)
+    csvRows.push(',,,,,"Donations schedule table"')
+    
+    // Row 6: Header row (matching Excel template exactly)
+    // Columns: A (empty), B (Item), C (Title), D (First name), E (Last name), F (House name or number), G (Postcode), H (Aggregated donations), I (Sponsored event), J (Donation date), K (Amount)
+    csvRows.push(',Item,Title,First name,Last name,House name or number,Postcode,Aggregated donations,Sponsored event,Donation date,Amount')
+    
+    // Rows 7-10: Empty rows (example data area in template - we skip these for actual data)
+    csvRows.push('') // Row 7
+    csvRows.push('') // Row 8
+    csvRows.push('') // Row 9
+    csvRows.push('') // Row 10
+    
+    // Row 11: "Enter details from here" in column B (index 1)
+    csvRows.push(',"Enter details from here"')
+    
+    // Row 12: Empty
+    csvRows.push('')
+    
+    // Row 13: "Box 1" in column B, "Earliest donation date in the period of claim. (DD/MM/YY)" in column C, then the date value in column D
+    csvRows.push(',"Box 1","Earliest donation date in the period of claim. (DD/MM/YY)",' + escapeCsvValue(formatDate(earliestDonationDate)))
+    
+    // Row 14: Empty
+    csvRows.push('')
+    
+    // Row 15: Empty
+    csvRows.push('')
+    
+    // Row 16: "Box 2" in column B, "Previously over-claimed amount. Leave blank if none" in column C
+    csvRows.push(',"Box 2","Previously over-claimed amount. Leave blank if none"')
+    
+    // Row 17: Empty
+    csvRows.push('')
+    
+    // Row 18: "Don't use a £ sign" in column C (index 2)
+    csvRows.push(',,,"Don\'t use a £ sign"')
+    
+    // Row 19: Additional text in column F (index 5)
+    csvRows.push(',,,,,"For aggregated donations, this date may be earlier than any date entered in the donation date column of the donations schedule table below."')
+    
+    // Row 20: Additional text in column F (index 5)
+    csvRows.push(',,,,,"Make sure you show the tax not the donation. This amount will be deducted from your claim."')
+    
+    // Row 21: "The total below is automatically calculated..." in column F (index 5)
+    csvRows.push(',,,,,"The total below is automatically calculated from the amounts you enter in the schedule."')
+    
+    // Row 22: Empty (spacing - data rows will start here)
+    csvRows.push('')
+    
+    // Data rows - one per aggregated donor
+    for (const rowData of giftAidRows) {
+      const amount = typeof rowData.amount === 'number' ? rowData.amount : parseFloat(String(rowData.amount)) || 0
+      const csvRow = [
+        '', // Column A (empty/margin)
+        escapeCsvValue(rowData.item || ''),
+        escapeCsvValue(rowData.title || ''),
+        escapeCsvValue(rowData.firstName || ''),
+        escapeCsvValue(rowData.lastName || ''),
+        escapeCsvValue(rowData.houseNameOrNumber || ''),
+        escapeCsvValue(rowData.postcode || ''),
+        escapeCsvValue(rowData.aggregatedDonations || ''), // Empty string
+        escapeCsvValue(rowData.sponsoredEvent || ''), // Empty string
+        escapeCsvValue(rowData.donationDate || ''),
+        escapeCsvValue(amount.toFixed(2)) // Amount as numeric string, no £ sign
+      ].join(',')
+      
+      csvRows.push(csvRow)
+    }
+    
+    // Join all rows with newlines (no blank rows between entries)
+    const csvContent = csvRows.join('\n')
+    
+    // Generate filename with date range
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    const monthName = monthNames[end.getMonth()]
+    const year = end.getFullYear()
+    const filename = `Gift Aid ${monthName} ${year}.csv`
+    
+    // Calculate total count
     const totalCount = giftAidRows.length
     
     // Save submission record to database
@@ -518,11 +371,10 @@ async function handleGET(request: NextRequest) {
       logger.error('Failed to save Gift Aid submission record', error)
     }
     
-    // Return ODS file
-    // HMRC Rule: File format must be .ods (OpenDocument Spreadsheet)
-    return new NextResponse(Buffer.from(buffer), {
+    // Return CSV file
+    return new NextResponse(csvContent, {
       headers: {
-        'Content-Type': 'application/vnd.oasis.opendocument.spreadsheet',
+        'Content-Type': 'text/csv',
         'Content-Disposition': `attachment; filename="${filename}"`
       }
     })

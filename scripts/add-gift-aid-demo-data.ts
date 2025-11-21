@@ -292,13 +292,15 @@ async function main() {
   })
 
   if (adminUser) {
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    
     const demoSubmissions = [
       {
         startDate: new Date(now.getFullYear(), now.getMonth() - 3, 1),
         endDate: new Date(now.getFullYear(), now.getMonth() - 1, 0),
         totalAmount: 1250.00,
         totalCount: 25,
-        filename: `Gift-Aid-Schedule-${now.getFullYear()}-${String(now.getMonth() - 2).padStart(2, '0')}-01-to-${now.getFullYear()}-${String(now.getMonth()).padStart(2, '0')}-${String(now.getDate() - 1).padStart(2, '0')}.xlsx`,
+        filename: `Gift Aid ${monthNames[now.getMonth() - 2]} ${now.getFullYear()}.csv`,
         createdAt: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
       },
       {
@@ -306,7 +308,7 @@ async function main() {
         endDate: new Date(now.getFullYear(), now.getMonth() - 4, 0),
         totalAmount: 980.50,
         totalCount: 18,
-        filename: `Gift-Aid-Schedule-${now.getFullYear()}-${String(now.getMonth() - 5).padStart(2, '0')}-01-to-${now.getFullYear()}-${String(now.getMonth() - 3).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}.xlsx`,
+        filename: `Gift Aid ${monthNames[now.getMonth() - 5]} ${now.getFullYear()}.csv`,
         createdAt: new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000)
       },
       {
@@ -314,7 +316,7 @@ async function main() {
         endDate: new Date(now.getFullYear(), now.getMonth() - 7, 0),
         totalAmount: 1520.75,
         totalCount: 32,
-        filename: `Gift-Aid-Schedule-${now.getFullYear()}-${String(now.getMonth() - 8).padStart(2, '0')}-01-to-${now.getFullYear()}-${String(now.getMonth() - 6).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}.xlsx`,
+        filename: `Gift Aid ${monthNames[now.getMonth() - 8]} ${now.getFullYear()}.csv`,
         createdAt: new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000)
       },
       {
@@ -322,7 +324,7 @@ async function main() {
         endDate: new Date(now.getFullYear(), now.getMonth() - 10, 0),
         totalAmount: 875.25,
         totalCount: 15,
-        filename: `Gift-Aid-Schedule-${now.getFullYear()}-${String(now.getMonth() - 11).padStart(2, '0')}-01-to-${now.getFullYear()}-${String(now.getMonth() - 9).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}.xlsx`,
+        filename: `Gift Aid ${monthNames[now.getMonth() - 11]} ${now.getFullYear()}.csv`,
         createdAt: new Date(now.getTime() - 120 * 24 * 60 * 60 * 1000)
       },
       {
@@ -330,7 +332,7 @@ async function main() {
         endDate: new Date(now.getFullYear() - 1, 2, 31),
         totalAmount: 2100.00,
         totalCount: 42,
-        filename: `Gift-Aid-Schedule-${(now.getFullYear() - 1)}-01-01-to-${(now.getFullYear() - 1)}-03-31.xlsx`,
+        filename: `Gift Aid Mar ${now.getFullYear() - 1}.csv`,
         createdAt: new Date(now.getFullYear() - 1, 3, 15)
       }
     ]
