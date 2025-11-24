@@ -652,157 +652,164 @@ export function GiftAidPageClient() {
               <div className="mt-4">
                 <button
                   onClick={() => setShowTutorial(!showTutorial)}
-                  className="w-full flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                  className="w-full flex items-center justify-between p-3 bg-[var(--muted)] border border-[var(--border)] rounded-lg hover:bg-[var(--muted)]/80 transition-colors"
                 >
                   <div className="flex items-center gap-2">
-                    <Info className="h-4 w-4 text-blue-600" />
-                    <span className="font-medium text-sm text-blue-900">
+                    <Info className="h-4 w-4 text-[var(--foreground)]" />
+                    <span className="font-medium text-sm text-[var(--foreground)]">
                       How to Submit to HMRC - Step by Step Guide
                     </span>
                   </div>
                   {showTutorial ? (
-                    <ChevronUp className="h-4 w-4 text-blue-600" />
+                    <ChevronUp className="h-4 w-4 text-[var(--foreground)]" />
                   ) : (
-                    <ChevronDown className="h-4 w-4 text-blue-600" />
+                    <ChevronDown className="h-4 w-4 text-[var(--foreground)]" />
                   )}
                 </button>
                 
                 {showTutorial && (
-                  <div className="mt-2 p-4 bg-white border border-blue-200 rounded-lg">
-                    <div className="space-y-3">
-                      <div className="flex gap-3">
-                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
-                          <span className="text-xs font-bold text-blue-700">1</span>
+                  <div className="mt-2 p-6 bg-[var(--card)] border border-[var(--border)] rounded-lg">
+                    <div className="space-y-4">
+                      {/* Step 1 */}
+                      <div className="flex gap-4">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[var(--primary)] text-white flex items-center justify-center font-bold text-sm">
+                          1
                         </div>
                         <div className="flex-1">
-                          <p className="font-medium text-sm text-gray-900 mb-0.5">Download Both Files</p>
-                          <p className="text-xs text-gray-600">
-                            Download both the <strong className="text-gray-900">HMRC Template (ODS)</strong> and the <strong className="text-gray-900">CSV Data</strong> files using the buttons above.
+                          <h4 className="font-semibold text-sm text-gray-900 mb-1">Download Both Files</h4>
+                          <p className="text-sm text-gray-600">
+                            Download both the <strong>HMRC Template (ODS)</strong> and the <strong>CSV Data</strong> files using the buttons above.
                           </p>
                         </div>
                       </div>
-                      
-                      <div className="flex gap-3">
-                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
-                          <span className="text-xs font-bold text-blue-700">2</span>
+
+                      {/* Step 2 */}
+                      <div className="flex gap-4">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[var(--primary)] text-white flex items-center justify-center font-bold text-sm">
+                          2
                         </div>
                         <div className="flex-1">
-                          <p className="font-medium text-sm text-gray-900 mb-0.5">Open the CSV File</p>
-                          <p className="text-xs text-gray-600">
+                          <h4 className="font-semibold text-sm text-gray-900 mb-1">Open the CSV File</h4>
+                          <p className="text-sm text-gray-600">
                             Open the downloaded CSV file in a spreadsheet application (Excel, LibreOffice, Google Sheets, etc.).
                           </p>
                         </div>
                       </div>
-                      
-                      <div className="flex gap-3">
-                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
-                          <span className="text-xs font-bold text-blue-700">3</span>
+
+                      {/* Step 3 */}
+                      <div className="flex gap-4">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[var(--primary)] text-white flex items-center justify-center font-bold text-sm">
+                          3
                         </div>
                         <div className="flex-1">
-                          <p className="font-medium text-sm text-gray-900 mb-0.5">Copy All Data</p>
-                          <p className="text-xs text-gray-600">
+                          <h4 className="font-semibold text-sm text-gray-900 mb-1">Copy All Data</h4>
+                          <p className="text-sm text-gray-600">
                             Select all rows and columns in the CSV file (Ctrl+A or Cmd+A) and copy them (Ctrl+C or Cmd+C).
                           </p>
                         </div>
                       </div>
-                      
-                      <div className="flex gap-3">
-                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
-                          <span className="text-xs font-bold text-blue-700">4</span>
+
+                      {/* Step 4 */}
+                      <div className="flex gap-4">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[var(--primary)] text-white flex items-center justify-center font-bold text-sm">
+                          4
                         </div>
                         <div className="flex-1">
-                          <p className="font-medium text-sm text-gray-900 mb-0.5">Open the HMRC Template</p>
-                          <p className="text-xs text-gray-600">
+                          <h4 className="font-semibold text-sm text-gray-900 mb-1">Open the HMRC Template</h4>
+                          <p className="text-sm text-gray-600">
                             Open the downloaded HMRC template ODS file in LibreOffice Calc (recommended) or Excel.
                           </p>
                         </div>
                       </div>
-                      
-                      <div className="flex gap-3">
-                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
-                          <span className="text-xs font-bold text-blue-700">5</span>
+
+                      {/* Step 5 */}
+                      <div className="flex gap-4">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[var(--primary)] text-white flex items-center justify-center font-bold text-sm">
+                          5
                         </div>
                         <div className="flex-1">
-                          <p className="font-medium text-sm text-gray-900 mb-1">Fill in Box 1 (Earliest Donation Date)</p>
-                          <p className="text-xs text-gray-600 mb-2">
-                            Find the section labeled <strong className="text-gray-900">"Box 1"</strong> and enter the earliest donation date in DD/MM/YY format:
+                          <h4 className="font-semibold text-sm text-gray-900 mb-1">Fill in Box 1</h4>
+                          <p className="text-sm text-gray-600 mb-2">
+                            Find the section labeled <strong>"Box 1"</strong> and enter the earliest donation date in DD/MM/YY format:
                           </p>
                           {earliestDonationDate ? (
-                            <div className="bg-gray-50 p-2 rounded border border-blue-300">
-                              <p className="font-mono text-base font-bold text-gray-900">
+                            <div className="bg-[var(--muted)] p-3 rounded border border-[var(--border)]">
+                              <p className="font-mono text-base font-bold text-[var(--foreground)]">
                                 {formatDateForBox1(earliestDonationDate)}
                               </p>
-                              <p className="text-xs text-gray-500 mt-0.5">
-                                This is the earliest payment date from your selected period
+                              <p className="text-xs text-[var(--muted-foreground)] mt-1">
+                                Earliest payment date
                               </p>
                             </div>
                           ) : (
-                            <p className="text-xs text-gray-500 italic">
-                              No donation dates found in the selected period.
+                            <p className="text-sm text-[var(--muted-foreground)] italic">
+                              No dates found
                             </p>
                           )}
                         </div>
                       </div>
-                      
-                      <div className="flex gap-3">
-                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
-                          <span className="text-xs font-bold text-blue-700">6</span>
+
+                      {/* Step 6 */}
+                      <div className="flex gap-4">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[var(--primary)] text-white flex items-center justify-center font-bold text-sm">
+                          6
                         </div>
                         <div className="flex-1">
-                          <p className="font-medium text-sm text-gray-900 mb-1">Paste Data into the Template</p>
-                          <p className="text-xs text-gray-600 mb-1">
-                            Navigate to the first data cell in the donations schedule table (usually below the header row). Then:
+                          <h4 className="font-semibold text-sm text-gray-900 mb-1">Paste Data</h4>
+                          <p className="text-sm text-gray-600 mb-1">
+                            Navigate to the first data cell in the donations schedule table. Then:
                           </p>
-                          <ol className="list-decimal list-inside space-y-0.5 text-xs text-gray-600 ml-1">
-                            <li>Right-click on the first cell where you want to paste</li>
-                            <li>Select <strong className="text-gray-900">"Paste Special"</strong> from the context menu</li>
-                            <li>Choose <strong className="text-gray-900">"Unformatted Text"</strong> from the sub-menu</li>
+                          <ol className="list-decimal list-inside space-y-1 text-sm text-gray-600 ml-2">
+                            <li>Right-click and select <strong>"Paste Special"</strong></li>
+                            <li>Choose <strong>"Unformatted Text"</strong></li>
                           </ol>
                         </div>
                       </div>
-                      
-                      <div className="flex gap-3">
-                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
-                          <span className="text-xs font-bold text-blue-700">7</span>
+
+                      {/* Step 7 */}
+                      <div className="flex gap-4">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[var(--primary)] text-white flex items-center justify-center font-bold text-sm">
+                          7
                         </div>
                         <div className="flex-1">
-                          <p className="font-medium text-sm text-gray-900 mb-1">Configure Separator Options</p>
-                          <p className="text-xs text-gray-600 mb-1">
-                            When the "Separator Options" dialog appears:
+                          <h4 className="font-semibold text-sm text-gray-900 mb-1">Configure Separator</h4>
+                          <p className="text-sm text-gray-600 mb-1">
+                            In the "Separator Options" dialog:
                           </p>
-                          <ol className="list-decimal list-inside space-y-0.5 text-xs text-gray-600 ml-1">
-                            <li>Select <strong className="text-gray-900">"Separated by"</strong> (radio button)</li>
-                            <li>Check the <strong className="text-gray-900">"Tab"</strong> checkbox</li>
-                            <li>Click <strong className="text-gray-900">"OK"</strong></li>
+                          <ol className="list-decimal list-inside space-y-1 text-sm text-gray-600 ml-2">
+                            <li>Select <strong>"Separated by"</strong></li>
+                            <li>Check <strong>"Tab"</strong> and click OK</li>
                           </ol>
                         </div>
                       </div>
-                      
-                      <div className="flex gap-3">
-                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
-                          <span className="text-xs font-bold text-blue-700">8</span>
+
+                      {/* Step 8 */}
+                      <div className="flex gap-4">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[var(--primary)] text-white flex items-center justify-center font-bold text-sm">
+                          8
                         </div>
                         <div className="flex-1">
-                          <p className="font-medium text-sm text-gray-900 mb-1">Verify Data</p>
-                          <p className="text-xs text-gray-600 mb-1">
-                            Double-check that all data has been pasted correctly into the appropriate columns. Verify:
+                          <h4 className="font-semibold text-sm text-gray-900 mb-1">Verify Data</h4>
+                          <p className="text-sm text-gray-600 mb-1">
+                            Double-check the pasted data:
                           </p>
-                          <ul className="list-disc list-inside space-y-0.5 text-xs text-gray-600 ml-1">
-                            <li>All rows are present</li>
-                            <li>Data is in the correct columns</li>
-                            <li>Dates are in DD/MM/YY format</li>
-                            <li>Amounts are numeric (no £ signs)</li>
+                          <ul className="list-disc list-inside space-y-1 text-sm text-gray-600 ml-2">
+                            <li>All rows present</li>
+                            <li>Correct columns</li>
+                            <li>Dates in DD/MM/YY</li>
+                            <li>Amounts numeric</li>
                           </ul>
                         </div>
                       </div>
-                      
-                      <div className="flex gap-3">
-                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
-                          <span className="text-xs font-bold text-blue-700">9</span>
+
+                      {/* Step 9 */}
+                      <div className="flex gap-4">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[var(--primary)] text-white flex items-center justify-center font-bold text-sm">
+                          9
                         </div>
                         <div className="flex-1">
-                          <p className="font-medium text-sm text-gray-900 mb-0.5">Save and Upload</p>
-                          <p className="text-xs text-gray-600">
+                          <h4 className="font-semibold text-sm text-gray-900 mb-1">Save and Upload</h4>
+                          <p className="text-sm text-gray-600">
                             Save the ODS file and upload it to HMRC's Gift Aid submission portal. The file is now ready for submission.
                           </p>
                         </div>
