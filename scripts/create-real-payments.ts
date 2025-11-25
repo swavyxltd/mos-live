@@ -24,7 +24,7 @@ async function createRealPayments() {
     }
 
     // Check if students exist, if not create some
-    let students = await prisma.student.findMany({ 
+    const students = await prisma.student.findMany({ 
       where: { orgId },
       take: 3
     })

@@ -81,15 +81,24 @@ async function handlePOST(request: NextRequest) {
           continue
         }
 
-        // Calculate days overdue based on billing anniversary
+        // Calculate days overdue based on first payment failure date or billing anniversary
         let daysOverdue = 0
         let shouldSuspend = false
+        let lastBilledDate: Date | null = null
 
         if (billing.subscriptionStatus === 'past_due') {
-          // If subscription is past_due, check lastBilledAt or use anniversary date
-          if (billing.lastBilledAt) {
-            const lastBilledDate = new Date(billing.lastBilledAt)
+          // Priority: Use firstPaymentFailureDate if available (new retry system)
+          if (billing.firstPaymentFailureDate) {
+            const firstFailureDate = new Date(billing.firstPaymentFailureDate)
+            daysOverdue = Math.floor((today.getTime() - firstFailureDate.getTime()) / (1000 * 60 * 60 * 24))
+            // Suspend if 14 days have passed since first failure
+            shouldSuspend = daysOverdue >= 14
+            lastBilledDate = billing.lastBilledAt ? new Date(billing.lastBilledAt) : null
+          } else if (billing.lastBilledAt) {
+            // Fallback to lastBilledAt if firstPaymentFailureDate not set (legacy)
+            lastBilledDate = new Date(billing.lastBilledAt)
             daysOverdue = Math.floor((today.getTime() - lastBilledDate.getTime()) / (1000 * 60 * 60 * 24))
+            shouldSuspend = daysOverdue > gracePeriodDays
           } else if (billing.billingAnniversaryDate) {
             // Calculate based on anniversary date
             const anniversaryDate = new Date(todayYear, todayMonth, billing.billingAnniversaryDate)
@@ -98,10 +107,8 @@ async function handlePOST(request: NextRequest) {
               anniversaryDate.setMonth(anniversaryDate.getMonth() - 1)
             }
             daysOverdue = Math.floor((today.getTime() - anniversaryDate.getTime()) / (1000 * 60 * 60 * 24))
+            shouldSuspend = daysOverdue > gracePeriodDays
           }
-          
-          // If past_due and grace period exceeded, deactivate
-          shouldSuspend = daysOverdue > gracePeriodDays
         } else if (billing.billingAnniversaryDate) {
           // Calculate based on billing anniversary date
           const anniversaryDate = new Date(todayYear, todayMonth, billing.billingAnniversaryDate)

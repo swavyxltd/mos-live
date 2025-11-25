@@ -84,6 +84,17 @@ export function InvoicesPageClient({ initialInvoices = [] }: InvoicesPageClientP
     if (initialInvoices.length === 0) {
       fetchInvoices()
     }
+    
+    // Listen for refresh events
+    const handleRefresh = () => {
+      fetchInvoices()
+    }
+    
+    window.addEventListener('refresh-invoices', handleRefresh)
+    
+    return () => {
+      window.removeEventListener('refresh-invoices', handleRefresh)
+    }
   }, [])
 
   // Filter invoices - only show current month data (no other filters)

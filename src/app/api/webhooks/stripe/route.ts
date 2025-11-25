@@ -326,6 +326,21 @@ async function handleSetupIntentSucceeded(setupIntent: any) {
 async function handleInvoicePaymentSucceeded(invoice: any) {
   // Handle platform billing invoice payment
   if (invoice.metadata?.orgId) {
+    // Reset retry tracking when payment succeeds
+    await prisma.platformOrgBilling.updateMany({
+      where: {
+        orgId: invoice.metadata.orgId
+      },
+      data: {
+        subscriptionStatus: 'active',
+        firstPaymentFailureDate: null,
+        paymentRetryCount: 0,
+        lastPaymentRetryDate: null,
+        warningEmailSent: false,
+        lastBilledAt: new Date()
+      }
+    })
+    
     await prisma.auditLog.create({
       data: {
         orgId: invoice.metadata.orgId,
@@ -402,6 +417,10 @@ async function handleSubscriptionDeleted(subscription: any) {
 async function handleInvoicePaymentFailed(invoice: any) {
   // Handle platform billing invoice payment failure
   if (invoice.metadata?.orgId) {
+    const billing = await prisma.platformOrgBilling.findUnique({
+      where: { orgId: invoice.metadata.orgId }
+    })
+    
     const org = await prisma.org.findUnique({
       where: { id: invoice.metadata.orgId },
       include: {
@@ -416,24 +435,34 @@ async function handleInvoicePaymentFailed(invoice: any) {
       }
     })
     
-    if (org?.memberships[0]?.user?.email) {
-      // Send notification email
-      await sendPaymentFailedPlatform({
-        to: org.memberships[0].user.email,
-        orgName: org.name,
-        updateUrl: `${process.env.APP_BASE_URL}/settings/billing`
-      })
+    // Track first payment failure date (only set if not already set)
+    const updateData: any = {
+      subscriptionStatus: 'past_due'
     }
     
-    // Update subscription status
+    if (!billing?.firstPaymentFailureDate) {
+      updateData.firstPaymentFailureDate = new Date()
+      updateData.paymentRetryCount = 0
+      updateData.warningEmailSent = false
+    }
+    
     await prisma.platformOrgBilling.updateMany({
       where: {
         orgId: invoice.metadata.orgId
       },
-      data: {
-        subscriptionStatus: 'past_due'
-      }
+      data: updateData
     })
+    
+    // Only send initial email if this is the first failure
+    if (!billing?.firstPaymentFailureDate && org?.memberships[0]?.user?.email) {
+      await sendPaymentFailedPlatform({
+        to: org.memberships[0].user.email,
+        orgName: org.name,
+        updateUrl: `${process.env.APP_BASE_URL}/settings?tab=subscription`,
+        amount: invoice.amount_due,
+        failureReason: invoice.last_payment_error?.message || 'Payment could not be processed'
+      })
+    }
     
     await prisma.auditLog.create({
       data: {

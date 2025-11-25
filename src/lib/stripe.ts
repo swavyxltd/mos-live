@@ -371,3 +371,37 @@ export async function attemptOffSessionPayment(orgId: string, parentUserId: stri
     return null
   }
 }
+
+// Report usage to Stripe for metered billing
+export async function reportUsage(orgId: string, studentCount: number) {
+  if (!stripe) {
+    throw new Error('Stripe is not initialized')
+  }
+
+  const billing = await prisma.platformOrgBilling.findUnique({
+    where: { orgId }
+  })
+
+  if (!billing?.stripeSubscriptionId || !billing.stripeSubscriptionItemId) {
+    throw new Error('Subscription not found for organization')
+  }
+
+  // Report usage to Stripe (for metered billing)
+  // This uses the subscription item's usage records
+  await stripe.subscriptionItems.createUsageRecord(
+    billing.stripeSubscriptionItemId,
+    {
+      quantity: studentCount,
+      timestamp: Math.floor(Date.now() / 1000)
+    }
+  )
+
+  // Update billing record
+  await prisma.platformOrgBilling.update({
+    where: { orgId },
+    data: {
+      lastBilledStudentCount: studentCount,
+      lastBilledAt: new Date()
+    }
+  })
+}

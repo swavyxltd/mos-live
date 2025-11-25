@@ -187,37 +187,108 @@ export async function sendSupportNotification({
 }
 
 export async function sendPaymentFailedPlatform({
+  to,
   orgName,
-  errorMessage
+  updateUrl,
+  amount,
+  failureReason
 }: {
+  to: string
   orgName: string
-  errorMessage: string
+  updateUrl: string
+  amount?: number
+  failureReason?: string
 }) {
+  const amountText = amount ? `£${(amount / 100).toFixed(2)}` : 'your subscription'
+  const reasonText = failureReason || 'Payment could not be processed'
+  
   const content = `
-    <div style="margin-bottom: 16px;">
-      <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280; font-weight: 500;">Organization:</p>
-      <p style="margin: 0 0 16px 0; font-size: 16px; color: #111827; font-weight: 600;">${orgName}</p>
-    </div>
-    <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-left: 4px solid #dc2626; border-radius: 8px; padding: 16px; margin-top: 16px;">
-      <p style="margin: 0 0 8px 0; font-size: 14px; color: #991b1b; font-weight: 600;">Error:</p>
-      <p style="margin: 0; font-size: 14px; color: #7f1d1d; line-height: 1.6;">
-        ${errorMessage}
+    <div style="margin-bottom: 24px;">
+      <p style="margin: 0 0 16px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">
+        We were unable to process your payment for <strong>${amountText}</strong> for <strong>${orgName}</strong>.
+      </p>
+      <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-left: 4px solid #dc2626; border-radius: 8px; padding: 16px; margin: 16px 0;">
+        <p style="margin: 0 0 8px 0; font-size: 14px; color: #991b1b; font-weight: 600; text-align: center;">Reason:</p>
+        <p style="margin: 0; font-size: 14px; color: #7f1d1d; line-height: 1.6; text-align: center;">
+          ${reasonText}
+        </p>
+      </div>
+      <p style="margin: 16px 0 0 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">
+        Don't worry - we'll automatically retry your payment in a few days. In the meantime, you can update your payment method if needed.
       </p>
     </div>
   `
   
   const html = await generateEmailTemplate({
-    title: 'Payment Processing Failed',
-    description: 'A payment processing error has occurred.',
+    title: 'Payment Update',
+    description: [
+      "Assalamu'alaikum!",
+      'We wanted to let you know that we were unable to process your monthly subscription payment. We\'ll automatically retry the payment in a few days.'
+    ],
     content,
-    footerText: 'Please investigate this payment failure.'
+    buttonText: 'Update Payment Method',
+    buttonUrl: updateUrl,
+    footerText: 'If you have any questions or need assistance, please contact our support team.'
   })
   
   return sendEmail({
-    to: process.env.PLATFORM_ADMIN_EMAIL || 'admin@madrasah.io',
-    subject: `Payment Failed - ${orgName}`,
+    to,
+    subject: `Payment Update - ${orgName}`,
     html,
-    text: `Payment Failed - ${orgName}\n\nError: ${errorMessage}`
+    text: `Payment Update - ${orgName}\n\nAssalamu'alaikum!\n\nWe wanted to let you know that we were unable to process your payment for ${amountText} for ${orgName}.\n\nReason: ${reasonText}\n\nDon't worry - we'll automatically retry your payment in a few days. In the meantime, you can update your payment method if needed.\n\nUpdate your payment method: ${updateUrl}\n\nIf you have any questions, please contact our support team.`
+  })
+}
+
+export async function sendPaymentFailedWarningPlatform({
+  to,
+  orgName,
+  updateUrl,
+  amount,
+  failureReason
+}: {
+  to: string
+  orgName: string
+  updateUrl: string
+  amount?: number
+  failureReason?: string
+}) {
+  const amountText = amount ? `£${(amount / 100).toFixed(2)}` : 'your subscription'
+  const reasonText = failureReason || 'Payment could not be processed'
+  
+  const content = `
+    <div style="margin-bottom: 24px;">
+      <p style="margin: 0 0 16px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">
+        We've attempted to process your payment for <strong>${amountText}</strong> for <strong>${orgName}</strong> multiple times, but were unable to complete it.
+      </p>
+      <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-left: 4px solid #dc2626; border-radius: 8px; padding: 16px; margin: 16px 0;">
+        <p style="margin: 0 0 8px 0; font-size: 14px; color: #991b1b; font-weight: 600; text-align: center;">Latest Reason:</p>
+        <p style="margin: 0; font-size: 14px; color: #7f1d1d; line-height: 1.6; text-align: center;">
+          ${reasonText}
+        </p>
+      </div>
+      <p style="margin: 16px 0 0 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">
+        Please update your payment method within the next 7 days to avoid any interruption to your service. Your account may be temporarily suspended if payment is not resolved.
+      </p>
+    </div>
+  `
+  
+  const html = await generateEmailTemplate({
+    title: 'Payment Action Required',
+    description: [
+      "Assalamu'alaikum!",
+      'We need your attention regarding your subscription payment. Please update your payment method to continue using Madrasah OS without interruption.'
+    ],
+    content,
+    buttonText: 'Update Payment Method',
+    buttonUrl: updateUrl,
+    footerText: 'If you have any questions or need assistance, please contact our support team immediately.'
+  })
+  
+  return sendEmail({
+    to,
+    subject: `Payment Action Required - ${orgName}`,
+    html,
+    text: `Payment Action Required - ${orgName}\n\nAssalamu'alaikum!\n\nWe've attempted to process your payment for ${amountText} for ${orgName} multiple times, but were unable to complete it.\n\nLatest Reason: ${reasonText}\n\nPlease update your payment method within the next 7 days to avoid any interruption to your service. Your account may be temporarily suspended if payment is not resolved.\n\nUpdate your payment method: ${updateUrl}\n\nIf you have any questions, please contact our support team immediately.`
   })
 }
 

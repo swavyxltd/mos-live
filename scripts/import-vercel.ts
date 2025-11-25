@@ -44,8 +44,9 @@ async function importData() {
     console.log('\n✅ Import complete!')
     console.log('   All data has been migrated to Vercel Postgres\n')
     
-  } catch (error: any) {
-    console.error('❌ Import failed:', error.message)
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    console.error('❌ Import failed:', message)
     console.error('\n   Make sure:')
     console.error('   1. Vercel Postgres database is created')
     console.error('   2. POSTGRES_PRISMA_URL is set in your environment')

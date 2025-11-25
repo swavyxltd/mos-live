@@ -32,8 +32,8 @@ async function main() {
     console.log(`   Name: ${user.name || 'N/A'}`)
     console.log(`   2FA Enabled: ${user.twoFactorEnabled}`)
     console.log(`\n📝 Two-factor authentication has been turned off for this account.\n`)
-  } catch (error: any) {
-    if (error.code === 'P2025') {
+  } catch (error: unknown) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2025') {
       console.error(`❌ User with email ${email} not found`)
     } else {
       console.error('❌ Error:', error.message)

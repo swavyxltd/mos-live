@@ -382,6 +382,10 @@ model PlatformOrgBilling {
   stripeSubscriptionId     String?
   subscriptionStatus       String?
   trialEndDate             DateTime?
+  firstPaymentFailureDate  DateTime?
+  paymentRetryCount        Int       @default(0)
+  lastPaymentRetryDate     DateTime?
+  warningEmailSent         Boolean   @default(false)
   Org                      Org       @relation(fields: [orgId], references: [id], onDelete: Cascade)
 }
 
@@ -486,8 +490,8 @@ model User {
   password               String?
   address                String?
   postcode               String?
-  title                  String?                 // Title (Mr, Mrs, Miss, Ms, Dr, etc.) for Gift Aid
-  giftAidStatus          String?                 // 'YES', 'NO', 'NOT_SURE'
+  title                  String? // Title (Mr, Mrs, Miss, Ms, Dr, etc.) for Gift Aid
+  giftAidStatus          String? // 'YES', 'NO', 'NOT_SURE'
   giftAidDeclaredAt      DateTime?
   isSuperAdmin           Boolean                 @default(false)
   isArchived             Boolean                 @default(false)
@@ -513,7 +517,7 @@ model User {
   SupportTicket          SupportTicket[]
   SupportTicketResponse  SupportTicketResponse[]
   UserOrgMembership      UserOrgMembership[]
-      GiftAidSubmission      GiftAidSubmission[]
+  GiftAidSubmission      GiftAidSubmission[]
 }
 
 model UserOrgMembership {
@@ -521,7 +525,7 @@ model UserOrgMembership {
   userId         String
   orgId          String
   role           String
-  staffSubrole   String?                     // ADMIN, TEACHER, FINANCE_OFFICER, or null for custom
+  staffSubrole   String? // ADMIN, TEACHER, FINANCE_OFFICER, or null for custom
   isInitialAdmin Boolean                     @default(false)
   Org            Org                         @relation(fields: [orgId], references: [id], onDelete: Cascade)
   User           User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -541,21 +545,21 @@ model VerificationToken {
 model StaffPermission {
   id          String                      @id
   key         String                      @unique // e.g., 'access_dashboard', 'access_classes'
-  name        String                      // Display name
-  description String?                     // Optional description
-  category    String?                     // Group permissions (e.g., 'pages', 'actions')
+  name        String // Display name
+  description String? // Optional description
+  category    String? // Group permissions (e.g., 'pages', 'actions')
   createdAt   DateTime                    @default(now())
   updatedAt   DateTime
   Assignments StaffPermissionAssignment[]
 }
 
 model StaffPermissionAssignment {
-  id           String           @id
+  id           String            @id
   membershipId String
   permissionId String
-  createdAt    DateTime         @default(now())
+  createdAt    DateTime          @default(now())
   Membership   UserOrgMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
-  Permission   StaffPermission  @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  Permission   StaffPermission   @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@unique([membershipId, permissionId])
   @@index([membershipId])

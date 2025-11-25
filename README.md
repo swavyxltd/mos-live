@@ -141,6 +141,89 @@ Toggle dark mode by adding the `dark` class to the HTML element:
    - Parent Portal: http://localhost:3000?portal=parent
    - Auth Portal: http://localhost:3000?portal=auth
 
+## Production Deployment
+
+### Pre-Deployment Checklist
+
+Before deploying to production, complete the items in `PRE_LAUNCH_CHECKLIST.md`.
+
+### Deploying to Vercel
+
+1. **Push code to GitHub:**
+   ```bash
+   git add .
+   git commit -m "Prepare for production"
+   git push origin main
+   ```
+
+2. **Import to Vercel:**
+   - Go to [vercel.com](https://vercel.com)
+   - Click "Add New..." → "Project"
+   - Import your GitHub repository
+
+3. **Configure Environment Variables:**
+   - In Vercel Dashboard → Settings → Environment Variables
+   - Add all required variables (see `DEPLOYMENT.md` for full list)
+   - **Critical variables:**
+     - `NEXTAUTH_URL` - Your production URL
+     - `NEXTAUTH_SECRET` - Generate with `openssl rand -base64 32`
+     - `DATABASE_URL` or `POSTGRES_PRISMA_URL` - Production database
+     - `STRIPE_SECRET_KEY` - Production key (starts with `sk_live_`)
+     - `STRIPE_WEBHOOK_SECRET` - From Stripe Dashboard
+
+4. **Set up Vercel Postgres:**
+   - In Vercel Dashboard → Storage → Create Database → Postgres
+   - Copy the `POSTGRES_PRISMA_URL` to environment variables
+
+5. **Set up Vercel Blob Storage:**
+   - In Vercel Dashboard → Storage → Create Database → Blob
+   - `BLOB_READ_WRITE_TOKEN` is automatically set
+
+6. **Deploy:**
+   - Vercel will auto-deploy on push to main branch
+   - Or click "Deploy" in dashboard
+
+7. **Run Database Migrations:**
+   ```bash
+   # Using Vercel CLI
+   vercel env pull .env.local
+   npx prisma migrate deploy
+   ```
+
+8. **Create First Admin Account:**
+   ```bash
+   # Using API endpoint
+   curl -X POST https://your-app.vercel.app/api/setup/owner \
+     -H "Content-Type: application/json" \
+     -d '{
+       "email": "admin@yourdomain.com",
+       "password": "your-secure-password",
+       "name": "Admin Name"
+     }'
+   ```
+
+9. **Configure Stripe Webhooks:**
+   - Go to Stripe Dashboard → Webhooks
+   - Add endpoint: `https://your-app.vercel.app/api/webhooks/stripe`
+   - Select events: `customer.subscription.*`, `invoice.*`, `payment_intent.*`
+   - Copy webhook signing secret to `STRIPE_WEBHOOK_SECRET`
+
+10. **Configure Custom Domains (Optional):**
+    - In Vercel Dashboard → Settings → Domains
+    - Add your domain (e.g., `app.madrasah.io`)
+    - Update `NEXTAUTH_URL` and `APP_BASE_URL` environment variables
+    - Redeploy
+
+### Post-Deployment
+
+- [ ] Verify all environment variables are set
+- [ ] Test login functionality
+- [ ] Test payment flow
+- [ ] Verify Stripe webhooks are receiving events
+- [ ] Set up error tracking (Sentry)
+- [ ] Set up uptime monitoring
+- [ ] Review and customize Terms of Service and Privacy Policy pages
+
 ## Demo Accounts
 
 After seeding, you can use these demo accounts:
@@ -191,30 +274,39 @@ WHATSAPP_DEV_PHONE_NUMBER_ID=your-dev-phone-id
 WHATSAPP_DEV_WABA_ID=your-dev-waba-id
 ```
 
+## Documentation
+
+### Quick Start
+- **[Quick Start Deployment](docs/QUICK_START_DEPLOYMENT.md)** - Get deployed in ~60 minutes
+
+### Core Documentation
+- **[API Documentation](docs/API_DOCUMENTATION.md)** - Complete API reference with request/response examples
+- **[Environment Variables](docs/ENVIRONMENT_VARIABLES.md)** - Complete reference for all environment variables
+- **[Helper Scripts](docs/HELPER_SCRIPTS.md)** - Reference for all utility scripts
+
+### Operations
+- **[Runbook](docs/RUNBOOK.md)** - Common issues and troubleshooting guide
+- **[Backup Strategy](docs/BACKUP_STRATEGY.md)** - Database backup and disaster recovery procedures
+- **[Monitoring Setup](docs/MONITORING_SETUP.md)** - Guide for setting up error tracking and monitoring
+- **[Domain Setup](docs/DOMAIN_SETUP.md)** - Guide for configuring custom domains and SSL
+
+### Testing & Quality
+- **[Testing Guide](docs/TESTING_GUIDE.md)** - Testing strategies and procedures
+- **[Load Testing](docs/LOAD_TESTING.md)** - Load testing strategies and tools
+
+### Deployment
+- **[Deployment Guide](DEPLOYMENT.md)** - Production deployment instructions
+- **[Pre-Launch Checklist](PRE_LAUNCH_CHECKLIST.md)** - Complete checklist before going live
+
 ## API Endpoints
 
-### Core APIs
+See [API Documentation](docs/API_DOCUMENTATION.md) for complete API reference.
+
+### Quick Reference
 - `POST /api/attendance/bulk` - Bulk update attendance
 - `POST /api/invoices/generate-monthly` - Generate monthly invoices
-- `POST /api/invoices/[id]/record-cash` - Record cash payment
-- `POST /api/messages/send` - Send announcements
-- `GET /api/files/signed-url` - Get signed file URLs
-- `GET /api/calendar/ics` - Export calendar as ICS
-
-### Payment APIs
 - `POST /api/payments/stripe/pay-now` - Process card payment
-- `POST /api/payments/stripe/setup-intent` - Save payment method
-- `POST /api/payments/stripe/autopay-toggle` - Toggle autopay
-
-### Webhooks
 - `POST /api/webhooks/stripe` - Stripe webhook handler
-- `GET/POST /api/webhooks/whatsapp` - WhatsApp webhook handler
-
-### Integration APIs
-- `GET/POST /api/integrations/whatsapp/*` - WhatsApp integration
-
-## Cron Endpoints
-
 - `POST /api/cron/nightly-usage` - Report usage to Stripe (run nightly)
 
 ## Development
@@ -239,6 +331,19 @@ npm run test:clickall # Smoke test all pages
 npm run build        # Build for production
 npm run start        # Start production server
 ```
+
+### Environment Validation
+```bash
+npm run validate-env      # Validate all environment variables before deployment
+npm run test-db           # Test database connection and schema
+npm run test-stripe       # Test Stripe configuration
+npm run test-resend       # Test Resend email configuration
+npm run verify-deployment # Verify deployment after going live
+npm run load-test         # Load test API endpoints
+npm run migrate:prod      # Safely run migrations on production
+```
+
+See [Helper Scripts](docs/HELPER_SCRIPTS.md) for all available utility scripts.
 
 ## Architecture
 

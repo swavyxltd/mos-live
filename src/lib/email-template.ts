@@ -47,7 +47,7 @@ export async function generateEmailTemplate({
   
   // Content HTML
   const contentHtml = content ? `
-    <div style="margin: 0 0 40px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: left; max-width: 480px; margin-left: auto; margin-right: auto;">
+    <div style="margin: 0 0 40px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center; max-width: 480px; margin-left: auto; margin-right: auto;">
       ${content}
     </div>
   ` : ''

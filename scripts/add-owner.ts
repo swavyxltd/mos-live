@@ -64,8 +64,9 @@ async function main() {
     console.log(`   Super Admin: ${owner.isSuperAdmin}`)
     console.log(`   ID: ${owner.id}`)
     console.log('\n📝 You can now sign in with these credentials\n')
-  } catch (error: any) {
-    console.error('❌ Error:', error.message)
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    console.error('❌ Error:', message)
     process.exit(1)
   } finally {
     rl.close()

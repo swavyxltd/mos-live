@@ -65,7 +65,7 @@ async function main() {
   ]
 
   const hashedPassword = await bcrypt.hash('demo123', 12)
-  const createdParents: any[] = []
+  const createdParents: Array<{ id: string; email: string }> = []
 
   for (const parentData of demoParents) {
     // Check if user already exists

@@ -91,81 +91,18 @@ export function ApplicationsPageClient({ orgSlug }: ApplicationsPageClientProps)
     }
   }
 
-  // Legacy demo data removed - always use real API data
-  const getDemoApplications = (): Application[] => [
-    {
-      id: '1',
-      status: 'NEW',
-      guardianName: 'Ahmed Hassan',
-      guardianPhone: '+44 7700 900123',
-      guardianEmail: 'ahmed.hassan@example.com',
-      submittedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
-      children: [
-        { firstName: 'Hassan', lastName: 'Hassan', dob: '2015-03-15' },
-        { firstName: 'Amina', lastName: 'Hassan', dob: '2017-08-22' }
-      ],
-      preferredClass: 'Quran Recitation',
-      additionalNotes: 'Both children are eager to learn and have been practicing at home.',
-      adminNotes: ''
-    },
-    {
-      id: '2',
-      status: 'REVIEWED',
-      guardianName: 'Fatima Ali',
-      guardianPhone: '+44 7700 900124',
-      guardianEmail: 'fatima.ali@example.com',
-      submittedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
-      children: [
-        { firstName: 'Yusuf', lastName: 'Ali', dob: '2016-11-10' }
-      ],
-      preferredClass: 'Islamic Studies',
-      additionalNotes: 'Yusuf has been reading Arabic books and is very interested in Islamic history.',
-      adminNotes: 'Good candidate - strong academic background. Schedule interview.'
-    },
-    {
-      id: '3',
-      status: 'ACCEPTED',
-      guardianName: 'Mohammed Khan',
-      guardianPhone: '+44 7700 900125',
-      guardianEmail: 'mohammed.khan@example.com',
-      submittedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days ago
-      children: [
-        { firstName: 'Aisha', lastName: 'Khan', dob: '2014-07-18' },
-        { firstName: 'Omar', lastName: 'Khan', dob: '2018-12-03' }
-      ],
-      preferredClass: 'Arabic Language',
-      additionalNotes: 'Family is very committed to Islamic education. Both parents are teachers.',
-      adminNotes: 'Excellent family background. Accepted and enrolled in Arabic Level 1.'
-    },
-    {
-      id: '4',
-      status: 'NEW',
-      guardianName: 'Sarah Ahmed',
-      guardianPhone: '+44 7700 900126',
-      guardianEmail: 'sarah.ahmed@example.com',
-      submittedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
-      children: [
-        { firstName: 'Zainab', lastName: 'Ahmed', dob: '2019-04-25' }
-      ],
-      preferredClass: 'Quran Memorization',
-      additionalNotes: 'Zainab has already memorized several short surahs at home.',
-      adminNotes: ''
-    },
-    {
-      id: '5',
-      status: 'REJECTED',
-      guardianName: 'John Smith',
-      guardianPhone: '+44 7700 900127',
-      guardianEmail: 'john.smith@example.com',
-      submittedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), // 10 days ago
-      children: [
-        { firstName: 'Emma', lastName: 'Smith', dob: '2015-09-12' }
-      ],
-      preferredClass: 'Islamic Studies',
-      additionalNotes: 'Looking for a more secular approach to education.',
-      adminNotes: 'Not suitable for our Islamic curriculum focus. Recommended alternative schools.'
+  // Listen for refresh events to update applications list
+  useEffect(() => {
+    const handleRefresh = () => {
+      fetchApplications()
     }
-  ]
+    
+    window.addEventListener('refresh-applications', handleRefresh)
+    
+    return () => {
+      window.removeEventListener('refresh-applications', handleRefresh)
+    }
+  }, [])
 
   const filteredApplications = applications
     .filter(app => {

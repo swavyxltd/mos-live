@@ -288,7 +288,7 @@ async function main() {
     data: {
       orgId: org.id,
       title: 'Welcome to the New Academic Year',
-      body: 'Assalamu'alaikum! We are excited to welcome all students and parents to the new academic year. Classes will begin on Monday.',
+      body: 'Assalamu\'alaikum! We are excited to welcome all students and parents to the new academic year. Classes will begin on Monday.',
       audience: 'ALL',
       channel: 'EMAIL',
       status: 'SENT',

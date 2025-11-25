@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useState } from "react"
+import Link from "next/link"
 
 interface LoginFormProps extends React.ComponentProps<"div"> {
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => Promise<void>
@@ -120,8 +121,9 @@ export function LoginForm({
       </Card>
 
       <p className="px-6 text-center text-sm text-gray-600">
-        By clicking continue, you agree to our <a href="#" className="underline-offset-4 hover:underline">Terms of Service</a>{" "}
-        and <a href="#" className="underline-offset-4 hover:underline">Privacy Policy</a>.
+        By clicking continue, you agree to our{" "}
+        <Link href="/terms" className="underline-offset-4 hover:underline">Terms of Service</Link>{" "}
+        and <Link href="/privacy" className="underline-offset-4 hover:underline">Privacy Policy</Link>.
       </p>
     </div>
   )

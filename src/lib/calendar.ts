@@ -1,4 +1,4 @@
-import { ics } from 'ics'
+import { createEvents } from 'ics'
 import { prisma } from './prisma'
 import { format, startOfMonth, endOfMonth, addMonths } from 'date-fns'
 
@@ -172,7 +172,7 @@ export async function generateICS(
     allDay: event.allDay
   }))
   
-  const { error, value } = ics(icsEvents)
+  const { error, value } = createEvents(icsEvents)
   
   if (error) {
     throw new Error(`ICS generation failed: ${error.message}`)
