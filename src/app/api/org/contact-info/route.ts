@@ -27,17 +27,32 @@ async function handleGET(request: NextRequest) {
       select: {
         name: true,
         address: true,
+        addressLine1: true,
+        city: true,
+        postcode: true,
         phone: true,
+        publicPhone: true,
         email: true,
+        publicEmail: true,
         officeHours: true
       }
     })
 
+    // Build full address from components if available
+    let fullAddress = orgData?.address || ''
+    if (!fullAddress && (orgData?.addressLine1 || orgData?.city || orgData?.postcode)) {
+      const addressParts = []
+      if (orgData?.addressLine1) addressParts.push(orgData.addressLine1)
+      if (orgData?.city) addressParts.push(orgData.city)
+      if (orgData?.postcode) addressParts.push(orgData.postcode)
+      fullAddress = addressParts.join('\n')
+    }
+
     return NextResponse.json({
       name: orgData?.name || org.name,
-      address: orgData?.address || 'Contact information not set',
-      phone: orgData?.phone || 'Contact information not set',
-      email: orgData?.email || 'Contact information not set',
+      address: fullAddress || 'Contact information not set',
+      phone: orgData?.publicPhone || orgData?.phone || 'Contact information not set',
+      email: orgData?.publicEmail || orgData?.email || 'Contact information not set',
       officeHours: orgData?.officeHours || 'Contact information not set'
     })
 

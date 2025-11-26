@@ -16,7 +16,8 @@ const sendMessageSchema = z.object({
   classIds: z.array(z.string()).optional(),
   parentId: z.string().optional(),
   targets: z.record(z.any()).optional(),
-  saveOnly: z.boolean().optional() // If true, save to DB without sending emails
+  saveOnly: z.boolean().optional(), // If true, save to DB without sending emails
+  showOnAnnouncements: z.boolean().optional().default(true) // If true, message appears on announcements page
 })
 
 async function handlePOST(request: NextRequest) {
@@ -44,7 +45,7 @@ async function handlePOST(request: NextRequest) {
     )
   }
   
-  const { title, body, audience, channel = 'EMAIL', classIds, parentId, targets, saveOnly = false } = parsedData
+  const { title, body, audience, channel = 'EMAIL', classIds, parentId, targets, saveOnly = false, showOnAnnouncements = true } = parsedData
   
   // Get recipients based on audience
   let recipients: Array<{ email?: string; phone?: string; name: string; id?: string }> = []
@@ -197,9 +198,10 @@ async function handlePOST(request: NextRequest) {
     successCount = recipients.length
   }
   
-  // Always mark as SENT if message is saved to database (so it appears in parent portal)
-  // Even if email delivery fails, the message is still available in the portal
-  const finalStatus = 'SENT'
+  // Always mark as SENT if message should appear on announcements page
+  // If showOnAnnouncements is false, keep as DRAFT so it doesn't appear on announcements
+  // Even if email delivery fails, the message is still available in the portal if showOnAnnouncements is true
+  const finalStatus = showOnAnnouncements ? 'SENT' : 'DRAFT'
   
   const existingTargetsData = JSON.parse(message.targets || '{}')
   await prisma.message.update({

@@ -17,7 +17,9 @@ import {
   CheckCircle, 
   AlertTriangle,
   Info,
-  Shield
+  Shield,
+  Edit,
+  X
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useStaffPermissions } from '@/lib/staff-permissions'
@@ -36,7 +38,8 @@ interface PaymentMethodSettings {
 
 export function PaymentMethodsTab() {
   const { data: session } = useSession()
-  const { hasPermission } = useStaffPermissions(session?.user, 'ADMIN')
+  const userSubrole = (session?.user as any)?.staffSubrole || 'ADMIN'
+  const { hasPermission } = useStaffPermissions(session?.user, userSubrole as any)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [settings, setSettings] = useState<PaymentMethodSettings>({
@@ -55,6 +58,12 @@ export function PaymentMethodsTab() {
     secretKey: '',
     webhookSecret: ''
   })
+  const [isEditingBankDetails, setIsEditingBankDetails] = useState(false)
+  const [tempBankDetails, setTempBankDetails] = useState({
+    bankAccountName: null as string | null,
+    bankSortCode: null as string | null,
+    bankAccountNumber: null as string | null
+  })
 
   useEffect(() => {
     fetchPaymentSettings()
@@ -72,6 +81,17 @@ export function PaymentMethodsTab() {
           bankSortCode: data.bankSortCode || null,
           bankAccountNumber: data.bankAccountNumber || null
         })
+        setTempBankDetails({
+          bankAccountName: data.bankAccountName || null,
+          bankSortCode: data.bankSortCode || null,
+          bankAccountNumber: data.bankAccountNumber || null
+        })
+        setIsEditingBankDetails(false)
+        setTempBankDetails({
+          bankAccountName: data.bankAccountName || null,
+          bankSortCode: data.bankSortCode || null,
+          bankAccountNumber: data.bankAccountNumber || null
+        })
       } else {
         throw new Error('Failed to fetch payment settings')
       }
@@ -83,7 +103,7 @@ export function PaymentMethodsTab() {
   }
 
   const handleSaveSettings = async () => {
-    if (!hasPermission('manage_payments')) {
+    if (!hasPermission('access_settings')) {
       toast.error('You do not have permission to manage payment settings')
       return
     }
@@ -120,6 +140,64 @@ export function PaymentMethodsTab() {
 
   const handleSettingChange = (key: keyof PaymentMethodSettings, value: boolean | string) => {
     setSettings(prev => ({ ...prev, [key]: value }))
+  }
+
+  const handleEditBankDetails = () => {
+    setTempBankDetails({
+      bankAccountName: settings.bankAccountName,
+      bankSortCode: settings.bankSortCode,
+      bankAccountNumber: settings.bankAccountNumber
+    })
+    setIsEditingBankDetails(true)
+  }
+
+  const handleCancelEditBankDetails = () => {
+    setSettings(prev => ({
+      ...prev,
+      bankAccountName: tempBankDetails.bankAccountName,
+      bankSortCode: tempBankDetails.bankSortCode,
+      bankAccountNumber: tempBankDetails.bankAccountNumber
+    }))
+    setIsEditingBankDetails(false)
+  }
+
+  const handleSaveBankDetails = async () => {
+    if (!hasPermission('access_settings')) {
+      toast.error('You do not have permission to manage payment settings')
+      return
+    }
+
+    setSaving(true)
+    try {
+      const response = await fetch('/api/settings/payment-methods', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...settings,
+          bankAccountName: settings.bankAccountName,
+          bankSortCode: settings.bankSortCode,
+          bankAccountNumber: settings.bankAccountNumber
+        })
+      })
+
+      if (response.ok) {
+        toast.success('Bank details saved successfully')
+        setTempBankDetails({
+          bankAccountName: settings.bankAccountName,
+          bankSortCode: settings.bankSortCode,
+          bankAccountNumber: settings.bankAccountNumber
+        })
+        setIsEditingBankDetails(false)
+        await fetchPaymentSettings()
+      } else {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to save bank details')
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to save bank details')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleStripeKeyChange = (key: string, value: string) => {
@@ -164,7 +242,7 @@ export function PaymentMethodsTab() {
             <Switch
               checked={settings.cashPaymentEnabled}
               onCheckedChange={(checked) => handleSettingChange('cashPaymentEnabled', checked)}
-              disabled={!hasPermission('manage_payments')}
+              disabled={!hasPermission('access_settings')}
             />
           </div>
 
@@ -184,7 +262,7 @@ export function PaymentMethodsTab() {
             <Switch
               checked={settings.bankTransferEnabled}
               onCheckedChange={(checked) => handleSettingChange('bankTransferEnabled', checked)}
-              disabled={!hasPermission('manage_payments')}
+              disabled={!hasPermission('access_settings')}
             />
           </div>
 
@@ -216,13 +294,63 @@ export function PaymentMethodsTab() {
       {settings.bankTransferEnabled && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Building2 className="h-5 w-5" />
-              <span>Bank Transfer Details</span>
-            </CardTitle>
-            <CardDescription>
-              Provide your bank account details for parents to make direct transfers. These will be shown to parents who choose bank transfer.
-            </CardDescription>
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <CardTitle className="flex items-center space-x-2">
+                  <Building2 className="h-5 w-5" />
+                  <span>Bank Transfer Details</span>
+                </CardTitle>
+                <CardDescription>
+                  Provide your bank account details for parents to make direct transfers. These will be shown to parents who choose bank transfer.
+                </CardDescription>
+              </div>
+              {hasPermission('access_settings') && (
+                <div className="flex items-center gap-2">
+                  {!isEditingBankDetails ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleEditBankDetails}
+                      className="flex items-center gap-2"
+                    >
+                      <Edit className="h-4 w-4" />
+                      Edit
+                    </Button>
+                  ) : (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCancelEditBankDetails}
+                        disabled={saving}
+                        className="flex items-center gap-2"
+                      >
+                        <X className="h-4 w-4" />
+                        Cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={handleSaveBankDetails}
+                        disabled={saving}
+                        className="flex items-center gap-2"
+                      >
+                        {saving ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="h-4 w-4" />
+                            Save
+                          </>
+                        )}
+                      </Button>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
@@ -232,7 +360,7 @@ export function PaymentMethodsTab() {
                 placeholder="e.g., Masjid Falah"
                 value={settings.bankAccountName || ''}
                 onChange={(e) => handleSettingChange('bankAccountName', e.target.value)}
-                disabled={!hasPermission('manage_payments')}
+                disabled={!isEditingBankDetails || !hasPermission('access_settings')}
               />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -243,7 +371,7 @@ export function PaymentMethodsTab() {
                   placeholder="e.g., 12-34-56"
                   value={settings.bankSortCode || ''}
                   onChange={(e) => handleSettingChange('bankSortCode', e.target.value)}
-                  disabled={!hasPermission('manage_payments')}
+                  disabled={!isEditingBankDetails || !hasPermission('access_settings')}
                   maxLength={8}
                 />
               </div>
@@ -254,7 +382,7 @@ export function PaymentMethodsTab() {
                   placeholder="e.g., 12345678"
                   value={settings.bankAccountNumber || ''}
                   onChange={(e) => handleSettingChange('bankAccountNumber', e.target.value)}
-                  disabled={!hasPermission('manage_payments')}
+                  disabled={!isEditingBankDetails || !hasPermission('access_settings')}
                   maxLength={10}
                 />
               </div>
@@ -265,8 +393,8 @@ export function PaymentMethodsTab() {
                 <span className="text-sm font-medium text-gray-900">Standing Order Instructions</span>
               </div>
               <p className="text-sm text-gray-700">
-                Parents can set up a standing order using these details to automate monthly fee payments. 
-                They will see these instructions when they choose bank transfer as their payment method.
+                A standing order is an automatic payment that sends money from the parent's bank account to the school each month. 
+                Parents can set this up through their online banking using the details above. Once set up, payments will be made automatically each month on the due date.
               </p>
             </div>
           </CardContent>
@@ -309,7 +437,7 @@ export function PaymentMethodsTab() {
       </Card>
 
       {/* Save Button */}
-      {hasPermission('manage_payments') && (
+      {hasPermission('access_settings') && (
         <div className="flex justify-end">
           <Button
             onClick={handleSaveSettings}

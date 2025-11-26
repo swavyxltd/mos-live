@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { CalendarGrid } from '@/components/ui/calendar-grid'
 import { isDemoMode } from '@/lib/demo-mode'
 import { Calendar, Download, Clock, MapPin, Users } from 'lucide-react'
+import { CardSkeleton, Skeleton } from '@/components/loading/skeleton'
 
 export default function ParentCalendarPage() {
   const { data: session, status } = useSession()
@@ -283,78 +284,133 @@ export default function ParentCalendarPage() {
       setLoading(false)
     } else {
       // Fetch real data from API
-      Promise.all([
-        fetch('/api/calendar/holidays').then(res => res.json()),
-        fetch('/api/calendar/classes').then(res => res.json())
-      ]).then(([holidaysData, classesData]) => {
-        setHolidays(holidaysData)
-        setClassSchedules(classesData)
-        
-        // Generate events from database data
-        const today = new Date()
-        const next30Days = new Date()
-        next30Days.setDate(today.getDate() + 30)
-        
-        const dbEvents = []
-        
-        // Add holidays
-        holidaysData.forEach((holiday: any) => {
-          dbEvents.push({
-            ...holiday,
-            isHoliday: true
-          })
-        })
+      const now = new Date()
+      const startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString()
+      const endDate = new Date(now.getFullYear(), now.getMonth() + 3, 0).toISOString()
 
-        // Add class schedules
-        for (let d = new Date(today); d <= next30Days; d.setDate(d.getDate() + 1)) {
-          const dayOfWeek = d.toLocaleDateString('en-US', { weekday: 'long' })
-          const dayClasses = classesData.filter((schedule: any) => 
-            schedule.schedule?.includes(dayOfWeek)
-          )
+      fetch(`/api/parent/calendar?startDate=${startDate}&endDate=${endDate}`)
+        .then(async res => {
+          if (!res.ok) {
+            console.error('Failed to fetch calendar data:', res.status)
+            setEvents([])
+            setHolidays([])
+            setClassSchedules([])
+            setLoading(false)
+            return
+          }
+          const data = await res.json()
           
-          dayClasses.forEach((schedule: any) => {
-            const eventDate = new Date(d)
-            // Parse schedule to get time (assuming format like "Monday, Wednesday, Friday 5:00 PM - 7:00 PM")
-            const timeMatch = schedule.schedule?.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i)
-            if (timeMatch) {
-              let hours = parseInt(timeMatch[1])
-              const minutes = parseInt(timeMatch[2])
-              const ampm = timeMatch[3].toUpperCase()
+          setHolidays(data.holidays || [])
+          setClassSchedules(data.classes || [])
+          
+          // Process events from API
+          const allEvents = data.events || []
+          
+          // Generate recurring class events from class schedules
+          const today = new Date()
+          const next30Days = new Date()
+          next30Days.setDate(today.getDate() + 30)
+          
+          const classEvents = []
+          
+          // Add recurring class events
+          if (data.classes && Array.isArray(data.classes)) {
+            for (let d = new Date(today); d <= next30Days; d.setDate(d.getDate() + 1)) {
+              const dayOfWeek = d.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase()
               
-              if (ampm === 'PM' && hours !== 12) hours += 12
-              if (ampm === 'AM' && hours === 12) hours = 0
-              
-              eventDate.setHours(hours, minutes)
+              data.classes.forEach((cls: any) => {
+                const schedule = cls.schedule
+                if (!schedule) return
+                
+                // Check if this class runs on this day
+                const scheduleDays = Array.isArray(schedule.days) ? schedule.days.map((d: string) => d.toLowerCase()) : []
+                if (!scheduleDays.includes(dayOfWeek)) return
+                
+                // Create event for this class on this day
+                const eventDate = new Date(d)
+                if (schedule.startTime) {
+                  const [hours, minutes] = schedule.startTime.split(':').map(Number)
+                  eventDate.setHours(hours || 17, minutes || 0, 0, 0)
+                } else {
+                  eventDate.setHours(17, 0, 0, 0)
+                }
+                
+                classEvents.push({
+                  id: `class-${cls.id}-${d.toISOString().split('T')[0]}`,
+                  title: cls.name,
+                  date: eventDate,
+                  startTime: schedule.startTime || '17:00',
+                  endTime: schedule.endTime || '19:00',
+                  room: cls.room || 'TBD',
+                  teacher: cls.teacher || 'TBD',
+                  students: cls.students || [],
+                  type: 'CLASS',
+                  isHoliday: false
+                })
+              })
             }
-            
-            dbEvents.push({
-              id: `${schedule.id}-${d.toISOString().split('T')[0]}`,
-              title: schedule.name,
-              date: eventDate,
-              room: schedule.room,
-              students: schedule.studentClasses?.map((sc: any) => `${sc.student.firstName} ${sc.student.lastName}`) || [],
-              type: 'CLASS',
-              isHoliday: false
-            })
-          })
-        }
-
-        // Sort events by date
-        dbEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-        setEvents(dbEvents)
-        setLoading(false)
-      }).catch(err => {
-        setLoading(false)
-      })
+          }
+          
+          // Transform holidays to events format
+          const holidayEvents = (data.holidays || []).map((holiday: any) => ({
+            id: holiday.id,
+            title: holiday.title || holiday.name,
+            date: new Date(holiday.date || holiday.startDate),
+            type: 'HOLIDAY',
+            isHoliday: true,
+            description: holiday.description
+          }))
+          
+          // Transform API events
+          const transformedApiEvents = (allEvents || []).map((event: any) => ({
+            id: event.id,
+            title: event.title,
+            date: new Date(event.date),
+            type: event.type || 'EVENT',
+            startTime: event.startTime,
+            endTime: event.endTime,
+            location: event.location,
+            teacher: event.teacher,
+            description: event.description,
+            isHoliday: event.type === 'HOLIDAY' || event.isHoliday
+          }))
+          
+          // Combine all events
+          const combinedEvents = [...transformedApiEvents, ...holidayEvents, ...classEvents]
+          
+          // Sort events by date
+          combinedEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+          setEvents(combinedEvents)
+          setLoading(false)
+        })
+        .catch(err => {
+          console.error('Error fetching calendar data:', err)
+          setEvents([])
+          setHolidays([])
+          setClassSchedules([])
+          setLoading(false)
+        })
     }
   }, [status])
 
-  if (status === 'loading' || loading) {
-    return <div>Loading...</div>
+  if (!session?.user?.id) {
+    return null // Will be handled by auth redirect
   }
 
-  if (!session?.user?.id) {
-    return <div>Please sign in to view the calendar.</div>
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <Skeleton className="h-8 w-48 mb-2" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <CardSkeleton className="h-96" />
+        <CardSkeleton className="h-64" />
+      </div>
+    )
   }
 
   // Demo org data

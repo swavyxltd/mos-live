@@ -1,13 +1,20 @@
-import { TableSkeleton } from '@/components/loading/skeleton'
+import { CardSkeleton, Skeleton } from '@/components/loading/skeleton'
 
 export default function Loading() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div className="h-8 w-48 bg-[var(--muted)] rounded-[var(--radius)] animate-pulse" />
-        <div className="h-10 w-32 bg-[var(--muted)] rounded-[var(--radius)] animate-pulse" />
+        <div>
+          <Skeleton className="h-8 w-48 mb-2" />
+          <Skeleton className="h-4 w-64" />
+        </div>
+        <Skeleton className="h-10 w-32" />
       </div>
-      <TableSkeleton rows={6} />
+      <div className="space-y-4">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <CardSkeleton key={i} />
+        ))}
+      </div>
     </div>
   )
 }

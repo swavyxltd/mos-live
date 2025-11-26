@@ -13,12 +13,19 @@ export function InitialAppLoader() {
 
   useEffect(() => {
     // Only show on initial app load (dashboard routes after sign-in)
-    // Check if we're on a dashboard route
+    // Check if we're on a dashboard route or any parent/staff/owner route
     const isDashboardRoute = pathname?.includes('/dashboard') || 
                             pathname?.includes('/parent/dashboard') ||
                             pathname?.includes('/owner/overview')
     
-    if (!isDashboardRoute) {
+    // Also show on any parent portal route on first login
+    const isParentRoute = pathname?.startsWith('/parent/')
+    const isStaffRoute = pathname?.startsWith('/staff/') || pathname?.startsWith('/admin/')
+    const isOwnerRoute = pathname?.startsWith('/owner/')
+    
+    const isAppRoute = isDashboardRoute || isParentRoute || isStaffRoute || isOwnerRoute
+    
+    if (!isAppRoute) {
       setShowLoader(false)
       return
     }

@@ -21,6 +21,7 @@ interface TopbarProps {
 export function Topbar({ title, user: initialUser, userRole }: TopbarProps) {
   const { data: session, status } = useSession()
   const [isDarkMode, setIsDarkMode] = React.useState(false)
+  const [mounted, setMounted] = React.useState(false)
   
   // Use session data if available (fresh from client), otherwise fall back to initial user prop
   // Always prioritize session data when it's loaded to ensure we get the latest from database
@@ -31,6 +32,13 @@ export function Topbar({ title, user: initialUser, userRole }: TopbarProps) {
   } : initialUser
   
   const firstName = user?.name?.split(' ')[0] || 'User'
+
+  // Check dark mode state after hydration to avoid mismatch
+  React.useEffect(() => {
+    setMounted(true)
+    const isDark = document.documentElement.classList.contains('dark')
+    setIsDarkMode(isDark)
+  }, [])
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode)
@@ -68,7 +76,7 @@ export function Topbar({ title, user: initialUser, userRole }: TopbarProps) {
           className="h-10 w-10 hover:bg-gray-100"
           onClick={toggleDarkMode}
         >
-          {isDarkMode ? (
+          {mounted && isDarkMode ? (
             <Sun className="h-5 w-5" />
           ) : (
             <Moon className="h-5 w-5" />

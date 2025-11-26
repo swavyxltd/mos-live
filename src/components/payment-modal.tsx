@@ -1,11 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import { X, CreditCard, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { X, Building2, Copy, CheckCircle, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 interface PaymentModalProps {
   isOpen: boolean
@@ -14,277 +12,230 @@ interface PaymentModalProps {
   onPaymentSuccess: () => void
 }
 
+interface BankDetails {
+  bankAccountName?: string
+  bankSortCode?: string
+  bankAccountNumber?: string
+}
+
 export function PaymentModal({ isOpen, onClose, overdueAmount, onPaymentSuccess }: PaymentModalProps) {
-  const [cardDetails, setCardDetails] = useState({
-    number: '',
-    expiryMonth: '',
-    expiryYear: '',
-    cvc: '',
-    name: ''
-  })
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'success' | 'error'>('idle')
-  const [errorMessage, setErrorMessage] = useState('')
+  const [bankDetails, setBankDetails] = useState<BankDetails | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [copiedField, setCopiedField] = useState<string | null>(null)
 
-  const handleInputChange = (field: string, value: string) => {
-    setCardDetails(prev => ({ ...prev, [field]: value }))
-  }
-
-  const formatCardNumber = (value: string) => {
-    // Remove all non-digits
-    const digits = value.replace(/\D/g, '')
-    // Add spaces every 4 digits
-    return digits.replace(/(\d{4})(?=\d)/g, '$1 ')
-  }
-
-  const handleCardNumberChange = (value: string) => {
-    const formatted = formatCardNumber(value)
-    if (formatted.replace(/\s/g, '').length <= 16) {
-      handleInputChange('number', formatted)
+  useEffect(() => {
+    if (isOpen) {
+      fetchBankDetails()
+    } else {
+      // Reset state when modal closes
+      setBankDetails(null)
+      setLoading(true)
+      setCopiedField(null)
     }
-  }
+  }, [isOpen])
 
-  const handleExpiryChange = (value: string) => {
-    if (value.length <= 2) {
-      handleInputChange('expiryMonth', value)
-    }
-  }
-
-  const handleYearChange = (value: string) => {
-    if (value.length <= 2) {
-      handleInputChange('expiryYear', value)
-    }
-  }
-
-  const handleCvcChange = (value: string) => {
-    if (value.length <= 4) {
-      handleInputChange('cvc', value)
-    }
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsProcessing(true)
-    setPaymentStatus('idle')
-    setErrorMessage('')
-
+  const fetchBankDetails = async () => {
     try {
-      // In demo mode, simulate payment processing
-      if (process.env.NODE_ENV === 'development') {
-        await new Promise(resolve => setTimeout(resolve, 2000)) // Simulate processing time
-        
-        // Store payment time in localStorage to simulate payment success
-        localStorage.setItem('lastPaymentTime', Date.now().toString())
-        
-        // Simulate success
-        setPaymentStatus('success')
-        setTimeout(() => {
-          onPaymentSuccess()
-          onClose()
-          resetForm()
-        }, 2000)
-        return
-      }
-
-      // Real Stripe payment processing would go here
-      const response = await fetch('/api/payments/stripe/pay-overdue', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          amount: overdueAmount,
-          cardDetails
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Payment failed')
-      }
-
-      const result = await response.json()
-      
-      if (result.success) {
-        setPaymentStatus('success')
-        setTimeout(() => {
-          onPaymentSuccess()
-          onClose()
-          resetForm()
-        }, 2000)
+      const response = await fetch('/api/settings/organization')
+      if (response.ok) {
+        const data = await response.json()
+        setBankDetails({
+          bankAccountName: data.bankAccountName,
+          bankSortCode: data.bankSortCode,
+          bankAccountNumber: data.bankAccountNumber
+        })
       } else {
-        throw new Error(result.error || 'Payment failed')
+        // Fallback to payment-methods endpoint
+        const fallbackResponse = await fetch('/api/settings/payment-methods')
+        if (fallbackResponse.ok) {
+          const fallbackData = await fallbackResponse.json()
+          setBankDetails({
+            bankAccountName: fallbackData.bankAccountName,
+            bankSortCode: fallbackData.bankSortCode,
+            bankAccountNumber: fallbackData.bankAccountNumber
+          })
+        }
       }
     } catch (error) {
-      setPaymentStatus('error')
-      setErrorMessage(error instanceof Error ? error.message : 'Payment failed. Please try again.')
+      console.error('Error fetching bank details:', error)
     } finally {
-      setIsProcessing(false)
+      setLoading(false)
     }
   }
 
-  const resetForm = () => {
-    setCardDetails({
-      number: '',
-      expiryMonth: '',
-      expiryYear: '',
-      cvc: '',
-      name: ''
-    })
-    setPaymentStatus('idle')
-    setErrorMessage('')
-  }
-
-  const handleClose = () => {
-    if (!isProcessing) {
-      onClose()
-      resetForm()
+  const handleCopy = async (text: string, field: string) => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text)
+        setCopiedField(field)
+        setTimeout(() => setCopiedField(null), 2000)
+      } else {
+        // Fallback for browsers that don't support clipboard API
+        const textArea = document.createElement('textarea')
+        textArea.value = text
+        textArea.style.position = 'fixed'
+        textArea.style.left = '-999999px'
+        document.body.appendChild(textArea)
+        textArea.select()
+        try {
+          document.execCommand('copy')
+          setCopiedField(field)
+          setTimeout(() => setCopiedField(null), 2000)
+        } catch (err) {
+          console.error('Failed to copy text:', err)
+        } finally {
+          if (textArea && textArea.parentNode) {
+            document.body.removeChild(textArea)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error copying to clipboard:', error)
     }
   }
+
 
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-white/20 backdrop-blur-md flex items-center justify-center z-50 p-4">
-      <div className="w-[75vw]">
-        <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-md overflow-hidden">
-          <div className="p-6 border-b border-[var(--border)]">
+    <div className="fixed inset-0 bg-white/20 backdrop-blur-md flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="w-[75vw] my-8 max-h-[90vh]">
+        <Card className="border border-[var(--border)] shadow-lg overflow-hidden flex flex-col max-h-[90vh]">
+          <CardHeader>
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-[var(--foreground)]">Pay Overdue Amount</h2>
+              <CardTitle className="text-xl font-semibold text-[var(--foreground)]">
+                Bank Transfer Details
+              </CardTitle>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={handleClose}
-                disabled={isProcessing}
+                onClick={onClose}
               >
                 <X className="h-4 w-4" />
               </Button>
             </div>
-          </div>
+          </CardHeader>
           
-          <div className="p-6">
-          {paymentStatus === 'success' ? (
-            <div className="text-center py-8">
-              <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-green-900 mb-2">Payment Successful!</h3>
-              <p className="text-sm text-green-700">
-                Your payment of £{overdueAmount} has been processed successfully.
-              </p>
+          <CardContent className="space-y-4 overflow-y-auto flex-1">
+            <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-700">Amount to Pay:</span>
+                <span className="text-lg font-bold text-gray-900">£{overdueAmount.toFixed(2)}</span>
+              </div>
             </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700">Amount to Pay:</span>
-                  <span className="text-lg font-bold text-gray-900">£{overdueAmount}</span>
+
+            {loading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                <p className="mt-4 text-sm text-gray-600">Loading bank details...</p>
+              </div>
+            ) : !bankDetails?.bankAccountName || !bankDetails?.bankSortCode || !bankDetails?.bankAccountNumber ? (
+              <div className="text-center py-8">
+                <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-sm text-gray-600">
+                  Bank account details are not yet configured. Please contact the school office for payment instructions.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="bg-[var(--accent)]/30 p-3 rounded-lg border border-[var(--border)]">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Building2 className="h-4 w-4 text-[var(--foreground)]" />
+                    <h3 className="text-sm font-semibold text-[var(--foreground)]">Bank Transfer Information</h3>
+                  </div>
+                  
+                  <div className="space-y-2.5">
+                    <div>
+                      <label className="text-sm font-medium text-[var(--muted-foreground)] mb-1 block">
+                        Account Name
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 p-2 bg-[var(--background)] border border-[var(--border)] rounded-md font-mono text-sm">
+                          {bankDetails.bankAccountName}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCopy(bankDetails.bankAccountName || '', 'name')}
+                          className="flex-shrink-0"
+                        >
+                          {copiedField === 'name' ? (
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-[var(--muted-foreground)] mb-1 block">
+                        Sort Code
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 p-2 bg-[var(--background)] border border-[var(--border)] rounded-md font-mono text-sm">
+                          {bankDetails.bankSortCode}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCopy(bankDetails.bankSortCode || '', 'sortCode')}
+                          className="flex-shrink-0"
+                        >
+                          {copiedField === 'sortCode' ? (
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-[var(--muted-foreground)] mb-1 block">
+                        Account Number
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 p-2 bg-[var(--background)] border border-[var(--border)] rounded-md font-mono text-sm">
+                          {bankDetails.bankAccountNumber}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCopy(bankDetails.bankAccountNumber || '', 'accountNumber')}
+                          className="flex-shrink-0"
+                        >
+                          {copiedField === 'accountNumber' ? (
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                  <p className="text-xs text-gray-700">
+                    <strong>Payment Instructions:</strong> Please transfer £{overdueAmount.toFixed(2)} to the bank account details above. 
+                    Include your child's name as the payment reference. Once payment is received, it will be updated in your account.
+                  </p>
                 </div>
               </div>
+            )}
 
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="cardNumber">Card Number</Label>
-                  <Input
-                    id="cardNumber"
-                    type="text"
-                    placeholder="1234 5678 9012 3456"
-                    value={cardDetails.number}
-                    onChange={(e) => handleCardNumberChange(e.target.value)}
-                    disabled={isProcessing}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="cardName">Cardholder Name</Label>
-                  <Input
-                    id="cardName"
-                    type="text"
-                    placeholder="John Doe"
-                    value={cardDetails.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
-                    disabled={isProcessing}
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="expiryMonth">Month</Label>
-                    <Input
-                      id="expiryMonth"
-                      type="text"
-                      placeholder="MM"
-                      value={cardDetails.expiryMonth}
-                      onChange={(e) => handleExpiryChange(e.target.value)}
-                      disabled={isProcessing}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="expiryYear">Year</Label>
-                    <Input
-                      id="expiryYear"
-                      type="text"
-                      placeholder="YY"
-                      value={cardDetails.expiryYear}
-                      onChange={(e) => handleYearChange(e.target.value)}
-                      disabled={isProcessing}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="cvc">CVC</Label>
-                    <Input
-                      id="cvc"
-                      type="text"
-                      placeholder="123"
-                      value={cardDetails.cvc}
-                      onChange={(e) => handleCvcChange(e.target.value)}
-                      disabled={isProcessing}
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {paymentStatus === 'error' && (
-                <div className="flex items-center space-x-2 text-red-600 bg-red-50 p-3 rounded-lg">
-                  <AlertCircle className="h-4 w-4" />
-                  <span className="text-sm">{errorMessage}</span>
-                </div>
-              )}
-
-              <div className="flex space-x-3 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleClose}
-                  disabled={isProcessing}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={isProcessing}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700"
-                >
-                  {isProcessing ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <CreditCard className="h-4 w-4 mr-2" />
-                      Pay £{overdueAmount}
-                    </>
-                  )}
-                </Button>
-              </div>
-            </form>
-          )}
-          </div>
-        </div>
+            <div className="flex justify-end pt-2">
+              <Button
+                onClick={onClose}
+                variant="default"
+                size="sm"
+              >
+                Close
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

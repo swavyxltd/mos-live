@@ -47,16 +47,30 @@ export default function ParentSupportPage() {
     }
   }, [status])
 
-  if (status === 'loading' || loading) {
-    return <div>Loading...</div>
+  if (!session?.user?.id) {
+    return null // Will be handled by auth redirect
   }
 
-  if (!session?.user?.id) {
-    return <div>Please sign in to access support.</div>
+  if (loading) {
+    return null // Will be handled by loading.tsx
   }
 
   if (!contactInfo) {
-    return <div>Contact information not available.</div>
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[var(--foreground)] break-words">Support</h1>
+          <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+            Get help with your children's education, payments, and school-related questions.
+          </p>
+        </div>
+        <Card className="p-6">
+          <div className="text-center text-[var(--muted-foreground)]">
+            Contact information is being set up. Please check back soon.
+          </div>
+        </Card>
+      </div>
+    )
   }
   return (
     <div className="space-y-6">

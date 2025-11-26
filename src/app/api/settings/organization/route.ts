@@ -165,7 +165,10 @@ async function handleGET() {
       publicPhone: (org as any).publicPhone || '',
       email: org.email || '',
       publicEmail: (org as any).publicEmail || '',
-      officeHours: org.officeHours || ''
+      officeHours: org.officeHours || '',
+      bankAccountName: org.bankAccountName || '',
+      bankSortCode: org.bankSortCode || '',
+      bankAccountNumber: org.bankAccountNumber || ''
     })
   } catch (error: any) {
     logger.error('Error fetching organization settings', error)

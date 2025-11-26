@@ -17,7 +17,7 @@ async function handlePUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, email, phone, twoFactorEnabled } = body
+    const { name, email, phone, address, city, postcode, title, giftAidStatus, twoFactorEnabled } = body
 
     // Get current user
     const user = await prisma.user.findUnique({
@@ -37,8 +37,9 @@ async function handlePUT(request: NextRequest) {
     }
 
     // Validate and sanitize email format if provided
+    let sanitizedEmail: string | undefined
     if (email && email !== user.email) {
-      const sanitizedEmail = email.toLowerCase().trim()
+      sanitizedEmail = email.toLowerCase().trim()
       if (!isValidEmail(sanitizedEmail)) {
         return NextResponse.json(
           { error: 'Invalid email format' },
@@ -84,6 +85,36 @@ async function handlePUT(request: NextRequest) {
       updateData.phone = sanitizedPhone || null
     }
     
+    // Update address if provided
+    if (address !== undefined) {
+      updateData.address = sanitizeText(address, MAX_STRING_LENGTHS.address) || null
+    }
+    
+    // Update city if provided
+    if (city !== undefined) {
+      updateData.city = sanitizeText(city, MAX_STRING_LENGTHS.name) || null
+    }
+    
+    // Update postcode if provided
+    if (postcode !== undefined) {
+      updateData.postcode = sanitizeText(postcode, 20) || null
+    }
+    
+    // Update title if provided
+    if (title !== undefined) {
+      updateData.title = sanitizeText(title, 20) || null
+    }
+    
+    // Update gift aid status if provided
+    if (giftAidStatus !== undefined) {
+      if (giftAidStatus === 'YES' || giftAidStatus === 'NO' || giftAidStatus === 'NOT_SURE' || giftAidStatus === null || giftAidStatus === '') {
+        updateData.giftAidStatus = giftAidStatus || null
+        if (giftAidStatus === 'YES' || giftAidStatus === 'NO') {
+          updateData.giftAidDeclaredAt = new Date()
+        }
+      }
+    }
+    
     // Update 2FA status if provided
     if (twoFactorEnabled !== undefined) {
       updateData.twoFactorEnabled = twoFactorEnabled
@@ -98,6 +129,11 @@ async function handlePUT(request: NextRequest) {
           name: user.name,
           email: user.email,
           phone: user.phone,
+          address: user.address,
+          city: (user as any).city,
+          postcode: user.postcode,
+          title: user.title,
+          giftAidStatus: user.giftAidStatus,
           image: user.image,
           isSuperAdmin: user.isSuperAdmin,
           twoFactorEnabled: user.twoFactorEnabled
@@ -113,6 +149,12 @@ async function handlePUT(request: NextRequest) {
         name: true,
         email: true,
         phone: true,
+        address: true,
+        city: true,
+        postcode: true,
+        title: true,
+        giftAidStatus: true,
+        giftAidDeclaredAt: true,
         image: true,
         isSuperAdmin: true,
         twoFactorEnabled: true
@@ -134,11 +176,12 @@ async function handlePUT(request: NextRequest) {
 
 export const PUT = withRateLimit(handlePUT)
 
-async function handleGET() {
+async function handleGET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
     if (!session?.user?.id) {
+      logger.warn('Unauthorized attempt to fetch user settings', { userId: session?.user?.id })
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -149,6 +192,12 @@ async function handleGET() {
         name: true,
         email: true,
         phone: true,
+        address: true,
+        city: true,
+        postcode: true,
+        title: true,
+        giftAidStatus: true,
+        giftAidDeclaredAt: true,
         image: true,
         isSuperAdmin: true,
         twoFactorEnabled: true
@@ -156,14 +205,22 @@ async function handleGET() {
     })
 
     if (!user) {
+      logger.warn('User not found when fetching settings', { userId: session.user.id })
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     return NextResponse.json(user)
-  } catch (error) {
-    logger.error('Error fetching user settings', error)
+  } catch (error: any) {
+    logger.error('Error fetching user settings', error, {
+      message: error?.message,
+      stack: error?.stack
+    })
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to fetch user settings' },
+      { 
+        error: 'Failed to fetch user settings',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }

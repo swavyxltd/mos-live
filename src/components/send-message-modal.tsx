@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Send, Copy, X } from 'lucide-react'
 import { toast } from 'sonner'
+import { Switch } from '@/components/ui/switch'
 
 interface SendMessageModalProps {
   isOpen: boolean
@@ -42,7 +43,8 @@ export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent }: Sen
     message: '',
     audience: 'all' as 'all' | 'class' | 'individual',
     classId: '',
-    parentId: ''
+    parentId: '',
+    showOnAnnouncements: true // Default to true - always show on announcements page
   })
   const [loading, setLoading] = useState(false)
   const [classes, setClasses] = useState<Class[]>([])
@@ -127,7 +129,8 @@ export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent }: Sen
         body: formData.message,
         audience: formData.audience.toUpperCase(),
         channel: 'WHATSAPP',
-        saveOnly: true
+        saveOnly: true,
+        showOnAnnouncements: formData.showOnAnnouncements
       }
       
       if (formData.audience === 'class' && formData.classId) {
@@ -180,7 +183,8 @@ export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent }: Sen
         message: '',
         audience: 'all',
         classId: '',
-        parentId: ''
+        parentId: '',
+        showOnAnnouncements: true
       })
     } catch (error: any) {
       const errorMessage = error?.message || 'Failed to save message. Please try again.'
@@ -226,7 +230,8 @@ export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent }: Sen
           channel: 'EMAIL',
           classIds: formData.audience === 'class' ? [formData.classId] : undefined,
           parentId: formData.audience === 'individual' ? formData.parentId : undefined,
-          saveOnly: false
+          saveOnly: false,
+          showOnAnnouncements: formData.showOnAnnouncements
         })
       })
       
@@ -248,7 +253,8 @@ export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent }: Sen
         message: '',
         audience: 'all',
         classId: '',
-        parentId: ''
+        parentId: '',
+        showOnAnnouncements: true
       })
       
       toast.success('Email sent successfully!')
@@ -265,7 +271,8 @@ export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent }: Sen
       message: '',
       audience: 'all',
       classId: '',
-      parentId: ''
+      parentId: '',
+      showOnAnnouncements: true
     })
     onClose()
   }
@@ -357,6 +364,22 @@ export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent }: Sen
             </Select>
           </div>
         )}
+
+        <div className="flex items-center justify-between p-4 bg-[var(--accent)]/30 rounded-lg border border-[var(--border)]">
+          <div className="flex-1">
+            <Label htmlFor="showOnAnnouncements" className="text-sm font-medium text-[var(--foreground)] cursor-pointer">
+              Show on Announcements Page
+            </Label>
+            <p className="text-xs text-[var(--muted-foreground)] mt-1">
+              This message will appear on the parent portal announcements page for all relevant parents
+            </p>
+          </div>
+          <Switch
+            id="showOnAnnouncements"
+            checked={formData.showOnAnnouncements}
+            onCheckedChange={(checked) => setFormData(prev => ({ ...prev, showOnAnnouncements: checked }))}
+          />
+        </div>
 
         <div className="flex justify-end space-x-3 pt-4">
           <Button type="button" variant="outline" onClick={handleCancel}>

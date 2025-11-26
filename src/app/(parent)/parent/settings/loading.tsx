@@ -3,17 +3,15 @@ import { CardSkeleton, Skeleton } from '@/components/loading/skeleton'
 export default function Loading() {
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex justify-between items-center">
         <div>
           <Skeleton className="h-8 w-48 mb-2" />
           <Skeleton className="h-4 w-64" />
         </div>
+        <Skeleton className="h-10 w-32" />
       </div>
-      <div className="grid gap-4 md:grid-cols-2">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <CardSkeleton key={i} />
-        ))}
-      </div>
+      <CardSkeleton />
+      <CardSkeleton />
     </div>
   )
 }

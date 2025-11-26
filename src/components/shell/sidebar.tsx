@@ -91,12 +91,13 @@ const ownerNavigation = [
 
 const parentNavigation = [
   { name: 'Dashboard', href: '/parent/dashboard', icon: Home },
-  { name: 'Announcements', href: '/parent/announcements', icon: MessageSquare },
+  { name: 'Children', href: '/parent/children', icon: Users },
   { name: 'Attendance', href: '/parent/attendance', icon: ClipboardList },
-  { name: 'Calendar', href: '/parent/calendar', icon: Calendar },
   { name: 'Payments', href: '/parent/payments', icon: CreditCard },
-  { name: 'Payment Methods', href: '/parent/payment-methods', icon: Settings },
+  { name: 'Calendar', href: '/parent/calendar', icon: Calendar },
+  { name: 'Announcements', href: '/parent/announcements', icon: MessageSquare },
   { name: 'Support', href: '/parent/support', icon: HelpCircle },
+  { name: 'Settings', href: '/parent/settings', icon: Settings },
 ]
 
 export function Sidebar({ user: initialUser, org, userRole, staffSubrole, permissions }: SidebarProps) {
@@ -113,7 +114,15 @@ export function Sidebar({ user: initialUser, org, userRole, staffSubrole, permis
     isSuperAdmin: session.user.isSuperAdmin ?? initialUser.isSuperAdmin
   } : initialUser
   const [isDarkMode, setIsDarkMode] = React.useState(false)
+  const [mounted, setMounted] = React.useState(false)
   const pathname = usePathname()
+
+  // Check dark mode state after hydration to avoid mismatch
+  React.useEffect(() => {
+    setMounted(true)
+    const isDark = document.documentElement.classList.contains('dark')
+    setIsDarkMode(isDark)
+  }, [])
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode)
@@ -209,7 +218,7 @@ export function Sidebar({ user: initialUser, org, userRole, staffSubrole, permis
               onClick={toggleDarkMode}
               className="h-10 w-10 hover:bg-gray-100 flex-shrink-0"
             >
-              {isDarkMode ? (
+              {mounted && isDarkMode ? (
                 <Sun className="h-5 w-5" />
               ) : (
                 <Moon className="h-5 w-5" />

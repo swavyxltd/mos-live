@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Calendar, CheckCircle, XCircle, Clock } from 'lucide-react'
+import { Calendar, CheckCircle, XCircle, Clock, TrendingUp, User } from 'lucide-react'
 import { getAttendanceRating } from '@/lib/attendance-ratings'
 import Link from 'next/link'
 
@@ -29,7 +29,7 @@ interface ParentWeeklyAttendanceCardsProps {
 
 export function ParentWeeklyAttendanceCards({ attendanceData }: ParentWeeklyAttendanceCardsProps) {
   const getStatusDot = (status: string, day: string, time?: string) => {
-    const baseClasses = "w-4 h-4 rounded-full transition-all duration-200 hover:scale-110 cursor-pointer"
+    const baseClasses = "w-5 h-5 rounded-full transition-all duration-200 hover:scale-110 cursor-pointer shadow-sm"
     const tooltipText = status === 'LATE' && time 
       ? `${day}: ${status} (arrived at ${time})`
       : `${day}: ${status}`
@@ -38,21 +38,21 @@ export function ParentWeeklyAttendanceCards({ attendanceData }: ParentWeeklyAtte
       case 'PRESENT':
         return (
           <div 
-            className={`${baseClasses} bg-green-500 hover:bg-green-600`}
+            className={`${baseClasses} bg-green-500 hover:bg-green-600 shadow-green-500/30`}
             title={tooltipText}
           />
         )
       case 'ABSENT':
         return (
           <div 
-            className={`${baseClasses} bg-red-500 hover:bg-red-600`}
+            className={`${baseClasses} bg-red-500 hover:bg-red-600 shadow-red-500/30`}
             title={tooltipText}
           />
         )
       case 'LATE':
         return (
           <div 
-            className={`${baseClasses} bg-yellow-500 hover:bg-yellow-600`}
+            className={`${baseClasses} bg-yellow-500 hover:bg-yellow-600 shadow-yellow-500/30`}
             title={tooltipText}
           />
         )
@@ -107,9 +107,9 @@ export function ParentWeeklyAttendanceCards({ attendanceData }: ParentWeeklyAtte
     return (
       <Card>
         <CardContent className="p-8 text-center">
-          <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No Attendance Data</h3>
-          <p className="text-gray-500">
+          <Calendar className="h-12 w-12 text-[var(--muted-foreground)] mx-auto mb-4 opacity-50" />
+          <h3 className="text-lg font-medium text-[var(--foreground)] mb-2">No Attendance Data</h3>
+          <p className="text-[var(--muted-foreground)]">
             No attendance records found for this week.
           </p>
         </CardContent>
@@ -125,27 +125,34 @@ export function ParentWeeklyAttendanceCards({ attendanceData }: ParentWeeklyAtte
         const TrendIcon = rating.icon
         
         return (
-          <Card key={child.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
+          <Card key={child.id} className="hover:shadow-lg transition-all border-[var(--border)]">
+            <CardHeader className="pb-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                  <CardTitle className="text-lg font-semibold text-gray-900">
-                    {child.name}
-                  </CardTitle>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {child.class} • {child.teacher}
-                  </p>
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0">
+                    <div className="h-10 w-10 rounded-full bg-[var(--primary)]/10 flex items-center justify-center">
+                      <User className="h-5 w-5 text-[var(--primary)]" />
+                    </div>
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg font-semibold text-[var(--foreground)]">
+                      {child.name}
+                    </CardTitle>
+                    <p className="text-sm text-[var(--muted-foreground)] mt-1">
+                      {child.class} • {child.teacher}
+                    </p>
+                  </div>
                 </div>
                 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
                   <div className="text-right">
-                    <div className="text-2xl font-bold text-gray-900">
+                    <div className="text-3xl font-bold text-[var(--foreground)]">
                       {weeklyAttendance}%
                     </div>
-                    <div className="text-sm text-gray-500">This Week</div>
+                    <div className="text-xs text-[var(--muted-foreground)] mt-0.5">This Week</div>
                   </div>
                   
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-[var(--radius-md)] bg-[var(--accent)]">
                     <TrendIcon className={`h-4 w-4 ${rating.color}`} />
                     <span className={`text-sm font-medium ${rating.color}`}>
                       {rating.text}
@@ -157,21 +164,34 @@ export function ParentWeeklyAttendanceCards({ attendanceData }: ParentWeeklyAtte
             
             <CardContent>
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-900">This Week</h3>
-                  <Badge variant="outline" className="flex items-center gap-1">
+                <div className="flex items-center justify-between pb-2 border-b border-[var(--border)]">
+                  <h3 className="text-sm font-semibold text-[var(--foreground)] uppercase tracking-wide">Weekly Breakdown</h3>
+                  <Badge variant="outline" className="flex items-center gap-1.5 text-xs">
                     <Calendar className="h-3 w-3" />
                     {formatDateRange(new Date())}
                   </Badge>
                 </div>
                 
-                <div className="grid grid-cols-5 gap-2">
+                <div className="grid grid-cols-5 gap-3">
                   {child.weeklyAttendance.map((day, index) => (
-                    <div key={index} className="flex flex-col items-center gap-2 p-3 bg-gray-50 rounded-lg">
-                      <div className="text-sm font-medium text-gray-700">{day.day}</div>
-                      {getStatusDot(day.status, day.day, day.time)}
-                      <div className="text-sm text-gray-500 text-center">
-                        {day.status === 'PRESENT' || day.status === 'LATE' ? day.time : day.status}
+                    <div 
+                      key={index} 
+                      className="flex flex-col items-center gap-3 p-4 bg-[var(--accent)]/30 rounded-[var(--radius-md)] border border-[var(--border)] hover:bg-[var(--accent)]/50 hover:border-[var(--primary)]/30 transition-all group"
+                    >
+                      <div className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wide">
+                        {day.day}
+                      </div>
+                      <div className="flex flex-col items-center gap-2">
+                        {getStatusDot(day.status, day.day, day.time)}
+                        <div className="text-xs text-[var(--muted-foreground)] text-center font-medium">
+                          {day.status === 'PRESENT' || day.status === 'LATE' 
+                            ? day.time 
+                            : day.status === 'ABSENT' 
+                            ? 'Absent' 
+                            : day.status === 'NOT_SCHEDULED'
+                            ? 'N/A'
+                            : day.status}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -182,7 +202,7 @@ export function ParentWeeklyAttendanceCards({ attendanceData }: ParentWeeklyAtte
         )
       })}
       
-      <div className="flex justify-center pt-4">
+      <div className="flex justify-center pt-2">
         <Link href="/parent/attendance">
           <Button variant="outline" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />

@@ -489,6 +489,7 @@ model User {
   phone                  String?
   password               String?
   address                String?
+  city                   String?
   postcode               String?
   title                  String? // Title (Mr, Mrs, Miss, Ms, Dr, etc.) for Gift Aid
   giftAidStatus          String? // 'YES', 'NO', 'NOT_SURE'

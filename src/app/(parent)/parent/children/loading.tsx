@@ -9,8 +9,8 @@ export default function Loading() {
           <Skeleton className="h-4 w-64" />
         </div>
       </div>
-      <div className="grid gap-4 md:grid-cols-2">
-        {Array.from({ length: 4 }).map((_, i) => (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, i) => (
           <CardSkeleton key={i} />
         ))}
       </div>

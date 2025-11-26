@@ -105,6 +105,9 @@ export async function getActiveOrg(userId?: string) {
         cashPaymentEnabled: true,
         bankTransferEnabled: true,
         paymentInstructions: true,
+        bankAccountName: true,
+        bankSortCode: true,
+        bankAccountNumber: true,
       }
     })
   } catch (error) {

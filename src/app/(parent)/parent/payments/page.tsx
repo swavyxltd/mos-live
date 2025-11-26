@@ -7,8 +7,11 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { StatCard } from '@/components/ui/stat-card'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { Switch } from '@/components/ui/switch'
 import { isDemoMode } from '@/lib/demo-mode'
 import { format } from 'date-fns'
+import { toast } from 'sonner'
 import { 
   CreditCard, 
   Coins, 
@@ -18,19 +21,24 @@ import {
   HelpCircle,
   CheckCircle,
   History,
-  Banknote,
   Users,
   AlertTriangle,
-  Calendar
+  Calendar,
+  Building2,
+  Banknote
 } from 'lucide-react'
 import { PaymentModal } from '@/components/payment-modal'
+import { TableSkeleton, Skeleton, StatCardSkeleton } from '@/components/loading/skeleton'
 
 export default function ParentInvoicesPage() {
-  const { data: session, status } = useSession()
+  const { status } = useSession()
   const [fees, setFees] = useState<any[]>([])
   const [paymentHistory, setPaymentHistory] = useState<any[]>([])
-  const [totalOutstanding, setTotalOutstanding] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState('overview')
+
+  // Ensure fees is always an array
+  const safeFees = Array.isArray(fees) ? fees : []
   const [paymentSettings, setPaymentSettings] = useState({
     cashPaymentEnabled: true,
     bankTransferEnabled: true,
@@ -48,15 +56,31 @@ export default function ParentInvoicesPage() {
       if (response.ok) {
         const settings = await response.json()
         setPaymentSettings(settings)
-      }
-      
-      // Also fetch parent's payment preferences
-      const paymentResponse = await fetch('/api/settings/payment')
-      if (paymentResponse.ok) {
-        const paymentData = await paymentResponse.json()
-        setPreferredPaymentMethod(paymentData.preferredPaymentMethod)
+        
+        // Auto-select if only one method is available
+        const availableMethods = []
+        if (settings.cashPaymentEnabled) availableMethods.push('CASH')
+        if (settings.bankTransferEnabled) availableMethods.push('BANK_TRANSFER')
+        
+        // Also fetch parent's payment preferences
+        const paymentResponse = await fetch('/api/settings/payment')
+        if (paymentResponse.ok) {
+          const paymentData = await paymentResponse.json()
+          const currentPreference = paymentData.preferredPaymentMethod
+          
+          // If only one method available, auto-select it
+          if (availableMethods.length === 1 && !currentPreference) {
+            const method = availableMethods[0] as 'CASH' | 'BANK_TRANSFER'
+            setPreferredPaymentMethod(method)
+            // Save it automatically
+            await handlePaymentMethodChange(method)
+          } else {
+            setPreferredPaymentMethod(currentPreference)
+          }
+        }
       }
     } catch (error) {
+      console.error('Error fetching payment settings:', error)
     }
   }
 
@@ -116,18 +140,118 @@ export default function ParentInvoicesPage() {
 
       setFees(demoFees)
       setPaymentHistory(demoPaymentHistory)
-      setTotalOutstanding(demoFees.filter(fee => fee.status === 'PENDING' || fee.status === 'OVERDUE').reduce((sum, fee) => sum + fee.amount, 0))
       setLoading(false)
     } else {
       // Fetch real fees from API
       fetch('/api/payments')
-        .then(res => res.json())
+        .then(async res => {
+          if (!res.ok) {
+            const errorData = await res.json().catch(() => ({}))
+            console.error('Payments API error response:', JSON.stringify(errorData, null, 2))
+            console.error('Response status:', res.status)
+            throw new Error(errorData.error || errorData.details || `Failed to fetch payments: ${res.status}`)
+          }
+          return res.json()
+        })
         .then(data => {
-          setFees(data)
-          setTotalOutstanding(data.filter((fee: any) => fee.status === 'PENDING').reduce((sum: number, fee: any) => sum + fee.amount, 0))
+          // API returns array of invoices
+          const invoices = Array.isArray(data) ? data : []
+          
+          // Transform invoices to match frontend format
+          const transformedFees = invoices.map((invoice: any) => {
+            // Get payment method and date from the most recent successful payment
+            const latestPayment = invoice.payments && invoice.payments.length > 0
+              ? invoice.payments[0] // Already sorted by createdAt desc
+              : null
+            
+            // Determine status: if paid, show PAID, otherwise check if upcoming (48h before due)
+            let displayStatus = invoice.status || 'PENDING'
+            if (displayStatus === 'PAID') {
+              displayStatus = 'PAID'
+            } else if (invoice.dueDate) {
+              const dueDate = new Date(invoice.dueDate)
+              const now = new Date()
+              const fortyEightHoursFromNow = new Date(now.getTime() + 48 * 60 * 60 * 1000)
+              
+              if (dueDate <= fortyEightHoursFromNow && dueDate >= now) {
+                displayStatus = 'UPCOMING'
+              } else if (dueDate < now) {
+                displayStatus = 'OVERDUE'
+              }
+            }
+            
+            return {
+              id: invoice.id,
+              invoiceNumber: invoice.invoiceNumber,
+              student: invoice.studentName,
+              description: `Monthly fees for ${invoice.studentName}`,
+              amount: invoice.amount || 0,
+              dueDate: invoice.dueDate ? new Date(invoice.dueDate) : new Date(),
+              status: invoice.status || 'PENDING',
+              displayStatus, // For UI display
+              paidDate: invoice.paidDate ? new Date(invoice.paidDate) : null,
+              paymentMethod: latestPayment?.method || invoice.paidMethod || null,
+              paymentDate: latestPayment?.createdAt ? new Date(latestPayment.createdAt) : (invoice.paidDate ? new Date(invoice.paidDate) : null),
+              studentName: invoice.studentName,
+              studentId: invoice.student?.id,
+              // For compatibility with existing code
+              children: invoice.studentName ? [{
+                name: invoice.studentName,
+                amount: invoice.amount || 0
+              }] : []
+            }
+          })
+          
+          // Extract payment history from invoices
+          const history: any[] = []
+          invoices.forEach((invoice: any) => {
+            if (invoice.payments && Array.isArray(invoice.payments)) {
+              invoice.payments.forEach((payment: any) => {
+                history.push({
+                  id: payment.id,
+                  invoiceNumber: invoice.invoiceNumber,
+                  studentName: invoice.studentName,
+                  amount: payment.amount || 0,
+                  paymentMethod: payment.method || 'Unknown',
+                  paymentDate: payment.createdAt ? new Date(payment.createdAt) : new Date(),
+                  status: payment.status || 'SUCCEEDED',
+                  transactionId: payment.id
+                })
+              })
+            }
+          })
+          
+          setFees(transformedFees)
+          setPaymentHistory(history)
+          
+          // Update sessionStorage for overdue banner
+          const overdueCount = transformedFees.filter((f: any) => {
+            const status = f?.displayStatus || f?.status
+            return status === 'OVERDUE'
+          }).length
+          const overdueAmount = transformedFees
+            .filter((f: any) => {
+              const status = f?.displayStatus || f?.status
+              return status === 'OVERDUE'
+            })
+            .reduce((sum: number, f: any) => sum + (f?.amount || 0), 0)
+          
+          if (overdueCount > 0) {
+            sessionStorage.setItem('hasOverduePayments', 'true')
+            sessionStorage.setItem('overdueAmount', overdueAmount.toString())
+            sessionStorage.setItem('overdueCount', overdueCount.toString())
+          } else {
+            sessionStorage.setItem('hasOverduePayments', 'false')
+            sessionStorage.setItem('overdueAmount', '0')
+            sessionStorage.setItem('overdueCount', '0')
+          }
+          
           setLoading(false)
         })
         .catch(err => {
+          console.error('Error fetching payments:', err)
+          setFees([])
+          setPaymentHistory([])
           setLoading(false)
         })
     }
@@ -160,18 +284,55 @@ export default function ParentInvoicesPage() {
     window.location.reload()
   }
 
+  // Filter fees: show upcoming (48h before due) and overdue, but not paid
+  const pendingFees = safeFees.filter((fee: any) => {
+    if (fee?.status === 'PAID') return false
+    // Use displayStatus if available, otherwise check status
+    const status = fee?.displayStatus || fee?.status
+    return status === 'UPCOMING' || status === 'OVERDUE' || status === 'PENDING'
+  })
+  
+  const upcomingFees = pendingFees.filter((fee: any) => {
+    const status = fee?.displayStatus || fee?.status
+    return status === 'UPCOMING'
+  })
+  
+  const overdueFees = pendingFees.filter((fee: any) => {
+    const status = fee?.displayStatus || fee?.status
+    return status === 'OVERDUE'
+  })
+  
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-sm text-gray-600">Loading payments...</p>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <Skeleton className="h-8 w-48 mb-2" />
+            <Skeleton className="h-4 w-64" />
+          </div>
         </div>
+        
+        {/* Tabs skeleton */}
+        <div className="border-b border-[var(--border)]">
+          <div className="flex gap-4">
+            <Skeleton className="h-10 w-24" />
+            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-10 w-28" />
+          </div>
+        </div>
+
+        {/* Stat cards skeleton */}
+        <div className="grid gap-4 md:grid-cols-3">
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+        </div>
+
+        {/* Table skeleton */}
+        <TableSkeleton rows={6} />
       </div>
     )
   }
-
-  const pendingFees = fees.filter(fee => fee.status === 'PENDING' || fee.status === 'OVERDUE')
 
   return (
     <div className="space-y-6">
@@ -183,261 +344,501 @@ export default function ParentInvoicesPage() {
         </p>
       </div>
 
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="overview" className="flex items-center gap-2">
+            <Receipt className="h-4 w-4" />
+            <span>Overview</span>
+          </TabsTrigger>
+          <TabsTrigger value="history" className="flex items-center gap-2">
+            <History className="h-4 w-4" />
+            <span>Payment History</span>
+          </TabsTrigger>
+          <TabsTrigger value="settings" className="flex items-center gap-2">
+            <CreditCard className="h-4 w-4" />
+            <span>Payment Methods</span>
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Fee Summary Cards */}
-      {pendingFees.length === 0 ? (
-        <Card>
-          <CardContent className="text-center py-8">
-            <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-            <h3 className="font-medium text-gray-900 mb-2">All Caught Up!</h3>
-            <p className="text-sm text-gray-600">You have no outstanding payments at this time.</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-             <StatCard
-               title="Children at Madrasah"
-               value={`${(() => {
-                 const uniqueChildren = new Set()
-                 fees.forEach(fee => {
-                   if (fee.children) {
-                     fee.children.forEach((child: any) => uniqueChildren.add(child.name))
-                   }
-                 })
-                 return uniqueChildren.size
-               })()}`}
-               change={{ value: `${pendingFees.length} fees`, type: "neutral" }}
-               description="Total enrolled"
-               icon={<Users className="h-5 w-5" />}
-             />
-             <StatCard
-               title="Monthly Fees"
-               value={`£${Math.round(pendingFees.reduce((sum, fee) => {
-                 if (fee.children) {
-                   return sum + fee.children.reduce((childSum: number, child: any) => childSum + child.amount, 0)
-                 }
-                 return sum + fee.amount
-               }, 0))}`}
-               change={{ value: "Regular fees", type: "neutral" }}
-               description="Monthly charges"
-               icon={<Receipt className="h-5 w-5" />}
-             />
-             <StatCard
-               title="Overdue Amount"
-               value={`£${Math.round(pendingFees.filter(fee => fee.status === 'OVERDUE').reduce((sum, fee) => sum + fee.amount, 0))}`}
-               change={{
-                 value: pendingFees.filter(fee => fee.status === 'OVERDUE').length > 0 ? "Overdue" : "None",
-                 type: pendingFees.filter(fee => fee.status === 'OVERDUE').length > 0 ? "negative" : "positive"
-               }}
-               description={pendingFees.filter(fee => fee.status === 'OVERDUE').length > 0 ? "Payment overdue" : "All up to date"}
-               icon={<AlertTriangle className="h-5 w-5" />}
-               onClick={pendingFees.filter(fee => fee.status === 'OVERDUE').length > 0 ? handleOverduePaymentClick : undefined}
-             />
-          <StatCard
-            title="Date Due"
-            value={pendingFees.length > 0 ? format(pendingFees[0].dueDate, 'MMM dd') : 'N/A'}
-            change={{ value: "Next due", type: "neutral" }}
-            description="Payment deadline"
-            icon={<Calendar className="h-5 w-5" />}
-          />
-        </div>
-      )}
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="space-y-6">
+          {/* Payment Summary - Similar to Subscription Tab */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Banknote className="h-5 w-5" />
+                Payment Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Summary Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Next Payment */}
+                <div className="bg-[var(--card)] border border-[var(--border)] rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Calendar className="h-4 w-4 text-gray-600" />
+                    <h3 className="text-sm font-semibold text-[var(--foreground)]">Next Payment</h3>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-[var(--muted-foreground)]">Date</span>
+                      <span className="text-sm font-medium text-[var(--foreground)]">
+                        {pendingFees.length > 0 ? (() => {
+                          const nextDueDate = pendingFees
+                            .map((fee: any) => fee.dueDate ? new Date(fee.dueDate) : null)
+                            .filter((date: Date | null) => date !== null)
+                            .sort((a: Date, b: Date) => a.getTime() - b.getTime())[0]
+                          return nextDueDate ? format(nextDueDate, 'd MMM yyyy') : 'N/A'
+                        })() : 'N/A'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-[var(--muted-foreground)]">Amount</span>
+                      <span className="text-sm font-medium text-[var(--foreground)]">
+                        £{pendingFees.length > 0 ? pendingFees.reduce((sum: number, fee: any) => sum + (fee.amount || 0), 0).toFixed(2) : '0.00'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
 
-      {/* Payment History */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <History className="h-5 w-5 mr-2" />
-            Payment History
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {paymentHistory.length === 0 ? (
-            <div className="text-center py-8">
-              <History className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="font-medium text-gray-900 mb-2">No Payment History</h3>
-              <p className="text-sm text-gray-600">Your payment history will appear here once you make payments.</p>
-            </div>
+                {/* Payment Status */}
+                <div className="bg-[var(--card)] border border-[var(--border)] rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Users className="h-4 w-4 text-gray-600" />
+                    <h3 className="text-sm font-semibold text-[var(--foreground)]">Status</h3>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-[var(--muted-foreground)]">Upcoming</span>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${upcomingFees.length > 0 ? 'bg-yellow-500' : overdueFees.length > 0 ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                        <span className="text-sm font-medium text-[var(--foreground)]">
+                          {upcomingFees.length > 0 
+                            ? `${upcomingFees.length} invoice${upcomingFees.length !== 1 ? 's' : ''}` 
+                            : overdueFees.length > 0
+                            ? `${overdueFees.length} overdue`
+                            : 'None'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-[var(--muted-foreground)]">Children</span>
+                      <span className="text-sm font-medium text-[var(--foreground)]">
+                        {(() => {
+                          const uniqueChildren = new Set<string>()
+                          safeFees.forEach((fee: any) => {
+                            if (fee?.studentName) {
+                              uniqueChildren.add(fee.studentName)
+                            } else if (fee?.children && Array.isArray(fee.children)) {
+                              fee.children.forEach((child: any) => {
+                                if (child?.name) uniqueChildren.add(child.name)
+                              })
+                            }
+                          })
+                          return uniqueChildren.size
+                        })()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Fee Summary Cards */}
+          {pendingFees.length === 0 ? (
+            <Card>
+              <CardContent className="text-center py-8">
+                <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+                <h3 className="font-medium text-gray-900 mb-2">All Caught Up!</h3>
+                <p className="text-sm text-gray-600">You have no upcoming or overdue payments at this time.</p>
+              </CardContent>
+            </Card>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
-                      Fee
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
-                      Student
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
-                      Amount
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
-                      Payment Method
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
-                      Payment Date
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
-                      Transaction ID
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {paymentHistory.map((payment) => (
-                    <tr key={payment.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {payment.invoiceNumber}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {payment.studentName}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        £{payment.amount.toFixed(2)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {payment.paymentMethod}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {format(payment.paymentDate, 'MMM dd, yyyy')}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <Badge variant="default" className="bg-green-100 text-green-800">
-                          {payment.status}
-                        </Badge>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {payment.transactionId || '-'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <StatCard
+                title="Children at Madrasah"
+                value={`${(() => {
+                  const uniqueChildren = new Set<string>()
+                  safeFees.forEach((fee: any) => {
+                    if (fee?.studentName) {
+                      uniqueChildren.add(fee.studentName)
+                    } else if (fee?.children && Array.isArray(fee.children)) {
+                      fee.children.forEach((child: any) => {
+                        if (child?.name) uniqueChildren.add(child.name)
+                      })
+                    }
+                  })
+                  return uniqueChildren.size
+                })()}`}
+                change={{ value: `${pendingFees.length} fees`, type: "neutral" }}
+                description="Total enrolled"
+                icon={<Users className="h-5 w-5" />}
+              />
+              <StatCard
+                title="Monthly Fees"
+                value={`£${Math.round(pendingFees.reduce((sum: number, fee: any) => {
+                  if (fee?.children && Array.isArray(fee.children) && fee.children.length > 0) {
+                    return sum + fee.children.reduce((childSum: number, child: any) => childSum + (child?.amount || 0), 0)
+                  }
+                  return sum + (fee?.amount || 0)
+                }, 0))}`}
+                change={{ value: "Regular fees", type: "neutral" }}
+                description="Monthly charges"
+                icon={<Receipt className="h-5 w-5" />}
+              />
+              <StatCard
+                title="Overdue Amount"
+                value={`£${Math.round(overdueFees.reduce((sum: number, fee: any) => sum + (fee?.amount || 0), 0))}`}
+                change={{
+                  value: overdueFees.length > 0 ? "Overdue" : "None",
+                  type: overdueFees.length > 0 ? "negative" : "positive"
+                }}
+                description={overdueFees.length > 0 ? "Payment overdue" : "All up to date"}
+                icon={<AlertTriangle className="h-5 w-5" />}
+                onClick={overdueFees.length > 0 ? handleOverduePaymentClick : undefined}
+              />
+              <StatCard
+                title="Date Due"
+                value={pendingFees.length > 0 && pendingFees[0]?.dueDate ? format(new Date(pendingFees[0].dueDate), 'MMM dd') : 'N/A'}
+                change={{ value: "Next due", type: "neutral" }}
+                description="Payment deadline"
+                icon={<Calendar className="h-5 w-5" />}
+              />
             </div>
           )}
-        </CardContent>
-      </Card>
 
-      {/* Payment Method Preference */}
-      {(paymentSettings.cashPaymentEnabled || paymentSettings.bankTransferEnabled) && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Settings className="h-5 w-5 mr-2" />
-              Payment Preference
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-600 mb-4">
-              How would you prefer to pay for fees?
-            </p>
-            <div className="space-y-3">
-              {paymentSettings.cashPaymentEnabled && (
-                <label className="flex items-center space-x-3 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="CASH"
-                    checked={preferredPaymentMethod === 'CASH'}
-                    onChange={() => handlePaymentMethodChange('CASH')}
-                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                  />
-                  <div className="flex items-center">
-                    <Coins className="h-4 w-4 mr-2 text-gray-500" strokeWidth={1.5} />
-                    <span className="text-sm">Cash (at school office)</span>
-                  </div>
-                </label>
+          {/* Upcoming/Overdue Invoices */}
+          {pendingFees.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Receipt className="h-5 w-5 mr-2" />
+                  {upcomingFees.length > 0 ? 'Upcoming Payments' : overdueFees.length > 0 ? 'Overdue Payments' : 'Pending Payments'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {pendingFees.map((fee: any) => (
+                    <div
+                      key={fee.id}
+                      className="flex items-center justify-between p-4 border border-[var(--border)] rounded-[var(--radius-md)] hover:bg-[var(--accent)]/50 transition-colors"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-semibold text-[var(--foreground)]">
+                            {fee.invoiceNumber || fee.id}
+                          </h3>
+                          <Badge
+                            variant={
+                              (fee.displayStatus || fee.status) === 'OVERDUE' 
+                                ? 'destructive' 
+                                : (fee.displayStatus || fee.status) === 'UPCOMING'
+                                ? 'default'
+                                : 'outline'
+                            }
+                            className="text-xs"
+                          >
+                            {(fee.displayStatus || fee.status) === 'UPCOMING' ? 'Upcoming' : (fee.displayStatus || fee.status)}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-[var(--muted-foreground)]">
+                          {fee.studentName || fee.student || 'Unknown Student'}
+                        </p>
+                        {fee.dueDate && (
+                          <p className="text-xs text-[var(--muted-foreground)] mt-1">
+                            Due: {format(new Date(fee.dueDate), 'MMM dd, yyyy')}
+                          </p>
+                        )}
+                        {fee.status === 'PAID' && fee.paymentDate && fee.paymentMethod && (
+                          <p className="text-xs text-green-600 mt-1">
+                            Paid: {format(new Date(fee.paymentDate), 'MMM dd, yyyy')} via {fee.paymentMethod}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-[var(--foreground)]">
+                            £{(fee.amount || 0).toFixed(2)}
+                          </div>
+                        </div>
+                        {fee.status !== 'PAID' ? (
+                          <Button
+                            variant={(fee.displayStatus || fee.status) === 'OVERDUE' ? 'destructive' : 'default'}
+                            size="sm"
+                            onClick={() => setIsPaymentModalOpen(true)}
+                          >
+                            <CreditCard className="h-4 w-4 mr-2" />
+                            Pay Now
+                          </Button>
+                        ) : (
+                          <Badge variant="default" className="bg-green-100 text-green-800">
+                            Paid
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* Payment History Tab */}
+        <TabsContent value="history" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <History className="h-5 w-5 mr-2" />
+                Payment History
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {paymentHistory.length === 0 ? (
+                <div className="text-center py-8">
+                  <History className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="font-medium text-gray-900 mb-2">No Payment History</h3>
+                  <p className="text-sm text-gray-600">Your payment history will appear here once you make payments.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                          Fee
+                        </th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                          Student
+                        </th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                          Amount
+                        </th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                          Payment Method
+                        </th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                          Payment Date
+                        </th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                          Transaction ID
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {paymentHistory.map((payment: any, index: number) => (
+                        <tr key={payment?.id || `payment-${index}`} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {payment?.invoiceNumber || 'N/A'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {payment?.studentName || 'Unknown'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            £{((payment?.amount || 0) as number).toFixed(2)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {payment?.paymentMethod || 'Unknown'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {payment?.paymentDate ? format(new Date(payment.paymentDate), 'MMM dd, yyyy') : 'N/A'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <Badge variant="default" className="bg-green-100 text-green-800">
+                              {payment?.status || 'SUCCEEDED'}
+                            </Badge>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {payment?.transactionId || '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
-              {paymentSettings.bankTransferEnabled && (
-                <label className="flex items-center space-x-3 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="BANK_TRANSFER"
-                    checked={preferredPaymentMethod === 'BANK_TRANSFER'}
-                    onChange={() => handlePaymentMethodChange('BANK_TRANSFER')}
-                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                  />
-                  <div className="flex items-center">
-                    <TrendingUp className="h-4 w-4 mr-2" />
-                    <span className="text-sm">Bank Transfer</span>
-                  </div>
-                </label>
-              )}
-            </div>
-            {preferredPaymentMethod && (
-              <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-sm text-green-800">
-                  <strong>Selected:</strong> {preferredPaymentMethod === 'CASH' ? 'Cash Payment' : 'Bank Transfer'}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Payment Methods Tab */}
+        <TabsContent value="settings" className="space-y-6">
+          {/* Payment Method Preference */}
+          {(paymentSettings.cashPaymentEnabled || paymentSettings.bankTransferEnabled) && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <CreditCard className="h-5 w-5 mr-2" />
+                  Payment Method Preference
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-600 mb-4">
+                  Select your preferred payment method. This will be used for all fee payments.
                 </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+                <div className="space-y-4">
+                  {/* Cash Payment Toggle */}
+                  {paymentSettings.cashPaymentEnabled && (
+                    <div className="flex items-center justify-between p-4 border border-[var(--border)] rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2 bg-gray-100 rounded-full">
+                          <Coins className="h-5 w-5 text-gray-500" strokeWidth={1.5} />
+                        </div>
+                        <div>
+                          <h3 className="font-medium">Cash Payment</h3>
+                          <p className="text-sm text-[var(--muted-foreground)]">
+                            Pay in cash at the school office
+                          </p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={preferredPaymentMethod === 'CASH'}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            handlePaymentMethodChange('CASH')
+                          } else if (paymentSettings.bankTransferEnabled) {
+                            // If unchecking cash and bank is available, switch to bank
+                            handlePaymentMethodChange('BANK_TRANSFER')
+                          }
+                        }}
+                        disabled={!paymentSettings.bankTransferEnabled && preferredPaymentMethod === 'CASH'}
+                      />
+                    </div>
+                  )}
 
-      {/* Bank Transfer Details */}
-      {preferredPaymentMethod === 'BANK_TRANSFER' && paymentSettings.bankAccountName && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <TrendingUp className="h-5 w-5 mr-2" />
-              Bank Transfer Details
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label className="text-sm text-gray-500">Account Name</Label>
-                <p className="text-sm font-medium text-gray-900 mt-1">{paymentSettings.bankAccountName}</p>
-              </div>
-              <div>
-                <Label className="text-sm text-gray-500">Sort Code</Label>
-                <p className="text-sm font-medium text-gray-900 mt-1">{paymentSettings.bankSortCode}</p>
-              </div>
-              <div>
-                <Label className="text-sm text-gray-500">Account Number</Label>
-                <p className="text-sm font-medium text-gray-900 mt-1">{paymentSettings.bankAccountNumber}</p>
-              </div>
-            </div>
-            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm font-medium text-blue-900 mb-1">Setting up a Standing Order:</p>
-              <p className="text-sm text-blue-700">
-                You can set up a standing order with your bank using these details to automatically pay your monthly fees. 
-                Contact your bank to set this up, and payments will be made automatically each month on the due date.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                  {/* Bank Transfer Toggle */}
+                  {paymentSettings.bankTransferEnabled && (
+                    <div className="flex items-center justify-between p-4 border border-[var(--border)] rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2 bg-gray-100 rounded-full">
+                          <Building2 className="h-5 w-5 text-gray-700" strokeWidth={1.5} />
+                        </div>
+                        <div>
+                          <h3 className="font-medium">Bank Transfer</h3>
+                          <p className="text-sm text-[var(--muted-foreground)]">
+                            Transfer money directly to the school's bank account
+                          </p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={preferredPaymentMethod === 'BANK_TRANSFER'}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            handlePaymentMethodChange('BANK_TRANSFER')
+                          } else if (paymentSettings.cashPaymentEnabled) {
+                            // If unchecking bank and cash is available, switch to cash
+                            handlePaymentMethodChange('CASH')
+                          }
+                        }}
+                        disabled={!paymentSettings.cashPaymentEnabled && preferredPaymentMethod === 'BANK_TRANSFER'}
+                      />
+                    </div>
+                  )}
+                </div>
+                
+                {/* Validation Message */}
+                {!preferredPaymentMethod && (paymentSettings.cashPaymentEnabled && paymentSettings.bankTransferEnabled) && (
+                  <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-sm text-yellow-800">
+                      <AlertTriangle className="h-4 w-4 inline mr-2" />
+                      <strong>Please select a payment method.</strong> You must choose one payment method to continue.
+                    </p>
+                  </div>
+                )}
+                
+                {/* Success Message */}
+                {preferredPaymentMethod && (
+                  <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-sm text-green-800">
+                      <CheckCircle className="h-4 w-4 inline mr-2" />
+                      <strong>Selected:</strong> {preferredPaymentMethod === 'CASH' ? 'Cash Payment' : 'Bank Transfer'}
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
-      {/* Payment Instructions */}
-      {paymentSettings.paymentInstructions && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <HelpCircle className="h-5 w-5 mr-2" />
-              Payment Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="prose prose-sm max-w-none">
-              <p className="text-sm text-gray-700 whitespace-pre-line">
-                {paymentSettings.paymentInstructions}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+          {/* Bank Transfer Details */}
+          {preferredPaymentMethod === 'BANK_TRANSFER' && paymentSettings.bankTransferEnabled && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Building2 className="h-5 w-5 mr-2" />
+                  Bank Transfer Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {paymentSettings.bankAccountName ? (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <Label className="text-sm text-gray-500">Account Name</Label>
+                        <p className="text-sm font-medium text-gray-900 mt-1">{paymentSettings.bankAccountName}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm text-gray-500">Sort Code</Label>
+                        <p className="text-sm font-medium text-gray-900 mt-1">{paymentSettings.bankSortCode || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm text-gray-500">Account Number</Label>
+                        <p className="text-sm font-medium text-gray-900 mt-1">{paymentSettings.bankAccountNumber || 'N/A'}</p>
+                      </div>
+                    </div>
+                    <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <HelpCircle className="h-4 w-4 text-gray-600" />
+                        <span className="text-sm font-medium text-gray-900">Setting up a Standing Order</span>
+                      </div>
+                      <p className="text-sm text-gray-700">
+                        A standing order is an automatic payment that sends money from your bank account to the school each month. 
+                        You can set this up through your online banking using the details above. Once set up, payments will be made automatically each month on the due date.
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-sm text-yellow-800">
+                      <AlertTriangle className="h-4 w-4 inline mr-2" />
+                      Bank account details are not yet configured. Please contact the school office for payment instructions.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Payment Instructions */}
+          {paymentSettings.paymentInstructions && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <HelpCircle className="h-5 w-5 mr-2" />
+                  Payment Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="prose prose-sm max-w-none">
+                  <p className="text-sm text-gray-700 whitespace-pre-line">
+                    {paymentSettings.paymentInstructions}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
 
       {/* Payment Modal */}
       <PaymentModal
         isOpen={isPaymentModalOpen}
         onClose={() => setIsPaymentModalOpen(false)}
-        overdueAmount={Math.round(pendingFees.filter(fee => fee.status === 'OVERDUE').reduce((sum, fee) => sum + fee.amount, 0))}
+        overdueAmount={Math.round(overdueFees.reduce((sum: number, fee: any) => sum + (fee?.amount || 0), 0))}
         onPaymentSuccess={handlePaymentSuccess}
       />
     </div>
