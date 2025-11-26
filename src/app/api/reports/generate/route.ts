@@ -856,17 +856,17 @@ async function handlePOST(request: NextRequest) {
       yPosition += 38
       
       // Calculate overall attendance statistics
-      const totalStudents = classesWithStats.reduce((sum, cls) => sum + (cls.students || 0), 0)
-      const weightedAttendance = classesWithStats.reduce((sum, cls) => sum + ((cls.attendance || 0) * (cls.students || 0)), 0)
-      const averageAttendance = totalStudents > 0 ? Math.round(weightedAttendance / totalStudents) : 0
+      const totalStudentsHTML = classesWithStats.reduce((sum, cls) => sum + (cls.students || 0), 0)
+      const weightedAttendanceHTML = classesWithStats.reduce((sum, cls) => sum + ((cls.attendance || 0) * (cls.students || 0)), 0)
+      const averageAttendanceHTML = totalStudentsHTML > 0 ? Math.round(weightedAttendanceHTML / totalStudentsHTML) : 0
       const targetAttendance = 85
       
       
       // Attendance metrics
       const attendanceMetrics = [
-        { title: 'Average Attendance', value: `${averageAttendance}%`, change: { value: '+4%', type: 'increase' }, color: averageAttendance >= targetAttendance ? colors.success : colors.warning },
+        { title: 'Average Attendance', value: `${averageAttendanceHTML}%`, change: { value: '+4%', type: 'increase' }, color: averageAttendanceHTML >= targetAttendance ? colors.success : colors.warning },
         { title: 'Target Attendance', value: `${targetAttendance}%`, change: { value: '0%', type: 'neutral' }, color: colors.gray[600] },
-        { title: 'Total Students', value: totalStudents.toString(), change: { value: '+12%', type: 'increase' }, color: colors.primary },
+        { title: 'Total Students', value: totalStudentsHTML.toString(), change: { value: '+12%', type: 'increase' }, color: colors.primary },
         { title: 'Classes Above Target', value: classesWithStats.filter(cls => (cls.attendance || 0) >= targetAttendance).length.toString(), change: { value: '0%', type: 'neutral' }, color: colors.success }
       ]
       
