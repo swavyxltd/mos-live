@@ -834,11 +834,11 @@ async function handlePOST(request: NextRequest) {
       yPosition += 15
       
       // Attendance Summary Paragraph
-      const classesAboveTarget = classesWithStats.filter(cls => (cls.attendance || 0) >= 85).length
-      const highestAttendance = classesWithStats.length > 0 
+      const classesAboveTargetAttendance = classesWithStats.filter(cls => (cls.attendance || 0) >= 85).length
+      const highestAttendanceAttendance = classesWithStats.length > 0 
         ? Math.max(...classesWithStats.map(cls => cls.attendance || 0))
         : 0
-      const attendanceSummary = `Our attendance performance this month demonstrates ${averageAttendance >= 85 ? 'excellent' : 'good'} student engagement and commitment to Islamic education. With an average attendance rate of ${averageAttendance}%, we have ${averageAttendance >= 85 ? `exceeded our target of 85% by ${averageAttendance - 85} percentage points` : `achieved ${85 - averageAttendance} percentage points below our target of 85%`}. ${classesAboveTarget} out of ${classesWithStats.length} class${classesWithStats.length !== 1 ? 'es' : ''} have achieved attendance rates above our target${highestAttendance > 0 ? `, with our highest performing class reaching ${highestAttendance}% attendance` : ''}. This ${averageAttendance >= 85 ? 'strong' : 'developing'} attendance record reflects the quality of our educational programs, dedicated teaching staff, and supportive family environment. Regular attendance is crucial for student progress in Quranic studies, Islamic knowledge, and Arabic language acquisition, and we are pleased to see such positive engagement from our student community.`
+      const attendanceSummary = `Our attendance performance this month demonstrates ${averageAttendance >= 85 ? 'excellent' : 'good'} student engagement and commitment to Islamic education. With an average attendance rate of ${averageAttendance}%, we have ${averageAttendance >= 85 ? `exceeded our target of 85% by ${averageAttendance - 85} percentage points` : `achieved ${85 - averageAttendance} percentage points below our target of 85%`}. ${classesAboveTargetAttendance} out of ${classesWithStats.length} class${classesWithStats.length !== 1 ? 'es' : ''} have achieved attendance rates above our target${highestAttendanceAttendance > 0 ? `, with our highest performing class reaching ${highestAttendanceAttendance}% attendance` : ''}. This ${averageAttendance >= 85 ? 'strong' : 'developing'} attendance record reflects the quality of our educational programs, dedicated teaching staff, and supportive family environment. Regular attendance is crucial for student progress in Quranic studies, Islamic knowledge, and Arabic language acquisition, and we are pleased to see such positive engagement from our student community.`
       
       addText('MONTHLY ATTENDANCE OVERVIEW', margin, yPosition, { 
         fontSize: 12, 
