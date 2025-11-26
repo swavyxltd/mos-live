@@ -11,7 +11,8 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  Users
+  Users,
+  Minus
 } from 'lucide-react'
 import { getAttendanceRating } from '@/lib/attendance-ratings'
 
@@ -188,10 +189,16 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
           />
         )
       case 'NOT_SCHEDULED':
+        // Check if this is a future day
+        const dayDate = new Date(day.split(' ')[1] || '') // Try to parse date from tooltip
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const isFuture = dayDate && dayDate > today
+        
         return (
           <div 
-            className={`${baseClasses} bg-gray-300 hover:bg-gray-400`}
-            title={`${day}: Not scheduled`}
+            className={`${baseClasses} ${isFuture ? 'bg-blue-200 hover:bg-blue-300' : 'bg-gray-300 hover:bg-gray-400'}`}
+            title={isFuture ? `${day}: Upcoming` : `${day}: Not scheduled`}
           />
         )
       default:
@@ -248,15 +255,27 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
       </div>
       
       <div className="grid grid-cols-5 gap-2">
-        {child.weeklyAttendance.map((day, index) => (
-          <div key={index} className="flex flex-col items-center gap-2 p-3 bg-gray-50 rounded-lg">
-            <div className="text-sm font-medium text-gray-700">{day.day}</div>
-            {getStatusDot(day.status, day.day, day.time)}
-            <div className="text-sm text-gray-500 text-center">
-              {day.status === 'PRESENT' || day.status === 'LATE' ? day.time : day.status}
+        {child.weeklyAttendance.map((day, index) => {
+          const dayDate = new Date(day.date)
+          const today = new Date()
+          today.setHours(0, 0, 0, 0)
+          const isFuture = dayDate > today
+          const isPast = dayDate < today
+          
+          return (
+            <div key={index} className="flex flex-col items-center gap-2 p-3 bg-gray-50 rounded-lg">
+              <div className="text-sm font-medium text-gray-700">{day.day}</div>
+              {getStatusDot(day.status, day.day, day.time)}
+              <div className="text-sm text-gray-500 text-center">
+                {day.status === 'PRESENT' || day.status === 'LATE' 
+                  ? day.time 
+                  : day.status === 'NOT_SCHEDULED' && isFuture
+                  ? 'Upcoming'
+                  : day.status}
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )

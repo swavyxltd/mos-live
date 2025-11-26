@@ -26,15 +26,15 @@ export default async function ParentDashboardPage() {
   try {
     // Get parent's students from database (excluding archived)
     students = await prisma.student.findMany({
-        where: { 
-          orgId: org.id,
-          primaryParentId: session.user.id,
-          isArchived: false
-        },
-        include: {
-          studentClasses: {
-            include: {
-            class: true
+      where: { 
+        orgId: org.id,
+        primaryParentId: session.user.id,
+        isArchived: false
+      },
+      include: {
+        StudentClass: {
+          include: {
+            Class: true
           }
         }
       }
@@ -56,9 +56,9 @@ export default async function ParentDashboardPage() {
         where: { 
           orgId: org.id,
           isArchived: false,
-          studentClasses: {
+          StudentClass: {
             some: {
-              student: {
+              Student: {
                 primaryParentId: session.user.id,
                 isArchived: false
               }
@@ -66,14 +66,14 @@ export default async function ParentDashboardPage() {
           }
         },
         include: {
-          studentClasses: {
+          StudentClass: {
             where: {
-              student: {
+              Student: {
                 primaryParentId: session.user.id
               }
             },
             include: {
-              student: true
+              Student: true
             }
           }
         }
@@ -86,7 +86,7 @@ export default async function ParentDashboardPage() {
     weeklyAttendance = await prisma.attendance.findMany({
         where: {
           orgId: org.id,
-          student: {
+          Student: {
             primaryParentId: session.user.id,
             isArchived: false
           },
@@ -95,8 +95,16 @@ export default async function ParentDashboardPage() {
           }
         },
         include: {
-          student: true,
-          class: true
+          Student: true,
+          Class: {
+            include: {
+              User: {
+                select: {
+                  name: true
+                }
+              }
+            }
+          }
         }
       })
 
@@ -105,7 +113,7 @@ export default async function ParentDashboardPage() {
     const upcomingInvoices = await prisma.invoice.findMany({
         where: {
           orgId: org.id,
-          student: {
+          Student: {
             primaryParentId: session.user.id,
             isArchived: false
           },
@@ -146,7 +154,7 @@ export default async function ParentDashboardPage() {
 
   // Calculate stats for parent's children
   const totalChildren = students.length
-  const totalClasses = students.reduce((acc, student) => acc + student.studentClasses.length, 0)
+  const totalClasses = students.reduce((acc, student) => acc + (student.StudentClass?.length || 0), 0)
   
   // Calculate overall attendance rate from weekly attendance data
   const attendanceRate = weeklyAttendance.length > 0 
@@ -171,21 +179,18 @@ export default async function ParentDashboardPage() {
             value={totalChildren}
             change={{ value: `${totalChildren} enrolled`, type: "neutral" }}
             description="Currently enrolled"
-            detail="Active students"
           />
           <StatCard
             title="Total Classes"
             value={totalClasses}
             change={{ value: "All active", type: "positive" }}
             description="Classes this term"
-            detail="Monday-Friday 5-7 PM"
           />
           <StatCard
             title="Attendance Rate"
             value={`${attendanceRate}%`}
             change={{ value: attendanceRate >= 95 ? "+5%" : "0%", type: attendanceRate >= 95 ? "positive" : "neutral" }}
             description={attendanceRate >= 95 ? "Excellent attendance" : attendanceRate >= 86 ? "Good attendance" : "Needs improvement"}
-            detail="Last 7 days"
           />
           <StatCard
             title="Payment Status"
@@ -202,7 +207,6 @@ export default async function ParentDashboardPage() {
             description={paymentStatus?.status === 'up_to_date' ? "No payments due" : 
                         paymentStatus?.status === 'due' ? "Payment due soon" :
                         paymentStatus?.status === 'overdue' ? "Payment overdue" : "No payments due"}
-            detail={paymentStatus?.dueDate ? `Due: ${paymentStatus.dueDate.toLocaleDateString()}` : "No upcoming payments"}
           />
         </div>
 
@@ -220,18 +224,18 @@ export default async function ParentDashboardPage() {
                       <h3 className="font-medium text-[var(--foreground)]">
                         {student.firstName} {student.lastName}
                       </h3>
-                      <p className="text-sm text-[var(--muted-foreground)]">Grade {student.grade}</p>
+                      <p className="text-sm text-[var(--muted-foreground)]">Grade {student.grade || 'N/A'}</p>
                       <div className="flex flex-wrap gap-1 mt-2">
-                        {student.studentClasses.map((sc: any) => (
-                          <Badge key={sc.class.id} variant="secondary" className="text-xs">
-                            {sc.class.name}
+                        {student.StudentClass?.map((sc: any) => (
+                          <Badge key={sc.Class.id} variant="secondary" className="text-xs">
+                            {sc.Class.name}
                           </Badge>
-                        ))}
+                        )) || []}
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="text-sm text-[var(--muted-foreground)]">
-                        {student.studentClasses.length} class{student.studentClasses.length !== 1 ? 'es' : ''}
+                        {student.StudentClass?.length || 0} class{(student.StudentClass?.length || 0) !== 1 ? 'es' : ''}
                       </p>
                     </div>
                   </div>
@@ -274,7 +278,64 @@ export default async function ParentDashboardPage() {
             <CardTitle>Weekly Attendance</CardTitle>
           </CardHeader>
           <CardContent>
-            <ParentWeeklyAttendanceCards attendanceData={weeklyAttendance} />
+            <ParentWeeklyAttendanceCards attendanceData={(() => {
+              // Transform attendance data to match component's expected format
+              const childAttendanceMap = new Map<string, {
+                id: string
+                name: string
+                class: string
+                teacher: string
+                overallAttendance: number
+                weeklyAttendance: Array<{
+                  day: string
+                  date: string
+                  status: 'PRESENT' | 'ABSENT' | 'LATE' | 'NOT_SCHEDULED'
+                  time?: string
+                }>
+              }>()
+
+              weeklyAttendance.forEach((attendance: any) => {
+                const studentId = attendance.Student?.id || attendance.studentId
+                const studentName = attendance.Student ? `${attendance.Student.firstName} ${attendance.Student.lastName}` : 'Unknown'
+                const className = attendance.Class?.name || attendance.class?.name || 'Unknown'
+                const teacherName = attendance.Class?.User?.name || 'Unknown'
+
+                if (!childAttendanceMap.has(studentId)) {
+                  childAttendanceMap.set(studentId, {
+                    id: studentId,
+                    name: studentName,
+                    class: className,
+                    teacher: teacherName,
+                    overallAttendance: 0,
+                    weeklyAttendance: []
+                  })
+                }
+
+                const childData = childAttendanceMap.get(studentId)!
+                const date = new Date(attendance.date)
+                const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+                const dayName = dayNames[date.getDay()]
+
+                childData.weeklyAttendance.push({
+                  day: dayName,
+                  date: date.toISOString().split('T')[0],
+                  status: attendance.status as 'PRESENT' | 'ABSENT' | 'LATE' | 'NOT_SCHEDULED',
+                  time: attendance.status === 'PRESENT' || attendance.status === 'LATE' ? '4:00 PM' : undefined
+                })
+              })
+
+              // Calculate overall attendance for each child
+              Array.from(childAttendanceMap.values()).forEach(child => {
+                if (child.weeklyAttendance.length > 0) {
+                  const presentDays = child.weeklyAttendance.filter(day => 
+                    day.status === 'PRESENT' || day.status === 'LATE'
+                  ).length
+                  child.overallAttendance = Math.round((presentDays / child.weeklyAttendance.length) * 100)
+                }
+              })
+
+              return Array.from(childAttendanceMap.values())
+            })()} />
           </CardContent>
         </Card>
 

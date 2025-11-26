@@ -32,16 +32,14 @@ export default function ParentInvoicesPage() {
   const [totalOutstanding, setTotalOutstanding] = useState(0)
   const [loading, setLoading] = useState(true)
   const [paymentSettings, setPaymentSettings] = useState({
-    autoPaymentEnabled: true,
     cashPaymentEnabled: true,
     bankTransferEnabled: true,
     paymentInstructions: '',
     bankAccountName: null as string | null,
     bankSortCode: null as string | null,
-    bankAccountNumber: null as string | null,
-    hasStripeConfigured: false
+    bankAccountNumber: null as string | null
   })
-  const [preferredPaymentMethod, setPreferredPaymentMethod] = useState<'CARD' | 'CASH' | 'BANK_TRANSFER' | null>(null)
+  const [preferredPaymentMethod, setPreferredPaymentMethod] = useState<'CASH' | 'BANK_TRANSFER' | null>(null)
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
 
   const fetchPaymentSettings = async () => {
@@ -137,7 +135,7 @@ export default function ParentInvoicesPage() {
     fetchPaymentSettings()
   }, [status])
 
-  const handlePaymentMethodChange = async (method: 'CARD' | 'CASH' | 'BANK_TRANSFER') => {
+  const handlePaymentMethodChange = async (method: 'CASH' | 'BANK_TRANSFER') => {
     setPreferredPaymentMethod(method)
     try {
       const response = await fetch('/api/settings/payment', {
@@ -150,15 +148,6 @@ export default function ParentInvoicesPage() {
       } else {
       }
     } catch (error) {
-    }
-  }
-
-  const handlePayNow = async (feeId: string) => {
-    if (paymentSettings.autoPaymentEnabled && paymentSettings.hasStripeConfigured) {
-      // Redirect to Stripe payment
-      window.location.href = `/api/payments/stripe/pay-now?invoiceId=${feeId}`
-    } else {
-      alert('Please contact the school office to make payment arrangements.')
     }
   }
 
@@ -219,7 +208,6 @@ export default function ParentInvoicesPage() {
                })()}`}
                change={{ value: `${pendingFees.length} fees`, type: "neutral" }}
                description="Total enrolled"
-               detail="All children"
                icon={<Users className="h-5 w-5" />}
              />
              <StatCard
@@ -232,24 +220,6 @@ export default function ParentInvoicesPage() {
                }, 0))}`}
                change={{ value: "Regular fees", type: "neutral" }}
                description="Monthly charges"
-               detail={`£${(() => {
-                 // Calculate cost per child from monthly fees
-                 const monthlyFees = pendingFees.filter(fee => 
-                   fee.description.toLowerCase().includes('monthly')
-                 )
-                 
-                 if (monthlyFees.length === 0) return '50' // Default fallback
-                 
-                 // Get the first monthly fee to determine the per-child rate
-                 const firstMonthlyFee = monthlyFees[0]
-                 if (firstMonthlyFee.children && firstMonthlyFee.children.length > 0) {
-                   // If it's a combined fee, calculate per child
-                   return Math.round(firstMonthlyFee.amount / firstMonthlyFee.children.length)
-                 } else {
-                   // If it's a single child fee, use that amount
-                   return Math.round(firstMonthlyFee.amount)
-                 }
-               })()} per child`}
                icon={<Receipt className="h-5 w-5" />}
              />
              <StatCard
@@ -260,7 +230,6 @@ export default function ParentInvoicesPage() {
                  type: pendingFees.filter(fee => fee.status === 'OVERDUE').length > 0 ? "negative" : "positive"
                }}
                description={pendingFees.filter(fee => fee.status === 'OVERDUE').length > 0 ? "Payment overdue" : "All up to date"}
-               detail="Overdue payments"
                icon={<AlertTriangle className="h-5 w-5" />}
                onClick={pendingFees.filter(fee => fee.status === 'OVERDUE').length > 0 ? handleOverduePaymentClick : undefined}
              />
@@ -269,7 +238,6 @@ export default function ParentInvoicesPage() {
             value={pendingFees.length > 0 ? format(pendingFees[0].dueDate, 'MMM dd') : 'N/A'}
             change={{ value: "Next due", type: "neutral" }}
             description="Payment deadline"
-            detail="Monthly billing"
             icon={<Calendar className="h-5 w-5" />}
           />
         </div>
@@ -354,7 +322,7 @@ export default function ParentInvoicesPage() {
       </Card>
 
       {/* Payment Method Preference */}
-      {(paymentSettings.cashPaymentEnabled || paymentSettings.bankTransferEnabled || (paymentSettings.autoPaymentEnabled && paymentSettings.hasStripeConfigured)) && (
+      {(paymentSettings.cashPaymentEnabled || paymentSettings.bankTransferEnabled) && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
@@ -364,25 +332,9 @@ export default function ParentInvoicesPage() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-gray-600 mb-4">
-              How would you prefer to pay for manual payments?
+              How would you prefer to pay for fees?
             </p>
             <div className="space-y-3">
-              {paymentSettings.autoPaymentEnabled && paymentSettings.hasStripeConfigured && (
-                <label className="flex items-center space-x-3 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="CARD"
-                    checked={preferredPaymentMethod === 'CARD'}
-                    onChange={() => handlePaymentMethodChange('CARD')}
-                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-                  />
-                  <div className="flex items-center">
-                    <CreditCard className="h-4 w-4 mr-2" />
-                    <span className="text-sm">Credit/Debit Card</span>
-                  </div>
-                </label>
-              )}
               {paymentSettings.cashPaymentEnabled && (
                 <label className="flex items-center space-x-3 cursor-pointer">
                   <input
@@ -419,8 +371,7 @@ export default function ParentInvoicesPage() {
             {preferredPaymentMethod && (
               <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
                 <p className="text-sm text-green-800">
-                  <strong>Selected:</strong> {preferredPaymentMethod === 'CARD' ? 'Credit/Debit Card' : 
-                   preferredPaymentMethod === 'CASH' ? 'Cash Payment' : 'Bank Transfer'}
+                  <strong>Selected:</strong> {preferredPaymentMethod === 'CASH' ? 'Cash Payment' : 'Bank Transfer'}
                 </p>
               </div>
             )}
