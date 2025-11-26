@@ -528,8 +528,8 @@ function ParentSetupForm() {
                           </div>
                         )}
                         <div className="mt-3 pt-3 border-t border-blue-300">
-                          <p className="text-xs font-medium text-blue-900 mb-1">Setting up a Standing Order:</p>
-                          <p className="text-xs text-blue-700">
+                          <p className="text-sm font-medium text-blue-900 mb-1">Setting up a Standing Order:</p>
+                          <p className="text-sm text-blue-700">
                             You can set up a standing order with your bank using these details to automatically pay your monthly fees. 
                             Contact your bank to set this up, and payments will be made automatically each month.
                           </p>
@@ -603,7 +603,7 @@ function ParentSetupForm() {
                     <div className="mb-4">
                       <Label className="mb-3 block">
                         <span className="text-sm font-semibold text-neutral-900 uppercase">SELECT YOUR GIFT AID STATUS</span>
-                        <span className="text-xs text-green-600 ml-2 uppercase">*REQUIRED FIELD</span>
+                        <span className="text-sm text-green-600 ml-2 uppercase">*REQUIRED FIELD</span>
                       </Label>
                       <div className="space-y-3">
                         <label className="flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer hover:bg-neutral-50 transition-colors">

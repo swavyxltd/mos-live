@@ -129,7 +129,7 @@ export function InvoiceDetailModal({
                 <div key={payment.id} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
                   <div>
                     <span className="text-sm font-medium">{payment.method}</span>
-                    <span className="text-xs text-gray-500 ml-2">
+                    <span className="text-sm text-gray-500 ml-2">
                       {format(new Date(payment.createdAt), 'MMM dd, yyyy')}
                     </span>
                   </div>

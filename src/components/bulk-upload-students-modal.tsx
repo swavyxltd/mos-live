@@ -347,13 +347,13 @@ export function BulkUploadStudentsModal({
                 <table className="w-full">
                   <thead className="bg-gray-50 sticky top-0">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Row</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">First Name</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last Name</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Parent Email</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Parent Phone</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Class *</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">Row</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">First Name</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">Last Name</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">Parent Email</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">Parent Phone</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">Class *</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase">Status</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -423,15 +423,15 @@ export function BulkUploadStudentsModal({
                           {!student.isValid && (
                             <div className="flex flex-col">
                               {student.errors.map((error, idx) => (
-                                <span key={idx} className="text-xs text-red-600">{error}</span>
+                                <span key={idx} className="text-sm text-red-600">{error}</span>
                               ))}
                             </div>
                           )}
                           {student.isDuplicate && (
-                            <span className="text-xs text-yellow-600">Duplicate (will update)</span>
+                            <span className="text-sm text-yellow-600">Duplicate (will update)</span>
                           )}
                           {student.isValid && !student.isDuplicate && (
-                            <span className="text-xs text-green-600">Ready</span>
+                            <span className="text-sm text-green-600">Ready</span>
                           )}
                         </td>
                       </tr>

@@ -109,7 +109,7 @@ export function AttendanceWeekFilter({
               <div className="text-sm font-medium text-gray-900">
                 {formatWeekRange(currentWeek)}
               </div>
-              <div className="text-xs text-gray-500">Week View</div>
+              <div className="text-sm text-gray-500">Week View</div>
             </div>
             
             <Button

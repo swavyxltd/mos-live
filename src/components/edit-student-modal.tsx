@@ -240,7 +240,7 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
                     <div className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor="firstName" className="text-xs text-[var(--muted-foreground)]">First Name *</Label>
+                          <Label htmlFor="firstName">First Name *</Label>
                           <Input
                             id="firstName"
                             value={formData.firstName}
@@ -250,7 +250,7 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
                           />
                         </div>
                         <div>
-                          <Label htmlFor="lastName" className="text-xs text-[var(--muted-foreground)]">Last Name *</Label>
+                          <Label htmlFor="lastName">Last Name *</Label>
                           <Input
                             id="lastName"
                             value={formData.lastName}
@@ -263,7 +263,7 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
 
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor="dateOfBirth" className="text-xs text-[var(--muted-foreground)]">Date of Birth</Label>
+                          <Label htmlFor="dateOfBirth">Date of Birth</Label>
                           <Input
                             id="dateOfBirth"
                             type="date"
@@ -273,7 +273,7 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
                           />
                         </div>
                         <div>
-                          <Label htmlFor="grade" className="text-xs text-[var(--muted-foreground)]">Grade</Label>
+                          <Label htmlFor="grade">Grade</Label>
                           <Input
                             id="grade"
                             value={formData.grade}
@@ -285,7 +285,7 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
                       </div>
 
                       <div>
-                        <Label htmlFor="address" className="text-xs text-[var(--muted-foreground)]">Address</Label>
+                        <Label htmlFor="address">Address</Label>
                         <div className="relative mt-1">
                           <MapPin className="absolute left-3 top-3 h-4 w-4 text-[var(--muted-foreground)]" />
                           <Input
@@ -299,7 +299,7 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
                       </div>
 
                       <div>
-                        <Label htmlFor="status" className="text-xs text-[var(--muted-foreground)]">Status</Label>
+                        <Label htmlFor="status">Status</Label>
                         <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
                           <SelectTrigger className="mt-1">
                             <SelectValue placeholder="Select status" />
@@ -325,7 +325,7 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
                     <h3 className="text-sm font-semibold text-[var(--foreground)] mb-3">Parent Information</h3>
                     <div className="space-y-4">
                       <div>
-                        <Label htmlFor="parentName" className="text-xs text-[var(--muted-foreground)]">Parent Name *</Label>
+                        <Label htmlFor="parentName">Parent Name *</Label>
                         <Input
                           id="parentName"
                           value={formData.parentName}
@@ -336,7 +336,7 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
                       </div>
 
                       <div>
-                        <Label htmlFor="parentEmail" className="text-xs text-[var(--muted-foreground)]">Parent Email *</Label>
+                        <Label htmlFor="parentEmail">Parent Email *</Label>
                         <div className="relative mt-1">
                           <Mail className="absolute left-3 top-3 h-4 w-4 text-[var(--muted-foreground)]" />
                           <Input
@@ -351,7 +351,7 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
                       </div>
 
                       <div>
-                        <Label htmlFor="parentPhone" className="text-xs text-[var(--muted-foreground)]">Parent Phone</Label>
+                        <Label htmlFor="parentPhone">Parent Phone</Label>
                         <div className="relative mt-1">
                           <Phone className="absolute left-3 top-3 h-4 w-4 text-[var(--muted-foreground)]" />
                           <Input
@@ -365,7 +365,7 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
                       </div>
 
                       <div>
-                        <Label htmlFor="emergencyContact" className="text-xs text-[var(--muted-foreground)]">Emergency Contact</Label>
+                        <Label htmlFor="emergencyContact">Emergency Contact</Label>
                         <Input
                           id="emergencyContact"
                           value={formData.emergencyContact}
@@ -387,7 +387,7 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
                     <h3 className="text-sm font-semibold text-[var(--foreground)] mb-3">Medical Information</h3>
                     <div className="space-y-4">
                       <div>
-                        <Label htmlFor="allergies" className="text-xs text-[var(--muted-foreground)]">Allergies</Label>
+                        <Label htmlFor="allergies">Allergies</Label>
                         <Input
                           id="allergies"
                           value={formData.allergies}
@@ -398,7 +398,7 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
                       </div>
 
                       <div>
-                        <Label htmlFor="medicalNotes" className="text-xs text-[var(--muted-foreground)]">Medical Notes</Label>
+                        <Label htmlFor="medicalNotes">Medical Notes</Label>
                         <Textarea
                           id="medicalNotes"
                           value={formData.medicalNotes}

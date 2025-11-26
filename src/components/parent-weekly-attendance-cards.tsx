@@ -170,7 +170,7 @@ export function ParentWeeklyAttendanceCards({ attendanceData }: ParentWeeklyAtte
                     <div key={index} className="flex flex-col items-center gap-2 p-3 bg-gray-50 rounded-lg">
                       <div className="text-sm font-medium text-gray-700">{day.day}</div>
                       {getStatusDot(day.status, day.day, day.time)}
-                      <div className="text-xs text-gray-500 text-center">
+                      <div className="text-sm text-gray-500 text-center">
                         {day.status === 'PRESENT' || day.status === 'LATE' ? day.time : day.status}
                       </div>
                     </div>

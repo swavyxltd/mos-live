@@ -339,7 +339,7 @@ export function EditClassModal({ classId, isOpen, onClose, onSave }: EditClassMo
                       variant={formData.schedule.days.includes(day) ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => toggleDay(day)}
-                      className="text-xs"
+                      className="text-sm"
                     >
                       {day.slice(0, 3)}
                     </Button>
@@ -400,7 +400,7 @@ export function EditClassModal({ classId, isOpen, onClose, onSave }: EditClassMo
                   placeholder="e.g., 25.00"
                   required
                 />
-                <p className="text-xs text-gray-500">Fixed monthly fee for this class. This will be used when creating payment records.</p>
+                <p className="text-sm text-gray-500">Fixed monthly fee for this class. This will be used when creating payment records.</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="feeDueDay">Fee Due Day (Day of Month) *</Label>
@@ -414,7 +414,7 @@ export function EditClassModal({ classId, isOpen, onClose, onSave }: EditClassMo
                   placeholder="e.g., 1 (for 1st of each month)"
                   required
                 />
-                <p className="text-xs text-gray-500">Day of the month when fees are due. Payments not received within 48 hours will be marked as late, and after 96 hours as overdue.</p>
+                <p className="text-sm text-gray-500">Day of the month when fees are due. Payments not received within 48 hours will be marked as late, and after 96 hours as overdue.</p>
               </div>
             </div>
 

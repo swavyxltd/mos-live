@@ -102,7 +102,7 @@ export function MaintenanceNotificationBanner() {
                 )}
               </p>
               {notification.scheduledAt && (
-                <div className="flex items-center gap-2 text-xs text-yellow-700 mt-2">
+                <div className="flex items-center gap-2 text-sm text-yellow-700 mt-2">
                   <Clock className="h-3 w-3" />
                   <span>
                     Scheduled for: {new Date(notification.scheduledAt).toLocaleString('en-GB', {

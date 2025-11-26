@@ -156,7 +156,7 @@ export function TeachersList({ teachers, onEditTeacher }: TeachersListProps) {
                     </div>
                     {teacher.classes.length > 0 && (
                       <div className="mt-1">
-                        <div className="text-xs text-gray-500">
+                        <div className="text-sm text-gray-500">
                           {teacher.classes.slice(0, 2).map(c => c.name).join(', ')}
                           {teacher.classes.length > 2 && ` +${teacher.classes.length - 2} more`}
                         </div>
@@ -173,7 +173,7 @@ export function TeachersList({ teachers, onEditTeacher }: TeachersListProps) {
                     </div>
                     {teacher._count.students > 0 && (
                       <div className="mt-1 hidden sm:block">
-                        <div className="text-xs text-gray-500">
+                        <div className="text-sm text-gray-500">
                           {teacher.classes.length > 0 
                             ? `Across ${teacher.classes.length} class${teacher.classes.length > 1 ? 'es' : ''}`
                             : 'No active classes'

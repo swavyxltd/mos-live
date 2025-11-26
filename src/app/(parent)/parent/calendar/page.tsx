@@ -487,7 +487,7 @@ export default function ParentCalendarPage() {
                   </div>
                   {schedule.students && schedule.students.length > 0 && (
                     <div className="mt-2 pt-2 border-t border-[var(--border)]">
-                      <p className="text-xs text-[var(--muted-foreground)]">
+                      <p className="text-sm text-[var(--muted-foreground)]">
                         Your children: {schedule.students.join(', ')}
                       </p>
                     </div>

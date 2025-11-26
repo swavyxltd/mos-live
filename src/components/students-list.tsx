@@ -466,7 +466,7 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
                           )}
                         </div>
                         {student.isArchived && student.archivedAt && (
-                          <div className="text-xs text-gray-500">
+                          <div className="text-sm text-gray-500">
                             Archived on {new Date(student.archivedAt).toLocaleDateString()}
                           </div>
                         )}

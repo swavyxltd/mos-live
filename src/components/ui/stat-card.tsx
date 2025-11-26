@@ -56,17 +56,17 @@ const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
             <div className="space-y-1 flex-1 min-w-0">
               {/* Mobile: ALWAYS 2 lines, Desktop: 1 line */}
               <div className="md:hidden">
-                <p className="text-xs text-[var(--muted-foreground)] leading-tight">{titleParts.firstLine}</p>
-                <p className="text-xs text-[var(--muted-foreground)] leading-tight">{titleParts.secondLine || '\u00A0'}</p>
+                <p className="text-sm text-[var(--muted-foreground)] leading-tight">{titleParts.firstLine}</p>
+                <p className="text-sm text-[var(--muted-foreground)] leading-tight">{titleParts.secondLine || '\u00A0'}</p>
               </div>
-              <p className="hidden md:block text-xs sm:text-sm text-[var(--muted-foreground)] whitespace-nowrap overflow-hidden text-ellipsis">{title}</p>
+              <p className="hidden md:block text-sm sm:text-sm text-[var(--muted-foreground)] whitespace-nowrap overflow-hidden text-ellipsis">{title}</p>
               <p className="text-2xl sm:text-3xl font-semibold text-[var(--foreground)] whitespace-nowrap overflow-hidden text-ellipsis">{value}</p>
               {description && (
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs text-[var(--muted-foreground)] whitespace-nowrap overflow-hidden text-ellipsis flex-1 min-w-0">{description}</p>
+                  <p className="text-sm text-[var(--muted-foreground)] whitespace-nowrap overflow-hidden text-ellipsis flex-1 min-w-0">{description}</p>
                   {change && (
                     <div className={cn(
-                      "px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-xs font-medium flex-shrink-0",
+                      "px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-sm font-medium flex-shrink-0",
                       changeColor[change.type]
                     )}>
                       {change.value}
@@ -76,10 +76,10 @@ const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
               )}
               {detail && (
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs text-[var(--muted-foreground)] whitespace-nowrap overflow-hidden text-ellipsis flex-1 min-w-0">{detail}</p>
+                  <p className="text-sm text-[var(--muted-foreground)] whitespace-nowrap overflow-hidden text-ellipsis flex-1 min-w-0">{detail}</p>
                   {change && !description && (
                     <div className={cn(
-                      "px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-xs font-medium flex-shrink-0",
+                      "px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-sm font-medium flex-shrink-0",
                       changeColor[change.type]
                     )}>
                       {change.value}
@@ -90,7 +90,7 @@ const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
               {!description && !detail && change && (
                 <div className="flex justify-end">
                   <div className={cn(
-                    "px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-xs font-medium flex-shrink-0",
+                    "px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md text-sm font-medium flex-shrink-0",
                     changeColor[change.type]
                   )}>
                     {change.value}

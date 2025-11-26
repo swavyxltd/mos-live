@@ -253,7 +253,7 @@ export default function OwnerStudentsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{studentData?.stats?.totalStudents || 0}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               <span className="text-green-600">+{studentData?.stats?.newStudentsThisMonth || 0}</span> this month
             </p>
           </CardContent>
@@ -266,7 +266,7 @@ export default function OwnerStudentsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{studentData?.stats?.activeStudents || 0}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               {studentData?.stats?.totalStudents ? Math.round((studentData.stats.activeStudents / studentData.stats.totalStudents) * 100) : 0}% of total
             </p>
           </CardContent>
@@ -279,7 +279,7 @@ export default function OwnerStudentsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{studentData?.stats?.studentsWithAllergies || 0}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Require special attention
             </p>
           </CardContent>
@@ -292,7 +292,7 @@ export default function OwnerStudentsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{studentData?.stats?.newStudentsThisMonth || 0}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Recent enrollments
             </p>
           </CardContent>
@@ -431,7 +431,7 @@ export default function OwnerStudentsPage() {
                         {student.parentName && `Parent: ${student.parentName}`}
                         {student.parentEmail && ` • ${student.parentEmail}`}
                       </p>
-                      <p className="text-xs text-gray-400 truncate">{student.orgName || 'Unknown'}</p>
+                      <p className="text-sm text-gray-400 truncate">{student.orgName || 'Unknown'}</p>
                       {student.classes && Array.isArray(student.classes) && student.classes.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-1">
                           {student.classes.slice(0, 2).map((cls: any) => (

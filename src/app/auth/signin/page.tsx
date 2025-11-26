@@ -13,7 +13,6 @@ function SignInPageContent() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
-  
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
   const resetSuccess = searchParams.get('reset') === 'success'
   const signupSuccess = searchParams.get('signup') === 'success'
@@ -107,29 +106,29 @@ function SignInPageContent() {
 
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
-      <div className="flex w-full max-w-sm flex-col gap-6">
-        {/* Logo/Branding */}
-        <a href="/" className="flex items-center gap-2 self-center">
-          <Image 
-            src="/logo.png" 
-            alt="Madrasah OS" 
-            width={128}
-            height={32}
-            className="h-8 w-auto"
-            priority
-            fetchPriority="high"
-          />
-        </a>
+        <div className="flex w-full max-w-sm flex-col gap-6">
+          {/* Logo/Branding */}
+          <a href="/" className="flex items-center gap-2 self-center">
+            <Image 
+              src="/logo.png" 
+              alt="Madrasah OS" 
+              width={128}
+              height={32}
+              className="h-8 w-auto"
+              priority
+              fetchPriority="high"
+            />
+          </a>
 
-        {/* Login Form */}
-        <LoginForm
-          onSubmit={handleCredentialsSignIn}
-          isLoading={isLoading}
-          error={error}
-          successMessage={successMessage}
-        />
+          {/* Login Form */}
+          <LoginForm
+            onSubmit={handleCredentialsSignIn}
+            isLoading={isLoading}
+            error={error}
+            successMessage={successMessage}
+          />
+        </div>
       </div>
-    </div>
   )
 }
 

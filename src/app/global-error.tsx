@@ -32,7 +32,7 @@ export default function GlobalError({
               A critical error occurred. Please refresh the page or contact support if the problem persists.
             </p>
             {error.digest && (
-              <p className="mb-4 text-xs text-[var(--muted-foreground)]">
+              <p className="mb-4 text-sm text-[var(--muted-foreground)]">
                 Error ID: {error.digest}
               </p>
             )}

@@ -138,8 +138,8 @@ export function PermissionSelector({
           </SelectContent>
         </Select>
         <div className="bg-[var(--accent)]/20 border border-[var(--border)] rounded-lg p-3 mt-2">
-          <p className="text-xs text-[var(--foreground)] font-medium mb-1">Dashboard Type:</p>
-          <p className="text-xs text-[var(--muted-foreground)]">
+          <p className="text-sm text-[var(--foreground)] font-medium mb-1">Dashboard Type:</p>
+          <p className="text-sm text-[var(--muted-foreground)]">
             {staffSubrole === 'ADMIN'
               ? 'Full dashboard with all organization stats'
               : staffSubrole === 'TEACHER'
@@ -154,11 +154,11 @@ export function PermissionSelector({
       {/* Base Permissions */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-xs font-medium text-[var(--foreground)] flex items-center gap-1.5">
+          <Label className="text-sm font-medium text-[var(--foreground)] flex items-center gap-1.5">
             Base Permissions
-            <Lock className="h-3 w-3 text-[var(--muted-foreground)]" />
+            <Lock className="h-4 w-4 text-[var(--muted-foreground)]" />
           </Label>
-          <span className="text-xs text-[var(--muted-foreground)]">
+          <span className="text-sm text-[var(--muted-foreground)]">
             {basePermissions.length} included
           </span>
         </div>
@@ -176,8 +176,8 @@ export function PermissionSelector({
                     "bg-[var(--accent)]/20"
                   )}
                 >
-                  <Lock className="h-3 w-3 text-[var(--muted-foreground)] flex-shrink-0" />
-                  <span className="text-xs font-medium text-[var(--foreground)] truncate">
+                  <Lock className="h-4 w-4 text-[var(--muted-foreground)] flex-shrink-0" />
+                  <span className="text-sm font-medium text-[var(--foreground)] truncate">
                     {definition.name}
                   </span>
                 </div>
@@ -185,7 +185,7 @@ export function PermissionSelector({
             })}
           </div>
         </div>
-        <p className="text-xs text-[var(--muted-foreground)]">
+        <p className="text-sm text-[var(--muted-foreground)]">
           Automatically included with {staffSubrole.toLowerCase().replace(/_/g, ' ')} role
         </p>
       </div>
@@ -194,7 +194,7 @@ export function PermissionSelector({
       {availableAdditionalCount > 0 && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label className="text-xs font-medium text-[var(--foreground)]">
+            <Label className="text-sm font-medium text-[var(--foreground)]">
               Additional Permissions
             </Label>
             <div className="flex gap-1.5">
@@ -203,7 +203,7 @@ export function PermissionSelector({
                 variant="outline"
                 size="sm"
                 onClick={handleSelectAllAdditional}
-                className="h-7 text-xs px-2"
+                className="h-7 text-sm px-2"
               >
                 Select All
               </Button>
@@ -212,7 +212,7 @@ export function PermissionSelector({
                 variant="outline"
                 size="sm"
                 onClick={handleDeselectAllAdditional}
-                className="h-7 text-xs px-2"
+                className="h-7 text-sm px-2"
               >
                 Clear All
               </Button>
@@ -244,7 +244,7 @@ export function PermissionSelector({
                         className="h-3.5 w-3.5"
                       />
                       <div className="flex-1 min-w-0">
-                        <div className="text-xs font-medium text-[var(--foreground)]">
+                        <div className="text-sm font-medium text-[var(--foreground)]">
                           {definition.name}
                         </div>
                       </div>
@@ -254,7 +254,7 @@ export function PermissionSelector({
             </div>
           </div>
 
-          <p className="text-xs text-[var(--muted-foreground)]">
+          <p className="text-sm text-[var(--muted-foreground)]">
             {additionalCount} of {availableAdditionalCount} selected
           </p>
         </div>

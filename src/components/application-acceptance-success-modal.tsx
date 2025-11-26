@@ -90,11 +90,11 @@ export function ApplicationAcceptanceSuccessModal({
                         <span className="font-medium text-gray-900 text-sm">
                           {student.firstName} {student.lastName}
                         </span>
-                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                        <span className="text-sm bg-green-100 text-green-800 px-2 py-1 rounded">
                           Active
                         </span>
                       </div>
-                      <div className="text-xs text-gray-600 space-y-0.5">
+                      <div className="text-sm text-gray-600 space-y-0.5">
                         <div>DOB: {student.dateOfBirth.toLocaleDateString()}</div>
                         <div>Gender: {student.gender}</div>
                         {student.preferredClass && (
@@ -180,7 +180,7 @@ export function ApplicationAcceptanceSuccessModal({
 
             {/* Help Text */}
             <div className="text-center">
-              <p className="text-xs text-gray-500">
+              <p className="text-sm text-gray-500">
                 The parent will receive an email invitation to create an account and access their children's information.
               </p>
             </div>

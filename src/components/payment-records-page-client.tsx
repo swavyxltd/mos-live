@@ -478,7 +478,7 @@ export default function PaymentRecordsPageClient() {
                       </>
                     )}
                   </Button>
-                  <p className="text-xs text-muted-foreground mt-2 text-center">
+                  <p className="text-sm text-muted-foreground mt-2 text-center">
                     A confirmation email will be sent to the parent
                   </p>
                 </div>

@@ -102,7 +102,7 @@ export function OwnerSidebar({ user }: OwnerSidebarProps) {
                 <p className="text-sm font-medium text-gray-900">{user.name || user.email}</p>
                 <div className="flex items-center space-x-1">
                   <Crown className="h-3 w-3 text-yellow-500" />
-                  <span className="text-xs text-gray-500">
+                  <span className="text-sm text-gray-500">
                     {user.isSuperAdmin ? 'Super Admin' : 'Owner'}
                   </span>
                 </div>

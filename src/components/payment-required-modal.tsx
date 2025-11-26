@@ -115,7 +115,7 @@ export function PaymentRequiredModal({ isOpen, onClose, action, userRole }: Paym
                   <AlertCircle className="h-5 w-5 text-[var(--muted-foreground)] flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
                     <h3 className="text-sm font-semibold text-[var(--foreground)] mb-1">Features Currently Unavailable</h3>
-                    <p className="text-xs text-[var(--muted-foreground)] mb-3">
+                    <p className="text-sm text-[var(--muted-foreground)] mb-3">
                       The following features are blocked until payment setup is complete:
                     </p>
                   </div>
@@ -147,7 +147,7 @@ export function PaymentRequiredModal({ isOpen, onClose, action, userRole }: Paym
                 </Button>
               </div>
               
-              <p className="text-xs text-[var(--muted-foreground)] text-center">
+              <p className="text-sm text-[var(--muted-foreground)] text-center">
                 Secure payment processing by Stripe. Your card details are encrypted and never stored on our servers.
               </p>
             </div>

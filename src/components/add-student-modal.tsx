@@ -163,7 +163,7 @@ export function AddStudentModal({ isOpen, onClose, onSave, classes }: AddStudent
                 placeholder="Enter parent email address"
                 required
               />
-              <p className="text-xs text-gray-500">An invitation email will be sent to this address for the parent to complete setup.</p>
+              <p className="text-sm text-gray-500">An invitation email will be sent to this address for the parent to complete setup.</p>
             </div>
         </div>
 
@@ -194,7 +194,7 @@ export function AddStudentModal({ isOpen, onClose, onSave, classes }: AddStudent
                 className="w-full"
                 required
               />
-              <p className="text-xs text-gray-500">The first payment record will be created for this month.</p>
+              <p className="text-sm text-gray-500">The first payment record will be created for this month.</p>
             </div>
         </div>
 

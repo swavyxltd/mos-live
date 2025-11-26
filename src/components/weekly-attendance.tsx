@@ -93,7 +93,7 @@ export function WeeklyAttendance({ attendance }: WeeklyAttendanceProps) {
                           <p className="text-sm font-medium text-gray-900">
                             {record.class.name}
                           </p>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-sm text-gray-500">
                             {formatDate(record.date)}
                           </p>
                         </div>

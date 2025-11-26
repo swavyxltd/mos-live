@@ -382,7 +382,7 @@ function SignUpForm() {
                     autoComplete="tel"
                   />
                 </div>
-                <p className="text-xs text-neutral-500 mt-1">For Madrasah OS to contact you</p>
+                <p className="text-sm text-neutral-500 mt-1">For Madrasah OS to contact you</p>
               </div>
 
               {/* Public Phone */}
@@ -404,7 +404,7 @@ function SignUpForm() {
                     autoComplete="tel"
                   />
                 </div>
-                <p className="text-xs text-neutral-500 mt-1">This will be visible to parents on the application form</p>
+                <p className="text-sm text-neutral-500 mt-1">This will be visible to parents on the application form</p>
               </div>
 
               {/* Contact Email (Internal/OS) */}
@@ -426,7 +426,7 @@ function SignUpForm() {
                     autoComplete="email"
                   />
                 </div>
-                <p className="text-xs text-neutral-500 mt-1">For Madrasah OS to contact you</p>
+                <p className="text-sm text-neutral-500 mt-1">For Madrasah OS to contact you</p>
               </div>
 
               {/* Public Email */}
@@ -448,7 +448,7 @@ function SignUpForm() {
                     autoComplete="email"
                   />
                 </div>
-                <p className="text-xs text-neutral-500 mt-1">This will be visible to parents on the application form</p>
+                <p className="text-sm text-neutral-500 mt-1">This will be visible to parents on the application form</p>
               </div>
 
               {/* Website (Optional) */}

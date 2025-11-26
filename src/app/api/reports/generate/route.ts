@@ -46,11 +46,33 @@ async function handlePOST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid year' }, { status: 400 })
     }
     
-    // Check if the requested month is in the future
+    // Check if the requested month is in the future or not complete
     const currentDate = new Date()
-    const requestedDate = new Date(year, month, 1)
-    if (requestedDate > currentDate) {
+    const currentYear = currentDate.getFullYear()
+    const currentMonth = currentDate.getMonth()
+    const currentDay = currentDate.getDate()
+    
+    // Can't generate report for future months
+    if (year > currentYear || (year === currentYear && month > currentMonth)) {
       return NextResponse.json({ error: 'Cannot generate report for future months' }, { status: 400 })
+    }
+    
+    // Can't generate report for current month if it's not complete
+    if (year === currentYear && month === currentMonth) {
+      const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0).getDate()
+      if (currentDay < lastDayOfMonth) {
+        return NextResponse.json({ error: 'Cannot generate report for incomplete month' }, { status: 400 })
+      }
+    }
+    
+    // Check if requested month is before org was created
+    const orgCreatedAt = org.createdAt
+    const orgStartDate = new Date(orgCreatedAt)
+    const orgStartYear = orgStartDate.getFullYear()
+    const orgStartMonth = orgStartDate.getMonth()
+    
+    if (year < orgStartYear || (year === orgStartYear && month < orgStartMonth)) {
+      return NextResponse.json({ error: 'Cannot generate report for months before organization was created' }, { status: 400 })
     }
 
     // Fetch all data from database
@@ -150,10 +172,90 @@ async function handlePOST(request: NextRequest) {
       createdAt: s.createdAt
     }))
 
+    // Get financial data for the requested month
+    const monthStart = new Date(year, month, 1)
+    const monthEnd = new Date(year, month + 1, 0, 23, 59, 59)
+    
+    // Get invoices for the month
+    const monthInvoices = await prisma.invoice.findMany({
+      where: {
+        orgId: org.id,
+        createdAt: {
+          gte: monthStart,
+          lte: monthEnd
+        }
+      },
+      select: {
+        id: true,
+        amountP: true,
+        status: true,
+        paidAt: true,
+        dueDate: true
+      }
+    })
+    
+    // Calculate revenue from paid invoices in the month
+    const paidInvoices = monthInvoices.filter(inv => inv.status === 'PAID' && inv.paidAt)
+    const totalRevenue = paidInvoices.reduce((sum, inv) => sum + Number(inv.amountP || 0) / 100, 0)
+    
+    // Get pending invoices (not paid yet, due date in future or past)
+    const pendingInvoices = monthInvoices.filter(inv => inv.status === 'PENDING')
+    const pendingPayments = pendingInvoices.reduce((sum, inv) => sum + Number(inv.amountP || 0) / 100, 0)
+    
+    // Get overdue invoices (past due date, not paid)
+    const now = new Date()
+    const overdueInvoices = monthInvoices.filter(inv => 
+      inv.status === 'PENDING' && 
+      inv.dueDate && 
+      new Date(inv.dueDate) < now
+    )
+    const overduePayments = overdueInvoices.reduce((sum, inv) => sum + Number(inv.amountP || 0) / 100, 0)
+    
+    // Get applications for the month
+    const monthApplications = await prisma.application.findMany({
+      where: {
+        orgId: org.id,
+        createdAt: {
+          gte: monthStart,
+          lte: monthEnd
+        }
+      },
+      select: {
+        id: true,
+        status: true,
+        createdAt: true
+      }
+    })
+    
+    const newApplications = monthApplications.length
+    const acceptedStudents = monthApplications.filter(app => app.status === 'ACCEPTED').length
+    
+    // Get events (exams and holidays) for the month
+    const monthEvents = await prisma.event.findMany({
+      where: {
+        orgId: org.id,
+        startDate: {
+          lte: monthEnd
+        },
+        endDate: {
+          gte: monthStart
+        }
+      },
+      select: {
+        id: true,
+        title: true,
+        startDate: true,
+        endDate: true,
+        description: true,
+        type: true
+      }
+    })
+    
+    const exams = monthEvents.filter(e => e.type === 'EXAM')
+    const holidays = monthEvents.filter(e => e.type === 'HOLIDAY')
+    
     const attendanceRecords: any[] = [] // Not used in current HTML report
-    const invoices: any[] = [] // Not used in current HTML report
-    const exams: any[] = [] // Not used in current HTML report
-    const holidays: any[] = [] // Not used in current HTML report
+    const invoices: any[] = monthInvoices // Now populated with real data
 
     // Create professional PDF report with design language
     try {
@@ -278,7 +380,7 @@ async function handlePOST(request: NextRequest) {
       addRect(0, 0, pageWidth, 60, { fill: colors.primary })
       
       // Main madrasah name (left-aligned and prominent)
-      const selectedMonth = new Date(year, month).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+      const selectedMonthName = new Date(year, month).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
       doc.setFontSize(22)
       doc.setFont(undefined, 'bold')
       doc.setTextColor(255, 255, 255)
@@ -287,7 +389,7 @@ async function handlePOST(request: NextRequest) {
       // Month report title
       doc.setFontSize(14)
       doc.setFont(undefined, 'normal')
-      doc.text(`${selectedMonth} Report`, margin, 40)
+      doc.text(`${selectedMonthName} Report`, margin, 40)
       
       // Generated date (top right)
       addText(`Generated: ${new Date().toLocaleDateString('en-GB')}`, pageWidth - margin - 20, 20, { 
@@ -316,8 +418,17 @@ async function handlePOST(request: NextRequest) {
       addLine(margin, yPosition, pageWidth - margin, yPosition, { color: colors.primary, width: 2 })
       yPosition += 15
       
+      // Calculate average attendance rate
+      const totalAttendanceRecords = classesWithStats.reduce((sum, cls) => {
+        // We need to get total attendance records for calculation
+        return sum + (cls.attendance || 0)
+      }, 0)
+      const averageAttendance = classesWithStats.length > 0 
+        ? Math.round(totalAttendanceRecords / classesWithStats.length) 
+        : 0
+      
       // Monthly Summary Paragraph for Trustees
-      const summaryText = `${org.name} has demonstrated strong performance throughout ${selectedMonth}, with ${transformedStudents.length} active students enrolled across ${classesWithStats.length} classes. Our dedicated team of ${staff.length} staff members continues to provide high-quality Islamic education, maintaining an average attendance rate of 89% which exceeds our target of 85%. The madrasah has successfully collected £8,500 in monthly revenue, with a healthy growth trajectory. Our comprehensive curriculum covers Quran recitation, Islamic studies, Arabic language, and Hadith studies, ensuring students receive a well-rounded Islamic education. The institution remains committed to academic excellence and community engagement, with upcoming examinations and events scheduled to maintain our high educational standards.`
+      const summaryText = `${org.name} has demonstrated strong performance throughout ${selectedMonthName}, with ${transformedStudents.length} active students enrolled across ${classesWithStats.length} classes. Our dedicated team of ${staff.length} staff members continues to provide high-quality Islamic education, maintaining an average attendance rate of ${averageAttendance}% which ${averageAttendance >= 85 ? 'exceeds' : 'approaches'} our target of 85%. The madrasah has successfully collected £${totalRevenue.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} in monthly revenue${totalRevenue > 0 ? ', with a healthy growth trajectory' : ''}. Our comprehensive curriculum covers Quran recitation, Islamic studies, Arabic language, and Hadith studies, ensuring students receive a well-rounded Islamic education. The institution remains committed to academic excellence and community engagement, with ${exams.length} examination${exams.length !== 1 ? 's' : ''} and ${holidays.length} event${holidays.length !== 1 ? 's' : ''} scheduled to maintain our high educational standards.`
       
       addText('MONTHLY OVERVIEW', margin, yPosition, { 
         fontSize: 12, 
@@ -359,9 +470,9 @@ async function handlePOST(request: NextRequest) {
         },
         { 
           title: 'Monthly Revenue', 
-          value: '£8,500', 
-          subtitle: 'Recurring Revenue',
-          change: { value: '+8%', type: 'increase' },
+          value: `£${totalRevenue.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, 
+          subtitle: 'Revenue Collected',
+          change: { value: totalRevenue > 0 ? '+0%' : '0%', type: totalRevenue > 0 ? 'increase' : 'neutral' },
           color: colors.success
         }
       ]
@@ -385,7 +496,7 @@ async function handlePOST(request: NextRequest) {
           lineWidth: 1
         })
         
-        // Title at the top (text-xs sm:text-sm text-[var(--muted-foreground)])
+        // Title at the top (text-sm sm:text-sm text-[var(--muted-foreground)])
         addText(metric.title, x + 12, y + 8, { 
           fontSize: 11, 
           style: 'normal', 
@@ -440,10 +551,9 @@ async function handlePOST(request: NextRequest) {
       yPosition += 15
       
       // Student Summary Paragraph
-      const newApplications = 8
-      const acceptedStudents = 5
       const totalActiveStudents = transformedStudents.length
-      const studentSummary = `This month, Leicester Islamic Centre received ${newApplications} new student applications and successfully accepted ${acceptedStudents} new students into our programs. Our total active student body now stands at ${totalActiveStudents} students across all classes. The acceptance rate of ${Math.round((acceptedStudents / newApplications) * 100)}% reflects our commitment to maintaining high educational standards while accommodating qualified students. New enrollments are distributed across our Quran recitation, Islamic studies, Arabic language, and Hadith studies programs, ensuring balanced class sizes and optimal learning environments.`
+      const acceptanceRate = newApplications > 0 ? Math.round((acceptedStudents / newApplications) * 100) : 0
+      const studentSummary = `This month, ${org.name} received ${newApplications} new student application${newApplications !== 1 ? 's' : ''} and successfully accepted ${acceptedStudents} new student${acceptedStudents !== 1 ? 's' : ''} into our programs. Our total active student body now stands at ${totalActiveStudents} student${totalActiveStudents !== 1 ? 's' : ''} across all classes.${newApplications > 0 ? ` The acceptance rate of ${acceptanceRate}% reflects our commitment to maintaining high educational standards while accommodating qualified students.` : ''} New enrollments are distributed across our Quran recitation, Islamic studies, Arabic language, and Hadith studies programs, ensuring balanced class sizes and optimal learning environments.`
       
       addText('MONTHLY STUDENT OVERVIEW', margin, yPosition, { 
         fontSize: 12, 
@@ -539,7 +649,11 @@ async function handlePOST(request: NextRequest) {
       // Class Summary Paragraph
       const totalClasses = classesWithStats.length
       const averageClassSize = totalClasses > 0 ? Math.round(transformedStudents.length / totalClasses) : 0
-      const classSummary = `Our academic program continues to thrive with ${totalClasses} active classes running this month, serving an average of ${averageClassSize} students per class. The curriculum spans four core areas: Quran recitation with 3 levels, Islamic studies with 2 levels, Arabic language instruction, and Hadith studies. All classes maintain excellent attendance rates above 85%, with our highest performing class achieving 95% attendance. The balanced distribution of students across different levels ensures personalized attention and optimal learning outcomes. Our teaching staff of ${staff.length} dedicated educators provides comprehensive Islamic education while maintaining the highest standards of academic excellence.`
+      const highestAttendance = classesWithStats.length > 0 
+        ? Math.max(...classesWithStats.map(cls => cls.attendance || 0))
+        : 0
+      const classesAboveTarget = classesWithStats.filter(cls => (cls.attendance || 0) >= 85).length
+      const classSummary = `Our academic program continues to thrive with ${totalClasses} active class${totalClasses !== 1 ? 'es' : ''} running this month, serving an average of ${averageClassSize} student${averageClassSize !== 1 ? 's' : ''} per class.${classesAboveTarget > 0 ? ` ${classesAboveTarget} out of ${totalClasses} class${totalClasses !== 1 ? 'es' : ''} maintain excellent attendance rates above 85%` : ''}${highestAttendance > 0 ? `, with our highest performing class achieving ${highestAttendance}% attendance` : ''}. The balanced distribution of students across different levels ensures personalized attention and optimal learning outcomes. Our teaching staff of ${staff.length} dedicated educator${staff.length !== 1 ? 's' : ''} provide${staff.length === 1 ? 's' : ''} comprehensive Islamic education while maintaining the highest standards of academic excellence.`
       
       addText('MONTHLY CLASS OVERVIEW', margin, yPosition, { 
         fontSize: 12, 
@@ -584,7 +698,7 @@ async function handlePOST(request: NextRequest) {
       yPosition += 12
       
       // Class data rows
-      classes.forEach((cls, index) => {
+      classesWithStats.forEach((cls, index) => {
         if (yPosition > pageHeight - 40) {
           doc.addPage()
           yPosition = margin
@@ -598,7 +712,7 @@ async function handlePOST(request: NextRequest) {
         xPos = margin
         const classData = [
           cls.name,
-          cls.teacher?.name || 'N/A',
+          cls.teacher?.name || 'Unassigned',
           cls.students?.toString() || '0',
           `${cls.attendance || 0}%`,
           cls.description || 'No description'
@@ -632,11 +746,11 @@ async function handlePOST(request: NextRequest) {
       yPosition += 15
       
       // Financial Summary Paragraph
-      const totalRevenue = 8500
-      const pendingPayments = 2800
-      const overduePayments = 1200
-      const collectionRate = Math.round(((totalRevenue) / (totalRevenue + pendingPayments + overduePayments)) * 100)
-      const financialSummary = `This month, Leicester Islamic Centre achieved strong financial performance with £${totalRevenue.toLocaleString()} in total revenue collected, representing a ${collectionRate}% collection rate. We have £${pendingPayments.toLocaleString()} in pending payments from families, with £${overduePayments.toLocaleString()} in overdue amounts requiring attention. Our financial management team continues to work closely with families to ensure timely payments while maintaining our commitment to accessibility. The revenue supports our educational programs, staff salaries, facility maintenance, and community outreach initiatives, ensuring sustainable operations and continued growth of our Islamic education services.`
+      const totalOutstanding = pendingPayments + overduePayments
+      const collectionRate = (totalRevenue + totalOutstanding) > 0 
+        ? Math.round((totalRevenue / (totalRevenue + totalOutstanding)) * 100) 
+        : 0
+      const financialSummary = `This month, ${org.name} achieved ${totalRevenue > 0 ? 'strong' : 'steady'} financial performance with £${totalRevenue.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} in total revenue collected${totalOutstanding > 0 ? `, representing a ${collectionRate}% collection rate` : ''}.${pendingPayments > 0 ? ` We have £${pendingPayments.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} in pending payments from families` : ''}${overduePayments > 0 ? `, with £${overduePayments.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} in overdue amounts requiring attention` : ''}. Our financial management team continues to work closely with families to ensure timely payments while maintaining our commitment to accessibility. The revenue supports our educational programs, staff salaries, facility maintenance, and community outreach initiatives, ensuring sustainable operations and continued growth of our Islamic education services.`
       
       addText('MONTHLY FINANCIAL OVERVIEW', margin, yPosition, { 
         fontSize: 12, 
@@ -654,10 +768,10 @@ async function handlePOST(request: NextRequest) {
       yPosition += 38
       
       const financialMetrics = [
-        { title: 'Total Revenue Collected', value: '£8,500', change: { value: '+8%', type: 'increase' }, color: colors.success },
-        { title: 'Pending Payments', value: '£2,800', change: { value: '-3%', type: 'decrease' }, color: colors.warning },
-        { title: 'Overdue Payments', value: '£1,200', change: { value: '+15%', type: 'increase' }, color: colors.error },
-        { title: 'Total Outstanding', value: '£4,000', change: { value: '+2%', type: 'increase' }, color: colors.gray[600] }
+        { title: 'Total Revenue Collected', value: `£${totalRevenue.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, change: { value: '0%', type: 'neutral' }, color: colors.success },
+        { title: 'Pending Payments', value: `£${pendingPayments.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, change: { value: '0%', type: 'neutral' }, color: colors.warning },
+        { title: 'Overdue Payments', value: `£${overduePayments.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, change: { value: '0%', type: 'neutral' }, color: colors.error },
+        { title: 'Total Outstanding', value: `£${totalOutstanding.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, change: { value: '0%', type: 'neutral' }, color: colors.gray[600] }
       ]
       
       financialMetrics.forEach((metric, index) => {
@@ -720,8 +834,11 @@ async function handlePOST(request: NextRequest) {
       yPosition += 15
       
       // Attendance Summary Paragraph
-      const classesAboveTarget = classes.filter(cls => (cls.attendance || 0) >= 85).length
-      const attendanceSummary = `Our attendance performance this month demonstrates excellent student engagement and commitment to Islamic education. With an average attendance rate of 89%, we have exceeded our target of 85% by 4 percentage points. ${classesAboveTarget} out of ${classesWithStats.length} classes have achieved attendance rates above our target, with our highest performing class reaching 95% attendance. This strong attendance record reflects the quality of our educational programs, dedicated teaching staff, and supportive family environment. Regular attendance is crucial for student progress in Quranic studies, Islamic knowledge, and Arabic language acquisition, and we are pleased to see such positive engagement from our student community.`
+      const classesAboveTarget = classesWithStats.filter(cls => (cls.attendance || 0) >= 85).length
+      const highestAttendance = classesWithStats.length > 0 
+        ? Math.max(...classesWithStats.map(cls => cls.attendance || 0))
+        : 0
+      const attendanceSummary = `Our attendance performance this month demonstrates ${averageAttendance >= 85 ? 'excellent' : 'good'} student engagement and commitment to Islamic education. With an average attendance rate of ${averageAttendance}%, we have ${averageAttendance >= 85 ? `exceeded our target of 85% by ${averageAttendance - 85} percentage points` : `achieved ${85 - averageAttendance} percentage points below our target of 85%`}. ${classesAboveTarget} out of ${classesWithStats.length} class${classesWithStats.length !== 1 ? 'es' : ''} have achieved attendance rates above our target${highestAttendance > 0 ? `, with our highest performing class reaching ${highestAttendance}% attendance` : ''}. This ${averageAttendance >= 85 ? 'strong' : 'developing'} attendance record reflects the quality of our educational programs, dedicated teaching staff, and supportive family environment. Regular attendance is crucial for student progress in Quranic studies, Islamic knowledge, and Arabic language acquisition, and we are pleased to see such positive engagement from our student community.`
       
       addText('MONTHLY ATTENDANCE OVERVIEW', margin, yPosition, { 
         fontSize: 12, 
@@ -739,8 +856,8 @@ async function handlePOST(request: NextRequest) {
       yPosition += 38
       
       // Calculate overall attendance statistics
-      const totalStudents = classes.reduce((sum, cls) => sum + (cls.students || 0), 0)
-      const weightedAttendance = classes.reduce((sum, cls) => sum + ((cls.attendance || 0) * (cls.students || 0)), 0)
+      const totalStudents = classesWithStats.reduce((sum, cls) => sum + (cls.students || 0), 0)
+      const weightedAttendance = classesWithStats.reduce((sum, cls) => sum + ((cls.attendance || 0) * (cls.students || 0)), 0)
       const averageAttendance = totalStudents > 0 ? Math.round(weightedAttendance / totalStudents) : 0
       const targetAttendance = 85
       
@@ -750,7 +867,7 @@ async function handlePOST(request: NextRequest) {
         { title: 'Average Attendance', value: `${averageAttendance}%`, change: { value: '+4%', type: 'increase' }, color: averageAttendance >= targetAttendance ? colors.success : colors.warning },
         { title: 'Target Attendance', value: `${targetAttendance}%`, change: { value: '0%', type: 'neutral' }, color: colors.gray[600] },
         { title: 'Total Students', value: totalStudents.toString(), change: { value: '+12%', type: 'increase' }, color: colors.primary },
-        { title: 'Classes Above Target', value: classes.filter(cls => (cls.attendance || 0) >= targetAttendance).length.toString(), change: { value: '+2%', type: 'increase' }, color: colors.success }
+        { title: 'Classes Above Target', value: classesWithStats.filter(cls => (cls.attendance || 0) >= targetAttendance).length.toString(), change: { value: '0%', type: 'neutral' }, color: colors.success }
       ]
       
       attendanceMetrics.forEach((metric, index) => {

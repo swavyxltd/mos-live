@@ -82,7 +82,7 @@ export default async function OwnerAnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">+{analyticsData.revenue.growth}%</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               £{analyticsData.revenue.currentMRR} vs £{analyticsData.revenue.lastMonthMRR}
             </p>
           </CardContent>
@@ -95,7 +95,7 @@ export default async function OwnerAnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">+{analyticsData.growth.newOrgsThisMonth}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               New organizations this month
             </p>
           </CardContent>
@@ -108,7 +108,7 @@ export default async function OwnerAnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{analyticsData.growth.retentionRate}%</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Monthly retention rate
             </p>
           </CardContent>
@@ -121,7 +121,7 @@ export default async function OwnerAnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">£{analyticsData.revenue.averageRevenuePerUser}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Average revenue per user
             </p>
           </CardContent>

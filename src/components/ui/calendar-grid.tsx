@@ -112,7 +112,7 @@ export function CalendarGrid({ events, onEventClick }: CalendarGridProps) {
             <div
               key={event.id}
               className={cn(
-                "text-xs p-1 rounded border cursor-pointer hover:opacity-80 transition-opacity",
+                "text-sm p-1 rounded border cursor-pointer hover:opacity-80 transition-opacity",
                 getEventColor(event)
               )}
               onClick={() => onEventClick?.(event)}
@@ -120,12 +120,12 @@ export function CalendarGrid({ events, onEventClick }: CalendarGridProps) {
             >
               <div className="truncate font-medium">{event.title}</div>
               {event.startTime && (
-                <div className="text-xs opacity-75">{event.startTime}</div>
+                <div className="text-sm opacity-75">{event.startTime}</div>
               )}
             </div>
           ))}
           {dayEvents.length > 3 && (
-            <div className="text-xs text-[var(--muted-foreground)] font-medium">
+            <div className="text-sm text-[var(--muted-foreground)] font-medium">
               +{dayEvents.length - 3} more
             </div>
           )}

@@ -83,7 +83,7 @@ export function AddStudentSuccessModal({
 
         {/* Help Text */}
         <div className="text-center">
-          <p className="text-xs text-gray-500">
+          <p className="text-sm text-gray-500">
             The parent will receive an email invitation to create an account and access their child's information.
           </p>
         </div>

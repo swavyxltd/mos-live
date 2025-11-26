@@ -120,7 +120,7 @@ export function WaveChart({
                 size="sm"
                 onClick={() => handleFilterChange(option.value)}
                 className={cn(
-                  "h-8 px-3 text-xs transition-all duration-200",
+                  "h-8 px-3 text-sm transition-all duration-200",
                   activeFilter === option.value
                     ? "bg-[var(--primary)] text-[var(--primary-foreground)] shadow-sm"
                     : "text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--muted)]"

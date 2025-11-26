@@ -686,7 +686,7 @@ export default function SettingsPage() {
                     onChange={(e) => handleOrgSettingsChange('phone', e.target.value)}
                     placeholder="+44 20 1234 5678"
                   />
-                  <p className="text-xs text-gray-500 mt-1">For Madrasah OS to contact you</p>
+                  <p className="text-sm text-gray-500 mt-1">For Madrasah OS to contact you</p>
                 </div>
                 <div>
                   <Label htmlFor="publicPhone">Public Phone (For Parents) *</Label>
@@ -697,7 +697,7 @@ export default function SettingsPage() {
                     onChange={(e) => handleOrgSettingsChange('publicPhone', e.target.value)}
                     placeholder="+44 20 1234 5678"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Visible on application form</p>
+                  <p className="text-sm text-gray-500 mt-1">Visible on application form</p>
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -710,7 +710,7 @@ export default function SettingsPage() {
                     onChange={(e) => handleOrgSettingsChange('email', e.target.value)}
                     placeholder="admin@madrasah.org"
                   />
-                  <p className="text-xs text-gray-500 mt-1">For Madrasah OS to contact you</p>
+                  <p className="text-sm text-gray-500 mt-1">For Madrasah OS to contact you</p>
                 </div>
                 <div>
                   <Label htmlFor="publicEmail">Public Email (For Parents) *</Label>
@@ -721,7 +721,7 @@ export default function SettingsPage() {
                     onChange={(e) => handleOrgSettingsChange('publicEmail', e.target.value)}
                     placeholder="info@madrasah.org"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Visible on application form</p>
+                  <p className="text-sm text-gray-500 mt-1">Visible on application form</p>
                 </div>
               </div>
             </div>

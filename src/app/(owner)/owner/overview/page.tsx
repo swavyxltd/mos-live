@@ -279,7 +279,7 @@ export default function OwnerOverviewPage() {
           <p className="mt-1 text-sm text-[var(--muted-foreground)] break-words">
             Complete overview of our platform performance and business metrics
           </p>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-sm text-gray-500 mt-1">
             Last updated: {lastUpdated.toLocaleTimeString()}
           </p>
         </div>
@@ -325,7 +325,7 @@ export default function OwnerOverviewPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">£{(dashboardData.mrr ?? 0).toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               <span className="text-green-600">+{((dashboardData.revenueGrowth ?? 0).toFixed(1))}%</span> from last month
             </p>
           </CardContent>
@@ -346,7 +346,7 @@ export default function OwnerOverviewPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{dashboardData.totalOrgs}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               <span className="text-green-600">+{dashboardData.newOrgsThisMonth}</span> this month
             </p>
           </CardContent>
@@ -367,7 +367,7 @@ export default function OwnerOverviewPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{(dashboardData.totalStudents ?? 0).toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               <span className="text-green-600">+{Math.round((dashboardData.totalStudents ?? 0) * 0.08)}</span> this month
             </p>
           </CardContent>
@@ -388,7 +388,7 @@ export default function OwnerOverviewPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">£{(dashboardData.arr ?? 0).toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               <span className="text-green-600">+{((dashboardData.revenueGrowth ?? 0).toFixed(1))}%</span> growth
             </p>
           </CardContent>
@@ -411,7 +411,7 @@ export default function OwnerOverviewPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{dashboardData.paymentSuccessRate}%</div>
-            <p className="text-xs text-muted-foreground">Last 30 days</p>
+            <p className="text-sm text-muted-foreground">Last 30 days</p>
           </CardContent>
         </Card>
 
@@ -429,7 +429,7 @@ export default function OwnerOverviewPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{dashboardData.overdueCount}</div>
-            <p className="text-xs text-muted-foreground">Requires attention</p>
+            <p className="text-sm text-muted-foreground">Requires attention</p>
           </CardContent>
         </Card>
 
@@ -447,7 +447,7 @@ export default function OwnerOverviewPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{dashboardData.churnRate}%</div>
-            <p className="text-xs text-muted-foreground">Monthly churn</p>
+            <p className="text-sm text-muted-foreground">Monthly churn</p>
           </CardContent>
         </Card>
 
@@ -465,7 +465,7 @@ export default function OwnerOverviewPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">£{((dashboardData.avgRevenuePerOrg ?? 0).toFixed(0))}</div>
-            <p className="text-xs text-muted-foreground">Per month</p>
+            <p className="text-sm text-muted-foreground">Per month</p>
           </CardContent>
         </Card>
       </div>
@@ -521,7 +521,7 @@ export default function OwnerOverviewPage() {
                       ) : (
                         <ArrowDownRight className="h-3 w-3 text-red-600 mr-1" />
                       )}
-                      <span className={`text-xs ${org.growth > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      <span className={`text-sm ${org.growth > 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {org.growth > 0 ? '+' : ''}{org.growth.toFixed(1)}%
                       </span>
                     </div>
@@ -554,7 +554,7 @@ export default function OwnerOverviewPage() {
                     {activity.amount && (
                       <p className="text-sm text-green-600 font-medium">£{activity.amount}</p>
                     )}
-                    <p className="text-xs text-gray-500">{activity.time}</p>
+                    <p className="text-sm text-gray-500">{activity.time}</p>
                   </div>
                 </div>
               ))}

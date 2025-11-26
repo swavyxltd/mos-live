@@ -155,8 +155,8 @@ export function RecentActivityModal({ isOpen, onClose, activities }: RecentActiv
                           {getTypeLabel(activity.type)}
                         </Badge>
                       </div>
-                      <p className="text-xs text-gray-500 mb-2">{activity.timestamp}</p>
-                      <div className="flex items-center gap-4 text-xs text-gray-600">
+                      <p className="text-sm text-gray-500 mb-2">{activity.timestamp}</p>
+                      <div className="flex items-center gap-4 text-sm text-gray-600">
                         <span>By: {activity.user.name}</span>
                         {activity.studentName && <span>Student: {activity.studentName}</span>}
                         {activity.class && <span>Class: {activity.class}</span>}

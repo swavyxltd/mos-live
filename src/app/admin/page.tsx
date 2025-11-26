@@ -47,12 +47,12 @@ export default async function AdminPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Owner</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Organizations</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Has Password</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
+                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Email</th>
+                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Name</th>
+                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Owner</th>
+                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Organizations</th>
+                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Has Password</th>
+                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Created</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -66,11 +66,11 @@ export default async function AdminPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {user.isSuperAdmin ? (
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                        <span className="px-2 inline-flex text-sm leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                           Yes
                         </span>
                       ) : (
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                        <span className="px-2 inline-flex text-sm leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
                           No
                         </span>
                       )}
@@ -81,7 +81,7 @@ export default async function AdminPage() {
                           {user.memberships.map((m) => (
                             <div key={m.id} className="flex items-center space-x-2">
                               <span>{m.org.name}</span>
-                              <span className="text-xs text-gray-400">({m.role})</span>
+                              <span className="text-sm text-gray-400">({m.role})</span>
                             </div>
                           ))}
                         </div>

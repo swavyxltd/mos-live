@@ -562,14 +562,14 @@ export function OrganizationDetailModal({ isOpen, onClose, organization, onRefre
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                     <div className="flex-1">
                       <p className="text-sm font-medium">Organization created</p>
-                      <p className="text-xs text-gray-500">{formatDate(organization.createdAt)}</p>
+                      <p className="text-sm text-gray-500">{formatDate(organization.createdAt)}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
                     <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                     <div className="flex-1">
                       <p className="text-sm font-medium">Last activity</p>
-                      <p className="text-xs text-gray-500">{formatDate(organization.lastActivity)}</p>
+                      <p className="text-sm text-gray-500">{formatDate(organization.lastActivity)}</p>
                     </div>
                   </div>
                   {organization._count.invoices > 0 && (
@@ -577,7 +577,7 @@ export function OrganizationDetailModal({ isOpen, onClose, organization, onRefre
                       <div className="w-2 h-2 bg-red-500 rounded-full"></div>
                       <div className="flex-1">
                         <p className="text-sm font-medium">{organization._count.invoices} overdue invoices</p>
-                        <p className="text-xs text-gray-500">Requires attention</p>
+                        <p className="text-sm text-gray-500">Requires attention</p>
                       </div>
                     </div>
                   )}

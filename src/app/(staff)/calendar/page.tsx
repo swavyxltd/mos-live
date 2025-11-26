@@ -260,25 +260,25 @@ export default function CalendarPage() {
           <CardContent>
             <div className="space-y-3">
               <div className="flex items-center space-x-2">
-                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                <span className="inline-flex px-2 py-1 text-sm font-semibold rounded-full bg-blue-100 text-blue-800">
                   CLASS
                 </span>
                 <span className="text-sm text-[var(--muted-foreground)]">Regular Classes</span>
               </div>
               <div className="flex items-center space-x-2">
-                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                <span className="inline-flex px-2 py-1 text-sm font-semibold rounded-full bg-yellow-100 text-yellow-800">
                   EXAM
                 </span>
                 <span className="text-sm text-[var(--muted-foreground)]">Examinations</span>
               </div>
               <div className="flex items-center space-x-2">
-                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                <span className="inline-flex px-2 py-1 text-sm font-semibold rounded-full bg-red-100 text-red-800">
                   HOLIDAY
                 </span>
                 <span className="text-sm text-[var(--muted-foreground)]">Holidays & Breaks</span>
               </div>
               <div className="flex items-center space-x-2">
-                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                <span className="inline-flex px-2 py-1 text-sm font-semibold rounded-full bg-green-100 text-green-800">
                   MEETING
                 </span>
                 <span className="text-sm text-[var(--muted-foreground)]">Meetings & Events</span>

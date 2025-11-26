@@ -28,22 +28,6 @@ const ActivityModal = dynamic(() => import('@/components/activity-modal').then(m
   ssr: false,
 })
 
-// Lazy load WaveChart to reduce initial bundle size
-const WaveChart = dynamic(() => import('@/components/ui/wave-chart').then(mod => ({ default: mod.WaveChart })), {
-  ssr: false,
-  loading: () => (
-    <Card>
-      <CardHeader>
-        <CardTitle>Attendance Trend</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="h-80">
-          <div className="h-full w-full bg-[var(--muted)] rounded-[var(--radius)] animate-pulse" />
-        </div>
-      </CardContent>
-    </Card>
-  )
-})
 import { 
   Users, 
   BookOpen, 
@@ -58,7 +42,8 @@ import {
   Activity,
   Eye,
   FileText,
-  MessageSquare
+  MessageSquare,
+  ArrowRight
 } from 'lucide-react'
 import type { DashboardStats as DashboardStatsType } from '@/lib/dashboard-stats'
 
@@ -75,7 +60,6 @@ interface DashboardStats {
   pendingInvoices: number
   overduePayments: number
   pendingApplications: number
-  attendanceTrend: Array<{ date: string; value: number }>
   paidThisMonth?: number
   averagePaymentTime?: number
 }
@@ -84,9 +68,10 @@ interface DashboardContentProps {
   initialStats?: DashboardStatsType | null
   userRole?: string | null
   staffSubrole?: string | null
+  orgCreatedAt?: Date
 }
 
-export function DashboardContent({ initialStats, userRole, staffSubrole }: DashboardContentProps) {
+export function DashboardContent({ initialStats, userRole, staffSubrole, orgCreatedAt }: DashboardContentProps) {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
   const [isAddStudentModalOpen, setIsAddStudentModalOpen] = useState(false)
   const [isAddTeacherModalOpen, setIsAddTeacherModalOpen] = useState(false)
@@ -96,6 +81,8 @@ export function DashboardContent({ initialStats, userRole, staffSubrole }: Dashb
   const [recentActivity, setRecentActivity] = useState<any[]>([])
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([])
   const [topPerformingClasses, setTopPerformingClasses] = useState<any[]>([])
+  const [todaysTasks, setTodaysTasks] = useState<any[]>([])
+  const [loadingTasks, setLoadingTasks] = useState(true)
   const [loading, setLoading] = useState(!initialStats) // Only loading if no initial stats
   const [stats, setStats] = useState<DashboardStats>(
     initialStats || {
@@ -110,8 +97,7 @@ export function DashboardContent({ initialStats, userRole, staffSubrole }: Dashb
       revenueGrowth: 0,
       pendingInvoices: 0,
       overduePayments: 0,
-      pendingApplications: 0,
-      attendanceTrend: []
+      pendingApplications: 0
     }
   )
 
@@ -128,6 +114,7 @@ export function DashboardContent({ initialStats, userRole, staffSubrole }: Dashb
     fetchRecentActivity()
     fetchUpcomingEvents()
     fetchTopPerformingClasses()
+    fetchTodaysTasks()
     
     // Listen for refresh events
     const handleRefresh = () => {
@@ -136,12 +123,29 @@ export function DashboardContent({ initialStats, userRole, staffSubrole }: Dashb
       fetchRecentActivity()
       fetchUpcomingEvents()
       fetchTopPerformingClasses()
+      fetchTodaysTasks()
     }
     
     window.addEventListener('refresh-dashboard', handleRefresh)
     
+    // Auto-refresh tasks every 30 seconds to catch completed tasks
+    const tasksInterval = setInterval(() => {
+      fetchTodaysTasks()
+    }, 30000) // 30 seconds
+    
+    // Also listen for page visibility changes to refresh when user returns
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchTodaysTasks()
+      }
+    }
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    
     return () => {
       window.removeEventListener('refresh-dashboard', handleRefresh)
+      clearInterval(tasksInterval)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [initialStats])
 
@@ -223,6 +227,23 @@ export function DashboardContent({ initialStats, userRole, staffSubrole }: Dashb
     }
   }
 
+  const fetchTodaysTasks = async () => {
+    try {
+      setLoadingTasks(true)
+      const response = await fetch('/api/dashboard/today-tasks', {
+        cache: 'no-store' // Always fetch fresh data
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setTodaysTasks(data.tasks || [])
+      }
+    } catch (error) {
+      // Error fetching tasks
+    } finally {
+      setLoadingTasks(false)
+    }
+  }
+
   const fetchTopPerformingClasses = async () => {
     try {
       const response = await fetch('/api/classes', {
@@ -281,7 +302,6 @@ export function DashboardContent({ initialStats, userRole, staffSubrole }: Dashb
           pendingInvoices: 0,
           overduePayments: 0,
           pendingApplications: 0,
-          attendanceTrend: [],
           paidThisMonth: 0,
           averagePaymentTime: 0
                 })
@@ -301,7 +321,6 @@ export function DashboardContent({ initialStats, userRole, staffSubrole }: Dashb
         pendingInvoices: 0,
         overduePayments: 0,
         pendingApplications: 0,
-        attendanceTrend: [],
         paidThisMonth: 0,
         averagePaymentTime: 0
       })
@@ -322,16 +341,10 @@ export function DashboardContent({ initialStats, userRole, staffSubrole }: Dashb
     revenueGrowth,
     pendingInvoices,
     overduePayments,
-    pendingApplications,
-    attendanceTrend
+    pendingApplications
   } = stats
 
   // Loading state is handled by loading.tsx file
-  
-  // Handle filter changes
-  const handleFilterChange = (filter: string) => {
-    // Filter change handler
-  }
 
   // Handle report generation
   const handleGenerateReport = async (month: number, year: number) => {
@@ -366,9 +379,6 @@ export function DashboardContent({ initialStats, userRole, staffSubrole }: Dashb
                   alert(`Error generating report: ${error instanceof Error ? error.message : 'Unknown error'}`)
                 }
   }
-  
-  // Use real attendance trend data from API (no fallback demo data)
-  const attendanceData = attendanceTrend
 
   // Dashboard type is determined by subrole template, not individual permissions
   const isTeacher = staffSubrole === 'TEACHER'
@@ -398,7 +408,7 @@ export function DashboardContent({ initialStats, userRole, staffSubrole }: Dashb
             <Button 
               variant="outline" 
               size="sm"
-              className="px-3 sm:px-4 py-2 text-sm hover:bg-gray-50 hover:scale-105 transition-all duration-200"
+              className="px-3 sm:px-4 py-2 text-sm hover:bg-gray-50"
               onClick={() => setIsReportModalOpen(true)}
             >
               <FileText className="h-4 w-4 mr-2" />
@@ -416,7 +426,6 @@ export function DashboardContent({ initialStats, userRole, staffSubrole }: Dashb
             value={totalStudents}
             change={studentGrowth > 0 ? { value: `+${studentGrowth.toFixed(1)}%`, type: "positive" } : studentGrowth < 0 ? { value: `${studentGrowth.toFixed(1)}%`, type: "negative" } : undefined}
             description="Active enrollments"
-            detail={newStudentsThisMonth > 0 ? `+${newStudentsThisMonth} new this month` : "No new students this month"}
             icon={<Users className="h-4 w-4" />}
           />
         </Link>
@@ -426,7 +435,6 @@ export function DashboardContent({ initialStats, userRole, staffSubrole }: Dashb
             value={`£${monthlyRevenue.toLocaleString()}`}
             change={revenueGrowth > 0 ? { value: `+${revenueGrowth.toFixed(1)}%`, type: "positive" } : revenueGrowth < 0 ? { value: `${revenueGrowth.toFixed(1)}%`, type: "negative" } : undefined}
             description="Recurring revenue"
-            detail="MRR growth trend"
             icon={<DollarSign className="h-4 w-4" />}
           />
         </Link>
@@ -436,7 +444,6 @@ export function DashboardContent({ initialStats, userRole, staffSubrole }: Dashb
             value={`${attendanceRate}%`}
             change={attendanceGrowth > 0 ? { value: `+${attendanceGrowth}%`, type: "positive" } : attendanceGrowth < 0 ? { value: `${attendanceGrowth}%`, type: "negative" } : undefined}
             description="Average attendance rate"
-            detail={attendanceRate >= 85 ? "Above target of 85%" : "Below target of 85%"}
             icon={<UserCheck className="h-4 w-4" />}
           />
         </Link>
@@ -445,7 +452,6 @@ export function DashboardContent({ initialStats, userRole, staffSubrole }: Dashb
             title="Active Classes"
             value={activeClasses}
             description="Currently running"
-            detail={`${staffMembers} staff members`}
             icon={<BookOpen className="h-4 w-4" />}
           />
         </Link>
@@ -454,7 +460,6 @@ export function DashboardContent({ initialStats, userRole, staffSubrole }: Dashb
             title="Pending Applications"
             value={pendingApplications}
             description="New student applications"
-            detail="Review needed"
             icon={<FileText className="h-4 w-4" />}
           />
         </Link>
@@ -463,7 +468,6 @@ export function DashboardContent({ initialStats, userRole, staffSubrole }: Dashb
             title="Overdue Payments"
             value={overduePayments}
             description="Past due amounts"
-            detail="Urgent attention"
             icon={<Clock className="h-4 w-4" />}
           />
         </Link>
@@ -473,7 +477,6 @@ export function DashboardContent({ initialStats, userRole, staffSubrole }: Dashb
             value={newStudentsThisMonth}
             change={studentGrowth > 0 ? { value: "This month", type: "positive" } : undefined}
             description="Recent additions"
-            detail="Growth indicator"
             icon={<TrendingUp className="h-4 w-4" />}
           />
         </Link>
@@ -482,26 +485,84 @@ export function DashboardContent({ initialStats, userRole, staffSubrole }: Dashb
             title="Staff Members"
             value={staffMembers}
             description="Team size"
-            detail="Active personnel"
             icon={<UserCheck className="h-4 w-4" />}
           />
         </Link>
       </div>
 
-      {/* Attendance Trend Chart */}
-      <div className="hover:shadow-md transition-shadow cursor-pointer">
-        <WaveChart 
-          title="Attendance Trend"
-          subtitle="Daily attendance over the last 2 weeks"
-          data={attendanceData}
-          filterOptions={[
-            { label: '7D', value: '7d' },
-            { label: '30D', value: '30d', active: true },
-            { label: '90D', value: '90d' }
-          ]}
-          onFilterChange={handleFilterChange}
-        />
-      </div>
+      {/* Today's Tasks Section - Only show for admins */}
+      {isAdmin && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 bg-[var(--muted)] rounded-lg flex items-center justify-center flex-shrink-0">
+                <Clock className="h-5 w-5 text-[var(--foreground)]" />
+              </div>
+              <CardTitle className="text-xl font-semibold text-[var(--foreground)]">
+                Today's Tasks
+              </CardTitle>
+            </div>
+            <p className="text-sm text-[var(--muted-foreground)]">
+              Action items that need your attention today
+            </p>
+          </CardHeader>
+          <CardContent>
+            {loadingTasks ? (
+              <div className="text-center py-8 text-[var(--muted-foreground)]">
+                <p className="text-sm">Loading tasks...</p>
+              </div>
+            ) : todaysTasks.length === 0 ? (
+              <div className="text-center py-8">
+                <CheckCircle className="h-12 w-12 mx-auto mb-4 text-[var(--muted-foreground)] opacity-50" />
+                <p className="text-sm text-[var(--muted-foreground)]">All caught up! No tasks for today.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {todaysTasks.map((task) => {
+                  const IconComponent = 
+                    task.icon === 'FileText' ? FileText :
+                    task.icon === 'AlertCircle' ? AlertCircle :
+                    task.icon === 'DollarSign' ? DollarSign :
+                    task.icon === 'UserCheck' ? UserCheck :
+                    task.icon === 'Calendar' ? Calendar : FileText
+
+                  return (
+                    <Link
+                      key={task.id}
+                      href={task.link}
+                      className="block p-4 border border-[var(--border)] rounded-lg bg-[var(--card)] hover:bg-[var(--accent)] transition-colors"
+                    >
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div className="w-10 h-10 bg-[var(--muted)] rounded-lg flex items-center justify-center flex-shrink-0">
+                            <IconComponent className="h-5 w-5 text-[var(--foreground)]" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-sm font-semibold text-[var(--foreground)] mb-1">
+                              {task.title}
+                            </h3>
+                            <p className="text-sm text-[var(--muted-foreground)]">
+                              {task.description}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {task.count > 0 && (
+                            <span className="px-2 py-1 rounded-full text-xs font-semibold bg-[var(--muted)] text-[var(--foreground)]">
+                              {task.count}
+                            </span>
+                          )}
+                          <ArrowRight className="h-4 w-4 text-[var(--muted-foreground)]" />
+                        </div>
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
           {/* Bottom Row */}
           <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-3">
@@ -514,7 +575,7 @@ export function DashboardContent({ initialStats, userRole, staffSubrole }: Dashb
                   <Activity className="h-5 w-5" />
                   Recent Activity
                 </CardTitle>
-                <Button variant="ghost" size="sm" className="text-xs">
+                <Button variant="ghost" size="sm" className="text-sm">
                   View All
                 </Button>
               </div>
@@ -544,7 +605,7 @@ export function DashboardContent({ initialStats, userRole, staffSubrole }: Dashb
                         <p className="text-sm text-[var(--foreground)] mt-0.5">
                           {activity.action}
                         </p>
-                        <p className="text-xs text-[var(--muted-foreground)] mt-1">
+                        <p className="text-sm text-[var(--muted-foreground)] mt-1">
                           {activity.timestamp}
                         </p>
                       </div>
@@ -582,8 +643,8 @@ export function DashboardContent({ initialStats, userRole, staffSubrole }: Dashb
                       }`} />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium">{event.title}</p>
-                        <p className="text-xs text-muted-foreground">{event.date}</p>
-                        <p className="text-xs text-muted-foreground">{event.description}</p>
+                        <p className="text-sm text-muted-foreground">{event.date}</p>
+                        <p className="text-sm text-muted-foreground">{event.description}</p>
                       </div>
                     </div>
                   ))}
@@ -607,7 +668,7 @@ export function DashboardContent({ initialStats, userRole, staffSubrole }: Dashb
                     <Target className="h-4 w-4 sm:h-5 sm:w-5" />
                     Top Performing Classes
                   </CardTitle>
-                  <Button variant="outline" size="sm" className="px-2 sm:px-3 py-1 text-xs hover:bg-gray-50 hover:scale-105 transition-all duration-200">
+                  <Button variant="outline" size="sm" className="px-2 sm:px-3 py-1 text-sm hover:bg-gray-50">
                     <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                     View All
                   </Button>
@@ -668,6 +729,7 @@ export function DashboardContent({ initialStats, userRole, staffSubrole }: Dashb
         isOpen={isReportModalOpen}
         onClose={() => setIsReportModalOpen(false)}
         onGenerateReport={handleGenerateReport}
+        orgCreatedAt={orgCreatedAt}
       />
 
       {/* Add Student Modal */}

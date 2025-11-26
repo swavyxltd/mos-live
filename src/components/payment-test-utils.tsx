@@ -80,7 +80,7 @@ export function PaymentTestUtils() {
           Clear Payment Method (for testing)
         </Button>
         
-        <p className="text-xs text-gray-500">
+        <p className="text-sm text-gray-500">
           Use these tools to test different payment states. 
           Clear payment method to test the "no payment" scenario.
         </p>

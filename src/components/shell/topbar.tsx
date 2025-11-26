@@ -65,7 +65,7 @@ export function Topbar({ title, user: initialUser, userRole }: TopbarProps) {
         <Button
           variant="ghost"
           size="icon"
-          className="h-10 w-10 hover:bg-gray-100 hover:scale-105 transition-all duration-200"
+          className="h-10 w-10 hover:bg-gray-100"
           onClick={toggleDarkMode}
         >
           {isDarkMode ? (

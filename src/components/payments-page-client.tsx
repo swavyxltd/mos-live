@@ -466,7 +466,7 @@ export function PaymentsPageClient({ classes }: PaymentsPageClientProps) {
                       <div className="text-lg font-semibold text-green-700">
                         {classItem.paid}
                       </div>
-                      <div className="text-xs text-green-600">Paid</div>
+                      <div className="text-sm text-green-600">Paid</div>
                     </div>
                     
                     <div className="text-center p-3 bg-yellow-50 rounded-lg">
@@ -476,7 +476,7 @@ export function PaymentsPageClient({ classes }: PaymentsPageClientProps) {
                       <div className="text-lg font-semibold text-yellow-700">
                         {classItem.late}
                       </div>
-                      <div className="text-xs text-yellow-600">Late</div>
+                      <div className="text-sm text-yellow-600">Late</div>
                     </div>
                     
                     <div className="text-center p-3 bg-red-50 rounded-lg">
@@ -486,7 +486,7 @@ export function PaymentsPageClient({ classes }: PaymentsPageClientProps) {
                       <div className="text-lg font-semibold text-red-700">
                         {classItem.overdue}
                       </div>
-                      <div className="text-xs text-red-600">Overdue</div>
+                      <div className="text-sm text-red-600">Overdue</div>
                     </div>
                   </div>
 
@@ -638,7 +638,7 @@ export function PaymentsPageClient({ classes }: PaymentsPageClientProps) {
                               variant="outline"
                               size="sm"
                               onClick={() => handleEdit(record)}
-                              className="h-8 px-3 text-xs font-medium whitespace-nowrap flex-shrink-0"
+                              className="h-8 px-3 text-sm font-medium whitespace-nowrap flex-shrink-0"
                             >
                               <Edit className="h-3.5 w-3.5 mr-1.5" />
                               Edit
@@ -648,7 +648,7 @@ export function PaymentsPageClient({ classes }: PaymentsPageClientProps) {
                               variant="default"
                               size="sm"
                               onClick={() => handleMarkAsPaid(record)}
-                              className="bg-green-600 hover:bg-green-700 text-white h-8 px-3 text-xs font-medium whitespace-nowrap flex-shrink-0"
+                              className="bg-green-600 hover:bg-green-700 text-white h-8 px-3 text-sm font-medium whitespace-nowrap flex-shrink-0"
                             >
                               <Check className="h-3.5 w-3.5 mr-1.5" />
                               Mark Paid
@@ -800,7 +800,7 @@ export function PaymentsPageClient({ classes }: PaymentsPageClientProps) {
                 <SelectItem value="BANK_TRANSFER">🏦 Bank Transfer</SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-sm text-gray-500 mt-1">
               Select how the payment was received
             </p>
           </div>
@@ -816,7 +816,7 @@ export function PaymentsPageClient({ classes }: PaymentsPageClientProps) {
               placeholder="e.g., Receipt #12345, Transaction ID"
               className="h-10"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-sm text-gray-500 mt-1">
               Add a reference number for record keeping
             </p>
           </div>

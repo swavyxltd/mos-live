@@ -295,25 +295,25 @@ export default function ParentInvoicesPage() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                       Fee
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                       Student
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                       Amount
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                       Payment Method
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                       Payment Date
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                       Transaction ID
                     </th>
                   </tr>
@@ -440,21 +440,21 @@ export default function ParentInvoicesPage() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <Label className="text-xs text-gray-500">Account Name</Label>
+                <Label className="text-sm text-gray-500">Account Name</Label>
                 <p className="text-sm font-medium text-gray-900 mt-1">{paymentSettings.bankAccountName}</p>
               </div>
               <div>
-                <Label className="text-xs text-gray-500">Sort Code</Label>
+                <Label className="text-sm text-gray-500">Sort Code</Label>
                 <p className="text-sm font-medium text-gray-900 mt-1">{paymentSettings.bankSortCode}</p>
               </div>
               <div>
-                <Label className="text-xs text-gray-500">Account Number</Label>
+                <Label className="text-sm text-gray-500">Account Number</Label>
                 <p className="text-sm font-medium text-gray-900 mt-1">{paymentSettings.bankAccountNumber}</p>
               </div>
             </div>
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-xs font-medium text-blue-900 mb-1">Setting up a Standing Order:</p>
-              <p className="text-xs text-blue-700">
+              <p className="text-sm font-medium text-blue-900 mb-1">Setting up a Standing Order:</p>
+              <p className="text-sm text-blue-700">
                 You can set up a standing order with your bank using these details to automatically pay your monthly fees. 
                 Contact your bank to set this up, and payments will be made automatically each month on the due date.
               </p>

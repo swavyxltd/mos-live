@@ -254,8 +254,8 @@ export function GlobalSearch() {
                         <X className="h-4 w-4" />
                       </Button>
                     )}
-                    <kbd className="hidden sm:inline-flex h-7 select-none items-center gap-1 rounded-lg border border-[var(--border)] bg-[var(--muted)] px-2 font-mono text-xs font-medium text-[var(--muted-foreground)] opacity-60">
-                      <span className="text-xs">⌘</span>K
+                    <kbd className="hidden sm:inline-flex h-7 select-none items-center gap-1 rounded-lg border border-[var(--border)] bg-[var(--muted)] px-2 font-mono text-sm font-medium text-[var(--muted-foreground)] opacity-60">
+                      <span className="text-sm">⌘</span>K
                     </kbd>
                   </div>
                 </div>
@@ -287,13 +287,13 @@ export function GlobalSearch() {
                             <div className="font-medium text-sm truncate text-[var(--foreground)]">
                               {result.title}
                             </div>
-                            <div className="text-xs text-[var(--muted-foreground)] truncate mt-0.5">
+                            <div className="text-sm text-[var(--muted-foreground)] truncate mt-0.5">
                               {result.subtitle}
                             </div>
                           </div>
                           <Badge 
                             variant="outline" 
-                            className={`text-xs border ${getTypeColor(result.type)}`}
+                            className={`text-sm border ${getTypeColor(result.type)}`}
                           >
                             {result.type}
                           </Badge>

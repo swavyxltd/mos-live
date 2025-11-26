@@ -20,7 +20,7 @@ export function QuickAddMenu({ onAddStudent, onAddTeacher, onAddClass }: QuickAd
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="hover:bg-gray-50 hover:scale-105 transition-all duration-200">
+        <Button variant="outline" size="sm" className="hover:bg-gray-50">
           <Plus className="h-4 w-4 mr-2" />
           Quick Add
         </Button>

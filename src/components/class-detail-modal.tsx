@@ -300,12 +300,12 @@ export function ClassDetailModal({ classId, isOpen, onClose, onClassUpdate }: Cl
                         <div className="space-y-4">
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                              <label className="text-xs text-[var(--muted-foreground)]">Class Name</label>
+                              <label className="text-sm text-[var(--muted-foreground)]">Class Name</label>
                               <p className="text-sm font-medium text-[var(--foreground)] mt-1">{classData.name}</p>
                             </div>
                             {classData.description && (
                               <div className="sm:col-span-2">
-                                <label className="text-xs text-[var(--muted-foreground)]">Description</label>
+                                <label className="text-sm text-[var(--muted-foreground)]">Description</label>
                                 <p className="text-sm text-[var(--foreground)] mt-1">{classData.description}</p>
                               </div>
                             )}
@@ -349,7 +349,7 @@ export function ClassDetailModal({ classId, isOpen, onClose, onClassUpdate }: Cl
                           </h3>
                           {classData.studentClasses.length > 0 && (
                             <Link href={`/students?class=${classData.id}`}>
-                              <Button variant="ghost" size="sm" className="text-xs">
+                              <Button variant="ghost" size="sm" className="text-sm">
                                 View All
                                 <ExternalLink className="h-3 w-3 ml-1" />
                               </Button>
@@ -429,11 +429,11 @@ export function ClassDetailModal({ classId, isOpen, onClose, onClassUpdate }: Cl
                           <div className="space-y-3">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               <div>
-                                <label className="text-xs text-[var(--muted-foreground)]">Name</label>
+                                <label className="text-sm text-[var(--muted-foreground)]">Name</label>
                                 <p className="text-sm font-medium text-[var(--foreground)] mt-1">{classData.teacher.name}</p>
                               </div>
                               <div>
-                                <label className="text-xs text-[var(--muted-foreground)]">Email</label>
+                                <label className="text-sm text-[var(--muted-foreground)]">Email</label>
                                 <div className="flex items-center gap-2 mt-1">
                                   <Mail className="h-4 w-4 text-[var(--muted-foreground)]" />
                                   <a 

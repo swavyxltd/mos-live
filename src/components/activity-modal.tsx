@@ -193,7 +193,7 @@ export function ActivityModal({ isOpen, onClose }: ActivityModalProps) {
                               <p className="text-sm font-medium text-[var(--foreground)]">
                                 {log.user?.name || log.user?.email || 'System'}
                                 {log.user?.role && (
-                                  <span className="ml-2 text-xs font-normal text-[var(--muted-foreground)]">
+                                  <span className="ml-2 text-sm font-normal text-[var(--muted-foreground)]">
                                     ({log.user.role})
                                   </span>
                                 )}
@@ -207,7 +207,7 @@ export function ActivityModal({ isOpen, onClose }: ActivityModalProps) {
                                   <span className="text-[var(--muted-foreground)]"> • {log.targetType}</span>
                                 )}
                               </p>
-                              <p className="text-xs text-[var(--muted-foreground)] mt-1">
+                              <p className="text-sm text-[var(--muted-foreground)] mt-1">
                                 {new Date(log.createdAt).toLocaleString()}
                               </p>
                             </div>

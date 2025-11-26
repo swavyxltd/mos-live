@@ -57,7 +57,7 @@ export function RecentAnnouncements({ announcements }: RecentAnnouncementsProps)
                   )}
                 </div>
               </div>
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-sm text-gray-500 mt-2">
                 {formatDateTime(announcement.createdAt)}
               </p>
             </div>

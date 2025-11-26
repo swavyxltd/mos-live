@@ -252,7 +252,7 @@ export function DetailedClassAttendance({
                   <div className="hidden sm:flex items-center gap-2 flex-shrink-0 mr-4">
                     {student.weeklyAttendance.map((day, index) => (
                       <div key={index} className="flex flex-col items-center gap-1">
-                        <div className="text-xs text-gray-500 font-medium">{day.day}</div>
+                        <div className="text-sm text-gray-500 font-medium">{day.day}</div>
                         {getWeeklyStatusIcon(day.status, day.day, day.time)}
                       </div>
                     ))}
@@ -266,7 +266,7 @@ export function DetailedClassAttendance({
                       <div className="text-sm font-medium text-gray-900">
                         {student.attendancePercentage}%
                       </div>
-                      <div className="text-xs text-gray-500">attendance</div>
+                      <div className="text-sm text-gray-500">attendance</div>
                     </div>
                   </div>
                 )}

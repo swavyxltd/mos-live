@@ -186,13 +186,13 @@ export default async function StaffDetailsPage({ params }: StaffDetailsPageProps
                   <div className="flex flex-wrap items-center gap-2 mt-1">
                     <Badge 
                       variant="outline"
-                      className={`text-xs ${teacherData.isActive 
+                      className={`text-sm ${teacherData.isActive 
                         ? 'text-green-600 bg-green-50 border-0' 
                         : 'bg-gray-50 text-gray-600 border-0'}`}
                     >
                       {teacherData.isActive ? 'Active' : 'Inactive'}
                     </Badge>
-                    <span className="text-xs sm:text-sm text-gray-500 hidden sm:inline">ID: {teacherData.id}</span>
+                    <span className="text-sm sm:text-sm text-gray-500 hidden sm:inline">ID: {teacherData.id}</span>
                   </div>
                 </div>
               </div>
@@ -293,7 +293,7 @@ export default async function StaffDetailsPage({ params }: StaffDetailsPageProps
               <div>
                 <Label className="text-sm font-medium text-gray-700">Username</Label>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="font-mono text-xs sm:text-sm bg-gray-100 px-2 py-1 rounded flex-1 min-w-0 truncate">
+                  <span className="font-mono text-sm sm:text-sm bg-gray-100 px-2 py-1 rounded flex-1 min-w-0 truncate">
                     {teacherData.username}
                   </span>
                   <Button variant="ghost" size="sm" className="flex-shrink-0">
@@ -303,7 +303,7 @@ export default async function StaffDetailsPage({ params }: StaffDetailsPageProps
               </div>
               
               <div className="pt-2 border-t">
-                <p className="text-xs text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   Passwords are private and cannot be viewed. Users can reset their own passwords via the forgot password link.
                 </p>
               </div>

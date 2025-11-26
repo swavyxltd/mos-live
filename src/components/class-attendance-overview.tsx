@@ -86,7 +86,7 @@ export function ClassAttendanceOverview({
                 <div className="text-lg font-semibold text-green-700">
                   {classItem.present}
                 </div>
-                <div className="text-xs text-green-600">Present</div>
+                <div className="text-sm text-green-600">Present</div>
               </div>
               
               <div className="text-center p-3 bg-red-50 rounded-lg">
@@ -96,7 +96,7 @@ export function ClassAttendanceOverview({
                 <div className="text-lg font-semibold text-red-700">
                   {classItem.absent}
                 </div>
-                <div className="text-xs text-red-600">Absent</div>
+                <div className="text-sm text-red-600">Absent</div>
               </div>
               
               <div className="text-center p-3 bg-yellow-50 rounded-lg">
@@ -106,7 +106,7 @@ export function ClassAttendanceOverview({
                 <div className="text-lg font-semibold text-yellow-700">
                   {classItem.late}
                 </div>
-                <div className="text-xs text-yellow-600">Late</div>
+                <div className="text-sm text-yellow-600">Late</div>
               </div>
             </div>
 

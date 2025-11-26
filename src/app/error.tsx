@@ -31,7 +31,7 @@ export default function Error({
           We encountered an unexpected error. Please try again or return to the home page.
         </p>
         {error.digest && (
-          <p className="mb-4 text-xs text-[var(--muted-foreground)]">
+          <p className="mb-4 text-sm text-[var(--muted-foreground)]">
             Error ID: {error.digest}
           </p>
         )}

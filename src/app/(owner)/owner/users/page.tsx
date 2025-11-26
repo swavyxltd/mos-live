@@ -293,7 +293,7 @@ export default function OwnerUsersPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{userData?.stats?.totalUsers || 0}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               <span className="text-green-600">+{userData?.stats?.newUsersThisMonth || 0}</span> this month
             </p>
           </CardContent>
@@ -306,7 +306,7 @@ export default function OwnerUsersPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{userData?.stats?.activeUsers || 0}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               {userData?.stats?.totalUsers ? Math.round((userData.stats.activeUsers / userData.stats.totalUsers) * 100) : 0}% of total
             </p>
           </CardContent>
@@ -319,7 +319,7 @@ export default function OwnerUsersPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{userData?.stats?.adminUsers || 0}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Platform administrators
             </p>
           </CardContent>
@@ -332,7 +332,7 @@ export default function OwnerUsersPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{userData?.stats?.staffUsers || 0}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Organization staff
             </p>
           </CardContent>
@@ -472,7 +472,7 @@ export default function OwnerUsersPage() {
                     <div className="min-w-0 flex-1">
                       <p className="font-medium truncate">{user.name}</p>
                       <p className="text-sm text-gray-500 truncate">{user.email}</p>
-                      <p className="text-xs text-gray-400 truncate">{user.orgName}</p>
+                      <p className="text-sm text-gray-400 truncate">{user.orgName}</p>
                     </div>
                   </div>
                   <div className="flex items-center flex-wrap gap-2 shrink-0 sm:flex-nowrap">

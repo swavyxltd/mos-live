@@ -217,7 +217,7 @@ export default function OwnerRevenuePage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">£{revenueData?.current?.mrr?.toLocaleString() || '0'}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               <span className="text-green-600">+8.4%</span> from last month
             </p>
           </CardContent>
@@ -230,7 +230,7 @@ export default function OwnerRevenuePage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">£{revenueData?.current?.arr?.toLocaleString() || '0'}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Projected annual revenue
             </p>
           </CardContent>
@@ -243,7 +243,7 @@ export default function OwnerRevenuePage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{revenueData?.paymentStatus?.successRate || 0}%</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Last 30 days
             </p>
           </CardContent>
@@ -256,7 +256,7 @@ export default function OwnerRevenuePage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{revenueData?.current?.failedPayments || 0}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Require attention
             </p>
           </CardContent>
@@ -456,7 +456,7 @@ export default function OwnerRevenuePage() {
                     ) : (
                       <ArrowDownRight className="h-3 w-3 text-red-600 mr-1" />
                     )}
-                    <span className={`text-xs ${org.growth > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    <span className={`text-sm ${org.growth > 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {org.growth > 0 ? '+' : ''}{org.growth}%
                     </span>
                   </div>

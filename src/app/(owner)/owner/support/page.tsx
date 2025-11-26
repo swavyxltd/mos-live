@@ -175,7 +175,7 @@ export default async function OwnerSupportPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{supportData.stats.totalTickets}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               <span className="text-green-600">+5</span> this week
             </p>
           </CardContent>
@@ -188,7 +188,7 @@ export default async function OwnerSupportPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{supportData.stats.openTickets}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Require attention
             </p>
           </CardContent>
@@ -201,7 +201,7 @@ export default async function OwnerSupportPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{supportData.stats.averageResponseTime}h</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Last 30 days
             </p>
           </CardContent>
@@ -214,7 +214,7 @@ export default async function OwnerSupportPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{supportData.stats.customerSatisfaction}/5</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Average rating
             </p>
           </CardContent>
@@ -378,7 +378,7 @@ export default async function OwnerSupportPage() {
             <div className="text-center">
               <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <p className="text-sm text-gray-500">Satisfaction trends chart</p>
-              <p className="text-xs text-gray-400">Current rating: {supportData.stats.customerSatisfaction}/5</p>
+              <p className="text-sm text-gray-400">Current rating: {supportData.stats.customerSatisfaction}/5</p>
             </div>
           </div>
         </CardContent>

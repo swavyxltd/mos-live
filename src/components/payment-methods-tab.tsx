@@ -197,7 +197,7 @@ export function PaymentMethodsTab() {
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="font-medium text-gray-500">Automatic Card Payments</h3>
-                  <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded">Coming soon</span>
+                  <span className="text-sm bg-gray-200 text-gray-600 px-2 py-0.5 rounded">Coming soon</span>
                 </div>
                 <p className="text-sm text-gray-400">
                   Parents can set up automatic payments via credit/debit cards

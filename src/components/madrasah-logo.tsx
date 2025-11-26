@@ -11,7 +11,7 @@ interface MadrasahLogoProps {
 
 export function MadrasahLogo({ className = '', showText = true, textSize = 'md', size = 'md' }: MadrasahLogoProps) {
   const textSizeClasses = {
-    sm: 'text-xs',
+    sm: 'text-sm',
     md: 'text-sm',
     lg: 'text-lg'
   }

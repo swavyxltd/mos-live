@@ -175,7 +175,7 @@ export function AddOrganisationForm({ onSuccess, onCancel }: AddOrganisationForm
           placeholder="e.g., manchester-islamic-school"
           required
         />
-        <p className="text-xs text-[var(--muted-foreground)]">
+        <p className="text-sm text-[var(--muted-foreground)]">
           This will be used in the organisation's URL
         </p>
       </div>
@@ -238,7 +238,7 @@ export function AddOrganisationForm({ onSuccess, onCancel }: AddOrganisationForm
             placeholder="London"
             required
           />
-          <p className="text-xs text-gray-500">Required for slug generation</p>
+          <p className="text-sm text-gray-500">Required for slug generation</p>
         </div>
       </div>
 
@@ -263,7 +263,7 @@ export function AddOrganisationForm({ onSuccess, onCancel }: AddOrganisationForm
           placeholder="admin@organisation.org"
           required
         />
-        <p className="text-xs text-[var(--muted-foreground)]">
+        <p className="text-sm text-[var(--muted-foreground)]">
           An invitation email will be sent to this address to set up the organization
         </p>
       </div>

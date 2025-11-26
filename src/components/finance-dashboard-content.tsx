@@ -383,7 +383,7 @@ export function FinanceDashboardContent({ initialStats }: FinanceDashboardConten
           <Button 
             variant="outline" 
             size="sm"
-            className="px-3 sm:px-4 py-2 text-sm hover:bg-gray-50 hover:scale-105 transition-all duration-200"
+            className="px-3 sm:px-4 py-2 text-sm hover:bg-gray-50"
             onClick={() => setIsReportModalOpen(true)}
           >
             <FileText className="h-4 w-4 mr-2" />
@@ -505,7 +505,7 @@ export function FinanceDashboardContent({ initialStats }: FinanceDashboardConten
                     }`} />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium">{activity.action}</p>
-                      <p className="text-xs text-muted-foreground">{activity.timestamp}</p>
+                      <p className="text-sm text-muted-foreground">{activity.timestamp}</p>
                     </div>
                     <div className="text-sm font-medium text-green-600">
                       {activity.amount}

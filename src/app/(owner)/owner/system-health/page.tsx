@@ -174,7 +174,7 @@ export default function OwnerSystemHealthPage() {
             <div className={`text-2xl font-bold ${getOverallStatusColor(systemHealth.overallStatus.status)} capitalize`}>
               {systemHealth.overallStatus.status}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               All systems operational
             </p>
           </CardContent>
@@ -187,7 +187,7 @@ export default function OwnerSystemHealthPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{systemHealth.overallStatus.uptime.toFixed(2)}%</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Last 30 days
             </p>
           </CardContent>
@@ -200,7 +200,7 @@ export default function OwnerSystemHealthPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{Math.round(systemHealth.overallStatus.responseTime)}ms</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Average response time
             </p>
           </CardContent>
@@ -213,7 +213,7 @@ export default function OwnerSystemHealthPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{systemHealth.overallStatus.errorRate.toFixed(2)}%</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Last 24 hours
             </p>
           </CardContent>
@@ -242,11 +242,11 @@ export default function OwnerSystemHealthPage() {
                 <div className="flex items-center space-x-4">
                   <div className="text-right">
                     <p className="text-sm font-medium">{Math.round(service.responseTime)}ms</p>
-                    <p className="text-xs text-gray-500">Response time</p>
+                    <p className="text-sm text-gray-500">Response time</p>
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-medium">{service.uptime.toFixed(2)}%</p>
-                    <p className="text-xs text-gray-500">Uptime</p>
+                    <p className="text-sm text-gray-500">Uptime</p>
                   </div>
                   {getStatusBadge(service.status)}
                 </div>

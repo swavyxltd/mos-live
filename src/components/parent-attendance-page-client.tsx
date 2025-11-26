@@ -252,7 +252,7 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
           <div key={index} className="flex flex-col items-center gap-2 p-3 bg-gray-50 rounded-lg">
             <div className="text-sm font-medium text-gray-700">{day.day}</div>
             {getStatusDot(day.status, day.day, day.time)}
-            <div className="text-xs text-gray-500 text-center">
+            <div className="text-sm text-gray-500 text-center">
               {day.status === 'PRESENT' || day.status === 'LATE' ? day.time : day.status}
             </div>
           </div>
@@ -276,14 +276,14 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
           <div key={index} className="p-4 bg-gray-50 rounded-lg">
             <div className="flex items-center justify-between mb-3">
               <div className="text-sm font-medium text-gray-700">{week.week}</div>
-              <div className="text-xs text-gray-500">
+              <div className="text-sm text-gray-500">
                 {week.present + week.absent + week.late} days
               </div>
             </div>
             
             {/* Week dots representation */}
             <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-600 min-w-0">Days:</span>
+              <span className="text-sm text-gray-600 min-w-0">Days:</span>
               <div className="flex gap-1">
                 {/* Present dots */}
                 {Array.from({ length: week.present }).map((_, i) => (
@@ -372,10 +372,10 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
               
               {/* Summary stats */}
               <div className="space-y-1">
-                <div className="flex items-center justify-between text-xs text-gray-600">
+                <div className="flex items-center justify-between text-sm text-gray-600">
                   <span>Total: {totalDays} days</span>
                 </div>
-                <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center justify-between text-sm">
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-1">
                       <div className="w-2 h-2 rounded-full bg-green-500"></div>
@@ -449,7 +449,7 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
                 <div className="text-sm font-medium text-gray-900">
                   {formatDateRange(currentDate, viewType)}
                 </div>
-                <div className="text-xs text-gray-500 capitalize">{viewType} View</div>
+                <div className="text-sm text-gray-500 capitalize">{viewType} View</div>
               </div>
               
               <Button

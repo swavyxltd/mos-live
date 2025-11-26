@@ -214,7 +214,7 @@ export function AttendanceMarking() {
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-[var(--foreground)] truncate">{student.name}</p>
                             {student.time && (
-                              <p className="text-xs text-[var(--muted-foreground)]">Time: {student.time}</p>
+                              <p className="text-sm text-[var(--muted-foreground)]">Time: {student.time}</p>
                             )}
                           </div>
                         </div>

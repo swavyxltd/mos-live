@@ -127,7 +127,7 @@ function PaymentMethodForm({ onSuccess, onCancel, clientSecret: propClientSecret
           <div className="flex flex-col items-center justify-center py-4">
             <Loader2 className="h-8 w-8 animate-spin text-[var(--muted-foreground)] mb-3" />
             <h3 className="text-sm font-medium text-[var(--foreground)] mb-1">Setting up secure payment</h3>
-            <p className="text-xs text-[var(--muted-foreground)]">Please wait while we prepare your payment form...</p>
+            <p className="text-sm text-[var(--muted-foreground)]">Please wait while we prepare your payment form...</p>
           </div>
         </div>
         <div className="flex gap-3">
@@ -183,7 +183,7 @@ function PaymentMethodForm({ onSuccess, onCancel, clientSecret: propClientSecret
             }}
           />
         </div>
-        <p className="text-xs text-[var(--muted-foreground)]">
+        <p className="text-sm text-[var(--muted-foreground)]">
           Your card information is encrypted and secure. We never store your card details.
         </p>
       </div>
@@ -193,7 +193,7 @@ function PaymentMethodForm({ onSuccess, onCancel, clientSecret: propClientSecret
           <Shield className="h-5 w-5 text-[var(--muted-foreground)] flex-shrink-0 mt-0.5" />
           <div>
             <h4 className="text-sm font-semibold text-[var(--foreground)] mb-1">Secure & Encrypted</h4>
-            <p className="text-xs text-[var(--muted-foreground)]">
+            <p className="text-sm text-[var(--muted-foreground)]">
               Your payment information is processed securely by Stripe and never stored on our servers.
             </p>
           </div>

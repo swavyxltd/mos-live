@@ -132,7 +132,7 @@ export function FeesPageClient({ classes, summary }: FeesPageClientProps) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{summary.totalClasses}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               {summary.classesWithFeesSet} with fees set
             </p>
           </CardContent>
@@ -145,7 +145,7 @@ export function FeesPageClient({ classes, summary }: FeesPageClientProps) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{summary.totalStudents}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Across all classes
             </p>
           </CardContent>
@@ -160,7 +160,7 @@ export function FeesPageClient({ classes, summary }: FeesPageClientProps) {
             <div className="text-2xl font-bold">
               {formatCurrency(Math.round(summary.totalMonthlyRevenue * 100))}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Potential monthly income
             </p>
           </CardContent>
@@ -173,7 +173,7 @@ export function FeesPageClient({ classes, summary }: FeesPageClientProps) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{summary.classesWithoutFees}</div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               {summary.classesWithoutFees === 0 ? 'All set!' : 'Need fee configuration'}
             </p>
           </CardContent>
@@ -329,7 +329,7 @@ export function FeesPageClient({ classes, summary }: FeesPageClientProps) {
               onChange={(e) => setFeeAmount(e.target.value)}
               placeholder="e.g., 25.00"
             />
-            <p className="text-xs text-gray-500">
+            <p className="text-sm text-gray-500">
               Current students: <strong>{editingClass?.studentCount || 0}</strong>
               {editingClass && editingClass.studentCount > 0 && (
                 <span className="ml-2">

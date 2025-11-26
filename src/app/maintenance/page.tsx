@@ -95,7 +95,7 @@ export default function MaintenancePage() {
             </div>
 
             <div className="pt-4 border-t">
-              <div className="text-center text-xs text-gray-500">
+              <div className="text-center text-sm text-gray-500">
                 <p>If you have urgent questions, please contact support:</p>
                 <p className="mt-1">
                   <a 
@@ -116,7 +116,7 @@ export default function MaintenancePage() {
               href={`https://${domain}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
             >
               {domain}
             </a>

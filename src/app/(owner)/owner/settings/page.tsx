@@ -456,7 +456,7 @@ export default function OwnerSettingsPage() {
                   <p className="text-sm text-yellow-800">
                     <strong>Note:</strong> This price must match your Stripe Price configuration. 
                     When you change this, you'll also need to update the corresponding Price in Stripe Dashboard 
-                    or create a new Price and update the <code className="text-xs bg-yellow-100 px-1 rounded">STRIPE_PRICE_ID</code> environment variable.
+                    or create a new Price and update the <code className="text-sm bg-yellow-100 px-1 rounded">STRIPE_PRICE_ID</code> environment variable.
                   </p>
                 </div>
               </div>
@@ -499,7 +499,7 @@ export default function OwnerSettingsPage() {
                     <p>• Total Organizations: {billingStats.totalOrgs}</p>
                     <p>• Total Active Students: {billingStats.totalStudents}</p>
                         <p>• Expected Monthly Revenue: {billingStats.expectedMonthlyRevenue}</p>
-                    <p className="text-xs text-gray-500 mt-2">
+                    <p className="text-sm text-gray-500 mt-2">
                       Revenue is calculated based on active student count across all organizations.
                     </p>
                   </div>

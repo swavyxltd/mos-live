@@ -501,7 +501,7 @@ export function PublicApplicationForm({ org, classes }: PublicApplicationFormPro
                 <label className="text-sm font-medium text-gray-700">
                   I confirm the information is accurate and I'm happy for the madrasah to contact me *
                 </label>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-sm text-gray-500 mt-1">
                   By checking this box, you confirm that all information provided is accurate and complete, and you consent to the madrasah contacting you regarding this application.
                 </p>
               </div>

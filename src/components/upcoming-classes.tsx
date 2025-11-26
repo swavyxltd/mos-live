@@ -106,7 +106,7 @@ export function UpcomingClasses({ classes }: UpcomingClassesProps) {
                   <p className="text-sm font-medium text-gray-900">
                     {cls.name}
                   </p>
-                  <div className="flex items-center space-x-4 text-xs text-gray-500">
+                  <div className="flex items-center space-x-4 text-sm text-gray-500">
                     <div className="flex items-center">
                       <Clock className="h-3 w-3 mr-1" />
                       {startTime} - {endTime}
@@ -117,7 +117,7 @@ export function UpcomingClasses({ classes }: UpcomingClassesProps) {
                     </div>
                   </div>
                 </div>
-                <div className="flex-shrink-0 text-xs text-gray-500">
+                <div className="flex-shrink-0 text-sm text-gray-500">
                   {formatDate(cls.date)}
                 </div>
               </div>

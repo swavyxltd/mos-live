@@ -263,7 +263,7 @@ export default function SupportPage() {
                           </Badge>
                         </div>
                         <p className="text-sm text-[var(--muted-foreground)] mb-3 line-clamp-2">{ticket.body}</p>
-                        <div className="flex items-center space-x-4 text-xs text-[var(--muted-foreground)]">
+                        <div className="flex items-center space-x-4 text-sm text-[var(--muted-foreground)]">
                           <span className="flex items-center">
                             <span className="w-2 h-2 bg-gray-400 rounded-full mr-2"></span>
                             By {ticket.createdBy?.name}
@@ -287,10 +287,10 @@ export default function SupportPage() {
                             {ticket.responses.map((response) => (
                               <div key={response.id} className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded-r-md">
                                 <div className="flex items-center space-x-2 mb-1">
-                                  <span className="text-xs font-medium text-blue-800">
+                                  <span className="text-sm font-medium text-blue-800">
                                     {response.createdBy.name}
                                   </span>
-                                  <span className="text-xs text-blue-600">
+                                  <span className="text-sm text-blue-600">
                                     {format(new Date(response.createdAt), 'MMM d, yyyy')}
                                   </span>
                                 </div>
@@ -322,7 +322,7 @@ export default function SupportPage() {
                 <div>
                   <h4 className="font-medium text-[var(--foreground)]">Email Support</h4>
                   <p className="text-sm text-[var(--muted-foreground)]">support@madrasah.io</p>
-                  <p className="text-xs text-[var(--muted-foreground)] mt-1">Response time: 24 hours</p>
+                  <p className="text-sm text-[var(--muted-foreground)] mt-1">Response time: 24 hours</p>
                 </div>
               </div>
             </div>

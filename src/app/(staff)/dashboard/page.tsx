@@ -57,5 +57,5 @@ export default async function DashboardPage() {
   // Fetch stats on the server for better performance
   const initialStats = await getDashboardStats(teacherId)
   
-  return <DashboardContent initialStats={initialStats} userRole={userRole} staffSubrole={staffSubrole} />
+  return <DashboardContent initialStats={initialStats} userRole={userRole} staffSubrole={staffSubrole} orgCreatedAt={org.createdAt} />
 }

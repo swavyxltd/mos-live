@@ -43,14 +43,14 @@ export default function AccountSuspendedPage() {
               <p className="text-gray-600 text-sm mb-1">
                 <strong>{orgName}</strong> account has been suspended.
               </p>
-              <p className="text-xs text-gray-500">
+              <p className="text-sm text-gray-500">
                 {reason}
               </p>
             </div>
 
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
               <h3 className="font-medium text-yellow-800 mb-1.5 text-sm">What does this mean?</h3>
-              <ul className="text-xs text-yellow-700 space-y-0.5">
+              <ul className="text-sm text-yellow-700 space-y-0.5">
                 <li>• All admin, staff, and teacher accounts are locked</li>
                 <li>• You cannot access the organisation dashboard</li>
                 <li>• Students and parents can still access their accounts</li>
@@ -61,11 +61,11 @@ export default function AccountSuspendedPage() {
             <div className="space-y-2">
               <h3 className="font-medium text-gray-900 text-sm">Need help?</h3>
               <div className="space-y-1.5">
-                <div className="flex items-center space-x-2 text-xs text-gray-600">
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
                   <Mail className="h-3.5 w-3.5" />
                   <span>support@madrasah.io</span>
                 </div>
-                <div className="flex items-center space-x-2 text-xs text-gray-600">
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
                   <Phone className="h-3.5 w-3.5" />
                   <span>+44 20 1234 5678</span>
                 </div>

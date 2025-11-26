@@ -99,7 +99,7 @@ export default function ParentSupportPage() {
                 <p className="font-medium text-[var(--primary)]">
                   <PhoneLink phone={contactInfo.phone} />
                 </p>
-                <p className="text-xs">General inquiries</p>
+                <p className="text-sm">General inquiries</p>
               </div>
             </div>
 

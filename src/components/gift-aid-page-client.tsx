@@ -737,7 +737,7 @@ export function GiftAidPageClient() {
                               <p className="font-mono text-base font-bold text-[var(--foreground)]">
                                 {formatDateForBox1(earliestDonationDate)}
                               </p>
-                              <p className="text-xs text-[var(--muted-foreground)] mt-1">
+                              <p className="text-sm text-[var(--muted-foreground)] mt-1">
                                 Earliest payment date
                               </p>
                             </div>
@@ -822,7 +822,7 @@ export function GiftAidPageClient() {
             
             {data.length > 0 && activeTab === 'active' && !showTutorial && (
               <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-xs text-green-800">
+                <p className="text-sm text-green-800">
                   <strong>Important:</strong> HMRC only accepts ODS files. Download both the template and CSV, then follow the tutorial above to combine them.
                 </p>
               </div>
@@ -840,7 +840,7 @@ export function GiftAidPageClient() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{totalPaymentCount}</div>
-              <p className="text-xs text-muted-foreground mt-1">{totalCount} unique parents</p>
+              <p className="text-sm text-muted-foreground mt-1">{totalCount} unique parents</p>
             </CardContent>
           </Card>
           <Card>
@@ -865,7 +865,7 @@ export function GiftAidPageClient() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{validationStats.complete}/{validationStats.total}</div>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 {validationStats.missingBoth > 0 && `${validationStats.missingBoth} missing both`}
               </p>
             </CardContent>
@@ -1005,7 +1005,7 @@ export function GiftAidPageClient() {
                     <p className="text-2xl font-bold text-green-600">
                       £{analytics.potentialValue?.toFixed(2) || '0.00'}
                     </p>
-                    <p className="text-xs text-muted-foreground">If all pending parents sign up</p>
+                    <p className="text-sm text-muted-foreground">If all pending parents sign up</p>
                   </div>
                 </div>
               ) : (
@@ -1313,7 +1313,7 @@ export function GiftAidPageClient() {
                             year: 'numeric'
                           })}
                         </td>
-                        <td className="p-2 text-sm font-mono text-xs">{submission.filename}</td>
+                        <td className="p-2 text-sm font-mono text-sm">{submission.filename}</td>
                         <td className="p-2 text-sm text-right">{submission.totalCount}</td>
                         <td className="p-2 text-sm text-right">£{submission.totalAmount.toFixed(2)}</td>
                         <td className="p-2 text-sm text-right">£{(submission.totalAmount * 0.25).toFixed(2)}</td>
@@ -1342,7 +1342,7 @@ export function GiftAidPageClient() {
               <p className="text-sm font-medium text-[var(--foreground)] mb-1">
                 Processing your Gift Aid data...
               </p>
-              <p className="text-xs text-[var(--muted-foreground)]">
+              <p className="text-sm text-[var(--muted-foreground)]">
                 This may take a few moments
               </p>
             </div>
@@ -1356,7 +1356,7 @@ export function GiftAidPageClient() {
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <p className="text-xs text-center text-[var(--muted-foreground)]">
+            <p className="text-sm text-center text-[var(--muted-foreground)]">
               {Math.round(progress)}% complete
             </p>
           </div>

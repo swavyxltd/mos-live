@@ -182,7 +182,7 @@ export function ApplicationsPageClient({ orgSlug }: ApplicationsPageClientProps)
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-[var(--foreground)]">Applications</h1>
-          <p className="mt-1 text-xs sm:text-sm text-[var(--muted-foreground)]">
+          <p className="mt-1 text-sm sm:text-sm text-[var(--muted-foreground)]">
             Manage student applications for your madrasah.
           </p>
         </div>
@@ -270,7 +270,7 @@ export function ApplicationsPageClient({ orgSlug }: ApplicationsPageClientProps)
           
           {/* Date Filter Dropdown */}
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <label className="text-xs sm:text-sm font-medium text-[var(--muted-foreground)] whitespace-nowrap">Sort by:</label>
+            <label className="text-sm sm:text-sm font-medium text-[var(--muted-foreground)] whitespace-nowrap">Sort by:</label>
             <Select
               value={dateFilter}
               onValueChange={(value: 'MOST_RECENT' | 'OLDEST') => setDateFilter(value)}
@@ -314,10 +314,10 @@ export function ApplicationsPageClient({ orgSlug }: ApplicationsPageClientProps)
                           ? application.children.map(c => `${c.firstName} ${c.lastName}`).join(', ')
                           : 'No child name'}
                       </h3>
-                      <p className="text-xs sm:text-sm text-[var(--muted-foreground)] mt-0.5 sm:mt-0 break-words">
+                      <p className="text-sm sm:text-sm text-[var(--muted-foreground)] mt-0.5 sm:mt-0 break-words">
                         Parent: {application.guardianName}
                       </p>
-                      <p className="text-xs sm:text-sm text-[var(--muted-foreground)] mt-0.5 break-words">
+                      <p className="text-sm sm:text-sm text-[var(--muted-foreground)] mt-0.5 break-words">
                         <span className="sm:hidden">
                           <PhoneLink phone={application.guardianPhone} />
                         </span>
@@ -325,7 +325,7 @@ export function ApplicationsPageClient({ orgSlug }: ApplicationsPageClientProps)
                           {application.guardianEmail} • <PhoneLink phone={application.guardianPhone} />
                         </span>
                       </p>
-                      <p className="text-xs sm:text-sm text-gray-500 mt-1.5 sm:mt-1">
+                      <p className="text-sm sm:text-sm text-gray-500 mt-1.5 sm:mt-1">
                         {application.children.length} child{application.children.length !== 1 ? 'ren' : ''} • 
                         Submitted {new Date(application.submittedAt).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })}
                       </p>

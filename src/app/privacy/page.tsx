@@ -137,7 +137,7 @@ export default function PrivacyPolicyPage() {
         </div>
 
         <div className="mt-8 pt-6 border-t border-[var(--border)]">
-          <p className="text-xs text-[var(--muted-foreground)] text-center">
+          <p className="text-sm text-[var(--muted-foreground)] text-center">
             ⚠️ <strong>Note:</strong> This is a template. Please review and customize this policy with legal counsel before going live, especially for GDPR compliance.
           </p>
         </div>

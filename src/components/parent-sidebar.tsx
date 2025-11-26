@@ -108,7 +108,7 @@ export function ParentSidebar({ user, org }: ParentSidebarProps) {
               </div>
               <div className="ml-3">
                 <p className="text-sm font-medium text-gray-900">{user.name || user.email}</p>
-                <p className="text-xs text-gray-500">Parent</p>
+                <p className="text-sm text-gray-500">Parent</p>
               </div>
             </div>
           </div>

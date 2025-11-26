@@ -235,9 +235,9 @@ export function StaffDetailModal({
                     <h3 className="text-sm font-semibold text-[var(--foreground)] mb-3">Login Credentials</h3>
                     <div className="space-y-4">
                       <div>
-                        <Label className="text-xs text-[var(--muted-foreground)]">Email</Label>
+                        <Label>Email</Label>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="font-mono text-xs sm:text-sm bg-[var(--accent)] px-2 py-1 rounded flex-1 min-w-0 truncate text-[var(--foreground)]">
+                          <span className="font-mono text-sm sm:text-sm bg-[var(--accent)] px-2 py-1 rounded flex-1 min-w-0 truncate text-[var(--foreground)]">
                             {staff.email || staff.username}
                           </span>
                           <Button variant="ghost" size="sm" className="flex-shrink-0">
@@ -247,7 +247,7 @@ export function StaffDetailModal({
                       </div>
                       
                       <div className="pt-2 border-t border-[var(--border)]">
-                        <p className="text-xs text-[var(--muted-foreground)] mb-2">
+                        <p className="text-sm text-[var(--muted-foreground)] mb-2">
                           Passwords are private and cannot be viewed. Users can reset their own passwords via the forgot password link.
                         </p>
                       </div>

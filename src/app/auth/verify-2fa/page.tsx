@@ -124,6 +124,7 @@ function Verify2FAContent() {
         return
       }
 
+
       // 2FA verified - get signin token
       const sessionResponse = await fetch('/api/auth/complete-signin', {
         method: 'POST',

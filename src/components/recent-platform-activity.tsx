@@ -88,7 +88,7 @@ export function RecentPlatformActivity({ logs }: RecentPlatformActivityProps) {
                       <span className="text-gray-500"> {log.targetType.toLowerCase()}</span>
                     )}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-sm text-gray-500">
                     {formatDateTime(log.createdAt)}
                   </p>
                 </div>
