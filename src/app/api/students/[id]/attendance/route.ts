@@ -72,20 +72,27 @@ async function handleGET(
       }
     })
 
-    // Build date filter
-    const dateFilter: any = {}
+    // Build date filter - always exclude future dates
+    const today = new Date()
+    today.setHours(23, 59, 59, 999)
+    
+    const dateFilter: any = {
+      lte: today // Always exclude future dates
+    }
     if (startDate) {
       dateFilter.gte = new Date(startDate)
     }
     if (endDate) {
-      dateFilter.lte = new Date(endDate)
+      // Use the earlier of endDate or today
+      const endDateObj = new Date(endDate)
+      dateFilter.lte = endDateObj < today ? endDateObj : today
     }
 
-    // Get attendance records
+    // Get attendance records - only up to today
     const attendanceRecords = await prisma.attendance.findMany({
       where: {
         studentId: id,
-        ...(Object.keys(dateFilter).length > 0 && { date: dateFilter })
+        date: dateFilter
       },
       orderBy: {
         date: 'asc'

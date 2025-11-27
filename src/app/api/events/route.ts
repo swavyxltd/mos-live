@@ -60,5 +60,83 @@ async function handleGET(request: NextRequest) {
   }
 }
 
+// POST /api/events - Create a new event
+async function handlePOST(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const org = await getActiveOrg(session.user.id)
+    if (!org) {
+      return NextResponse.json({ error: 'No organization found' }, { status: 404 })
+    }
+
+    const body = await request.json()
+    const { title, description, type, date, startTime, endTime, location, teacher, classId, allDay } = body
+
+    if (!title || !date) {
+      return NextResponse.json(
+        { error: 'Title and date are required' },
+        { status: 400 }
+      )
+    }
+
+    // Validate date
+    const eventDate = new Date(date)
+    if (isNaN(eventDate.getTime())) {
+      return NextResponse.json(
+        { error: 'Invalid date format' },
+        { status: 400 }
+      )
+    }
+
+    // Sanitize inputs
+    const { sanitizeText, MAX_STRING_LENGTHS } = await import('@/lib/input-validation')
+    const sanitizedTitle = sanitizeText(title, MAX_STRING_LENGTHS.name)
+    const sanitizedDescription = description ? sanitizeText(description, MAX_STRING_LENGTHS.text) : null
+    const sanitizedLocation = location ? sanitizeText(location, MAX_STRING_LENGTHS.text) : null
+    const sanitizedTeacher = teacher ? sanitizeText(teacher, MAX_STRING_LENGTHS.name) : null
+
+    // Create event - classId is null by default so it shows for all accounts in the org
+    const event = await prisma.event.create({
+      data: {
+        orgId: org.id,
+        title: sanitizedTitle,
+        description: sanitizedDescription,
+        type: type || 'EVENT',
+        date: eventDate,
+        startTime: allDay ? null : (startTime || null),
+        endTime: allDay ? null : (endTime || null),
+        location: sanitizedLocation,
+        teacher: sanitizedTeacher,
+        classId: classId || null // null means it's visible to all accounts in the org
+      },
+      include: {
+        Class: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
+      }
+    })
+
+    return NextResponse.json(event, { status: 201 })
+  } catch (error: any) {
+    logger.error('Error creating event', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
+    return NextResponse.json(
+      { 
+        error: 'Failed to create event',
+        ...(isDevelopment && { details: error?.message })
+      },
+      { status: 500 }
+    )
+  }
+}
+
 export const GET = withRateLimit(handleGET)
+export const POST = withRateLimit(handlePOST)
 

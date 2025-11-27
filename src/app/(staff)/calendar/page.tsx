@@ -5,12 +5,9 @@ import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { CalendarGrid } from '@/components/ui/calendar-grid'
 import { AddEventModal } from '@/components/add-event-modal'
 import { EventDetailModal } from '@/components/event-detail-modal'
-import { CalendarFilters } from '@/components/calendar-filters'
-import { isDemoMode } from '@/lib/demo-mode'
-import { Plus, Download, Calendar, Clock, MapPin, Users } from 'lucide-react'
+import { Download, Calendar, Clock, MapPin } from 'lucide-react'
 import { RestrictedAction } from '@/components/restricted-action'
 import { PageSkeleton } from '@/components/loading/skeleton'
 
@@ -20,29 +17,24 @@ export default function CalendarPage() {
   const [loading, setLoading] = useState(true)
   const [selectedEvent, setSelectedEvent] = useState<any>(null)
   const [eventDetailOpen, setEventDetailOpen] = useState(false)
-  const [filters, setFilters] = useState({
-    eventTypes: [] as string[],
-    dateRange: 'all'
-  })
-  const [filteredEvents, setFilteredEvents] = useState<any[]>([])
-  const [showAllUpcoming, setShowAllUpcoming] = useState(false)
 
-  // Fetch events
+  // Fetch events, holidays, and exams
   useEffect(() => {
     if (status === 'loading') return
 
-    const fetchEvents = async () => {
+    const fetchCalendarData = async () => {
       try {
         setLoading(true)
         const now = new Date()
         const startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString()
         const endDate = new Date(now.getFullYear(), now.getMonth() + 3, 0).toISOString()
 
-        const response = await fetch(`/api/events?startDate=${startDate}&endDate=${endDate}`)
+        const response = await fetch(`/api/staff/calendar?startDate=${startDate}&endDate=${endDate}`)
         if (response.ok) {
           const data = await response.json()
-          // Transform API data for frontend
-          const transformed = data.map((event: any) => ({
+          
+          // Transform all events for frontend
+          const allEvents = (data.events || []).map((event: any) => ({
             id: event.id,
             title: event.title,
             type: event.type || 'EVENT',
@@ -52,74 +44,24 @@ export default function CalendarPage() {
             location: event.location || '',
             teacher: event.teacher || '',
             description: event.description || '',
-            class: event.Class
+            class: event.class,
+            isHoliday: event.isHoliday || event.type === 'HOLIDAY'
           }))
-          setEvents(transformed)
+          
+          setEvents(allEvents)
         } else {
           setEvents([])
         }
       } catch (error) {
+        console.error('Error fetching calendar data:', error)
         setEvents([])
       } finally {
         setLoading(false)
       }
     }
 
-    fetchEvents()
+    fetchCalendarData()
   }, [status])
-
-  // Filter events based on current filters
-  useEffect(() => {
-    let filtered = [...events]
-
-    // Filter by event types
-    if (filters.eventTypes.length > 0) {
-      filtered = filtered.filter(event => filters.eventTypes.includes(event.type))
-    }
-
-    // Filter by date range
-    const today = new Date()
-    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-    const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59)
-
-    switch (filters.dateRange) {
-      case 'today':
-        filtered = filtered.filter(event => {
-          const eventDate = new Date(event.date)
-          return eventDate >= startOfToday && eventDate <= endOfToday
-        })
-        break
-      case 'week':
-        const startOfWeek = new Date(startOfToday)
-        startOfWeek.setDate(today.getDate() - today.getDay())
-        const endOfWeek = new Date(startOfWeek)
-        endOfWeek.setDate(startOfWeek.getDate() + 6)
-        endOfWeek.setHours(23, 59, 59)
-        filtered = filtered.filter(event => {
-          const eventDate = new Date(event.date)
-          return eventDate >= startOfWeek && eventDate <= endOfWeek
-        })
-        break
-      case 'month':
-        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
-        const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59)
-        filtered = filtered.filter(event => {
-          const eventDate = new Date(event.date)
-          return eventDate >= startOfMonth && eventDate <= endOfMonth
-        })
-        break
-      case 'next-month':
-        const startOfNextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1)
-        const endOfNextMonth = new Date(today.getFullYear(), today.getMonth() + 2, 0, 23, 59, 59)
-        filtered = filtered.filter(event => {
-          const eventDate = new Date(event.date)
-          return eventDate >= startOfNextMonth && eventDate <= endOfNextMonth
-        })
-        break
-    }
-
-    setFilteredEvents(filtered)
-  }, [events, filters])
 
   if (loading) {
     return <PageSkeleton />
@@ -129,13 +71,26 @@ export default function CalendarPage() {
     return <div className="flex items-center justify-center min-h-screen">Please sign in to view the calendar.</div>
   }
 
-  // Get upcoming events (next 3 months) from filtered events
-  const upcomingEvents = filteredEvents.filter(event => {
+  // Get all upcoming events (next 3 months) - only holidays, exams, meetings, and events, exclude regular classes
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const next3Months = new Date()
+  next3Months.setMonth(today.getMonth() + 3)
+  next3Months.setHours(23, 59, 59, 999)
+  
+  const upcomingEvents = events.filter(event => {
     const eventDate = new Date(event.date)
-    const today = new Date()
-    const nextThreeMonths = new Date()
-    nextThreeMonths.setMonth(today.getMonth() + 3)
-    return eventDate >= today && eventDate <= nextThreeMonths
+    eventDate.setHours(0, 0, 0, 0)
+    
+    // Only show holidays, exams, meetings, and events - exclude regular classes
+    const isRelevantEvent = event.isHoliday || 
+                          event.type === 'HOLIDAY' || 
+                          event.type === 'EXAM' || 
+                          event.type === 'MEETING' ||
+                          event.type === 'EVENT'
+    
+    // Only show future events
+    return eventDate >= today && eventDate <= next3Months && isRelevantEvent
   }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
   const handleEventClick = (event: any) => {
@@ -143,12 +98,34 @@ export default function CalendarPage() {
     setEventDetailOpen(true)
   }
 
-  const handleFiltersChange = (newFilters: { eventTypes: string[], dateRange: string }) => {
-    setFilters(newFilters)
-  }
+  const handleEventAdded = async () => {
+    // Refetch calendar data after adding event
+    const now = new Date()
+    const startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString()
+    const endDate = new Date(now.getFullYear(), now.getMonth() + 3, 0).toISOString()
 
-  const handleEventAdded = (newEvent: any) => {
-    setEvents(prev => [...prev, newEvent])
+    try {
+      const response = await fetch(`/api/staff/calendar?startDate=${startDate}&endDate=${endDate}`)
+      if (response.ok) {
+        const data = await response.json()
+        const allEvents = (data.events || []).map((event: any) => ({
+          id: event.id,
+          title: event.title,
+          type: event.type || 'EVENT',
+          date: new Date(event.date),
+          startTime: event.startTime || '',
+          endTime: event.endTime || '',
+          location: event.location || '',
+          teacher: event.teacher || '',
+          description: event.description || '',
+          class: event.class,
+          isHoliday: event.isHoliday || event.type === 'HOLIDAY'
+        }))
+        setEvents(allEvents)
+      }
+    } catch (error) {
+      console.error('Error refreshing calendar data:', error)
+    }
   }
 
   const handleEventUpdated = (updatedEvent: any) => {
@@ -165,136 +142,132 @@ export default function CalendarPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--foreground)]">Calendar</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[var(--foreground)] break-words">Calendar</h1>
           <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-            View and manage school events, classes, and holidays.
+            View and manage school events, holidays, exams, and special events.
           </p>
         </div>
         <div className="flex space-x-3">
           <RestrictedAction action="schedule">
             <AddEventModal onEventAdded={handleEventAdded} />
           </RestrictedAction>
-          <Button variant="outline">
-            <Download className="h-4 w-4 mr-2" />
+          <Button variant="outline" className="flex items-center gap-2">
+            <Download className="h-4 w-4" />
             Download ICS
           </Button>
         </div>
       </div>
 
-      {/* Calendar Filters */}
-      <CalendarFilters onFiltersChange={handleFiltersChange} />
-
-      {/* Calendar Grid */}
-      <CalendarGrid 
-        events={filteredEvents.map(event => ({
-          ...event,
-          date: new Date(event.date)
-        }))}
-        onEventClick={handleEventClick}
-      />
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Upcoming Events */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Upcoming Events (Next 3 Months)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {(showAllUpcoming ? upcomingEvents : upcomingEvents.slice(0, 10)).map((event) => (
-                  <div key={event.id} className="flex items-center justify-between p-3 border border-[var(--border)] rounded-[var(--radius-md)]">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-3 h-3 rounded-full ${
-                        event.type === 'CLASS' ? 'bg-blue-500' : 
+      {/* Upcoming Events List */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Upcoming Events</CardTitle>
+          <p className="text-sm text-[var(--muted-foreground)] mt-1">
+            Holidays, exams, and special events for the next 3 months
+          </p>
+        </CardHeader>
+        <CardContent>
+          {upcomingEvents.length === 0 ? (
+            <div className="text-center py-8">
+              <Calendar className="h-12 w-12 text-[var(--muted-foreground)] mx-auto mb-4 opacity-50" />
+              <p className="text-sm text-[var(--muted-foreground)]">
+                No upcoming events scheduled
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {upcomingEvents.map((event) => {
+                const eventDate = new Date(event.date)
+                const isToday = eventDate.toDateString() === today.toDateString()
+                
+                return (
+                  <div 
+                    key={event.id} 
+                    className={`flex items-start justify-between p-4 border border-[var(--border)] rounded-[var(--radius-md)] hover:bg-[var(--accent)]/30 transition-all cursor-pointer ${
+                      isToday ? 'border-[var(--primary)]/50 bg-[var(--primary)]/5' : ''
+                    }`}
+                    onClick={() => handleEventClick(event)}
+                  >
+                    <div className="flex items-start gap-3 flex-1">
+                      <div className={`w-3 h-3 rounded-full mt-1.5 flex-shrink-0 ${
+                        event.isHoliday || event.type === 'HOLIDAY' ? 'bg-red-500' : 
                         event.type === 'EXAM' ? 'bg-yellow-500' : 
-                        event.type === 'HOLIDAY' ? 'bg-red-500' : 
+                        event.type === 'MEETING' ? 'bg-blue-500' : 
                         'bg-green-500'
                       }`} />
-                      <div>
-                        <h4 className="font-medium text-[var(--foreground)]">{event.title}</h4>
-                        <p className="text-sm text-[var(--muted-foreground)]">
-                          {new Date(event.date).toLocaleDateString('en-US', { 
-                            weekday: 'long', 
-                            month: 'short', 
-                            day: 'numeric' 
-                          })}
-                          {event.startTime && ` • ${event.startTime}`}
-                        </p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-semibold text-[var(--foreground)]">{event.title}</h4>
+                          {isToday && (
+                            <Badge variant="outline" className="text-xs">Today</Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-[var(--muted-foreground)] mb-1">
+                          <Calendar className="h-3 w-3" />
+                          <span>
+                            {eventDate.toLocaleDateString('en-GB', { 
+                              weekday: 'long', 
+                              day: 'numeric',
+                              month: 'long',
+                              year: 'numeric'
+                            })}
+                          </span>
+                          {event.startTime && (
+                            <>
+                              <span>•</span>
+                              <Clock className="h-3 w-3" />
+                              <span>{event.startTime}{event.endTime ? ` - ${event.endTime}` : ''}</span>
+                            </>
+                          )}
+                        </div>
+                        {event.description && (
+                          <p className="text-sm text-[var(--muted-foreground)] mt-1">
+                            {event.description}
+                          </p>
+                        )}
+                        {event.location && (
+                          <div className="flex items-center gap-1.5 text-sm text-[var(--muted-foreground)] mt-1">
+                            <MapPin className="h-3 w-3" />
+                            <span>{event.location}</span>
+                          </div>
+                        )}
+                        {event.class && (
+                          <div className="text-sm text-[var(--muted-foreground)] mt-1">
+                            <span className="font-medium">Class:</span> {event.class.name}
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <Badge variant={
-                      event.type === 'CLASS' ? 'default' : 
-                      event.type === 'EXAM' ? 'secondary' : 
-                      event.type === 'HOLIDAY' ? 'destructive' : 
-                      'outline'
-                    }>
-                      {event.type}
+                    <Badge 
+                      variant={
+                        event.isHoliday || event.type === 'HOLIDAY' ? 'destructive' : 
+                        event.type === 'EXAM' ? 'secondary' : 
+                        'outline'
+                      }
+                      className="ml-3 flex-shrink-0"
+                    >
+                      {event.isHoliday || event.type === 'HOLIDAY' ? 'Holiday' : 
+                       event.type === 'EXAM' ? 'Exam' :
+                       event.type === 'MEETING' ? 'Meeting' :
+                       'Event'}
                     </Badge>
                   </div>
-                ))}
-                {upcomingEvents.length > 10 && (
-                  <div className="pt-3 border-t border-[var(--border)]">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => setShowAllUpcoming(!showAllUpcoming)}
-                      className="w-full"
-                    >
-                      {showAllUpcoming ? 'Show Less' : `Show All (${upcomingEvents.length} events)`}
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Calendar Legend */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Legend</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <span className="inline-flex px-2 py-1 text-sm font-semibold rounded-full bg-blue-100 text-blue-800">
-                  CLASS
-                </span>
-                <span className="text-sm text-[var(--muted-foreground)]">Regular Classes</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="inline-flex px-2 py-1 text-sm font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                  EXAM
-                </span>
-                <span className="text-sm text-[var(--muted-foreground)]">Examinations</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="inline-flex px-2 py-1 text-sm font-semibold rounded-full bg-red-100 text-red-800">
-                  HOLIDAY
-                </span>
-                <span className="text-sm text-[var(--muted-foreground)]">Holidays & Breaks</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="inline-flex px-2 py-1 text-sm font-semibold rounded-full bg-green-100 text-green-800">
-                  MEETING
-                </span>
-                <span className="text-sm text-[var(--muted-foreground)]">Meetings & Events</span>
-              </div>
+                )
+              })}
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Event Detail Modal */}
       <EventDetailModal
         event={selectedEvent}
         open={eventDetailOpen}
         onOpenChange={setEventDetailOpen}
-        onEventUpdated={handleEventUpdated}
-        onEventDeleted={handleEventDeleted}
+        onEventUpdated={handleEventAdded}
+        onEventDeleted={handleEventAdded}
       />
     </div>
   )

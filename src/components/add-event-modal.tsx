@@ -63,13 +63,24 @@ export function AddEventModal({ onEventAdded, trigger }: AddEventModalProps) {
         setOpen(false)
         resetForm()
       } else {
-        // In production, make API call
-        const response = await fetch('/api/calendar', {
+        // In production, make API call to create event
+        const response = await fetch('/api/events', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(formData),
+          body: JSON.stringify({
+            title: formData.title,
+            description: formData.description,
+            type: formData.type,
+            date: formData.date,
+            startTime: formData.allDay ? null : formData.startTime,
+            endTime: formData.allDay ? null : formData.endTime,
+            location: formData.location,
+            teacher: formData.teacher,
+            allDay: formData.allDay,
+            classId: null // null means visible to all accounts in the org
+          }),
         })
 
         if (response.ok) {
@@ -78,6 +89,9 @@ export function AddEventModal({ onEventAdded, trigger }: AddEventModalProps) {
           setOpen(false)
           resetForm()
         } else {
+          const error = await response.json().catch(() => ({ error: 'Failed to create event' }))
+          console.error('Error creating event:', error)
+          alert(error.error || 'Failed to create event')
         }
       }
     } catch (error) {

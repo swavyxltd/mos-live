@@ -5,286 +5,20 @@ import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { CalendarGrid } from '@/components/ui/calendar-grid'
-import { isDemoMode } from '@/lib/demo-mode'
-import { Calendar, Download, Clock, MapPin, Users } from 'lucide-react'
+import { Calendar, Download, Clock, MapPin } from 'lucide-react'
 import { CardSkeleton, Skeleton } from '@/components/loading/skeleton'
 
 export default function ParentCalendarPage() {
   const { data: session, status } = useSession()
   const [events, setEvents] = useState<any[]>([])
   const [holidays, setHolidays] = useState<any[]>([])
-  const [classSchedules, setClassSchedules] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (status === 'loading') return
 
-    if (isDemoMode()) {
-      // Demo data for calendar
-      const demoHolidays = [
-        {
-          id: 'demo-holiday-1',
-          title: 'Christmas Break',
-          date: new Date('2024-12-25'),
-          type: 'HOLIDAY',
-          description: 'School closed for Christmas Day',
-          isRecurring: false
-        },
-        {
-          id: 'demo-holiday-2',
-          title: 'Boxing Day',
-          date: new Date('2024-12-26'),
-          type: 'HOLIDAY',
-          description: 'School closed for Boxing Day',
-          isRecurring: false
-        },
-        {
-          id: 'demo-holiday-3',
-          title: 'New Year Holiday',
-          date: new Date('2025-01-01'),
-          type: 'HOLIDAY',
-          description: 'School closed for New Year',
-          isRecurring: false
-        },
-        {
-          id: 'demo-holiday-4',
-          title: 'Eid al-Fitr',
-          date: new Date('2025-03-30'),
-          type: 'HOLIDAY',
-          description: 'School closed for Eid al-Fitr',
-          isRecurring: false
-        },
-        {
-          id: 'demo-holiday-5',
-          title: 'Eid al-Adha',
-          date: new Date('2025-06-06'),
-          type: 'HOLIDAY',
-          description: 'School closed for Eid al-Adha',
-          isRecurring: false
-        }
-      ]
-
-      const demoClassSchedules = [
-        {
-          id: 'demo-schedule-1',
-          title: "Ahmed's classes: Monday to Friday 5-7pm",
-          dayOfWeek: 'Monday',
-          startTime: '17:00',
-          endTime: '19:00',
-          room: 'Room A',
-          teacher: 'Moulana Omar',
-          students: ['Ahmed Hassan'],
-          isSummary: true
-        },
-        {
-          id: 'demo-schedule-2',
-          title: "Fatima's classes: Monday to Friday 5-7pm",
-          dayOfWeek: 'Monday',
-          startTime: '17:00',
-          endTime: '19:00',
-          room: 'Room B',
-          teacher: 'Apa Aisha',
-          students: ['Fatima Hassan'],
-          isSummary: true
-        }
-      ]
-
-      // Generate events for the next 30 days
-      const today = new Date()
-      const next30Days = new Date()
-      next30Days.setDate(today.getDate() + 30)
-
-      const demoEvents = []
-      
-      // Add holidays
-      demoHolidays.forEach(holiday => {
-        if (holiday.date >= today && holiday.date <= next30Days) {
-          demoEvents.push({
-            ...holiday,
-            date: holiday.date,
-            isHoliday: true
-          })
-        }
-      })
-
-      // Add class schedules for the next 30 days
-      for (let d = new Date(today); d <= next30Days; d.setDate(d.getDate() + 1)) {
-        const dayOfWeek = d.toLocaleDateString('en-US', { weekday: 'long' })
-        const dayClasses = demoClassSchedules.filter(schedule => schedule.dayOfWeek === dayOfWeek)
-        
-        dayClasses.forEach(schedule => {
-          const eventDate = new Date(d)
-          eventDate.setHours(parseInt(schedule.startTime.split(':')[0]), parseInt(schedule.startTime.split(':')[1]))
-          
-          // For summary entries, only show once per week (on Monday)
-          if (schedule.isSummary && dayOfWeek !== 'Monday') {
-            return
-          }
-          
-          demoEvents.push({
-            id: schedule.isSummary ? schedule.id : `${schedule.id}-${d.toISOString().split('T')[0]}`,
-            title: schedule.title,
-            date: eventDate,
-            startTime: schedule.startTime,
-            endTime: schedule.endTime,
-            room: schedule.room,
-            teacher: schedule.teacher,
-            students: schedule.students,
-            type: 'CLASS',
-            isHoliday: false,
-            isSummary: schedule.isSummary
-          })
-        })
-      }
-
-      // Add some special events
-      demoEvents.push(
-        // October 2025 Events
-        {
-          id: 'demo-event-1',
-          title: 'Quran Recitation Exam',
-          date: new Date('2025-10-20'),
-          type: 'EXAM',
-          description: 'Quran recitation assessment for all levels',
-          isHoliday: false
-        },
-        {
-          id: 'demo-event-2',
-          title: 'Islamic Studies Exam',
-          date: new Date('2025-10-25'),
-          type: 'EXAM',
-          description: 'Islamic Studies written examination',
-          isHoliday: false
-        },
-        {
-          id: 'demo-event-3',
-          title: 'Arabic Grammar Exam',
-          date: new Date('2025-10-28'),
-          type: 'EXAM',
-          description: 'Arabic language and grammar assessment',
-          isHoliday: false
-        },
-        {
-          id: 'demo-event-4',
-          title: 'Quran Competition',
-          date: new Date('2025-10-30'),
-          type: 'EVENT',
-          description: 'Annual Quran recitation competition',
-          isHoliday: false
-        },
-        // November 2025 Events
-        {
-          id: 'demo-event-5',
-          title: 'Parent-Teacher Meeting',
-          date: new Date('2025-11-05'),
-          type: 'MEETING',
-          description: 'Scheduled meetings with teachers',
-          isHoliday: false
-        },
-        {
-          id: 'demo-event-6',
-          title: 'Mid-Term Assessment',
-          date: new Date('2025-11-15'),
-          type: 'EXAM',
-          description: 'Mid-term progress assessment',
-          isHoliday: false
-        },
-        {
-          id: 'demo-event-7',
-          title: 'Islamic History Exam',
-          date: new Date('2025-11-20'),
-          type: 'EXAM',
-          description: 'Islamic History and Seerah examination',
-          isHoliday: false
-        },
-        {
-          id: 'demo-event-8',
-          title: 'Hadith Studies Exam',
-          date: new Date('2025-11-25'),
-          type: 'EXAM',
-          description: 'Hadith and Sunnah studies assessment',
-          isHoliday: false
-        },
-        // December 2025 Events
-        {
-          id: 'demo-event-9',
-          title: 'Arabic Speaking Exam',
-          date: new Date('2025-12-05'),
-          type: 'EXAM',
-          description: 'Arabic conversation and speaking assessment',
-          isHoliday: false
-        },
-        {
-          id: 'demo-event-10',
-          title: 'End of Term Exams',
-          date: new Date('2025-12-15'),
-          type: 'EXAM',
-          description: 'Final examinations for all classes',
-          isHoliday: false
-        },
-        {
-          id: 'demo-event-11',
-          title: 'Parent-Teacher Conference',
-          date: new Date('2025-12-18'),
-          type: 'MEETING',
-          description: 'Progress review meetings with parents',
-          isHoliday: false
-        },
-        // Christmas Holiday Period (2 weeks)
-        {
-          id: 'demo-holiday-christmas-start',
-          title: 'Christmas Holiday Begins',
-          date: new Date('2025-12-23'),
-          type: 'HOLIDAY',
-          description: 'School closed for Christmas holiday period',
-          isHoliday: true
-        },
-        {
-          id: 'demo-holiday-christmas-end',
-          title: 'Christmas Holiday Ends',
-          date: new Date('2026-01-06'),
-          type: 'HOLIDAY',
-          description: 'School reopens after Christmas holiday',
-          isHoliday: true
-        },
-        // January 2026 Events
-        {
-          id: 'demo-event-12',
-          title: 'New Term Begins',
-          date: new Date('2026-01-07'),
-          type: 'EVENT',
-          description: 'Start of new academic term',
-          isHoliday: false
-        },
-        {
-          id: 'demo-event-13',
-          title: 'Quran Memorization Exam',
-          date: new Date('2026-01-15'),
-          type: 'EXAM',
-          description: 'Quran memorization assessment',
-          isHoliday: false
-        },
-        {
-          id: 'demo-event-14',
-          title: 'Islamic Ethics Exam',
-          date: new Date('2026-01-20'),
-          type: 'EXAM',
-          description: 'Islamic Ethics and Character assessment',
-          isHoliday: false
-        }
-      )
-
-      // Sort events by date
-      demoEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-
-      setHolidays(demoHolidays)
-      setClassSchedules(demoClassSchedules)
-      setEvents(demoEvents)
-      setLoading(false)
-    } else {
-      // Fetch real data from API
-      const now = new Date()
+    // Always fetch real data from API
+    const now = new Date()
       const startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString()
       const endDate = new Date(now.getFullYear(), now.getMonth() + 3, 0).toISOString()
 
@@ -294,14 +28,12 @@ export default function ParentCalendarPage() {
             console.error('Failed to fetch calendar data:', res.status)
             setEvents([])
             setHolidays([])
-            setClassSchedules([])
             setLoading(false)
             return
           }
           const data = await res.json()
           
           setHolidays(data.holidays || [])
-          setClassSchedules(data.classes || [])
           
           // Process events from API
           const allEvents = data.events || []
@@ -387,10 +119,8 @@ export default function ParentCalendarPage() {
           console.error('Error fetching calendar data:', err)
           setEvents([])
           setHolidays([])
-          setClassSchedules([])
           setLoading(false)
         })
-    }
   }, [status])
 
   if (!session?.user?.id) {
@@ -432,18 +162,27 @@ export default function ParentCalendarPage() {
     return acc
   }, {} as Record<string, any[]>)
 
-  // Get upcoming events (next 3 months) - only holidays and exams, not regular classes
+  // Get all upcoming events (next 3 months) - only holidays, exams, and meetings, exclude regular classes
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const next3Months = new Date()
+  next3Months.setMonth(today.getMonth() + 3)
+  next3Months.setHours(23, 59, 59, 999)
+  
   const upcomingEvents = events.filter(event => {
     const eventDate = new Date(event.date)
-    const today = new Date()
-    const next3Months = new Date()
-    next3Months.setMonth(today.getMonth() + 3)
+    eventDate.setHours(0, 0, 0, 0)
     
-    // Only show holidays, exams, and meetings, exclude regular classes
-    const isRelevantEvent = event.isHoliday || event.type === 'HOLIDAY' || event.type === 'EXAM' || event.type === 'MEETING'
+    // Only show holidays, exams, meetings, and events - exclude regular classes
+    const isRelevantEvent = event.isHoliday || 
+                          event.type === 'HOLIDAY' || 
+                          event.type === 'EXAM' || 
+                          event.type === 'MEETING' ||
+                          event.type === 'EVENT'
     
+    // Only show future events
     return eventDate >= today && eventDate <= next3Months && isRelevantEvent
-  })
+  }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
   return (
     <div className="space-y-6">
@@ -460,99 +199,101 @@ export default function ParentCalendarPage() {
           </Button>
         </div>
 
-        {/* Upcoming Events */}
+        {/* Upcoming Events List */}
         <Card>
           <CardHeader>
-            <CardTitle>Upcoming Events (Next 3 Months)</CardTitle>
+            <CardTitle>Upcoming Events</CardTitle>
+            <p className="text-sm text-[var(--muted-foreground)] mt-1">
+              Holidays, exams, and special events for the next 3 months
+            </p>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {upcomingEvents.slice(0, 5).map((event) => (
-                <div key={event.id} className="flex items-center justify-between p-3 border border-[var(--border)] rounded-[var(--radius-md)]">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-3 h-3 rounded-full ${
-                      event.isHoliday ? 'bg-red-500' : 
-                      event.type === 'CLASS' ? 'bg-blue-500' : 
-                      event.type === 'EXAM' ? 'bg-yellow-500' : 
-                      'bg-green-500'
-                    }`} />
-                    <div>
-                      <h4 className="font-medium text-[var(--foreground)]">{event.title}</h4>
-                      <p className="text-sm text-[var(--muted-foreground)]">
-                        {new Date(event.date).toLocaleDateString('en-US', { 
-                          weekday: 'long', 
-                          month: 'short', 
-                          day: 'numeric' 
-                        })}
-                        {event.startTime && ` • ${event.startTime} - ${event.endTime}`}
-                      </p>
+            {upcomingEvents.length === 0 ? (
+              <div className="text-center py-8">
+                <Calendar className="h-12 w-12 text-[var(--muted-foreground)] mx-auto mb-4 opacity-50" />
+                <p className="text-sm text-[var(--muted-foreground)]">
+                  No upcoming events scheduled
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {upcomingEvents.map((event) => {
+                  const eventDate = new Date(event.date)
+                  const isToday = eventDate.toDateString() === today.toDateString()
+                  
+                  return (
+                    <div 
+                      key={event.id} 
+                      className={`flex items-start justify-between p-4 border border-[var(--border)] rounded-[var(--radius-md)] hover:bg-[var(--accent)]/30 transition-all ${
+                        isToday ? 'border-[var(--primary)]/50 bg-[var(--primary)]/5' : ''
+                      }`}
+                    >
+                      <div className="flex items-start gap-3 flex-1">
+                        <div className={`w-3 h-3 rounded-full mt-1.5 flex-shrink-0 ${
+                          event.isHoliday || event.type === 'HOLIDAY' ? 'bg-red-500' : 
+                          event.type === 'EXAM' ? 'bg-yellow-500' : 
+                          event.type === 'MEETING' ? 'bg-blue-500' : 
+                          'bg-green-500'
+                        }`} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-semibold text-[var(--foreground)]">{event.title}</h4>
+                            {isToday && (
+                              <Badge variant="outline" className="text-xs">Today</Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-[var(--muted-foreground)] mb-1">
+                            <Calendar className="h-3 w-3" />
+                            <span>
+                              {eventDate.toLocaleDateString('en-GB', { 
+                                weekday: 'long', 
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric'
+                              })}
+                            </span>
+                            {event.startTime && (
+                              <>
+                                <span>•</span>
+                                <Clock className="h-3 w-3" />
+                                <span>{event.startTime}{event.endTime ? ` - ${event.endTime}` : ''}</span>
+                              </>
+                            )}
+                          </div>
+                          {event.description && (
+                            <p className="text-sm text-[var(--muted-foreground)] mt-1">
+                              {event.description}
+                            </p>
+                          )}
+                          {event.location && (
+                            <div className="flex items-center gap-1.5 text-sm text-[var(--muted-foreground)] mt-1">
+                              <MapPin className="h-3 w-3" />
+                              <span>{event.location}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <Badge 
+                        variant={
+                          event.isHoliday || event.type === 'HOLIDAY' ? 'destructive' : 
+                          event.type === 'EXAM' ? 'secondary' : 
+                          'outline'
+                        }
+                        className="ml-3 flex-shrink-0"
+                      >
+                        {event.isHoliday || event.type === 'HOLIDAY' ? 'Holiday' : 
+                         event.type === 'EXAM' ? 'Exam' :
+                         event.type === 'MEETING' ? 'Meeting' :
+                         'Event'}
+                      </Badge>
                     </div>
-                  </div>
-                  <Badge variant={
-                    event.isHoliday ? 'destructive' : 
-                    event.type === 'CLASS' ? 'default' : 
-                    event.type === 'EXAM' ? 'secondary' : 
-                    'outline'
-                  }>
-                    {event.isHoliday ? 'Holiday' : event.type}
-                  </Badge>
-                </div>
-              ))}
-            </div>
+                  )
+                })}
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Calendar Grid */}
-        <CalendarGrid 
-          events={events.map(event => ({
-            ...event,
-            date: new Date(event.date)
-          }))}
-          onEventClick={(event) => {
-            // Handle event click - could open a modal or navigate to event details
-          }}
-        />
-
-        {/* Class Schedule Summary */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Regular Class Schedule</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {classSchedules.map((schedule) => (
-                <div key={schedule.id} className="p-4 border border-[var(--border)] rounded-[var(--radius-md)]">
-                  <h4 className="font-medium text-[var(--foreground)] mb-2">{schedule.title}</h4>
-                  <div className="space-y-1 text-sm text-[var(--muted-foreground)]">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-3 w-3" />
-                      {schedule.dayOfWeek}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-3 w-3" />
-                      {schedule.startTime} - {schedule.endTime}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-3 w-3" />
-                      {schedule.room}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Users className="h-3 w-3" />
-                      {schedule.teacher}
-                    </div>
-                  </div>
-                  {schedule.students && schedule.students.length > 0 && (
-                    <div className="mt-2 pt-2 border-t border-[var(--border)]">
-                      <p className="text-sm text-[var(--muted-foreground)]">
-                        Your children: {schedule.students.join(', ')}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
       </div>
   )
 }

@@ -4,6 +4,7 @@ import { requireRole, requireOrg } from '@/lib/roles'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
+import { transformInvoiceData } from '@/lib/invoice-data-transform'
 
 async function handleGET(
   request: NextRequest,
@@ -55,29 +56,8 @@ async function handleGET(
       return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
     }
     
-    // Transform the data for frontend
-    const transformedInvoice = {
-      id: invoice.id,
-      invoiceNumber: `INV-${invoice.id.slice(-8).toUpperCase()}`,
-      studentName: `${invoice.student.firstName} ${invoice.student.lastName}`,
-      parentName: invoice.student.primaryParent?.name || 'N/A',
-      parentEmail: invoice.student.primaryParent?.email || 'N/A',
-      amount: invoice.amountP / 100, // Convert from pence to pounds
-      currency: 'GBP',
-      status: invoice.status,
-      dueDate: invoice.dueDate,
-      paidDate: invoice.paidAt,
-      createdAt: invoice.createdAt,
-      updatedAt: invoice.updatedAt,
-      payments: invoice.payments.map(payment => ({
-        id: payment.id,
-        method: payment.method,
-        amount: payment.amountP / 100,
-        status: payment.status,
-        createdAt: payment.createdAt,
-        meta: payment.meta
-      }))
-    }
+    // Transform the data for frontend using shared utility for consistency
+    const transformedInvoice = transformInvoiceData(invoice)
     
     return NextResponse.json(transformedInvoice)
   } catch (error: any) {

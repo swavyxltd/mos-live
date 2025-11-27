@@ -38,8 +38,12 @@ export default async function StudentsPage() {
   })
 
   // Get YTD (Year to Date) attendance records for these students
+  // Always exclude future dates
   const studentIds = students.map(s => s.id)
   const now = new Date()
+  const today = new Date(now)
+  today.setHours(23, 59, 59, 999)
+  
   const yearStart = new Date(now.getFullYear(), 0, 1) // January 1st of current year
   yearStart.setHours(0, 0, 0, 0)
   
@@ -48,7 +52,8 @@ export default async function StudentsPage() {
       studentId: { in: studentIds },
       orgId: org.id,
       date: {
-        gte: yearStart // Only records from current year (YTD)
+        gte: yearStart, // Only records from current year (YTD)
+        lte: today // Exclude future dates
       }
     },
     select: {

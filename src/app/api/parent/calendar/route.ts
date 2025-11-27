@@ -50,7 +50,57 @@ async function handleGET(request: NextRequest) {
     })
 
     const studentIds = students.map(s => s.id)
-    const classIds = students.flatMap(s => s.StudentClass.map(sc => sc.classId))
+    
+    // Debug: Log student count
+    if (students.length === 0) {
+      logger.warn(`No students found for parent ${session.user.id} in org ${org.id}`)
+    }
+    
+    // Query StudentClass directly to ensure we get ALL enrollments
+    // This is more reliable than relying on the include in the students query
+    const allStudentClasses = studentIds.length > 0 ? await prisma.studentClass.findMany({
+      where: {
+        orgId: org.id,
+        studentId: { in: studentIds }
+      },
+      include: {
+        Class: {
+          select: {
+            id: true,
+            name: true,
+            isArchived: true
+          }
+        },
+        Student: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            primaryParentId: true
+          }
+        }
+      }
+    }) : []
+    
+    // Filter out enrollments for archived classes
+    const activeEnrollments = allStudentClasses.filter(sc => 
+      sc.Class && !sc.Class.isArchived && sc.Student && studentIds.includes(sc.Student.id)
+    )
+    
+    // Get all unique class IDs from active enrollments
+    const classIds = Array.from(new Set(
+      activeEnrollments.map(sc => sc.classId)
+    )).filter(id => id) // Remove any null/undefined values
+    
+    // Debug: Log enrollment info
+    if (activeEnrollments.length === 0 && students.length > 0) {
+      logger.warn(`Parent ${session.user.id} has ${students.length} students but no active class enrollments`)
+    } else if (students.length > 0) {
+      logger.warn(`Parent ${session.user.id}: ${students.length} students, ${activeEnrollments.length} enrollments, ${classIds.length} classes`)
+      // Log student names to help debug
+      const studentNames = students.map(s => `${s.firstName} ${s.lastName}`).join(', ')
+      logger.warn(`Students: ${studentNames}`)
+    }
 
     // Get date range
     const now = new Date()
@@ -58,6 +108,8 @@ async function handleGET(request: NextRequest) {
     const end = endDate ? new Date(endDate) : new Date(now.getFullYear(), now.getMonth() + 3, 0)
 
     // Fetch events (only for classes the parent's children are in, or general events)
+    // classId: null means the event is visible to ALL accounts in the org (created by admins)
+    // classId: { in: classIds } means the event is for specific classes the parent's children are in
     const events = await prisma.event.findMany({
       where: {
         orgId: org.id,
@@ -65,9 +117,11 @@ async function handleGET(request: NextRequest) {
           gte: start,
           lte: end
         },
-        OR: [
-          { classId: { in: classIds } },
-          { classId: null }
+        OR: classIds.length > 0 ? [
+          { classId: { in: classIds } }, // Events for parent's children's classes
+          { classId: null } // General events visible to all (created by admins)
+        ] : [
+          { classId: null } // Only general events if parent has no enrolled children
         ]
       },
       include: {
@@ -82,7 +136,7 @@ async function handleGET(request: NextRequest) {
     })
 
     // Fetch exams (only for classes the parent's children are in)
-    const exams = await prisma.exam.findMany({
+    const exams = classIds.length > 0 ? await prisma.exam.findMany({
       where: {
         orgId: org.id,
         date: {
@@ -100,7 +154,7 @@ async function handleGET(request: NextRequest) {
         }
       },
       orderBy: { date: 'asc' }
-    })
+    }) : []
 
     // Fetch holidays
     const holidays = await prisma.holiday.findMany({
@@ -117,7 +171,8 @@ async function handleGET(request: NextRequest) {
     })
 
     // Get classes the parent's children are enrolled in
-    const classes = await prisma.class.findMany({
+    // If no classIds, return empty array (parent's children aren't enrolled in any classes)
+    const classes = classIds.length > 0 ? await prisma.class.findMany({
       where: {
         orgId: org.id,
         id: { in: classIds },
@@ -128,23 +183,26 @@ async function handleGET(request: NextRequest) {
           select: {
             name: true
           }
-        },
-        StudentClass: {
-          where: {
-            studentId: { in: studentIds }
-          },
-          include: {
-            Student: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true
-              }
-            }
-          }
         }
       },
       orderBy: { name: 'asc' }
+    }) : []
+    
+    // Build a map of classId -> students enrolled for this parent
+    // Use the activeEnrollments we queried directly to ensure accuracy
+    const classStudentsMap = new Map<string, Array<{id: string, firstName: string, lastName: string}>>()
+    activeEnrollments.forEach(sc => {
+      if (!sc.Class || !sc.Student) return
+      const classId = sc.classId
+      if (!classId) return
+      if (!classStudentsMap.has(classId)) {
+        classStudentsMap.set(classId, [])
+      }
+      classStudentsMap.get(classId)!.push({
+        id: sc.Student.id,
+        firstName: sc.Student.firstName || '',
+        lastName: sc.Student.lastName || ''
+      })
     })
 
     // Transform data for frontend
@@ -152,7 +210,7 @@ async function handleGET(request: NextRequest) {
       id: event.id,
       title: event.title,
       type: event.type || 'EVENT',
-      date: event.date,
+      date: event.date instanceof Date ? event.date.toISOString() : event.date,
       startTime: event.startTime,
       endTime: event.endTime,
       location: event.location,
@@ -165,7 +223,7 @@ async function handleGET(request: NextRequest) {
       id: exam.id,
       title: exam.title,
       type: 'EXAM',
-      date: exam.date,
+      date: exam.date instanceof Date ? exam.date.toISOString() : exam.date,
       description: exam.notes,
       class: exam.Class
     }))
@@ -174,8 +232,8 @@ async function handleGET(request: NextRequest) {
       id: holiday.id,
       title: holiday.name,
       type: 'HOLIDAY',
-      date: holiday.startDate,
-      endDate: holiday.endDate,
+      date: holiday.startDate instanceof Date ? holiday.startDate.toISOString() : holiday.startDate,
+      endDate: holiday.endDate instanceof Date ? holiday.endDate.toISOString() : holiday.endDate,
       isHoliday: true
     }))
 
@@ -187,20 +245,32 @@ async function handleGET(request: NextRequest) {
         schedule = {}
       }
       
+      // Format days of week properly - show all days if multiple
+      const scheduleDays = Array.isArray(schedule?.days) ? schedule.days : []
+      const formattedDays = scheduleDays.map((day: string) => {
+        return day.charAt(0).toUpperCase() + day.slice(1).toLowerCase()
+      })
+      const dayOfWeekDisplay = formattedDays.length > 0 
+        ? formattedDays.join(', ')
+        : 'Not scheduled'
+      
+      // Get students for this class from our map (ensures we have all enrollments)
+      const classStudents = classStudentsMap.get(cls.id) || []
+      const studentNames = classStudents.map(s => `${s.firstName} ${s.lastName}`)
+      
       return {
         id: cls.id,
         name: cls.name,
         title: cls.name,
         description: cls.description,
         schedule: schedule,
-        dayOfWeek: Array.isArray(schedule?.days) && schedule.days.length > 0 
-          ? schedule.days[0].charAt(0).toUpperCase() + schedule.days[0].slice(1)
-          : 'Monday',
+        days: scheduleDays, // Keep original for processing
+        dayOfWeek: dayOfWeekDisplay, // Display all days
         startTime: schedule?.startTime || '17:00',
         endTime: schedule?.endTime || '19:00',
         room: schedule?.room || 'TBD',
         teacher: cls.User?.name || 'TBD',
-        students: cls.StudentClass.map(sc => `${sc.Student.firstName} ${sc.Student.lastName}`)
+        students: studentNames
       }
     })
 

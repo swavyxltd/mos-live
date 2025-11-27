@@ -291,16 +291,36 @@ async function main() {
 
   const students = []
   let studentIndex = 0
+  let boyNameIndex = 0
+  let girlNameIndex = 0
 
   for (let classIndex = 0; classIndex < classes.length; classIndex++) {
     const classItem = classes[classIndex]
+    const isBoysClass = classItem.name.toLowerCase().includes('boy')
+    const isGirlsClass = classItem.name.toLowerCase().includes('girl')
     
     for (let i = 0; i < 20; i++) {
-      // Alternate between male and female names
-      const isMale = studentIndex % 2 === 0
+      // For Boys class, use only male names. For Girls class, use only female names. For other classes, alternate.
+      let isMale
+      if (isBoysClass) {
+        isMale = true
+      } else if (isGirlsClass) {
+        isMale = false
+      } else {
+        isMale = studentIndex % 2 === 0
+      }
+      
       const firstNamePool = isMale ? maleFirstNames : femaleFirstNames
-      const firstName = firstNamePool[studentIndex % firstNamePool.length]
+      const nameIndex = isMale ? boyNameIndex : girlNameIndex
+      const firstName = firstNamePool[nameIndex % firstNamePool.length]
       const lastName = lastNames[studentIndex % lastNames.length]
+      
+      // Increment the appropriate name index
+      if (isMale) {
+        boyNameIndex++
+      } else {
+        girlNameIndex++
+      }
 
       const studentId = `demo-student-${studentIndex + 1}-${org.id}`
       const student = await prisma.student.upsert({
@@ -340,7 +360,20 @@ async function main() {
           classId: classItem.id
         }
       })
-      students.push(student)
+      
+      // Fetch student with StudentClass relation for easier querying
+      const studentWithClass = await prisma.student.findUnique({
+        where: { id: student.id },
+        include: {
+          StudentClass: {
+            include: {
+              Class: true
+            }
+          }
+        }
+      })
+      
+      students.push(studentWithClass || student)
       studentIndex++
     }
     console.log(`   ✅ Created 20 students for ${classItem.name}`)
@@ -363,11 +396,37 @@ async function main() {
   })
   console.log('   ✅ Updated parent@test.com with Gift Aid details (title, address, postcode)')
   
-  // Step 3: Create parent billing profiles and link 2 children to parent@test.com
-  console.log('\n👨‍👩‍👧 Linking parent@test.com to 2 children...')
-  const parentChildren = students.slice(0, 2)
+  // Step 3: Create parent billing profiles and link 2 children to parent@test.com (1 boy, 1 girl)
+  console.log('\n👨‍👩‍👧 Linking parent@test.com to 2 children (1 boy, 1 girl)...')
   
-  // Create parent billing profile (one per parent per org)
+  const boyClass = classes.find(c => c.name.toLowerCase().includes('boy'))
+  const girlClass = classes.find(c => c.name.toLowerCase().includes('girl'))
+  
+  // Query database directly to get first student from each class
+  const boyStudent = await prisma.student.findFirst({
+    where: {
+      orgId: org.id,
+      StudentClass: { some: { classId: boyClass?.id } },
+      isArchived: false
+    },
+    select: { id: true, firstName: true, lastName: true }
+  })
+  
+  const girlStudent = await prisma.student.findFirst({
+    where: {
+      orgId: org.id,
+      StudentClass: { some: { classId: girlClass?.id } },
+      isArchived: false
+    },
+    select: { id: true, firstName: true, lastName: true }
+  })
+  
+  if (!boyStudent || !girlStudent) {
+    console.log('   ⚠️  Error: Could not find both a boy and girl student')
+    return
+  }
+  
+  // Create parent billing profile
   await prisma.parentBillingProfile.upsert({
     where: {
       orgId_parentUserId: {
@@ -389,16 +448,61 @@ async function main() {
     }
   })
   
-  for (const child of parentChildren) {
-    // Update student to link to parent
+  // Unlink all existing children
+  await prisma.student.updateMany({
+    where: {
+      orgId: org.id,
+      primaryParentId: parentUser.id
+    },
+    data: { primaryParentId: null }
+  })
+  
+  // Link the 2 children and ensure each is only in ONE class
+  if (boyStudent) {
+    // Remove all class enrollments first
+    await prisma.studentClass.deleteMany({
+      where: { studentId: boyStudent.id }
+    })
+    // Re-enroll only in the boys class
+    if (boyClass) {
+      await prisma.studentClass.create({
+        data: {
+          id: `demo-student-class-boy-${boyStudent.id}`,
+          orgId: org.id,
+          studentId: boyStudent.id,
+          classId: boyClass.id
+        }
+      })
+    }
+    // Link to parent
     await prisma.student.update({
-      where: { id: child.id },
-      data: {
-        primaryParentId: parentUser.id
-      }
+      where: { id: boyStudent.id },
+      data: { primaryParentId: parentUser.id }
     })
   }
-  console.log(`   ✅ Linked parent@test.com to: ${parentChildren[0].firstName} ${parentChildren[0].lastName} and ${parentChildren[1].firstName} ${parentChildren[1].lastName}`)
+  
+  if (girlStudent && girlClass) {
+    // Remove all class enrollments first
+    await prisma.studentClass.deleteMany({
+      where: { studentId: girlStudent.id }
+    })
+    // Re-enroll only in the first girls class found
+    await prisma.studentClass.create({
+      data: {
+        id: `demo-student-class-girl-${girlStudent.id}`,
+        orgId: org.id,
+        studentId: girlStudent.id,
+        classId: girlClass.id
+      }
+    })
+    // Link to parent
+    await prisma.student.update({
+      where: { id: girlStudent.id },
+      data: { primaryParentId: parentUser.id }
+    })
+  }
+  
+  console.log(`   ✅ Linked parent@test.com to: ${boyStudent?.firstName} ${boyStudent?.lastName} (Boys) and ${girlStudent?.firstName} ${girlStudent?.lastName} (Girls)`)
 
   // Ensure parent has membership in the org
   const parentMembership = parentUser.UserOrgMembership.find(m => m.orgId === org.id)

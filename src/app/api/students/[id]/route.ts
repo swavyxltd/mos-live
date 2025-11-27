@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { AuditLogAction, AuditLogTargetType } from '@prisma/client'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
+import { transformStudentData } from '@/lib/student-data-transform'
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -36,46 +37,15 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: 'Student not found' }, { status: 404 })
     }
 
-    // Calculate age
-    const age = student.dob 
-      ? Math.floor((new Date().getTime() - new Date(student.dob).getTime()) / (1000 * 60 * 60 * 24 * 365.25))
-      : 0
-
-    // Get primary class (first one or default)
-    const primaryClass = student.StudentClass[0]?.Class || null
-    const teacherName = primaryClass?.User?.name || 'N/A'
-
-    // Transform student data
-    const transformedStudent = {
-      id: student.id,
-      firstName: student.firstName,
-      lastName: student.lastName,
-      dateOfBirth: student.dob ? student.dob.toISOString().split('T')[0] : '',
-      age,
-      grade: '', // Grade not in schema - using empty string
-      address: '', // Address not in schema - using empty string
-      class: primaryClass?.name || 'N/A',
-      teacher: teacherName,
-      parentName: student.User?.name || '',
-      parentEmail: student.User?.email || '',
-      parentPhone: student.User?.phone || '',
-      emergencyContact: '', // Emergency contact not in schema - using empty string
-      allergies: student.allergies || 'None',
-      medicalNotes: student.medicalNotes || '',
-      enrollmentDate: student.createdAt.toISOString(), // Using createdAt as enrollmentDate
-      status: 'ACTIVE', // Status not in schema - defaulting to ACTIVE
-      isArchived: student.isArchived,
-      archivedAt: student.archivedAt ? student.archivedAt.toISOString() : null,
-      createdAt: student.createdAt.toISOString(),
-      classes: student.StudentClass.map(sc => ({
-        id: sc.Class.id,
-        name: sc.Class.name
-      })),
+    // Transform student data using shared utility for consistency
+    const transformedStudent = transformStudentData(student)
+    
+    // Add attendance data if needed (can be calculated separately)
+    return NextResponse.json({
+      ...transformedStudent,
       attendanceRate: 0, // TODO: Calculate from attendance records
       lastAttendance: new Date().toISOString() // TODO: Get from attendance records
-    }
-
-    return NextResponse.json(transformedStudent)
+    })
   } catch (error) {
     logger.error('Error fetching student', error)
     return NextResponse.json({ error: 'Failed to fetch student' }, { status: 500 })

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ParentWeeklyAttendanceCards } from '@/components/parent-weekly-attendance-cards'
+import { SetOverdueBannerData } from '@/components/set-overdue-banner-data'
 import { formatDate, formatDateTime } from '@/lib/utils'
 import Link from 'next/link'
 import { 
@@ -31,7 +32,6 @@ export default async function ParentDashboardPage() {
   
   let students: any[] = []
   let announcements: any[] = []
-  let upcomingClasses: any[] = []
   let weeklyAttendance: any[] = []
   let upcomingEvents: any[] = []
   let paymentStatus: any = null
@@ -102,37 +102,18 @@ export default async function ParentDashboardPage() {
       return false
     })
 
-    // Get upcoming classes (next 7 days)
-    upcomingClasses = await prisma.class.findMany({
-        where: { 
-          orgId: org.id,
-          isArchived: false,
-          StudentClass: {
-            some: {
-              Student: {
-                primaryParentId: session.user.id,
-                isArchived: false
-              }
-            }
-          }
-        },
-        include: {
-          StudentClass: {
-            where: {
-              Student: {
-                primaryParentId: session.user.id
-              }
-            },
-            include: {
-              Student: true
-            }
-          }
-        }
-      })
 
-    // Get weekly attendance for parent's students
-    const oneWeekAgo = new Date()
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
+    // Get weekly attendance for parent's students (current week: Monday to Friday)
+    const today = new Date()
+    const currentDay = today.getDay()
+    const daysFromMonday = currentDay === 0 ? 6 : currentDay - 1 // Convert Sunday (0) to 6, others to 0-4
+    const weekStart = new Date(today)
+    weekStart.setDate(today.getDate() - daysFromMonday)
+    weekStart.setHours(0, 0, 0, 0)
+    
+    const weekEnd = new Date(weekStart)
+    weekEnd.setDate(weekStart.getDate() + 4) // Friday (5 days: Mon-Fri)
+    weekEnd.setHours(23, 59, 59, 999)
     
     weeklyAttendance = await prisma.attendance.findMany({
         where: {
@@ -142,7 +123,8 @@ export default async function ParentDashboardPage() {
             isArchived: false
           },
           date: {
-            gte: oneWeekAgo
+            gte: weekStart,
+            lte: weekEnd
           }
         },
         include: {
@@ -159,8 +141,7 @@ export default async function ParentDashboardPage() {
         }
       })
 
-    // Get payment status for parent's students
-    const today = new Date()
+    // Get payment status for parent's students (reuse today variable)
     const allInvoices = await prisma.invoice.findMany({
         where: {
           orgId: org.id,
@@ -189,12 +170,22 @@ export default async function ParentDashboardPage() {
         return days <= 0
       })
       
+      // Calculate overdue count and amount
+      const overdueInvoices = allInvoices.filter(inv => {
+        const days = Math.ceil((inv.dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+        return days <= 0
+      })
+      const overdueAmount = overdueInvoices.reduce((sum, inv) => sum + (inv.amountP || 0), 0) / 100
+      const overdueCount = overdueInvoices.length
+      
       paymentStatus = {
         status: hasOverdue ? 'overdue' : daysUntilDue <= 5 ? 'due' : 'up_to_date',
         amount: totalAmount,
         dueDate: nextInvoice.dueDate,
         daysUntilDue: daysUntilDue,
-        isOverdue: hasOverdue
+        isOverdue: hasOverdue,
+        overdueAmount: overdueAmount,
+        overdueCount: overdueCount
       }
     } else {
       paymentStatus = {
@@ -202,7 +193,9 @@ export default async function ParentDashboardPage() {
         amount: 0,
         dueDate: null,
         daysUntilDue: null,
-        isOverdue: false
+        isOverdue: false,
+        overdueAmount: 0,
+        overdueCount: 0
       }
     }
 
@@ -214,17 +207,45 @@ export default async function ParentDashboardPage() {
 
   // Calculate stats for parent's children
   const totalChildren = students.length
-  const totalClasses = students.reduce((acc, student) => acc + (student.StudentClass?.length || 0), 0)
+  // Count unique classes (not total enrollments)
+  const uniqueClassIds = new Set<string>()
+  students.forEach(student => {
+    student.StudentClass?.forEach((sc: any) => {
+      if (sc.Class?.id) {
+        uniqueClassIds.add(sc.Class.id)
+      }
+    })
+  })
+  const totalClasses = uniqueClassIds.size
   
   // Calculate overall attendance rate from weekly attendance data
-  const attendanceRate = weeklyAttendance.length > 0 
-    ? Math.round((weeklyAttendance.filter(a => a.status === 'PRESENT' || a.status === 'LATE').length / weeklyAttendance.length) * 100)
+  // Only count days that have occurred so far (today or earlier) AND have actual attendance records
+  const todayForStat = new Date()
+  todayForStat.setHours(0, 0, 0, 0)
+  const todayDateString = todayForStat.toISOString().split('T')[0] // YYYY-MM-DD format
+  
+  const daysSoFar = weeklyAttendance.filter(a => {
+    const attendanceDate = a.date ? new Date(a.date) : null
+    if (!attendanceDate) return false
+    const attendanceDateString = attendanceDate.toISOString().split('T')[0]
+    const hasOccurred = attendanceDateString <= todayDateString
+    const hasAttendanceRecord = a.status !== 'NOT_SCHEDULED'
+    return hasOccurred && hasAttendanceRecord
+  })
+  
+  const attendanceRate = daysSoFar.length > 0 
+    ? Math.round((daysSoFar.filter(a => a.status === 'PRESENT' || a.status === 'LATE').length / daysSoFar.length) * 100)
     : 0
     
   const upcomingEventsCount = upcomingEvents.filter(e => e.date >= new Date()).length
 
   return (
     <div className="space-y-4 sm:space-y-6">
+        <SetOverdueBannerData 
+          hasOverdue={paymentStatus?.isOverdue || false}
+          overdueAmount={paymentStatus?.overdueAmount || 0}
+          overdueCount={paymentStatus?.overdueCount || 0}
+        />
         <div>
           <h1 className="text-2xl font-bold text-[var(--foreground)]">Welcome back, {session.user.name?.split(' ')[0]}!</h1>
           <p className="mt-1 text-sm text-[var(--muted-foreground)]">
@@ -356,10 +377,8 @@ export default async function ParentDashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Recent Announcements and Upcoming Classes */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Recent Announcements */}
-          <Card className="hover:shadow-lg transition-shadow">
+        {/* Recent Announcements */}
+        <Card className="hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
               <div className="flex items-center gap-2">
                 <Bell className="h-5 w-5 text-[var(--muted-foreground)]" />
@@ -413,129 +432,6 @@ export default async function ParentDashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Upcoming Classes */}
-          <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-[var(--muted-foreground)]" />
-                <CardTitle>Upcoming Classes</CardTitle>
-              </div>
-              {upcomingClasses.length > 0 && (
-                <Link href="/parent/calendar">
-                  <Button variant="ghost" size="sm" className="text-xs">
-                    View Calendar
-                    <ArrowRight className="h-3 w-3 ml-1" />
-                  </Button>
-                </Link>
-              )}
-            </CardHeader>
-            <CardContent>
-              {upcomingClasses.length === 0 ? (
-                <div className="text-center py-8">
-                  <Calendar className="h-12 w-12 mx-auto mb-4 text-[var(--muted-foreground)] opacity-50" />
-                  <p className="text-sm text-[var(--muted-foreground)]">No upcoming classes</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {(() => {
-                    // Get next 7 days and find classes
-                    const next7Days = Array.from({ length: 7 }, (_, i) => {
-                      const date = new Date()
-                      date.setDate(date.getDate() + i)
-                      return date
-                    })
-
-                    const upcomingClassesList = next7Days
-                      .map(date => {
-                        const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][date.getDay()]
-                        
-                        return upcomingClasses
-                          .filter((cls: any) => {
-                            let schedule: any = {}
-                            if (cls.schedule) {
-                              try {
-                                schedule = typeof cls.schedule === 'string' 
-                                  ? JSON.parse(cls.schedule) 
-                                  : cls.schedule
-                              } catch (e) {
-                                schedule = {}
-                              }
-                            }
-                            const scheduleDays = schedule?.days || []
-                            const normalizedScheduleDays = scheduleDays.map((d: string) => d.toLowerCase())
-                            return normalizedScheduleDays.includes(dayOfWeek)
-                          })
-                          .map((cls: any) => ({
-                            ...cls,
-                            date,
-                            dayOfWeek
-                          }))
-                      })
-                      .flat()
-                      .slice(0, 3)
-
-                    return upcomingClassesList.map((cls: any, index: number) => {
-                      let schedule: any = {}
-                      if (cls.schedule) {
-                        try {
-                          schedule = typeof cls.schedule === 'string' 
-                            ? JSON.parse(cls.schedule) 
-                            : cls.schedule
-                        } catch (e) {
-                          schedule = {}
-                        }
-                      }
-                      const startTime = schedule?.startTime || 'TBD'
-                      const endTime = schedule?.endTime || 'TBD'
-                      const studentCount = cls.StudentClass?.length || 0
-                      
-                      return (
-                        <Link 
-                          key={`${cls.id}-${cls.date.getTime()}`}
-                          href="/parent/calendar"
-                          className="block group"
-                        >
-                          <div className="flex items-center gap-3 p-3 border border-[var(--border)] rounded-[var(--radius-md)] hover:border-[var(--primary)] hover:bg-[var(--accent)]/50 transition-all cursor-pointer">
-                            <div className="flex-shrink-0">
-                              <div className="w-10 h-10 bg-[var(--primary)]/10 rounded-full flex items-center justify-center group-hover:bg-[var(--primary)]/20 transition-colors">
-                                <Calendar className="h-5 w-5 text-[var(--primary)]" />
-                              </div>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-medium text-[var(--foreground)] group-hover:text-[var(--primary)] transition-colors">
-                                {cls.name}
-                              </h4>
-                              <div className="flex items-center gap-3 text-sm text-[var(--muted-foreground)] mt-1">
-                                <div className="flex items-center gap-1">
-                                  <Clock className="h-3 w-3" />
-                                  {startTime} - {endTime}
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <Users className="h-3 w-3" />
-                                  {studentCount} {studentCount === 1 ? 'child' : 'children'}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex-shrink-0 text-right">
-                              <p className="text-sm font-medium text-[var(--foreground)]">
-                                {formatDate(cls.date)}
-                              </p>
-                              <p className="text-xs text-[var(--muted-foreground)] capitalize">
-                                {cls.dayOfWeek}
-                              </p>
-                              <ChevronRight className="h-4 w-4 text-[var(--muted-foreground)] opacity-0 group-hover:opacity-100 transition-opacity mt-1 ml-auto" />
-                            </div>
-                          </div>
-                        </Link>
-                      )
-                    })
-                  })()}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Weekly Attendance */}
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
@@ -567,43 +463,110 @@ export default async function ParentDashboardPage() {
                 }>
               }>()
 
+              // Get current week (Monday to Friday)
+              const today = new Date()
+              const currentDay = today.getDay()
+              const daysFromMonday = currentDay === 0 ? 6 : currentDay - 1 // Convert Sunday (0) to 6, others to 0-4
+              const weekStart = new Date(today)
+              weekStart.setDate(today.getDate() - daysFromMonday)
+              weekStart.setHours(0, 0, 0, 0)
+
+              // Generate all weekdays (Monday to Friday)
+              const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
+              const weekDays: Array<{ day: string; date: Date }> = []
+              for (let i = 0; i < 5; i++) {
+                const date = new Date(weekStart)
+                date.setDate(weekStart.getDate() + i)
+                weekDays.push({
+                  day: dayNames[i],
+                  date: date
+                })
+              }
+
+              // Build attendance map by student and date
+              const attendanceByStudentAndDate = new Map<string, Map<string, any>>()
               weeklyAttendance.forEach((attendance: any) => {
                 const studentId = attendance.Student?.id || attendance.studentId
-                const studentName = attendance.Student ? `${attendance.Student.firstName} ${attendance.Student.lastName}` : 'Unknown'
-                const className = attendance.Class?.name || attendance.class?.name || 'Unknown'
-                const teacherName = attendance.Class?.User?.name || 'Unknown'
-
-                if (!childAttendanceMap.has(studentId)) {
-                  childAttendanceMap.set(studentId, {
-                    id: studentId,
-                    name: studentName,
-                    class: className,
-                    teacher: teacherName,
-                    overallAttendance: 0,
-                    weeklyAttendance: []
-                  })
+                const dateKey = new Date(attendance.date).toISOString().split('T')[0]
+                
+                if (!attendanceByStudentAndDate.has(studentId)) {
+                  attendanceByStudentAndDate.set(studentId, new Map())
                 }
+                attendanceByStudentAndDate.get(studentId)!.set(dateKey, attendance)
+              })
 
-                const childData = childAttendanceMap.get(studentId)!
-                const date = new Date(attendance.date)
-                const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-                const dayName = dayNames[date.getDay()]
+              // Build child attendance data with all weekdays
+              students.forEach((student) => {
+                const studentId = student.id
+                const studentName = `${student.firstName} ${student.lastName}`
+                const primaryClass = student.StudentClass?.[0]?.Class
+                const className = primaryClass?.name || 'Unknown'
+                const teacherName = primaryClass?.User?.name || 'Unknown'
 
-                childData.weeklyAttendance.push({
-                  day: dayName,
-                  date: date.toISOString().split('T')[0],
-                  status: attendance.status as 'PRESENT' | 'ABSENT' | 'LATE' | 'NOT_SCHEDULED',
-                  time: attendance.status === 'PRESENT' || attendance.status === 'LATE' ? '4:00 PM' : undefined
+                const weeklyData: Array<{
+                  day: string
+                  date: string
+                  status: 'PRESENT' | 'ABSENT' | 'LATE' | 'NOT_SCHEDULED'
+                  time?: string
+                }> = []
+
+                weekDays.forEach(({ day, date }) => {
+                  const dateKey = date.toISOString().split('T')[0]
+                  const attendance = attendanceByStudentAndDate.get(studentId)?.get(dateKey)
+                  
+                  if (attendance) {
+                    weeklyData.push({
+                      day: day,
+                      date: dateKey,
+                      status: attendance.status as 'PRESENT' | 'ABSENT' | 'LATE' | 'NOT_SCHEDULED',
+                      time: attendance.status === 'PRESENT' || attendance.status === 'LATE' ? '4:00 PM' : undefined
+                    })
+                  } else {
+                    // No attendance record for this day - show as NOT_SCHEDULED
+                    weeklyData.push({
+                      day: day,
+                      date: dateKey,
+                      status: 'NOT_SCHEDULED',
+                      time: undefined
+                    })
+                  }
+                })
+
+                childAttendanceMap.set(studentId, {
+                  id: studentId,
+                  name: studentName,
+                  class: className,
+                  teacher: teacherName,
+                  overallAttendance: 0,
+                  weeklyAttendance: weeklyData
                 })
               })
 
-              // Calculate overall attendance for each child
+              // Calculate overall attendance for each child (only count days that have occurred so far)
+              const todayForCalculation = new Date()
+              const todayDateString = todayForCalculation.toISOString().split('T')[0] // YYYY-MM-DD format
+              
               Array.from(childAttendanceMap.values()).forEach(child => {
                 if (child.weeklyAttendance.length > 0) {
-                  const presentDays = child.weeklyAttendance.filter(day => 
+                  // Filter to only days that have occurred (today or earlier) AND have actual attendance records
+                  // Exclude NOT_SCHEDULED days from the calculation
+                  const daysSoFar = child.weeklyAttendance.filter(day => {
+                    const hasOccurred = day.date <= todayDateString
+                    const hasAttendanceRecord = day.status !== 'NOT_SCHEDULED'
+                    return hasOccurred && hasAttendanceRecord
+                  })
+                  
+                  // Count present/late days that have occurred
+                  const presentDays = daysSoFar.filter(day => 
                     day.status === 'PRESENT' || day.status === 'LATE'
                   ).length
-                  child.overallAttendance = Math.round((presentDays / child.weeklyAttendance.length) * 100)
+                  
+                  // Count total days that have occurred with attendance records
+                  const totalDaysSoFar = daysSoFar.length
+                  
+                  child.overallAttendance = totalDaysSoFar > 0 
+                    ? Math.round((presentDays / totalDaysSoFar) * 100)
+                    : 0
                 }
               })
 

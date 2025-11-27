@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -28,6 +29,14 @@ interface ParentWeeklyAttendanceCardsProps {
 }
 
 export function ParentWeeklyAttendanceCards({ attendanceData }: ParentWeeklyAttendanceCardsProps) {
+  const [mounted, setMounted] = useState(false)
+  const [currentDate, setCurrentDate] = useState<Date | null>(null)
+
+  useEffect(() => {
+    setMounted(true)
+    setCurrentDate(new Date())
+  }, [])
+
   const getStatusDot = (status: string, day: string, time?: string) => {
     const baseClasses = "w-5 h-5 rounded-full transition-all duration-200 hover:scale-110 cursor-pointer shadow-sm"
     const tooltipText = status === 'LATE' && time 
@@ -99,8 +108,22 @@ export function ParentWeeklyAttendanceCards({ attendanceData }: ParentWeeklyAtte
     const totalDays = child.weeklyAttendance.length
     if (totalDays === 0) return 0
     
-    const presentDays = child.weeklyAttendance.filter(day => day.status === 'PRESENT' || day.status === 'LATE').length
-    return Math.round((presentDays / totalDays) * 100)
+    // Only count days that have occurred so far (today or earlier) AND have actual attendance records
+    // Exclude NOT_SCHEDULED days from the calculation
+    if (!currentDate) return 0
+    
+    const todayDateString = currentDate.toISOString().split('T')[0] // YYYY-MM-DD format
+    
+    const daysSoFar = child.weeklyAttendance.filter(day => {
+      const hasOccurred = day.date <= todayDateString
+      const hasAttendanceRecord = day.status !== 'NOT_SCHEDULED'
+      return hasOccurred && hasAttendanceRecord
+    })
+    
+    if (daysSoFar.length === 0) return 0
+    
+    const presentDays = daysSoFar.filter(day => day.status === 'PRESENT' || day.status === 'LATE').length
+    return Math.round((presentDays / daysSoFar.length) * 100)
   }
 
   if (attendanceData.length === 0) {
@@ -149,7 +172,7 @@ export function ParentWeeklyAttendanceCards({ attendanceData }: ParentWeeklyAtte
                     <div className="text-3xl font-bold text-[var(--foreground)]">
                       {weeklyAttendance}%
                     </div>
-                    <div className="text-xs text-[var(--muted-foreground)] mt-0.5">This Week</div>
+                    <div className="text-xs text-[var(--muted-foreground)] mt-0.5">So Far This Week</div>
                   </div>
                   
                   <div className="flex items-center gap-2 px-3 py-1.5 rounded-[var(--radius-md)] bg-[var(--accent)]">
@@ -168,7 +191,7 @@ export function ParentWeeklyAttendanceCards({ attendanceData }: ParentWeeklyAtte
                   <h3 className="text-sm font-semibold text-[var(--foreground)] uppercase tracking-wide">Weekly Breakdown</h3>
                   <Badge variant="outline" className="flex items-center gap-1.5 text-xs">
                     <Calendar className="h-3 w-3" />
-                    {formatDateRange(new Date())}
+                    {mounted && currentDate ? formatDateRange(currentDate) : 'Loading...'}
                   </Badge>
                 </div>
                 

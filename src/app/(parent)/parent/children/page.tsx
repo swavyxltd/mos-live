@@ -40,8 +40,13 @@ export default async function ParentChildrenPage() {
   })
 
   // Get attendance data for the last 30 days
+  // Always exclude future dates
+  const today = new Date()
+  today.setHours(23, 59, 59, 999)
+  
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  thirtyDaysAgo.setHours(0, 0, 0, 0)
   
   const attendanceRecords = await prisma.attendance.findMany({
     where: {
@@ -51,7 +56,8 @@ export default async function ParentChildrenPage() {
         isArchived: false
       },
       date: {
-        gte: thirtyDaysAgo
+        gte: thirtyDaysAgo,
+        lte: today // Exclude future dates
       }
     },
     include: {

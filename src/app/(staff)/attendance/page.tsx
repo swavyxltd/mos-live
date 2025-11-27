@@ -15,7 +15,11 @@ export default async function AttendancePage() {
   const { prisma } = await import('@/lib/prisma')
   
   // Get attendance records from database - include current week and past 4 weeks
+  // Always exclude future dates
   const now = new Date()
+  const today = new Date(now)
+  today.setHours(23, 59, 59, 999)
+  
   const fourWeeksAgo = new Date(now)
   fourWeeksAgo.setDate(now.getDate() - 28) // 4 weeks ago
   fourWeeksAgo.setHours(0, 0, 0, 0)
@@ -51,7 +55,8 @@ export default async function AttendancePage() {
     where: {
       orgId: org.id,
       date: {
-        gte: fourWeeksAgo
+        gte: fourWeeksAgo,
+        lte: today // Exclude future dates
       }
     },
     include: {

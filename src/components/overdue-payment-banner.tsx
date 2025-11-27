@@ -17,23 +17,56 @@ export function OverduePaymentBanner() {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
 
   useEffect(() => {
-    // Get overdue data from sessionStorage (set during initial load)
-    const hasOverdue = sessionStorage.getItem('hasOverduePayments')
-    if (hasOverdue === 'true') {
-      const overdueAmount = parseFloat(sessionStorage.getItem('overdueAmount') || '0')
-      const overdueCount = parseInt(sessionStorage.getItem('overdueCount') || '0')
-      setOverdueData({
-        hasOverdue: true,
-        overdueAmount,
-        overdueCount
-      })
-    } else if (hasOverdue === 'false') {
-      setOverdueData({
-        hasOverdue: false,
-        overdueAmount: 0,
-        overdueCount: 0
-      })
+    // Fetch overdue data directly from API to get accurate values
+    const fetchOverdueData = async () => {
+      try {
+        const response = await fetch('/api/payments')
+        if (!response.ok) return
+        
+        const invoices = await response.json()
+        if (!Array.isArray(invoices)) return
+        
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        
+        // Calculate overdue invoices (same logic as dashboard)
+        const overdueInvoices = invoices.filter((invoice: any) => {
+          if (invoice.status === 'PAID') return false
+          const dueDate = invoice.dueDate ? new Date(invoice.dueDate) : null
+          if (!dueDate) return false
+          const days = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+          return days <= 0
+        })
+        
+        const overdueAmount = overdueInvoices.reduce((sum: number, inv: any) => {
+          // Amount is already in pounds from the API
+          return sum + (inv.amount || 0)
+        }, 0)
+        
+        const overdueCount = overdueInvoices.length
+        
+        if (overdueCount > 0) {
+          setOverdueData({
+            hasOverdue: true,
+            overdueAmount,
+            overdueCount
+          })
+        } else {
+          setOverdueData({
+            hasOverdue: false,
+            overdueAmount: 0,
+            overdueCount: 0
+          })
+        }
+      } catch (error) {
+        console.error('Error fetching overdue data:', error)
+      }
     }
+    
+    fetchOverdueData()
+    // Re-fetch periodically to catch updates
+    const interval = setInterval(fetchOverdueData, 5000)
+    return () => clearInterval(interval)
   }, [])
 
   const handlePayNow = () => {
@@ -60,7 +93,7 @@ export function OverduePaymentBanner() {
   return (
     <>
       <Card className="mb-6 border-red-200 bg-red-50">
-        <CardContent className="p-4">
+        <CardContent className="p-4 !pt-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <AlertTriangle className="h-6 w-6 text-red-600" />
@@ -69,7 +102,7 @@ export function OverduePaymentBanner() {
                   Payment Overdue
                 </h3>
                 <p className="text-sm text-red-700">
-                  You have {overdueData.overdueCount} overdue payment{overdueData.overdueCount !== 1 ? 's' : ''} totaling £{overdueData.overdueAmount}
+                  You have {overdueData.overdueCount} overdue payment{overdueData.overdueCount !== 1 ? 's' : ''} totaling £{overdueData.overdueAmount.toFixed(2)}
                 </p>
               </div>
             </div>

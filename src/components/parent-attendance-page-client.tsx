@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -8,11 +8,8 @@ import {
   ChevronLeft, 
   ChevronRight, 
   Calendar,
-  CheckCircle,
-  XCircle,
-  Clock,
   Users,
-  Minus
+  User
 } from 'lucide-react'
 import { getAttendanceRating } from '@/lib/attendance-ratings'
 
@@ -57,7 +54,6 @@ type ViewType = 'week' | 'month' | 'year'
 export function ParentAttendancePageClient({ attendanceData }: ParentAttendancePageClientProps) {
   const [viewType, setViewType] = useState<ViewType>('week')
   const [currentDate, setCurrentDate] = useState(new Date())
-  const [selectedChild, setSelectedChild] = useState<ChildAttendance | null>(null)
 
   const getWeekStart = (date: Date) => {
     const start = new Date(date)
@@ -75,9 +71,19 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
     return end
   }
 
+  const isCurrentWeek = (date: Date) => {
+    const today = new Date()
+    const currentWeekStart = getWeekStart(today)
+    const selectedWeekStart = getWeekStart(date)
+    return currentWeekStart.getTime() === selectedWeekStart.getTime()
+  }
+
   const formatDateRange = (date: Date, view: ViewType) => {
     switch (view) {
       case 'week':
+        if (isCurrentWeek(date)) {
+          return 'This Week So Far'
+        }
         const weekStart = getWeekStart(date)
         const weekEnd = getWeekEnd(date)
         return `${weekStart.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })} - ${weekEnd.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}`
@@ -147,21 +153,8 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
     setCurrentDate(new Date())
   }
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'PRESENT':
-        return <CheckCircle className="h-4 w-4 text-green-600" />
-      case 'ABSENT':
-        return <XCircle className="h-4 w-4 text-red-600" />
-      case 'LATE':
-        return <Clock className="h-4 w-4 text-yellow-600" />
-      default:
-        return <Minus className="h-4 w-4 text-gray-400" />
-    }
-  }
-
   const getStatusDot = (status: string, day: string, time?: string) => {
-    const baseClasses = "w-4 h-4 rounded-full transition-all duration-200 hover:scale-110 cursor-pointer"
+    const baseClasses = "w-5 h-5 rounded-full transition-all duration-200 hover:scale-110 cursor-pointer shadow-sm"
     const tooltipText = status === 'LATE' && time 
       ? `${day}: ${status} (arrived at ${time})`
       : `${day}: ${status}`
@@ -170,56 +163,61 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
       case 'PRESENT':
         return (
           <div 
-            className={`${baseClasses} bg-green-500 hover:bg-green-600`}
+            className={`${baseClasses} bg-green-500 hover:bg-green-600 shadow-green-500/30`}
             title={tooltipText}
           />
         )
       case 'ABSENT':
         return (
           <div 
-            className={`${baseClasses} bg-red-500 hover:bg-red-600`}
+            className={`${baseClasses} bg-red-500 hover:bg-red-600 shadow-red-500/30`}
             title={tooltipText}
           />
         )
       case 'LATE':
         return (
           <div 
-            className={`${baseClasses} bg-yellow-500 hover:bg-yellow-600`}
+            className={`${baseClasses} bg-yellow-500 hover:bg-yellow-600 shadow-yellow-500/30`}
             title={tooltipText}
           />
         )
       case 'NOT_SCHEDULED':
-        // Check if this is a future day
-        const dayDate = new Date(day.split(' ')[1] || '') // Try to parse date from tooltip
-        const today = new Date()
-        today.setHours(0, 0, 0, 0)
-        const isFuture = dayDate && dayDate > today
-        
         return (
           <div 
-            className={`${baseClasses} ${isFuture ? 'bg-blue-200 hover:bg-blue-300' : 'bg-gray-300 hover:bg-gray-400'}`}
-            title={isFuture ? `${day}: Upcoming` : `${day}: Not scheduled`}
+            className={`${baseClasses} bg-gray-300 hover:bg-gray-400`}
+            title={tooltipText}
           />
         )
       default:
         return (
           <div 
             className={`${baseClasses} bg-gray-300 hover:bg-gray-400`}
-            title={`${day}: Unknown status`}
+            title={tooltipText}
           />
         )
     }
   }
 
-
   const calculatePeriodAttendance = (child: ChildAttendance, view: ViewType) => {
     switch (view) {
       case 'week':
-        const weekTotal = child.weeklyAttendance.length
-        const weekPresent = child.weeklyAttendance.filter(day => 
+        // Only count days that have occurred so far (today or earlier) AND have actual attendance records
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const todayDateString = today.toISOString().split('T')[0]
+        
+        const daysSoFar = child.weeklyAttendance.filter(day => {
+          const hasOccurred = day.date <= todayDateString
+          const hasAttendanceRecord = day.status !== 'NOT_SCHEDULED'
+          return hasOccurred && hasAttendanceRecord
+        })
+        
+        if (daysSoFar.length === 0) return 0
+        
+        const weekPresent = daysSoFar.filter(day => 
           day.status === 'PRESENT' || day.status === 'LATE'
         ).length
-        return weekTotal > 0 ? Math.round((weekPresent / weekTotal) * 100) : 0
+        return Math.round((weekPresent / daysSoFar.length) * 100)
 
       case 'month':
         const monthTotal = child.monthlyAttendance.reduce((sum, week) => 
@@ -245,89 +243,34 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
   }
 
   const renderWeekView = (child: ChildAttendance) => (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">This Week</h3>
-        <Badge variant="outline" className="flex items-center gap-1">
+    <div className="space-y-3">
+      <div className="flex items-center justify-between pb-2 border-b border-[var(--border)]">
+        <h3 className="text-sm font-semibold text-[var(--foreground)] uppercase tracking-wide">Weekly Breakdown</h3>
+        <Badge variant="outline" className="flex items-center gap-1.5 text-xs">
           <Calendar className="h-3 w-3" />
           {formatDateRange(currentDate, 'week')}
         </Badge>
       </div>
       
       <div className="grid grid-cols-5 gap-2">
-        {child.weeklyAttendance.map((day, index) => {
-          const dayDate = new Date(day.date)
-          const today = new Date()
-          today.setHours(0, 0, 0, 0)
-          const isFuture = dayDate > today
-          const isPast = dayDate < today
-          
-          return (
-            <div key={index} className="flex flex-col items-center gap-2 p-3 bg-gray-50 rounded-lg">
-              <div className="text-sm font-medium text-gray-700">{day.day}</div>
+        {child.weeklyAttendance.map((day, index) => (
+          <div 
+            key={index} 
+            className="flex flex-col items-center gap-2 p-3 bg-[var(--accent)]/30 rounded-[var(--radius-md)] border border-[var(--border)] hover:bg-[var(--accent)]/50 hover:border-[var(--primary)]/30 transition-all group"
+          >
+            <div className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wide">
+              {day.day}
+            </div>
+            <div className="flex flex-col items-center gap-1.5">
               {getStatusDot(day.status, day.day, day.time)}
-              <div className="text-sm text-gray-500 text-center">
+              <div className="text-xs text-[var(--muted-foreground)] text-center font-medium">
                 {day.status === 'PRESENT' || day.status === 'LATE' 
                   ? day.time 
-                  : day.status === 'NOT_SCHEDULED' && isFuture
-                  ? 'Upcoming'
+                  : day.status === 'ABSENT' 
+                  ? 'Absent' 
+                  : day.status === 'NOT_SCHEDULED'
+                  ? 'N/A'
                   : day.status}
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-
-  const renderMonthView = (child: ChildAttendance) => (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">This Month</h3>
-        <Badge variant="outline" className="flex items-center gap-1">
-          <Calendar className="h-3 w-3" />
-          {formatDateRange(currentDate, 'month')}
-        </Badge>
-      </div>
-      
-      <div className="space-y-4">
-        {child.monthlyAttendance.map((week, index) => (
-          <div key={index} className="p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center justify-between mb-3">
-              <div className="text-sm font-medium text-gray-700">{week.week}</div>
-              <div className="text-sm text-gray-500">
-                {week.present + week.absent + week.late} days
-              </div>
-            </div>
-            
-            {/* Week dots representation */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600 min-w-0">Days:</span>
-              <div className="flex gap-1">
-                {/* Present dots */}
-                {Array.from({ length: week.present }).map((_, i) => (
-                  <div 
-                    key={`present-${i}`}
-                    className="w-3 h-3 rounded-full bg-green-500"
-                    title={`Present - Day ${i + 1}`}
-                  />
-                ))}
-                {/* Late dots */}
-                {Array.from({ length: week.late }).map((_, i) => (
-                  <div 
-                    key={`late-${i}`}
-                    className="w-3 h-3 rounded-full bg-yellow-500"
-                    title={`Late - Day ${week.present + i + 1}`}
-                  />
-                ))}
-                {/* Absent dots */}
-                {Array.from({ length: week.absent }).map((_, i) => (
-                  <div 
-                    key={`absent-${i}`}
-                    className="w-3 h-3 rounded-full bg-red-500"
-                    title={`Absent - Day ${week.present + week.late + i + 1}`}
-                  />
-                ))}
               </div>
             </div>
           </div>
@@ -336,37 +279,124 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
     </div>
   )
 
+  const renderMonthView = (child: ChildAttendance) => (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between pb-2 border-b border-[var(--border)]">
+        <h3 className="text-sm font-semibold text-[var(--foreground)] uppercase tracking-wide">Monthly Breakdown</h3>
+        <Badge variant="outline" className="flex items-center gap-1.5 text-xs">
+          <Calendar className="h-3 w-3" />
+          {formatDateRange(currentDate, 'month')}
+        </Badge>
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        {child.monthlyAttendance.map((week, index) => {
+          const totalDays = week.present + week.absent + week.late
+          const weekPercentage = totalDays > 0 
+            ? Math.round(((week.present + week.late) / totalDays) * 100) 
+            : 0
+          
+          return (
+            <div key={index} className="p-3 bg-[var(--accent)]/30 rounded-[var(--radius-md)] border border-[var(--border)] hover:bg-[var(--accent)]/50 transition-all">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-sm font-semibold text-[var(--foreground)]">{week.week}</div>
+                <div className="flex items-center gap-2">
+                  <div className="text-xs text-[var(--muted-foreground)]">
+                    {totalDays} days
+                  </div>
+                  <div className="text-sm font-bold text-[var(--foreground)]">
+                    {weekPercentage}%
+                  </div>
+                </div>
+              </div>
+              
+              {/* Week dots and stats combined */}
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 flex-1">
+                  <div className="flex gap-1 flex-wrap">
+                    {/* Present dots */}
+                    {Array.from({ length: week.present }).map((_, i) => (
+                      <div 
+                        key={`present-${i}`}
+                        className="w-3.5 h-3.5 rounded-full bg-green-500 hover:bg-green-600 transition-colors shadow-sm"
+                        title={`Present - Day ${i + 1}`}
+                      />
+                    ))}
+                    {/* Late dots */}
+                    {Array.from({ length: week.late }).map((_, i) => (
+                      <div 
+                        key={`late-${i}`}
+                        className="w-3.5 h-3.5 rounded-full bg-yellow-500 hover:bg-yellow-600 transition-colors shadow-sm"
+                        title={`Late - Day ${week.present + i + 1}`}
+                      />
+                    ))}
+                    {/* Absent dots */}
+                    {Array.from({ length: week.absent }).map((_, i) => (
+                      <div 
+                        key={`absent-${i}`}
+                        className="w-3.5 h-3.5 rounded-full bg-red-500 hover:bg-red-600 transition-colors shadow-sm"
+                        title={`Absent - Day ${week.present + week.late + i + 1}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Summary stats - compact */}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                    <span className="text-xs text-[var(--muted-foreground)]">{week.present}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                    <span className="text-xs text-[var(--muted-foreground)]">{week.late}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                    <span className="text-xs text-[var(--muted-foreground)]">{week.absent}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+
   const renderYearView = (child: ChildAttendance) => (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">This Year</h3>
-        <Badge variant="outline" className="flex items-center gap-1">
+    <div className="space-y-3">
+      <div className="flex items-center justify-between pb-2 border-b border-[var(--border)]">
+        <h3 className="text-sm font-semibold text-[var(--foreground)] uppercase tracking-wide">Yearly Breakdown</h3>
+        <Badge variant="outline" className="flex items-center gap-1.5 text-xs">
           <Calendar className="h-3 w-3" />
           {formatDateRange(currentDate, 'year')}
         </Badge>
       </div>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
         {child.yearlyAttendance.map((month, index) => {
           const totalDays = month.present + month.absent + month.late
-          const attendancePercentage = Math.round(((month.present + month.late) / totalDays) * 100)
+          const attendancePercentage = totalDays > 0
+            ? Math.round(((month.present + month.late) / totalDays) * 100)
+            : 0
           
           return (
-            <div key={index} className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+            <div key={index} className="p-3 bg-[var(--accent)]/30 rounded-[var(--radius-md)] border border-[var(--border)] hover:bg-[var(--accent)]/50 hover:border-[var(--primary)]/30 transition-all">
               {/* Month header */}
-              <div className="flex items-center justify-between mb-3">
-                <div className="text-base font-semibold text-gray-900">{month.month}</div>
-                <div className="text-sm font-medium text-gray-700">{attendancePercentage}%</div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-sm font-semibold text-[var(--foreground)]">{month.month}</div>
+                <div className="text-sm font-bold text-[var(--foreground)]">{attendancePercentage}%</div>
               </div>
               
               {/* Attendance dots grid */}
-              <div className="mb-3">
-                <div className="grid grid-cols-7 gap-1 mb-2">
+              <div className="mb-2">
+                <div className="flex gap-0.5 flex-wrap">
                   {/* Present dots */}
                   {Array.from({ length: month.present }).map((_, i) => (
                     <div 
                       key={`present-${i}`}
-                      className="w-3 h-3 rounded-full bg-green-500 hover:bg-green-600 transition-colors"
+                      className="w-2.5 h-2.5 rounded-full bg-green-500 hover:bg-green-600 transition-colors shadow-sm"
                       title={`Present - Day ${i + 1}`}
                     />
                   ))}
@@ -374,7 +404,7 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
                   {Array.from({ length: month.late }).map((_, i) => (
                     <div 
                       key={`late-${i}`}
-                      className="w-3 h-3 rounded-full bg-yellow-500 hover:bg-yellow-600 transition-colors"
+                      className="w-2.5 h-2.5 rounded-full bg-yellow-500 hover:bg-yellow-600 transition-colors shadow-sm"
                       title={`Late - Day ${month.present + i + 1}`}
                     />
                   ))}
@@ -382,7 +412,7 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
                   {Array.from({ length: month.absent }).map((_, i) => (
                     <div 
                       key={`absent-${i}`}
-                      className="w-3 h-3 rounded-full bg-red-500 hover:bg-red-600 transition-colors"
+                      className="w-2.5 h-2.5 rounded-full bg-red-500 hover:bg-red-600 transition-colors shadow-sm"
                       title={`Absent - Day ${month.present + month.late + i + 1}`}
                     />
                   ))}
@@ -390,24 +420,22 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
               </div>
               
               {/* Summary stats */}
-              <div className="space-y-1">
-                <div className="flex items-center justify-between text-sm text-gray-600">
-                  <span>Total: {totalDays} days</span>
+              <div className="pt-2 border-t border-[var(--border)]">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs text-[var(--muted-foreground)]">{totalDays} days</span>
                 </div>
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                      <span className="text-green-700">{month.present}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
-                      <span className="text-yellow-700">{month.late}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                      <span className="text-red-700">{month.absent}</span>
-                    </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-0.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                    <span className="text-xs text-[var(--muted-foreground)]">{month.present}</span>
+                  </div>
+                  <div className="flex items-center gap-0.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-yellow-500"></div>
+                    <span className="text-xs text-[var(--muted-foreground)]">{month.late}</span>
+                  </div>
+                  <div className="flex items-center gap-0.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
+                    <span className="text-xs text-[var(--muted-foreground)]">{month.absent}</span>
                   </div>
                 </div>
               </div>
@@ -423,21 +451,21 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Attendance</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-xl sm:text-2xl font-bold text-[var(--foreground)]">Attendance</h1>
+          <p className="mt-1 text-sm text-[var(--muted-foreground)]">
             Track your children's attendance history.
           </p>
         </div>
       </div>
 
       {/* View Toggle and Navigation */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <Card className="hover:shadow-lg transition-shadow border-[var(--border)]">
+        <CardContent className="p-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             {/* View Type Toggle */}
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-700">View:</span>
-              <div className="flex bg-gray-100 rounded-lg p-1">
+              <span className="text-sm font-medium text-[var(--foreground)]">View:</span>
+              <div className="flex bg-[var(--accent)] rounded-lg p-1">
                 {(['week', 'month', 'year'] as ViewType[]).map((view) => (
                   <Button
                     key={view}
@@ -465,10 +493,10 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
               </Button>
               
               <div className="text-center min-w-0 flex-1">
-                <div className="text-sm font-medium text-gray-900">
+                <div className="text-sm font-medium text-[var(--foreground)]">
                   {formatDateRange(currentDate, viewType)}
                 </div>
-                <div className="text-sm text-gray-500 capitalize">{viewType} View</div>
+                <div className="text-xs text-[var(--muted-foreground)] capitalize">{viewType} View</div>
               </div>
               
               <Button
@@ -505,27 +533,34 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
           const TrendIcon = rating.icon
           
           return (
-            <Card key={child.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div>
-                    <CardTitle className="text-lg font-semibold text-gray-900">
-                      {child.name}
-                    </CardTitle>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {child.class} • {child.teacher}
-                    </p>
+            <Card key={child.id} className="hover:shadow-lg transition-all border-[var(--border)]">
+            <CardHeader className="pb-3">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0">
+                      <div className="h-10 w-10 rounded-full bg-[var(--primary)]/10 flex items-center justify-center">
+                        <User className="h-5 w-5 text-[var(--primary)]" />
+                      </div>
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg font-semibold text-[var(--foreground)]">
+                        {child.name}
+                      </CardTitle>
+                      <p className="text-sm text-[var(--muted-foreground)] mt-1">
+                        {child.class} • {child.teacher}
+                      </p>
+                    </div>
                   </div>
                   
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-4">
                     <div className="text-right">
-                      <div className="text-2xl font-bold text-gray-900">
+                      <div className="text-3xl font-bold text-[var(--foreground)]">
                         {periodAttendance}%
                       </div>
-                      <div className="text-sm text-gray-500 capitalize">{viewType} View</div>
+                      <div className="text-xs text-[var(--muted-foreground)] mt-0.5 capitalize">{viewType} View</div>
                     </div>
                     
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-[var(--radius-md)] bg-[var(--accent)]">
                       <TrendIcon className={`h-4 w-4 ${rating.color}`} />
                       <span className={`text-sm font-medium ${rating.color}`}>
                         {rating.text}
@@ -546,11 +581,11 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
       </div>
 
       {attendanceData.length === 0 && (
-        <Card>
+        <Card className="border-[var(--border)]">
           <CardContent className="p-8 text-center">
-            <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Children Found</h3>
-            <p className="text-gray-500">
+            <Users className="h-12 w-12 text-[var(--muted-foreground)] mx-auto mb-4 opacity-50" />
+            <h3 className="text-lg font-medium text-[var(--foreground)] mb-2">No Children Found</h3>
+            <p className="text-[var(--muted-foreground)]">
               No children are registered under your account. Please contact your madrasah administrator.
             </p>
           </CardContent>

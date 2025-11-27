@@ -164,7 +164,12 @@ export function StudentDetailModal({
             : false // If no schedule info, don't show any days
           
           // Only add scheduled days to the list
-          if (isScheduled) {
+          // Also exclude future dates - only show days that have occurred
+          const today = new Date()
+          today.setHours(0, 0, 0, 0)
+          const isFuture = currentDate > today
+          
+          if (isScheduled && !isFuture) {
             const dayAttendance = attendanceData.find((a: any) => {
               const aDate = new Date(a.date)
               return aDate.toDateString() === currentDate.toDateString()
@@ -175,6 +180,14 @@ export function StudentDetailModal({
               date: currentDate.toISOString().split('T')[0],
               status: dayAttendance?.status || 'ABSENT',
               time: dayAttendance?.time || undefined
+            })
+          } else if (isScheduled && isFuture) {
+            // Future scheduled days should show as NOT_SCHEDULED
+            attendanceDays.push({
+              day: dayName,
+              date: currentDate.toISOString().split('T')[0],
+              status: 'NOT_SCHEDULED',
+              time: undefined
             })
           }
           

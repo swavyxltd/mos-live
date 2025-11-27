@@ -5,6 +5,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { getActiveOrg } from '@/lib/org'
+import { transformStudentData } from '@/lib/student-data-transform'
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -46,40 +47,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
-    // Calculate age
-    const age = student.dob 
-      ? Math.floor((new Date().getTime() - new Date(student.dob).getTime()) / (1000 * 60 * 60 * 24 * 365.25))
-      : 0
-
-    // Get primary class (first one or default)
-    const primaryClass = student.StudentClass[0]?.Class || null
-    const teacherName = primaryClass?.User?.name || 'N/A'
-
-    // Transform student data
-    const transformedStudent = {
-      id: student.id,
-      firstName: student.firstName,
-      lastName: student.lastName,
-      dateOfBirth: student.dob ? student.dob.toISOString().split('T')[0] : '',
-      age,
-      grade: student.grade || '',
-      address: student.address || '',
-      class: primaryClass?.name || 'N/A',
-      teacher: teacherName,
-      parentName: student.User?.name || '',
-      parentEmail: student.User?.email || '',
-      parentPhone: student.User?.phone || '',
-      emergencyContact: student.emergencyContact || '',
-      allergies: student.allergies || 'None',
-      medicalNotes: student.medicalNotes || '',
-      enrollmentDate: student.createdAt.toISOString(),
-      status: 'ACTIVE',
-      isArchived: student.isArchived,
-      classes: student.StudentClass.map(sc => ({
-        id: sc.Class.id,
-        name: sc.Class.name
-      }))
-    }
+    // Transform student data using shared utility for consistency
+    const transformedStudent = transformStudentData(student)
 
     return NextResponse.json(transformedStudent)
   } catch (error) {
@@ -155,37 +124,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       }
     })
 
-    // Calculate age
-    const age = updatedStudent.dob 
-      ? Math.floor((new Date().getTime() - new Date(updatedStudent.dob).getTime()) / (1000 * 60 * 60 * 24 * 365.25))
-      : 0
-
-    // Get primary class
-    const primaryClass = updatedStudent.StudentClass[0]?.Class || null
-    const teacherName = primaryClass?.User?.name || 'N/A'
-
-    // Transform response to match frontend expectations
-    const transformedStudent = {
-      id: updatedStudent.id,
-      firstName: updatedStudent.firstName,
-      lastName: updatedStudent.lastName,
-      dateOfBirth: updatedStudent.dob ? updatedStudent.dob.toISOString().split('T')[0] : null,
-      age,
-      grade: updatedStudent.grade || '',
-      address: updatedStudent.address || '',
-      class: primaryClass?.name || 'N/A',
-      teacher: teacherName,
-      parentName: updatedStudent.User?.name || null,
-      parentEmail: updatedStudent.User?.email || null,
-      parentPhone: updatedStudent.User?.phone || null,
-      emergencyContact: updatedStudent.emergencyContact || '',
-      allergies: updatedStudent.allergies || null,
-      medicalNotes: updatedStudent.medicalNotes || null,
-      classes: updatedStudent.StudentClass.map(sc => ({
-        id: sc.Class.id,
-        name: sc.Class.name
-      }))
-    }
+    // Transform response using shared utility for consistency
+    const transformedStudent = transformStudentData(updatedStudent)
 
     // Dispatch refresh event for dynamic updates
     // This will be handled by the frontend

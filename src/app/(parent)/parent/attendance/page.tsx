@@ -40,8 +40,13 @@ export default async function ParentAttendancePage() {
     })
 
     // Get all attendance records for these students (last 90 days for year view)
+    // Only include dates up to today (exclude future dates)
     const ninetyDaysAgo = new Date()
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
+    ninetyDaysAgo.setHours(0, 0, 0, 0)
+    
+    const todayEnd = new Date()
+    todayEnd.setHours(23, 59, 59, 999)
     
     const allAttendance = await prisma.attendance.findMany({
       where: {
@@ -51,7 +56,8 @@ export default async function ParentAttendancePage() {
           isArchived: false
         },
         date: {
-          gte: ninetyDaysAgo
+          gte: ninetyDaysAgo,
+          lte: todayEnd
         }
       },
       include: {
@@ -71,134 +77,82 @@ export default async function ParentAttendancePage() {
       }
     })
 
+    // Get current week (Monday to Friday) - same logic as dashboard
+    const today = new Date()
+    const currentDay = today.getDay()
+    const daysFromMonday = currentDay === 0 ? 6 : currentDay - 1 // Convert Sunday (0) to 6, others to 0-4
+    const weekStart = new Date(today)
+    weekStart.setDate(today.getDate() - daysFromMonday)
+    weekStart.setHours(0, 0, 0, 0)
+
+    // Generate all weekdays (Monday to Friday)
+    const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
+    const weekDays: Array<{ day: string; date: Date }> = []
+    for (let i = 0; i < 5; i++) {
+      const date = new Date(weekStart)
+      date.setDate(weekStart.getDate() + i)
+      weekDays.push({
+        day: dayNames[i],
+        date: date
+      })
+    }
+
+    // Build attendance map by student and date
+    const attendanceByStudentAndDate = new Map<string, Map<string, any>>()
+    allAttendance.forEach((attendance: any) => {
+      const studentId = attendance.studentId
+      const dateKey = new Date(attendance.date).toISOString().split('T')[0]
+      
+      if (!attendanceByStudentAndDate.has(studentId)) {
+        attendanceByStudentAndDate.set(studentId, new Map())
+      }
+      attendanceByStudentAndDate.get(studentId)!.set(dateKey, attendance)
+    })
+
     // Transform data for each student
     for (const student of students) {
       const studentAttendance = allAttendance.filter(a => a.studentId === student.id)
-      
-      if (studentAttendance.length === 0) continue
 
       // Get the primary class (first class)
       const primaryClass = student.StudentClass[0]?.Class
       const className = primaryClass?.name || 'Unknown'
       const teacherName = primaryClass?.User?.name || 'Unknown'
 
-      // Parse class schedule to get scheduled days
-      let scheduledDays: string[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] // Default
-      let startTime = '5:00 PM' // Default
-      
-      try {
-        if (primaryClass?.schedule) {
-          const schedule = typeof primaryClass.schedule === 'string' 
-            ? JSON.parse(primaryClass.schedule) 
-            : primaryClass.schedule
-          
-          if (schedule?.days && Array.isArray(schedule.days) && schedule.days.length > 0) {
-            scheduledDays = schedule.days
-          }
-          if (schedule?.startTime) {
-            startTime = schedule.startTime
-          }
-        }
-      } catch (e) {
-        // If schedule parsing fails, use default Monday-Friday
-        console.error('Error parsing schedule:', e)
-      }
+      // Build weekly attendance data with all weekdays (same as dashboard)
+      const weeklyData: Array<{
+        day: string
+        date: string
+        status: 'PRESENT' | 'ABSENT' | 'LATE' | 'NOT_SCHEDULED'
+        time?: string
+      }> = []
 
-      // Map full day names to abbreviations
-      const dayNameMap: Record<string, string> = {
-        'Monday': 'Mon',
-        'Tuesday': 'Tue',
-        'Wednesday': 'Wed',
-        'Thursday': 'Thu',
-        'Friday': 'Fri',
-        'Saturday': 'Sat',
-        'Sunday': 'Sun'
-      }
-
-      // Map day names to day of week numbers (0 = Sunday, 1 = Monday, etc.)
-      const dayToNumber: Record<string, number> = {
-        'Sunday': 0,
-        'Monday': 1,
-        'Tuesday': 2,
-        'Wednesday': 3,
-        'Thursday': 4,
-        'Friday': 5,
-        'Saturday': 6
-      }
-
-      // Get current week's attendance for scheduled days only
       const today = new Date()
       today.setHours(0, 0, 0, 0)
-      const currentWeekStart = getWeekStart(today)
-      const weeklyAttendance: any[] = []
-      
-      // Create attendance entries for each scheduled day in the current week
-      for (const scheduledDay of scheduledDays) {
-        const dayNumber = dayToNumber[scheduledDay]
-        if (dayNumber === undefined) continue
+      const todayDateString = today.toISOString().split('T')[0]
 
-        // Calculate the date for this scheduled day in the current week
-        // Monday = 1, so if scheduledDay is Monday, we add 0 days
-        // Tuesday = 2, so we add 1 day, etc.
-        const date = new Date(currentWeekStart)
-        const daysToAdd = dayNumber - 1 // Monday (1) - 1 = 0, Tuesday (2) - 1 = 1, etc.
-        date.setDate(date.getDate() + daysToAdd)
-        date.setHours(0, 0, 0, 0)
+      weekDays.forEach(({ day, date }) => {
+        const dateKey = date.toISOString().split('T')[0]
+        const isFuture = dateKey > todayDateString
+        const attendance = attendanceByStudentAndDate.get(student.id)?.get(dateKey)
         
-        // Check if this day is in the past or future
-        const checkToday = new Date()
-        checkToday.setHours(0, 0, 0, 0)
-        const isPast = date < checkToday
-        const isToday = date.getTime() === checkToday.getTime()
-        const isFuture = date > checkToday
-        
-        // Find attendance record for this day
-        const attendanceRecord = studentAttendance.find(att => {
-          const attDate = new Date(att.date)
-          attDate.setHours(0, 0, 0, 0)
-          return attDate.getTime() === date.getTime()
-        })
-        
-        if (attendanceRecord) {
-          // Has attendance record - show it
-          weeklyAttendance.push({
-            day: dayNameMap[scheduledDay] || scheduledDay.slice(0, 3),
-            date: date.toISOString().split('T')[0],
-            status: attendanceRecord.status as 'PRESENT' | 'ABSENT' | 'LATE' | 'NOT_SCHEDULED',
-            time: (attendanceRecord.status === 'PRESENT' || attendanceRecord.status === 'LATE') ? startTime : undefined
-          })
-        } else if (isPast) {
-          // Past day with no attendance - mark as NOT_SCHEDULED (attendance should have been taken)
-          weeklyAttendance.push({
-            day: dayNameMap[scheduledDay] || scheduledDay.slice(0, 3),
-            date: date.toISOString().split('T')[0],
-            status: 'NOT_SCHEDULED' as const,
-            time: undefined
+        // Only show attendance records for dates that have occurred (today or earlier)
+        // Future dates should always be NOT_SCHEDULED, and we should not show attendance data for future dates
+        if (attendance && !isFuture) {
+          weeklyData.push({
+            day: day,
+            date: dateKey,
+            status: attendance.status as 'PRESENT' | 'ABSENT' | 'LATE' | 'NOT_SCHEDULED',
+            time: attendance.status === 'PRESENT' || attendance.status === 'LATE' ? attendance.time || '4:00 PM' : undefined
           })
         } else {
-          // Future or today - show as scheduled but don't mark as NOT_SCHEDULED
-          // Include it but the component will handle displaying it appropriately
-          // We'll use NOT_SCHEDULED status but the component should show it differently for future days
-          weeklyAttendance.push({
-            day: dayNameMap[scheduledDay] || scheduledDay.slice(0, 3),
-            date: date.toISOString().split('T')[0],
-            status: 'NOT_SCHEDULED' as const,
+          // No attendance record for this day or it's a future date - show as NOT_SCHEDULED
+          weeklyData.push({
+            day: day,
+            date: dateKey,
+            status: 'NOT_SCHEDULED',
             time: undefined
           })
         }
-      }
-      
-      // Sort by the order of scheduled days (already in correct order, but ensure it)
-      weeklyAttendance.sort((a, b) => {
-        const aIndex = scheduledDays.findIndex(day => {
-          const dayAbbr = dayNameMap[day] || day.slice(0, 3)
-          return dayAbbr === a.day
-        })
-        const bIndex = scheduledDays.findIndex(day => {
-          const dayAbbr = dayNameMap[day] || day.slice(0, 3)
-          return dayAbbr === b.day
-        })
-        return aIndex - bIndex
       })
 
       // Calculate monthly attendance (group by week)
@@ -207,12 +161,28 @@ export default async function ParentAttendancePage() {
       // Calculate yearly attendance (group by month)
       const yearlyAttendance = calculateYearlyAttendance(studentAttendance)
 
-      // Calculate overall attendance
-      const totalDays = studentAttendance.length
-      const presentDays = studentAttendance.filter(a => 
-        a.status === 'PRESENT' || a.status === 'LATE'
+      // Calculate overall attendance for current week (only count days that have occurred so far)
+      // Same logic as dashboard - reuse todayDateString from above
+      
+      // Filter to only days that have occurred (today or earlier) AND have actual attendance records
+      // Exclude NOT_SCHEDULED days from the calculation
+      const daysSoFar = weeklyData.filter(day => {
+        const hasOccurred = day.date <= todayDateString
+        const hasAttendanceRecord = day.status !== 'NOT_SCHEDULED'
+        return hasOccurred && hasAttendanceRecord
+      })
+      
+      // Count present/late days that have occurred
+      const presentDays = daysSoFar.filter(day => 
+        day.status === 'PRESENT' || day.status === 'LATE'
       ).length
-      const overallAttendance = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : 0
+      
+      // Count total days that have occurred with attendance records
+      const totalDaysSoFar = daysSoFar.length
+      
+      const overallAttendance = totalDaysSoFar > 0 
+        ? Math.round((presentDays / totalDaysSoFar) * 100)
+        : 0
 
       attendanceData.push({
         id: student.id,
@@ -220,7 +190,7 @@ export default async function ParentAttendancePage() {
         class: className,
         teacher: teacherName,
         overallAttendance,
-        weeklyAttendance,
+        weeklyAttendance: weeklyData,
         monthlyAttendance,
         yearlyAttendance
       })
