@@ -165,18 +165,18 @@ export function AddEventModal({ onEventAdded, trigger }: AddEventModalProps) {
         // For holidays, we need to create a holiday record instead of an event
         if (isHoliday) {
           const response = await fetch('/api/holidays', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
             body: JSON.stringify({
               name: formData.title,
               startDate: formData.date,
               endDate: formData.endDate || formData.date, // Use endDate if provided, otherwise same as start
             }),
-          })
+        })
 
-          if (response.ok) {
+        if (response.ok) {
             const newHoliday = await response.json()
             onEventAdded?.(newHoliday)
             setOpen(false)
@@ -249,10 +249,10 @@ export function AddEventModal({ onEventAdded, trigger }: AddEventModalProps) {
           }
 
           try {
-            const newEvent = await response.json()
-            onEventAdded?.(newEvent)
-            setOpen(false)
-            resetForm()
+          const newEvent = await response.json()
+          onEventAdded?.(newEvent)
+          setOpen(false)
+          resetForm()
           } catch (e) {
             console.error('Error parsing success response:', e)
             alert('Event created but failed to parse response')
@@ -350,20 +350,20 @@ export function AddEventModal({ onEventAdded, trigger }: AddEventModalProps) {
           {/* Date Fields - Different for holidays vs other events */}
           {isHoliday ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
+            <div className="space-y-2">
                 <Label htmlFor="date" className="text-sm font-medium">
                   Start Date <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => handleInputChange('date', e.target.value)}
-                  required
+              <Input
+                id="date"
+                type="date"
+                value={formData.date}
+                onChange={(e) => handleInputChange('date', e.target.value)}
+                required
                   className="w-full cursor-pointer"
-                />
-              </div>
-              <div className="space-y-2">
+              />
+            </div>
+            <div className="space-y-2">
                 <Label htmlFor="endDate" className="text-sm font-medium">
                   End Date <span className="text-red-500">*</span>
                 </Label>
@@ -399,49 +399,49 @@ export function AddEventModal({ onEventAdded, trigger }: AddEventModalProps) {
                 </div>
                 <div className="space-y-2 flex items-end">
                   <Label className="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.allDay}
-                      onChange={(e) => handleInputChange('allDay', e.target.checked)}
+                <input
+                  type="checkbox"
+                  checked={formData.allDay}
+                  onChange={(e) => handleInputChange('allDay', e.target.checked)}
                       className="rounded border-[var(--border)]"
-                    />
+                />
                     <span className="text-sm font-medium">All Day Event</span>
-                  </Label>
-                </div>
-              </div>
+              </Label>
+            </div>
+          </div>
 
-              {!formData.allDay && (
+          {!formData.allDay && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
+              <div className="space-y-2">
                     <Label htmlFor="startTime" className="text-sm font-medium">
                       Start Time
                     </Label>
                     <div className="relative">
                       <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[var(--muted-foreground)]" />
-                      <Input
-                        id="startTime"
-                        type="time"
-                        value={formData.startTime}
-                        onChange={(e) => handleInputChange('startTime', e.target.value)}
+                <Input
+                  id="startTime"
+                  type="time"
+                  value={formData.startTime}
+                  onChange={(e) => handleInputChange('startTime', e.target.value)}
                         className="pl-10"
-                      />
+                />
                     </div>
-                  </div>
-                  <div className="space-y-2">
+              </div>
+              <div className="space-y-2">
                     <Label htmlFor="endTime" className="text-sm font-medium">
                       End Time
                     </Label>
                     <div className="relative">
                       <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[var(--muted-foreground)]" />
-                      <Input
-                        id="endTime"
-                        type="time"
-                        value={formData.endTime}
-                        onChange={(e) => handleInputChange('endTime', e.target.value)}
+                <Input
+                  id="endTime"
+                  type="time"
+                  value={formData.endTime}
+                  onChange={(e) => handleInputChange('endTime', e.target.value)}
                         className="pl-10"
-                      />
-                    </div>
-                  </div>
+                />
+              </div>
+            </div>
                 </div>
               )}
             </>
@@ -472,7 +472,7 @@ export function AddEventModal({ onEventAdded, trigger }: AddEventModalProps) {
                     <div className="sticky top-0 z-10 bg-[var(--popover)] border-b border-[var(--border)] p-2">
                       <div className="relative">
                         <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[var(--muted-foreground)]" />
-                        <Input
+              <Input
                           type="text"
                           placeholder="Search students..."
                           value={studentSearch}

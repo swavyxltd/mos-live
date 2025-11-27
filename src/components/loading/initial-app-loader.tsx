@@ -9,9 +9,14 @@ export function InitialAppLoader() {
   const [showLoader, setShowLoader] = useState(true)
   const [progress, setProgress] = useState(0)
   const pathname = usePathname()
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
 
   useEffect(() => {
+    // Wait for session to be loaded
+    if (status === 'loading') {
+      return
+    }
+
     // Only show on initial app load (dashboard routes after sign-in)
     // Check if we're on a dashboard route or any parent/staff/owner route
     const isDashboardRoute = pathname?.includes('/dashboard') || 
@@ -120,7 +125,7 @@ export function InitialAppLoader() {
     }
     
     requestAnimationFrame(animate)
-  }, [pathname, session])
+  }, [pathname, session, status])
 
   // Clear the visited flag on page unload (refresh detection)
   useEffect(() => {

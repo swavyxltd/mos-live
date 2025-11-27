@@ -55,52 +55,49 @@ export default async function ParentDashboardPage() {
 
     // Get recent announcements - messages sent to all parents, parent's classes, or directly to parent
     const classIds = students.flatMap(s => s.StudentClass.map((sc: any) => sc.Class.id))
+    
+    // Get all messages for the org (we'll filter them properly below)
     const allMessages = await prisma.message.findMany({
       where: {
         orgId: org.id,
-        status: 'SENT',
-        OR: [
-          { audience: 'ALL' },
-          {
-            audience: 'BY_CLASS',
-            targets: {
-              contains: JSON.stringify(classIds)
-            }
-          },
-          {
-            audience: 'INDIVIDUAL',
-            targets: {
-              contains: session.user.id
-            }
-          }
-        ]
+        status: 'SENT'
       },
       orderBy: { createdAt: 'desc' },
-      take: 5
+      take: 10 // Get more messages to filter from
     })
     
-    // Filter messages more accurately
+    // Filter messages more accurately - matching the announcements page logic
     announcements = allMessages.filter((msg: any) => {
       if (msg.audience === 'ALL') return true
+      
+      if (msg.audience === 'BY_CLASS') {
+        try {
+          const targets = msg.targets ? JSON.parse(msg.targets) : {}
+          const messageClassIds = targets.classIds || []
+          // Check if any of the parent's classes match the message's target classes
+          return messageClassIds.some((cid: string) => classIds.includes(cid))
+        } catch (e) {
+          // Fallback: try to match class IDs in the string
+          if (classIds.length > 0) {
+            return classIds.some((cid: string) => String(msg.targets).includes(cid))
+          }
+          return false
+        }
+      }
+      
       if (msg.audience === 'INDIVIDUAL') {
         try {
-          const targets = typeof msg.targets === 'string' ? JSON.parse(msg.targets) : msg.targets
-          return Array.isArray(targets) ? targets.includes(session.user.id) : targets === session.user.id
-        } catch {
+          const targets = msg.targets ? JSON.parse(msg.targets) : {}
+          // Check if this parent is the target
+          return targets.parentId === session.user.id
+        } catch (e) {
+          // Fallback: check if user ID is in the string
           return String(msg.targets).includes(session.user.id)
         }
       }
-      if (msg.audience === 'BY_CLASS') {
-        try {
-          const targets = typeof msg.targets === 'string' ? JSON.parse(msg.targets) : msg.targets
-          const targetClassIds = Array.isArray(targets) ? targets : [targets]
-          return targetClassIds.some((id: string) => classIds.includes(id))
-        } catch {
-          return String(msg.targets).includes(JSON.stringify(classIds))
-        }
-      }
+      
       return false
-    })
+    }).slice(0, 5) // Limit to 5 most recent after filtering
 
 
     // Get weekly attendance for parent's students (current week: Monday to Friday)

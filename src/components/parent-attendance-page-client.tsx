@@ -307,37 +307,37 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
                   <div className="text-sm font-bold text-[var(--foreground)]">
                     {weekPercentage}%
                   </div>
-                </div>
               </div>
-              
+            </div>
+            
               {/* Week dots and stats combined */}
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2 flex-1">
                   <div className="flex gap-1 flex-wrap">
-                    {/* Present dots */}
-                    {Array.from({ length: week.present }).map((_, i) => (
-                      <div 
-                        key={`present-${i}`}
+                {/* Present dots */}
+                {Array.from({ length: week.present }).map((_, i) => (
+                  <div 
+                    key={`present-${i}`}
                         className="w-3.5 h-3.5 rounded-full bg-green-500 hover:bg-green-600 transition-colors shadow-sm"
-                        title={`Present - Day ${i + 1}`}
-                      />
-                    ))}
-                    {/* Late dots */}
-                    {Array.from({ length: week.late }).map((_, i) => (
-                      <div 
-                        key={`late-${i}`}
+                    title={`Present - Day ${i + 1}`}
+                  />
+                ))}
+                {/* Late dots */}
+                {Array.from({ length: week.late }).map((_, i) => (
+                  <div 
+                    key={`late-${i}`}
                         className="w-3.5 h-3.5 rounded-full bg-yellow-500 hover:bg-yellow-600 transition-colors shadow-sm"
-                        title={`Late - Day ${week.present + i + 1}`}
-                      />
-                    ))}
-                    {/* Absent dots */}
-                    {Array.from({ length: week.absent }).map((_, i) => (
-                      <div 
-                        key={`absent-${i}`}
+                    title={`Late - Day ${week.present + i + 1}`}
+                  />
+                ))}
+                {/* Absent dots */}
+                {Array.from({ length: week.absent }).map((_, i) => (
+                  <div 
+                    key={`absent-${i}`}
                         className="w-3.5 h-3.5 rounded-full bg-red-500 hover:bg-red-600 transition-colors shadow-sm"
-                        title={`Absent - Day ${week.present + week.late + i + 1}`}
-                      />
-                    ))}
+                    title={`Absent - Day ${week.present + week.late + i + 1}`}
+                  />
+                ))}
                   </div>
                 </div>
                 
@@ -355,9 +355,9 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
                     <div className="w-2 h-2 rounded-full bg-red-500"></div>
                     <span className="text-xs text-[var(--muted-foreground)]">{week.absent}</span>
                   </div>
-                </div>
               </div>
             </div>
+          </div>
           )
         })}
       </div>
@@ -428,11 +428,11 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
                   <div className="flex items-center gap-0.5">
                     <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
                     <span className="text-xs text-[var(--muted-foreground)]">{month.present}</span>
-                  </div>
+                    </div>
                   <div className="flex items-center gap-0.5">
                     <div className="w-1.5 h-1.5 rounded-full bg-yellow-500"></div>
                     <span className="text-xs text-[var(--muted-foreground)]">{month.late}</span>
-                  </div>
+                    </div>
                   <div className="flex items-center gap-0.5">
                     <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
                     <span className="text-xs text-[var(--muted-foreground)]">{month.absent}</span>
@@ -542,13 +542,13 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
                         <User className="h-5 w-5 text-[var(--primary)]" />
                       </div>
                     </div>
-                    <div>
+                  <div>
                       <CardTitle className="text-lg font-semibold text-[var(--foreground)]">
-                        {child.name}
-                      </CardTitle>
+                      {child.name}
+                    </CardTitle>
                       <p className="text-sm text-[var(--muted-foreground)] mt-1">
-                        {child.class} • {child.teacher}
-                      </p>
+                      {child.class} • {child.teacher}
+                    </p>
                     </div>
                   </div>
                   
