@@ -113,8 +113,7 @@ async function handleGET(request: NextRequest) {
       type: 'HOLIDAY',
       date: holiday.startDate instanceof Date ? holiday.startDate.toISOString() : holiday.startDate,
       endDate: holiday.endDate instanceof Date ? holiday.endDate.toISOString() : holiday.endDate,
-      isHoliday: true,
-      description: holiday.description
+      isHoliday: true
     }))
 
     // Combine all events

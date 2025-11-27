@@ -121,9 +121,11 @@ model Event {
   teacher     String?
   description String?
   classId     String?
+  studentId   String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime
   Class       Class?   @relation(fields: [classId], references: [id], onDelete: Cascade)
+  Student     Student? @relation(fields: [studentId], references: [id], onDelete: Cascade)
   Org         Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
 }
 
@@ -427,6 +429,7 @@ model Student {
   MonthlyPaymentRecord MonthlyPaymentRecord[]
   ParentInvitation     ParentInvitation[]
   ProgressLog          ProgressLog[]
+  Event                Event[]
   Org                  Org                    @relation(fields: [orgId], references: [id], onDelete: Cascade)
   User                 User?                  @relation(fields: [primaryParentId], references: [id])
   StudentClass         StudentClass[]

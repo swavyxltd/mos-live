@@ -107,9 +107,10 @@ async function handleGET(request: NextRequest) {
     const start = startDate ? new Date(startDate) : new Date(now.getFullYear(), now.getMonth() - 1, 1)
     const end = endDate ? new Date(endDate) : new Date(now.getFullYear(), now.getMonth() + 3, 0)
 
-    // Fetch events (only for classes the parent's children are in, or general events)
+    // Fetch events (only for classes the parent's children are in, or general events, or meetings for this parent's children)
     // classId: null means the event is visible to ALL accounts in the org (created by admins)
     // classId: { in: classIds } means the event is for specific classes the parent's children are in
+    // studentId: { in: studentIds } means the event is a meeting for one of this parent's children
     const events = await prisma.event.findMany({
       where: {
         orgId: org.id,
@@ -117,11 +118,14 @@ async function handleGET(request: NextRequest) {
           gte: start,
           lte: end
         },
-        OR: classIds.length > 0 ? [
-          { classId: { in: classIds } }, // Events for parent's children's classes
-          { classId: null } // General events visible to all (created by admins)
-        ] : [
-          { classId: null } // Only general events if parent has no enrolled children
+        OR: [
+          ...(classIds.length > 0 ? [
+            { classId: { in: classIds } }, // Events for parent's children's classes
+          ] : []),
+          { classId: null, type: { not: 'MEETING' } }, // General events visible to all (but not meetings)
+          ...(studentIds.length > 0 ? [
+            { studentId: { in: studentIds }, type: 'MEETING' } // Meetings for this parent's children
+          ] : [])
         ]
       },
       include: {

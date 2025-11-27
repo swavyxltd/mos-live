@@ -39,6 +39,7 @@ export default function CalendarPage() {
             title: event.title,
             type: event.type || 'EVENT',
             date: new Date(event.date),
+            endDate: event.endDate ? new Date(event.endDate) : null,
             startTime: event.startTime || '',
             endTime: event.endTime || '',
             location: event.location || '',
@@ -113,6 +114,7 @@ export default function CalendarPage() {
           title: event.title,
           type: event.type || 'EVENT',
           date: new Date(event.date),
+          endDate: event.endDate ? new Date(event.endDate) : null,
           startTime: event.startTime || '',
           endTime: event.endTime || '',
           location: event.location || '',
@@ -190,13 +192,13 @@ export default function CalendarPage() {
                     }`}
                     onClick={() => handleEventClick(event)}
                   >
-                    <div className="flex items-start gap-3 flex-1">
-                      <div className={`w-3 h-3 rounded-full mt-1.5 flex-shrink-0 ${
-                        event.isHoliday || event.type === 'HOLIDAY' ? 'bg-red-500' : 
-                        event.type === 'EXAM' ? 'bg-yellow-500' : 
-                        event.type === 'MEETING' ? 'bg-blue-500' : 
-                        'bg-green-500'
-                      }`} />
+                      <div className="flex items-start gap-3 flex-1">
+                        <div className={`w-3 h-3 rounded-full mt-1.5 flex-shrink-0 ${
+                          event.isHoliday || event.type === 'HOLIDAY' ? 'bg-green-500' : 
+                          event.type === 'EXAM' ? 'bg-yellow-500' : 
+                          event.type === 'MEETING' ? 'bg-blue-500' : 
+                          'bg-purple-500'
+                        }`} />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <h4 className="font-semibold text-[var(--foreground)]">{event.title}</h4>
@@ -207,14 +209,35 @@ export default function CalendarPage() {
                         <div className="flex items-center gap-2 text-sm text-[var(--muted-foreground)] mb-1">
                           <Calendar className="h-3 w-3" />
                           <span>
-                            {eventDate.toLocaleDateString('en-GB', { 
-                              weekday: 'long', 
-                              day: 'numeric',
-                              month: 'long',
-                              year: 'numeric'
-                            })}
+                            {event.endDate && (event.isHoliday || event.type === 'HOLIDAY') ? (
+                              // Show date range for holidays
+                              (() => {
+                                const startDate = eventDate
+                                const endDate = new Date(event.endDate)
+                                const startFormatted = startDate.toLocaleDateString('en-GB', { 
+                                  weekday: 'long', 
+                                  day: 'numeric',
+                                  month: 'long',
+                                  year: 'numeric'
+                                })
+                                const endFormatted = endDate.toLocaleDateString('en-GB', { 
+                                  weekday: 'long', 
+                                  day: 'numeric',
+                                  month: 'long',
+                                  year: 'numeric'
+                                })
+                                return `${startFormatted} - ${endFormatted}`
+                              })()
+                            ) : (
+                              eventDate.toLocaleDateString('en-GB', { 
+                                weekday: 'long', 
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric'
+                              })
+                            )}
                           </span>
-                          {event.startTime && (
+                          {event.startTime && !event.isHoliday && (
                             <>
                               <span>•</span>
                               <Clock className="h-3 w-3" />
@@ -241,12 +264,13 @@ export default function CalendarPage() {
                       </div>
                     </div>
                     <Badge 
-                      variant={
-                        event.isHoliday || event.type === 'HOLIDAY' ? 'destructive' : 
-                        event.type === 'EXAM' ? 'secondary' : 
-                        'outline'
-                      }
-                      className="ml-3 flex-shrink-0"
+                      variant="outline"
+                      className={`ml-3 flex-shrink-0 ${
+                        event.isHoliday || event.type === 'HOLIDAY' ? 'border-green-500 text-green-700 bg-green-50' : 
+                        event.type === 'EXAM' ? 'border-yellow-500 text-yellow-700 bg-yellow-50' : 
+                        event.type === 'MEETING' ? 'border-blue-500 text-blue-700 bg-blue-50' : 
+                        'border-purple-500 text-purple-700 bg-purple-50'
+                      }`}
                     >
                       {event.isHoliday || event.type === 'HOLIDAY' ? 'Holiday' : 
                        event.type === 'EXAM' ? 'Exam' :
