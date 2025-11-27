@@ -141,6 +141,7 @@ async function handlePOST(request: NextRequest) {
       const attendanceRecords = await prisma.attendance.findMany({
         where: {
           classId: cls.id,
+          orgId: org.id, // CRITICAL: Ensure org scoping
           date: {
             gte: monthStart,
             lte: monthEnd

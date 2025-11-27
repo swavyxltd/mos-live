@@ -60,3 +60,39 @@ export function hasRole(userRole: Role, requiredRoles: Role[]): boolean {
 export function canAccessOwnerFeatures(userRole: Role, isSuperAdmin: boolean): boolean {
   return isSuperAdmin || userRole === 'OWNER'
 }
+
+/**
+ * Require that the user is a super admin (owner)
+ * Use this for all /api/owner/** routes
+ */
+export async function requireOwner(request: NextRequest) {
+  const session = await requireAuth(request)
+  if (session instanceof NextResponse) return session
+  
+  if (!session.user.isSuperAdmin) {
+    return NextResponse.json({ error: 'Unauthorized - Owner access required' }, { status: 403 })
+  }
+  
+  return session
+}
+
+/**
+ * Require that the user has a specific role in the organization
+ * This is a convenience wrapper around requireRole that also returns the role
+ */
+export async function requireRoleInOrg(request: NextRequest, requiredRoles: Role[]) {
+  const session = await requireRole(requiredRoles)(request)
+  if (session instanceof NextResponse) return session
+  
+  const orgId = await getActiveOrgId(session.user.id)
+  if (!orgId) {
+    return NextResponse.json({ error: 'No organization selected' }, { status: 400 })
+  }
+  
+  const userRole = await getUserRoleInOrg(session.user.id, orgId)
+  if (!userRole) {
+    return NextResponse.json({ error: 'Not a member of this organization' }, { status: 403 })
+  }
+  
+  return { session, userRole, orgId }
+}

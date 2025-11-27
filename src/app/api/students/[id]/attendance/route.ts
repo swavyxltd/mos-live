@@ -18,9 +18,17 @@ async function handleGET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const org = await getActiveOrg()
+    const org = await getActiveOrg(session.user.id)
     if (!org) {
       return NextResponse.json({ error: 'No organization found' }, { status: 404 })
+    }
+
+    // Verify user has appropriate role
+    const { getUserRoleInOrg } = await import('@/lib/org')
+    const userRole = await getUserRoleInOrg(session.user.id, org.id)
+    
+    if (!userRole || !['ADMIN', 'OWNER', 'STAFF', 'PARENT'].includes(userRole)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
     const { id } = params
@@ -51,6 +59,11 @@ async function handleGET(
 
     if (!student) {
       return NextResponse.json({ error: 'Student not found' }, { status: 404 })
+    }
+
+    // If user is a parent, verify they own this student
+    if (userRole === 'PARENT' && student.primaryParentId !== session.user.id) {
+      return NextResponse.json({ error: 'Unauthorized - You can only access your own children' }, { status: 403 })
     }
 
     // Get class schedules - combine all classes the student is enrolled in
@@ -88,10 +101,11 @@ async function handleGET(
       dateFilter.lte = endDateObj < today ? endDateObj : today
     }
 
-    // Get attendance records - only up to today
+    // Get attendance records - only up to today, scoped to org
     const attendanceRecords = await prisma.attendance.findMany({
       where: {
         studentId: id,
+        orgId: org.id, // CRITICAL: Ensure org scoping
         date: dateFilter
       },
       orderBy: {

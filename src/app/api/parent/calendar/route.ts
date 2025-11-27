@@ -21,6 +21,14 @@ async function handleGET(request: NextRequest) {
       return NextResponse.json({ error: 'No organization found' }, { status: 404 })
     }
 
+    // Verify user is a PARENT in this organization
+    const { getUserRoleInOrg } = await import('@/lib/org')
+    const userRole = await getUserRoleInOrg(session.user.id, org.id)
+    
+    if (userRole !== 'PARENT') {
+      return NextResponse.json({ error: 'Unauthorized - Parent access required' }, { status: 403 })
+    }
+
     const { searchParams } = new URL(request.url)
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')

@@ -15,12 +15,20 @@ async function handleGET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const org = await getActiveOrg()
+    const org = await getActiveOrg(session.user.id)
     if (!org) {
       return NextResponse.json({ error: 'No organization found' }, { status: 404 })
     }
 
-    // Check if user is a parent in this organization
+    // Verify user is a PARENT in this organization
+    const { getUserRoleInOrg } = await import('@/lib/org')
+    const userRole = await getUserRoleInOrg(session.user.id, org.id)
+    
+    if (userRole !== 'PARENT') {
+      return NextResponse.json({ error: 'Unauthorized - Parent access required' }, { status: 403 })
+    }
+
+    // Check if user is a parent in this organization (using primaryParentId relationship)
     const parent = await prisma.parent.findFirst({
       where: {
         userId: session.user.id,
@@ -65,6 +73,7 @@ async function handleGET(request: NextRequest) {
         const attendanceRecords = await prisma.attendance.findMany({
           where: {
             studentId: child.id,
+            orgId: org.id, // CRITICAL: Ensure org scoping
             date: {
               gte: twelveMonthsAgo
             }
@@ -91,6 +100,7 @@ async function handleGET(request: NextRequest) {
         const weeklyAttendance = await prisma.attendance.findMany({
           where: {
             studentId: child.id,
+            orgId: org.id, // CRITICAL: Ensure org scoping
             date: {
               gte: currentWeekStart,
               lte: currentWeekEnd
@@ -131,6 +141,7 @@ async function handleGET(request: NextRequest) {
           const weekAttendance = await prisma.attendance.findMany({
             where: {
               studentId: child.id,
+              orgId: org.id, // CRITICAL: Ensure org scoping
               date: {
                 gte: weekStart,
                 lte: weekEnd
@@ -166,6 +177,7 @@ async function handleGET(request: NextRequest) {
           const monthAttendance = await prisma.attendance.findMany({
             where: {
               studentId: child.id,
+              orgId: org.id, // CRITICAL: Ensure org scoping
               date: {
                 gte: monthStart,
                 lte: monthEnd

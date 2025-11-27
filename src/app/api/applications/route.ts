@@ -17,7 +17,8 @@ async function handleGET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const org = await getActiveOrg()
+    // CRITICAL: Use authenticated user's orgId, never from query params
+    const org = await getActiveOrg(session.user.id)
     if (!org) {
       return NextResponse.json({ error: 'No organization found' }, { status: 404 })
     }
@@ -91,10 +92,16 @@ async function handlePOST(request: NextRequest) {
       return NextResponse.json({ error: 'At least one child with first and last name is required' }, { status: 400 })
     }
     
-    // Verify org exists
-    const org = await prisma.org.findUnique({ where: { id: orgId } })
+    // Verify org exists and is active (public route, but we should validate orgId)
+    const org = await prisma.org.findUnique({ 
+      where: { id: orgId },
+      select: { id: true, name: true, status: true }
+    })
     if (!org) {
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
+    }
+    if (org.status !== 'ACTIVE') {
+      return NextResponse.json({ error: 'Organization is not accepting applications' }, { status: 403 })
     }
 
     // Create the application

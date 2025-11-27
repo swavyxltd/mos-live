@@ -1,6 +1,7 @@
 export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRole, requireOrg } from '@/lib/roles'
+import { getUserRoleInOrg, getActiveOrgId } from '@/lib/org'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
@@ -14,6 +15,13 @@ async function handleGET(request: NextRequest) {
     const orgId = await requireOrg(request)
     if (orgId instanceof NextResponse) return orgId
     
+    // Get user's role in this org (already validated in requireRole, but we need it for filtering)
+    const userRole = await getUserRoleInOrg(session.user.id, orgId)
+    if (!userRole) {
+      logger.error('No user role found after requireRole validation', { userId: session.user.id, orgId })
+      return NextResponse.json({ error: 'Failed to get user role' }, { status: 500 })
+    }
+    
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
     const studentId = searchParams.get('studentId')
@@ -22,20 +30,21 @@ async function handleGET(request: NextRequest) {
     let whereClause: any = { orgId }
     
     // If user is a parent, only show invoices for their children
-    if (session.user.role === 'PARENT') {
+    if (userRole === 'PARENT') {
       whereClause.student = {
-        primaryParentId: session.user.id
+        primaryParentId: session.user.id,
+        ...(studentId ? { id: studentId } : {}) // If studentId is provided, also filter by it
+      }
+    } else {
+      // For non-parents, filter by studentId directly if provided
+      if (studentId) {
+        whereClause.studentId = studentId
       }
     }
     
     // Add status filter if provided
     if (status) {
       whereClause.status = status
-    }
-    
-    // Add student filter if provided
-    if (studentId) {
-      whereClause.studentId = studentId
     }
     
     const invoices = await prisma.invoice.findMany({

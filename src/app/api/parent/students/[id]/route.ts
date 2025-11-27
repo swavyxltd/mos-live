@@ -19,6 +19,14 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
     }
 
+    // Verify user is a PARENT in this organization
+    const { getUserRoleInOrg } = await import('@/lib/org')
+    const userRole = await getUserRoleInOrg(session.user.id, org.id)
+    
+    if (userRole !== 'PARENT') {
+      return NextResponse.json({ error: 'Unauthorized - Parent access required' }, { status: 403 })
+    }
+
     const { id } = params
 
     // Verify the student belongs to the parent
@@ -44,7 +52,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     // Verify the parent owns this student
     if (student.primaryParentId !== session.user.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+      return NextResponse.json({ error: 'Unauthorized - You can only access your own children' }, { status: 403 })
     }
 
     // Transform student data using shared utility for consistency
@@ -67,6 +75,14 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     const org = await getActiveOrg(session.user.id)
     if (!org) {
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
+    }
+
+    // Verify user is a PARENT in this organization
+    const { getUserRoleInOrg } = await import('@/lib/org')
+    const userRole = await getUserRoleInOrg(session.user.id, org.id)
+    
+    if (userRole !== 'PARENT') {
+      return NextResponse.json({ error: 'Unauthorized - Parent access required' }, { status: 403 })
     }
 
     const { id } = params
@@ -95,7 +111,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
     // Verify the parent owns this student
     if (existingStudent.primaryParentId !== session.user.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+      return NextResponse.json({ error: 'Unauthorized - You can only update your own children' }, { status: 403 })
     }
 
     // Update the student (parents can only update certain fields)

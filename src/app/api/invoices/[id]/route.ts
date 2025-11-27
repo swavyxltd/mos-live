@@ -1,6 +1,7 @@
 export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRole, requireOrg } from '@/lib/roles'
+import { getUserRoleInOrg, getActiveOrgId } from '@/lib/org'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
@@ -17,13 +18,20 @@ async function handleGET(
     const orgId = await requireOrg(request)
     if (orgId instanceof NextResponse) return orgId
     
+    // Get user's role in this org (already validated in requireRole, but we need it for filtering)
+    const userRole = await getUserRoleInOrg(session.user.id, orgId)
+    if (!userRole) {
+      logger.error('No user role found after requireRole validation', { userId: session.user.id, orgId })
+      return NextResponse.json({ error: 'Failed to get user role' }, { status: 500 })
+    }
+    
     const invoiceId = params.id
     
     // Build where clause based on user role
     let whereClause: any = { id: invoiceId, orgId }
     
     // If user is a parent, only show invoices for their children
-    if (session.user.role === 'PARENT') {
+    if (userRole === 'PARENT') {
       whereClause.student = {
         primaryParentId: session.user.id
       }

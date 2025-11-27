@@ -139,10 +139,11 @@ async function handleGET(request: NextRequest) {
   weekStart.setHours(0, 0, 0, 0)
   
   const classesWithAttendance = await Promise.all(classes.map(async (cls) => {
-    // Get attendance records for this class in the current week
+    // Get attendance records for this class in the current week, scoped to org
     const attendanceRecords = await prisma.attendance.findMany({
       where: {
         classId: cls.id,
+        orgId: orgId, // CRITICAL: Ensure org scoping
         date: { gte: weekStart }
       },
       select: { status: true }

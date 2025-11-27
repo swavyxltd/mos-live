@@ -15,9 +15,17 @@ async function handleGET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const org = await getActiveOrg()
+    const org = await getActiveOrg(session.user.id)
     if (!org) {
       return NextResponse.json({ error: 'No organization found' }, { status: 404 })
+    }
+
+    // Verify user has appropriate role (staff/admin can see all messages, parents can only see their own)
+    const { getUserRoleInOrg } = await import('@/lib/org')
+    const userRole = await getUserRoleInOrg(session.user.id, org.id)
+    
+    if (!userRole || !['ADMIN', 'OWNER', 'STAFF', 'PARENT'].includes(userRole)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
     // Get pagination parameters
@@ -26,14 +34,20 @@ async function handleGET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10', 10)
     const skip = (page - 1) * limit
 
+    // Build where clause - parents can only see messages sent to them
+    let whereClause: any = { orgId: org.id }
+    if (userRole === 'PARENT') {
+      whereClause.recipientId = session.user.id
+    }
+
     // Get total count
     const total = await prisma.message.count({
-      where: { orgId: org.id }
+      where: whereClause
     })
 
     // Get paginated messages
     const messages = await prisma.message.findMany({
-      where: { orgId: org.id },
+      where: whereClause,
       orderBy: { createdAt: 'desc' },
       skip,
       take: limit

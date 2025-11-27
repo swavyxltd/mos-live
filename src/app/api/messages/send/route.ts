@@ -73,17 +73,41 @@ async function handlePOST(request: NextRequest) {
     audienceDisplayName = 'All parents'
   } else if (audience === 'BY_CLASS' && classIds && classIds.length > 0) {
     // Get parents of students in specific classes
-    const classData = await prisma.class.findUnique({
-      where: { id: classIds[0] },
+    // CRITICAL: Verify classes belong to the authenticated user's org
+    const classData = await prisma.class.findFirst({
+      where: { 
+        id: classIds[0],
+        orgId: orgId // CRITICAL: Ensure class belongs to authenticated user's org
+      },
       select: { name: true }
     })
+    
+    if (!classData) {
+      return NextResponse.json({ error: 'Class not found or unauthorized' }, { status: 404 })
+    }
+    // CRITICAL: Verify all classIds belong to the authenticated user's org
+    const validClasses = await prisma.class.findMany({
+      where: {
+        id: { in: classIds },
+        orgId: orgId // CRITICAL: Ensure all classes belong to authenticated user's org
+      },
+      select: { id: true }
+    })
+    
+    const validClassIds = validClasses.map(c => c.id)
+    if (validClassIds.length !== classIds.length) {
+      return NextResponse.json({ error: 'One or more classes not found or unauthorized' }, { status: 403 })
+    }
+    
     const parents = await prisma.user.findMany({
       where: {
         Student: {
           some: {
+            orgId: orgId, // CRITICAL: Ensure students belong to authenticated user's org
             StudentClass: {
               some: {
-                classId: { in: classIds }
+                classId: { in: validClassIds },
+                orgId: orgId // CRITICAL: Ensure enrollments belong to authenticated user's org
               }
             }
           }
@@ -99,16 +123,30 @@ async function handlePOST(request: NextRequest) {
     recipients = parents
     audienceDisplayName = classData?.name || 'Specific class'
   } else if (audience === 'INDIVIDUAL' && parentId) {
-    // Get individual parent
-    const parent = await prisma.user.findUnique({
-      where: { id: parentId },
-      select: {
-        id: true,
-        email: true,
-        phone: true,
-        name: true
+    // Get individual parent - CRITICAL: Verify parent belongs to authenticated user's org
+    const membership = await prisma.userOrgMembership.findFirst({
+      where: {
+        userId: parentId,
+        orgId: orgId, // CRITICAL: Ensure parent belongs to authenticated user's org
+        role: 'PARENT'
+      },
+      include: {
+        User: {
+          select: {
+            id: true,
+            email: true,
+            phone: true,
+            name: true
+          }
+        }
       }
     })
+    
+    if (!membership) {
+      return NextResponse.json({ error: 'Parent not found or unauthorized' }, { status: 404 })
+    }
+    
+    const parent = membership.User
     if (parent) {
       recipients = [parent]
       audienceDisplayName = parent.name || parent.email || 'Individual parent'

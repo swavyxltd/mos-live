@@ -16,15 +16,20 @@ async function handleGET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
-    const orgId = searchParams.get('orgId')
 
-    // If specific user and org requested, return membership info
-    if (userId && orgId) {
+    // Get authenticated user's active org - NEVER trust orgId from query params
+    const org = await getActiveOrg(session.user.id)
+    if (!org) {
+      return NextResponse.json({ error: 'No organization found' }, { status: 404 })
+    }
+
+    // If specific user requested, return membership info for the authenticated user's org
+    if (userId) {
       const membership = await prisma.userOrgMembership.findUnique({
         where: {
           userId_orgId: {
             userId,
-            orgId,
+            orgId: org.id, // CRITICAL: Use authenticated user's orgId, not from query params
           },
         },
         include: {
@@ -55,10 +60,7 @@ async function handleGET(request: NextRequest) {
     }
 
     // Otherwise, get all staff members (or all users if allUsers param is set)
-    const org = await getActiveOrg()
-    if (!org) {
-      return NextResponse.json({ error: 'No organization found' }, { status: 404 })
-    }
+    // org is already set above
 
     const allUsers = searchParams.get('allUsers') === 'true'
 
