@@ -56,7 +56,6 @@ async function handlePOST(request: NextRequest) {
       guardianAddress,
       children,
       preferredClass,
-      preferredTerm,
       preferredStartDate,
       additionalNotes
     } = body
@@ -92,7 +91,7 @@ async function handlePOST(request: NextRequest) {
       return NextResponse.json({ error: 'At least one child with first and last name is required' }, { status: 400 })
     }
     
-    // Verify org exists and is active (public route, but we should validate orgId)
+    // Verify org exists and is not deactivated or paused (public route, but we should validate orgId)
     const org = await prisma.org.findUnique({ 
       where: { id: orgId },
       select: { id: true, name: true, status: true }
@@ -100,7 +99,7 @@ async function handlePOST(request: NextRequest) {
     if (!org) {
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
     }
-    if (org.status !== 'ACTIVE') {
+    if (org.status === 'DEACTIVATED' || org.status === 'PAUSED') {
       return NextResponse.json({ error: 'Organization is not accepting applications' }, { status: 403 })
     }
 
@@ -116,7 +115,6 @@ async function handlePOST(request: NextRequest) {
         guardianEmail: sanitizedGuardianEmail,
         guardianAddress: guardianAddress ? sanitizeText(guardianAddress, MAX_STRING_LENGTHS.address) : null,
         preferredClass: preferredClass ? sanitizeText(preferredClass, MAX_STRING_LENGTHS.name) : null,
-        preferredTerm: preferredTerm ? sanitizeText(preferredTerm, MAX_STRING_LENGTHS.name) : null,
         preferredStartDate: preferredStartDate ? new Date(preferredStartDate) : undefined,
         additionalNotes: additionalNotes ? sanitizeText(additionalNotes, MAX_STRING_LENGTHS.notes) : null,
         submittedAt: now, // Set submittedAt to current time

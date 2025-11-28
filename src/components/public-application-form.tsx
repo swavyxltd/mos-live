@@ -62,7 +62,6 @@ export function PublicApplicationForm({ org, classes }: PublicApplicationFormPro
   
   // Preferences
   const [preferredClass, setPreferredClass] = useState('')
-  const [preferredTerm, setPreferredTerm] = useState('')
   const [preferredStartDate, setPreferredStartDate] = useState('')
   const [additionalNotes, setAdditionalNotes] = useState('')
 
@@ -167,7 +166,6 @@ export function PublicApplicationForm({ org, classes }: PublicApplicationFormPro
           guardianAddress: guardianAddress,
           children: children.filter(child => child.firstName && child.lastName),
           preferredClass: preferredClass || undefined,
-          preferredTerm: preferredTerm || undefined,
           preferredStartDate: preferredStartDate || undefined,
           additionalNotes: additionalNotes || undefined,
         }),
@@ -454,16 +452,6 @@ export function PublicApplicationForm({ org, classes }: PublicApplicationFormPro
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Preferred Term (Optional)
-                </label>
-                <Input
-                  value={preferredTerm}
-                  onChange={(e) => setPreferredTerm(e.target.value)}
-                  placeholder="e.g., Spring 2024, Fall 2024"
-                />
               </div>
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">

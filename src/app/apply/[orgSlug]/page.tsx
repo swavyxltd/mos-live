@@ -18,7 +18,7 @@ export default async function ApplyPage({ params }: ApplyPageProps) {
   }
 
   // Fetch classes for this organization
-  const classes = await prisma.class.findMany({
+  const allClasses = await prisma.class.findMany({
     where: { orgId: org.id },
     select: {
       id: true,
@@ -26,6 +26,15 @@ export default async function ApplyPage({ params }: ApplyPageProps) {
     },
     orderBy: { name: 'asc' }
   })
+
+  // Deduplicate classes by name on the server side to prevent hydration mismatches
+  const uniqueClassesMap = new Map<string, { id: string; name: string }>()
+  for (const cls of allClasses) {
+    if (!uniqueClassesMap.has(cls.name)) {
+      uniqueClassesMap.set(cls.name, cls)
+    }
+  }
+  const classes = Array.from(uniqueClassesMap.values())
 
   return <PublicApplicationForm org={org} classes={classes} />
 }
