@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { PhoneLink } from './phone-link'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -187,29 +188,70 @@ export function PublicApplicationForm({ org, classes }: PublicApplicationFormPro
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <Card className="max-w-sm w-full p-8 text-center">
-          <div className="mb-6">
-            <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              Application Submitted!
-            </h1>
-            <p className="text-gray-600 mb-2">
-              JazakAllahu khayran for your interest in {org.name}.
-            </p>
-            <p className="text-gray-600">
-              We will review your application and contact you shortly.
-            </p>
+      <div className="min-h-screen relative flex items-center justify-center p-4" data-theme="light">
+        {/* Background image - same as auth page */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: 'url(/auth-bg.png)'
+          }}
+        />
+        
+        {/* Content - centered with grid */}
+        <div className="relative z-10 w-full grid place-items-center">
+          <div className="flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
+            <div className="flex w-full max-w-sm flex-col gap-6">
+              {/* Logo/Branding */}
+              <a href="/" className="flex items-center gap-2 self-center">
+                <Image 
+                  src="/logo.png" 
+                  alt="Madrasah OS" 
+                  width={128}
+                  height={32}
+                  className="h-8 w-auto"
+                  priority
+                  fetchPriority="high"
+                />
+              </a>
+
+              {/* Success Card */}
+              <Card>
+                <CardHeader className="text-center">
+                  <div className="flex justify-center mb-4">
+                    <CheckCircle className="h-16 w-16 text-green-500" />
+                  </div>
+                  <CardTitle className="text-xl">Application Submitted!</CardTitle>
+                  <CardDescription className="mt-4">
+                    JazakAllahu khayran for your interest in {org.name}.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-center text-gray-600">
+                    We will review your application and contact you shortly.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
           </div>
-        </Card>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen relative" data-theme="light">
+      {/* Background image - same as auth page */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: 'url(/auth-bg.png)'
+        }}
+      />
+      
+      {/* Content overlay */}
+      <div className="relative z-10">
       {/* Header */}
-      <div className="bg-white shadow-sm">
+      <div className="bg-white/95 backdrop-blur-sm shadow-sm">
         <div className="max-w-4xl mx-auto px-6 py-8">
           <div className="flex items-center justify-center mb-6">
             <div className="scale-50 origin-center">
@@ -517,6 +559,7 @@ export function PublicApplicationForm({ org, classes }: PublicApplicationFormPro
             </Button>
           </div>
         </form>
+      </div>
       </div>
     </div>
   )
