@@ -188,19 +188,18 @@ export function PublicApplicationForm({ org, classes }: PublicApplicationFormPro
   if (isSubmitted) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full p-8 text-center">
+        <Card className="max-w-sm w-full p-8 text-center">
           <div className="mb-6">
             <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
               Application Submitted!
             </h1>
-            <p className="text-gray-600">
-              JazakAllahu khayran — your application has been received. We'll be in touch soon.
+            <p className="text-gray-600 mb-2">
+              JazakAllahu khayran for your interest in {org.name}.
             </p>
-          </div>
-          <div className="text-sm text-gray-500">
-            <p>Thank you for your interest in {org.name}.</p>
-            <p>We will review your application and contact you shortly.</p>
+            <p className="text-gray-600">
+              We will review your application and contact you shortly.
+            </p>
           </div>
         </Card>
       </div>
