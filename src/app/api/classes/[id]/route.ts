@@ -95,7 +95,7 @@ async function handlePATCH(
     if (orgId instanceof NextResponse) return orgId
 
     const body = await request.json()
-    const { name, description, schedule, teacherId, monthlyFeeP, feeDueDay } = body
+    const { name, description, schedule, teacherId, monthlyFeeP } = body
 
     // Verify class belongs to org
     const existingClass = await prisma.class.findFirst({
@@ -120,13 +120,6 @@ async function handlePATCH(
       )
     }
 
-    if (feeDueDay !== undefined && feeDueDay !== null && (feeDueDay < 1 || feeDueDay > 31)) {
-      return NextResponse.json(
-        { error: 'Fee due day must be between 1 and 31' },
-        { status: 400 }
-      )
-    }
-
     // Build update data object
     const updateData: any = {
       updatedAt: new Date()
@@ -137,7 +130,6 @@ async function handlePATCH(
     if (schedule !== undefined) updateData.schedule = schedule
     if (teacherId !== undefined) updateData.teacherId = teacherId || null
     if (monthlyFeeP !== undefined) updateData.monthlyFeeP = Math.round(monthlyFeeP)
-    if (feeDueDay !== undefined) updateData.feeDueDay = feeDueDay || null
 
     // Update class
     const updatedClass = await prisma.class.update({

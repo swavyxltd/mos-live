@@ -9,7 +9,6 @@ import { Label } from '@/components/ui/label'
 import { StatCard } from '@/components/ui/stat-card'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Switch } from '@/components/ui/switch'
-import { isDemoMode } from '@/lib/demo-mode'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
 import { 
@@ -87,62 +86,7 @@ export default function ParentInvoicesPage() {
   useEffect(() => {
     if (status === 'loading') return
 
-    if (isDemoMode()) {
-      // Demo data - consolidated fees for parent with multiple children
-      const demoFees = [
-        {
-          id: 'INV-2024-003',
-          student: 'Ahmed & Fatima Hassan',
-          description: 'Monthly fees for both children',
-          amount: 100.00, // Combined amount for both children (£50 each)
-          dueDate: new Date('2024-12-31'),
-          status: 'PENDING',
-          children: [
-            { name: 'Ahmed Hassan', class: 'Quran Classes', amount: 50.00 },
-            { name: 'Fatima Hassan', class: 'Islamic Studies', amount: 50.00 }
-          ]
-        },
-      ]
-
-      // Demo payment history
-      const demoPaymentHistory = [
-        {
-          id: 'payment-1',
-          invoiceNumber: 'INV-2024-001',
-          studentName: 'Ahmed Hassan',
-          amount: 50.00,
-          paymentMethod: 'Credit Card',
-          paymentDate: new Date('2024-11-25'),
-          status: 'SUCCEEDED',
-          transactionId: 'txn_123456789'
-        },
-        {
-          id: 'payment-2',
-          invoiceNumber: 'INV-2024-002',
-          studentName: 'Fatima Hassan',
-          amount: 50.00,
-          paymentMethod: 'Bank Transfer',
-          paymentDate: new Date('2024-11-28'),
-          status: 'SUCCEEDED',
-          transactionId: 'txn_987654321'
-        },
-        {
-          id: 'payment-3',
-          invoiceNumber: 'INV-2023-012',
-          studentName: 'Ahmed Hassan',
-          amount: 50.00,
-          paymentMethod: 'Cash',
-          paymentDate: new Date('2024-10-30'),
-          status: 'SUCCEEDED',
-          transactionId: null
-        }
-      ]
-
-      setFees(demoFees)
-      setPaymentHistory(demoPaymentHistory)
-      setLoading(false)
-    } else {
-      // Fetch real fees from API
+    // Fetch real fees from API (always use real data)
       fetch('/api/payments')
         .then(async res => {
           if (!res.ok) {
@@ -254,7 +198,6 @@ export default function ParentInvoicesPage() {
           setPaymentHistory([])
           setLoading(false)
         })
-    }
 
     fetchPaymentSettings()
   }, [status])
@@ -519,12 +462,12 @@ export default function ParentInvoicesPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {pendingFees.map((fee: any) => (
-                    <div
-                      key={fee.id}
-                      className="flex items-center justify-between p-4 border border-[var(--border)] rounded-[var(--radius-md)] hover:bg-[var(--accent)]/50 transition-colors"
-                    >
+                <div>
+                  {pendingFees.map((fee: any, index: number) => (
+                    <div key={fee.id}>
+                      <div
+                        className="flex items-center justify-between p-4 hover:bg-[var(--accent)]/50 transition-colors"
+                      >
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <h3 className="font-semibold text-[var(--foreground)]">
@@ -578,6 +521,10 @@ export default function ParentInvoicesPage() {
                           </Badge>
                         )}
                       </div>
+                      </div>
+                      {index < pendingFees.length - 1 && (
+                        <div className="border-b border-[var(--border)]" />
+                      )}
                     </div>
                   ))}
                 </div>
@@ -681,10 +628,11 @@ export default function ParentInvoicesPage() {
                 <p className="text-sm text-gray-600 mb-4">
                   Select your preferred payment method. This will be used for all fee payments.
                 </p>
-                <div className="space-y-4">
+                <div>
                   {/* Cash Payment Toggle */}
                   {paymentSettings.cashPaymentEnabled && (
-                    <div className="flex items-center justify-between p-4 border border-[var(--border)] rounded-lg">
+                    <div>
+                      <div className="flex items-center justify-between p-4">
                       <div className="flex items-center space-x-3">
                         <div className="p-2 bg-gray-100 rounded-full">
                           <Coins className="h-5 w-5 text-gray-500" strokeWidth={1.5} />
@@ -708,13 +656,18 @@ export default function ParentInvoicesPage() {
                         }}
                         disabled={!paymentSettings.bankTransferEnabled && preferredPaymentMethod === 'CASH'}
                       />
+                      </div>
                     </div>
                   )}
 
                   {/* Bank Transfer Toggle */}
                   {paymentSettings.bankTransferEnabled && (
-                    <div className="flex items-center justify-between p-4 border border-[var(--border)] rounded-lg">
-                      <div className="flex items-center space-x-3">
+                    <div>
+                      {paymentSettings.cashPaymentEnabled && (
+                        <div className="border-b border-[var(--border)]" />
+                      )}
+                      <div className="flex items-center justify-between p-4">
+                        <div className="flex items-center space-x-3">
                         <div className="p-2 bg-gray-100 rounded-full">
                           <Building2 className="h-5 w-5 text-gray-700" strokeWidth={1.5} />
                         </div>
@@ -737,6 +690,7 @@ export default function ParentInvoicesPage() {
                         }}
                         disabled={!paymentSettings.cashPaymentEnabled && preferredPaymentMethod === 'BANK_TRANSFER'}
                       />
+                      </div>
                     </div>
                   )}
                 </div>

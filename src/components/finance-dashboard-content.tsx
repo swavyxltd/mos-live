@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import GenerateReportModal from '@/components/generate-report-modal'
 import { RecentActivityModal } from '@/components/recent-activity-modal'
 import { useState, useEffect } from 'react'
@@ -172,36 +173,43 @@ export function FinanceDashboardContent({ initialStats }: FinanceDashboardConten
 
   const fetchRecentFinancialActivity = async () => {
     try {
-      // Fetch recent payments and invoices
-      const [paymentsResponse, invoicesResponse] = await Promise.all([
-        fetch('/api/payments'),
+      // Fetch recent monthly payment records (real data from database)
+      const [paymentRecordsResponse, invoicesResponse] = await Promise.all([
+        fetch('/api/payments/records?status=PAID'),
         fetch('/api/invoices')
       ])
 
       const activities: any[] = []
 
-      if (paymentsResponse.ok) {
-        const payments = await paymentsResponse.json()
-        // Filter for paid payments and take most recent
-        const paidPayments = payments
-          .filter((p: any) => p.status === 'PAID' && p.paidDate)
-          .sort((a: any, b: any) => new Date(b.paidDate || b.createdAt).getTime() - new Date(a.paidDate || a.createdAt).getTime())
-          .slice(0, 5)
+      if (paymentRecordsResponse.ok) {
+        const paymentRecords = await paymentRecordsResponse.json()
+        // Filter for paid records and take most recent
+        const paidRecords = paymentRecords
+          .filter((p: any) => p.status === 'PAID' && p.paidAt)
+          .sort((a: any, b: any) => new Date(b.paidAt || b.createdAt).getTime() - new Date(a.paidAt || a.createdAt).getTime())
+          .slice(0, 10)
         
-        paidPayments.forEach((payment: any) => {
+        paidRecords.forEach((record: any) => {
+          const studentName = record.Student 
+            ? `${record.Student.firstName || ''} ${record.Student.lastName || ''}`.trim() || 'Student'
+            : 'Student'
+          
           activities.push({
-            id: payment.id,
-            type: 'payment',
-            action: `Payment received from ${payment.studentName || 'Student'}`,
-            amount: `£${payment.amount?.toFixed(2) || '0.00'}`,
-            timestamp: new Date(payment.paidDate || payment.createdAt).toLocaleDateString('en-GB', {
+            id: record.id,
+            type: record.method === 'CASH' ? 'cash_payment' : 'payment',
+            action: `Payment received from ${studentName}`,
+            amount: `£${((record.amountP || 0) / 100).toFixed(2)}`,
+            timestamp: new Date(record.paidAt || record.createdAt).toLocaleDateString('en-GB', {
               day: 'numeric',
               month: 'short',
               year: 'numeric',
               hour: '2-digit',
               minute: '2-digit'
             }),
-            time: new Date(payment.paidDate || payment.createdAt)
+            time: new Date(record.paidAt || record.createdAt),
+            studentName,
+            class: record.Class?.name,
+            paymentMethod: record.method
           })
         })
       }
@@ -227,7 +235,8 @@ export function FinanceDashboardContent({ initialStats }: FinanceDashboardConten
               hour: '2-digit',
               minute: '2-digit'
             }),
-            time: new Date(invoice.dueDate || invoice.createdAt)
+            time: new Date(invoice.dueDate || invoice.createdAt),
+            studentName: invoice.studentName
           })
         })
       }
@@ -236,6 +245,7 @@ export function FinanceDashboardContent({ initialStats }: FinanceDashboardConten
       activities.sort((a, b) => (b.time?.getTime() || 0) - (a.time?.getTime() || 0))
       setRecentFinancialActivity(activities.slice(0, 10))
     } catch (error) {
+      console.error('Error fetching recent financial activity:', error)
       setRecentFinancialActivity([])
     }
   }
@@ -330,10 +340,10 @@ export function FinanceDashboardContent({ initialStats }: FinanceDashboardConten
         document.body.removeChild(a)
       } else {
         const errorData = await response.json()
-        alert(`Failed to generate CSV report: ${errorData.error || 'Unknown error'}`)
+        toast.error(`Failed to generate CSV report: ${errorData.error || 'Unknown error'}`)
       }
     } catch (error) {
-      alert(`Error generating CSV report: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      toast.error(`Error generating CSV report: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
   // Show skeleton loaders while data is loading
@@ -494,9 +504,10 @@ export function FinanceDashboardContent({ initialStats }: FinanceDashboardConten
         <CardContent>
           {recentFinancialActivity.length > 0 ? (
             <>
-              <div className="space-y-4">
+              <div>
                 {recentFinancialActivity.slice(0, 4).map((activity, index) => (
-                  <div key={index} className="flex items-start gap-3">
+                  <div key={index}>
+                    <div className="flex items-start gap-3 py-3">
                     <div className={`w-2 h-2 rounded-full mt-2 ${
                       activity.type === 'payment' ? 'bg-green-500' :
                       activity.type === 'invoice' ? 'bg-blue-500' :
@@ -510,6 +521,10 @@ export function FinanceDashboardContent({ initialStats }: FinanceDashboardConten
                     <div className="text-sm font-medium text-green-600">
                       {activity.amount}
                     </div>
+                    </div>
+                    {index < Math.min(recentFinancialActivity.length, 4) - 1 && (
+                      <div className="border-b border-[var(--border)]" />
+                    )}
                   </div>
                 ))}
               </div>

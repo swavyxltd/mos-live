@@ -206,9 +206,10 @@ export function AttendanceMarking() {
                     </Button>
                   </div>
 
-                  <div className="space-y-3">
-                    {selectedClass.students.map((student) => (
-                      <div key={student.id} className="flex items-center justify-between p-4 border border-[var(--border)] rounded-lg bg-[var(--muted)] hover:bg-[var(--accent)] transition-colors shadow-sm">
+                  <div>
+                    {selectedClass.students.map((student, index) => (
+                      <div key={student.id}>
+                        <div className="flex items-center justify-between p-4 bg-[var(--muted)] hover:bg-[var(--accent)] transition-colors">
                         <div className="flex items-center space-x-3 flex-1 min-w-0">
                           {getStatusIcon(student.status)}
                           <div className="flex-1 min-w-0">
@@ -256,6 +257,10 @@ export function AttendanceMarking() {
                             <Clock className="h-6 w-6" />
                           </Button>
                         </div>
+                        </div>
+                        {index < selectedClass.students.length - 1 && (
+                          <div className="border-b border-[var(--border)]" />
+                        )}
                       </div>
                     ))}
                   </div>

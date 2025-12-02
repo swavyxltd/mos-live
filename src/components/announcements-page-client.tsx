@@ -31,9 +31,9 @@ export function AnnouncementsPageClient({ messages }: AnnouncementsPageClientPro
           </div>
         </div>
       ) : (
-        <div className="space-y-4">
-          {messages.map((message) => (
-            <div key={message.id} className="bg-white shadow rounded-lg">
+        <div className="bg-[var(--card)] shadow rounded-lg border border-[var(--border)]">
+          {messages.map((message, index) => (
+            <div key={message.id}>
               <div className="px-4 py-5 sm:p-6">
                 <div className="flex justify-between items-start mb-3">
                   <h3 className="text-lg font-medium text-gray-900">{message.title}</h3>
@@ -41,6 +41,9 @@ export function AnnouncementsPageClient({ messages }: AnnouncementsPageClientPro
                 </div>
                 <div className="text-gray-700 whitespace-pre-wrap">{message.body}</div>
               </div>
+              {index < messages.length - 1 && (
+                <div className="border-b border-[var(--border)]" />
+              )}
             </div>
           ))}
         </div>

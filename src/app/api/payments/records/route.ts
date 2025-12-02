@@ -49,7 +49,7 @@ async function handleGET(request: NextRequest) {
         }
       },
       orderBy: [
-        { month: 'desc' },
+        { paidAt: 'desc' },
         { createdAt: 'desc' }
       ]
     })
@@ -166,7 +166,8 @@ async function handlePATCH(request: NextRequest) {
           month: currentRecord.month,
           amount: currentRecord.amountP,
           paymentMethod: currentRecord.method || 'Unknown',
-          reference: reference || currentRecord.reference
+          reference: reference || currentRecord.reference,
+          paidAt: currentRecord.updatedAt || currentRecord.createdAt
         })
         logger.info('Payment confirmation email sent', {
           to: currentRecord.Student.User.email,

@@ -4,6 +4,7 @@ interface EmailTemplateOptions {
   title: string
   description: string | string[]
   content?: string
+  headerHtml?: string
   buttonText?: string
   buttonUrl?: string
   footerText?: string
@@ -17,6 +18,7 @@ export async function generateEmailTemplate({
   title,
   description,
   content,
+  headerHtml,
   buttonText,
   buttonUrl,
   footerText,
@@ -60,10 +62,14 @@ export async function generateEmailTemplate({
   ` : ''
   
   // Logo HTML
+  // For preview mode, use a data URL or local path
+  const isPreview = process.env.NODE_ENV === 'development' && logoUrl.includes('localhost')
+  const logoSrc = isPreview ? '/madrasah-logo.png' : logoUrl
+  
   const logoHtml = showLogo ? `
     <tr>
-      <td align="center" style="padding: 48px 40px 32px 40px;">
-        <img src="${logoUrl}" alt="Madrasah OS" style="max-width: 198px; height: auto; display: block;" />
+      <td align="center" style="padding: 48px 40px 27px 40px;">
+        <img src="${logoSrc}" alt="Madrasah OS" style="max-width: 198px; height: auto; display: block;" onerror="this.style.display='none';" />
       </td>
     </tr>
   ` : ''
@@ -88,7 +94,8 @@ export async function generateEmailTemplate({
                 
                 <!-- Content -->
                 <tr>
-                  <td align="center" style="padding: 0 40px 48px 40px;">
+                  <td align="center" style="padding: 48px 40px 48px 40px;">
+                    ${headerHtml || ''}
                     <h1 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 600; color: #111827; line-height: 1.4; text-align: center;">
                       ${title}
                     </h1>

@@ -13,6 +13,7 @@ function Verify2FAContent() {
   const [isLoading, setIsLoading] = useState(false)
   const [isResending, setIsResending] = useState(false)
   const [error, setError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
   const [email, setEmail] = useState('')
   const [pendingUserId, setPendingUserId] = useState<string | null>(null)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
@@ -52,6 +53,7 @@ function Verify2FAContent() {
     newCode[index] = value
     setCode(newCode)
     setError('')
+    setSuccessMessage('')
 
     // Auto-focus next input
     if (value && index < 5) {
@@ -191,6 +193,7 @@ function Verify2FAContent() {
 
     setIsResending(true)
     setError('')
+    setSuccessMessage('')
 
     try {
       const response = await fetch('/api/auth/resend-2fa', {
@@ -203,10 +206,15 @@ function Verify2FAContent() {
 
       if (!response.ok) {
         setError(data.error || 'Failed to resend code. Please try again.')
+        setSuccessMessage('')
       } else {
         setError('')
-        // Show success message
-        alert('Verification code sent to your email')
+        // Show success message within the auth box
+        setSuccessMessage('Verification code sent to your email')
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+          setSuccessMessage('')
+        }, 5000)
       }
     } catch (error) {
       setError('Failed to resend code. Please try again.')
@@ -251,6 +259,13 @@ function Verify2FAContent() {
 
         {/* Content */}
         <div className="p-4 sm:p-6 space-y-6">
+          {/* Success message */}
+          {successMessage && (
+            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm text-center">
+              {successMessage}
+            </div>
+          )}
+          
           {/* Error message */}
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm text-center">

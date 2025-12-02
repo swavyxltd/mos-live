@@ -19,6 +19,13 @@ async function handlePOST(request: NextRequest) {
     const orgId = await requireOrg(request)
     if (orgId instanceof NextResponse) return orgId
 
+    // Get org feeDueDay setting
+    const org = await prisma.org.findUnique({
+      where: { id: orgId },
+      select: { feeDueDay: true }
+    })
+    const orgFeeDueDay = (org as any)?.feeDueDay || 1
+
     // Get all unpaid payment records for this org
     const unpaidRecords = await prisma.monthlyPaymentRecord.findMany({
       where: {
@@ -30,8 +37,7 @@ async function handlePOST(request: NextRequest) {
       include: {
         Class: {
           select: {
-            id: true,
-            feeDueDay: true
+            id: true
           }
         }
       }
@@ -44,7 +50,7 @@ async function handlePOST(request: NextRequest) {
       const newStatus = calculatePaymentStatus(
         record.status,
         record.month,
-        record.Class.feeDueDay,
+        orgFeeDueDay,
         record.paidAt
       )
 

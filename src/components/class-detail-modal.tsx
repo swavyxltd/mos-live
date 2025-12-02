@@ -56,11 +56,11 @@ interface ClassData {
     studentClasses: number
   }
   monthlyFeeP?: number
-  feeDueDay?: number
 }
 
 export function ClassDetailModal({ classId, isOpen, onClose, onClassUpdate }: ClassDetailModalProps) {
   const [classData, setClassData] = useState<ClassData | null>(null)
+  const [orgFeeDueDay, setOrgFeeDueDay] = useState<number>(1)
   const [loading, setLoading] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -92,9 +92,14 @@ export function ClassDetailModal({ classId, isOpen, onClose, onClassUpdate }: Cl
     
     setLoading(true)
     try {
-      const response = await fetch(`/api/classes/${classId}`)
-      if (response.ok) {
-        const data = await response.json()
+      // Fetch class data and org settings in parallel
+      const [classResponse, orgResponse] = await Promise.all([
+        fetch(`/api/classes/${classId}`),
+        fetch('/api/settings/organization')
+      ])
+      
+      if (classResponse.ok) {
+        const data = await classResponse.json()
         
         // Parse schedule
         let parsedSchedule: any = {}
@@ -106,6 +111,12 @@ export function ClassDetailModal({ classId, isOpen, onClose, onClassUpdate }: Cl
           } catch (e) {
             parsedSchedule = {}
           }
+        }
+
+        // Get org feeDueDay
+        if (orgResponse.ok) {
+          const orgData = await orgResponse.json()
+          setOrgFeeDueDay(orgData.feeDueDay || 1)
         }
 
         // Transform to match expected format
@@ -130,8 +141,7 @@ export function ClassDetailModal({ classId, isOpen, onClose, onClassUpdate }: Cl
           _count: {
             studentClasses: data._count?.StudentClass || 0
           },
-          monthlyFeeP: data.monthlyFeeP,
-          feeDueDay: data.feeDueDay
+          monthlyFeeP: data.monthlyFeeP
         }
         
         setClassData(transformed)
@@ -326,10 +336,10 @@ export function ClassDetailModal({ classId, isOpen, onClose, onClassUpdate }: Cl
                                 <span>£{(classData.monthlyFeeP / 100).toFixed(2)}/month</span>
                               </div>
                             )}
-                            {classData.feeDueDay && (
+                            {orgFeeDueDay && (
                               <div className="flex items-center gap-2 text-sm text-[var(--foreground)]">
                                 <Calendar className="h-4 w-4 flex-shrink-0 text-[var(--muted-foreground)]" />
-                                <span>Due {classData.feeDueDay}{classData.feeDueDay === 1 ? 'st' : classData.feeDueDay === 2 ? 'nd' : classData.feeDueDay === 3 ? 'rd' : 'th'} of month</span>
+                                <span>Due {orgFeeDueDay}{orgFeeDueDay === 1 ? 'st' : orgFeeDueDay === 2 ? 'nd' : orgFeeDueDay === 3 ? 'rd' : 'th'} of month</span>
                               </div>
                             )}
                           </div>

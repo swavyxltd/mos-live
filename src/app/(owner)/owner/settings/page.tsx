@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -11,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Save, Globe, CreditCard, Calendar, Building2, Shield, Settings, Image, CheckCircle2, AlertCircle } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { useToast } from '@/hooks/use-toast'
+import { toast } from 'sonner'
 
 interface PlatformSettings {
   id: string
@@ -46,18 +48,22 @@ interface BillingStats {
 }
 
 export default function OwnerSettingsPage() {
-  const { toast } = useToast()
+  const { toast: toastHook } = useToast()
+  const { data: session } = useSession()
   const [activeTab, setActiveTab] = useState('platform')
   const [loading, setLoading] = useState(false)
   const [loadingData, setLoadingData] = useState(true)
   const [settings, setSettings] = useState<PlatformSettings | null>(null)
   const [billingStats, setBillingStats] = useState<BillingStats | null>(null)
   const [formData, setFormData] = useState<Partial<PlatformSettings>>({})
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false)
+  const [loading2FA, setLoading2FA] = useState(false)
 
   // Fetch settings on mount
   useEffect(() => {
     fetchSettings()
     fetchBillingStats()
+    fetchOwner2FA()
   }, [])
 
   const fetchSettings = async () => {
@@ -68,7 +74,7 @@ export default function OwnerSettingsPage() {
       setSettings(data)
       setFormData(data)
     } catch (error: any) {
-      toast({
+      toastHook({
         title: 'Error',
         description: 'Failed to load settings',
         variant: 'destructive'
@@ -85,6 +91,46 @@ export default function OwnerSettingsPage() {
       const data = await response.json()
       setBillingStats(data)
     } catch (error: any) {
+    }
+  }
+
+  const fetchOwner2FA = async () => {
+    try {
+      const response = await fetch('/api/settings/user')
+      if (response.ok) {
+        const user = await response.json()
+        if (user && user.twoFactorEnabled !== undefined) {
+          setTwoFactorEnabled(user.twoFactorEnabled !== false)
+        }
+      }
+    } catch (error: any) {
+      // Silently fail - 2FA status is optional
+    }
+  }
+
+  const handle2FAToggle = async (checked: boolean) => {
+    setLoading2FA(true)
+    try {
+      const response = await fetch('/api/settings/user', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          twoFactorEnabled: checked
+        })
+      })
+      
+      const data = await response.json()
+      
+      if (response.ok && data.success) {
+        setTwoFactorEnabled(checked)
+        toast.success(checked ? 'Two-factor authentication enabled' : 'Two-factor authentication disabled')
+      } else {
+        toast.error('Failed to update 2FA settings')
+      }
+    } catch (error) {
+      toast.error('Failed to update 2FA settings')
+    } finally {
+      setLoading2FA(false)
     }
   }
 
@@ -106,7 +152,7 @@ export default function OwnerSettingsPage() {
       setSettings(result.settings)
       setFormData(result.settings)
       
-      toast({
+      toastHook({
         title: 'Success',
         description: 'Settings saved successfully',
       })
@@ -116,7 +162,7 @@ export default function OwnerSettingsPage() {
         fetchBillingStats()
       }
     } catch (error: any) {
-      toast({
+      toastHook({
         title: 'Error',
         description: error.message || 'Failed to save settings',
         variant: 'destructive'
@@ -415,6 +461,44 @@ export default function OwnerSettingsPage() {
                   />
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                Account Security
+              </CardTitle>
+              <CardDescription>
+                Manage two-factor authentication for your owner account.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Two-Factor Authentication</Label>
+                  <p className="text-sm text-gray-500">
+                    Add an extra layer of security to your account. When enabled, you'll receive a verification code via email when signing in.
+                  </p>
+                </div>
+                <Switch
+                  checked={twoFactorEnabled}
+                  onCheckedChange={handle2FAToggle}
+                  disabled={loading2FA}
+                />
+              </div>
+              {twoFactorEnabled && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    <span className="text-sm font-medium text-green-900">2FA is enabled for your account</span>
+                  </div>
+                  <p className="text-sm text-green-700 mt-1">
+                    You will be required to enter a verification code sent to your email when signing in.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

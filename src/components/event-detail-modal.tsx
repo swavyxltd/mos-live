@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Modal } from '@/components/ui/modal'
 import { Badge } from '@/components/ui/badge'
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import { Calendar, Clock, MapPin, Users, Edit, Trash2, X } from 'lucide-react'
 
 interface CalendarEvent {
@@ -43,6 +44,7 @@ export function EventDetailModal({
 }: EventDetailModalProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -131,11 +133,15 @@ export function EventDetailModal({
     }
   }
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!event) return
+    setShowDeleteConfirm(true)
+  }
 
-    if (confirm('Are you sure you want to delete this event?')) {
-      setLoading(true)
+  const confirmDelete = async () => {
+    if (!event) return
+    setShowDeleteConfirm(false)
+    setLoading(true)
       try {
         const { isDemoMode } = await import('@/lib/demo-mode')
         
@@ -357,6 +363,18 @@ export function EventDetailModal({
             </div>
           </div>
         )}
+      
+      <ConfirmationDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={confirmDelete}
+        title="Delete Event"
+        message="Are you sure you want to delete this event? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="destructive"
+        isLoading={loading}
+      />
     </Modal>
   )
 }

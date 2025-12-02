@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
+import { toast } from 'sonner'
 import { PhoneLink } from './phone-link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -87,29 +88,29 @@ export function PublicApplicationForm({ org, classes }: PublicApplicationFormPro
     
     // Validate required fields
     if (!guardianName.trim()) {
-      alert('Please enter the guardian\'s full name.')
+      toast.error('Please enter the guardian\'s full name.')
       return
     }
     
     if (!guardianPhone.trim()) {
-      alert('Please enter the guardian\'s phone number.')
+      toast.error('Please enter the guardian\'s phone number.')
       return
     }
     
     if (!guardianEmail.trim()) {
-      alert('Please enter the guardian\'s email address.')
+      toast.error('Please enter the guardian\'s email address.')
       return
     }
     
     if (!guardianAddress.trim()) {
-      alert('Please enter the guardian\'s address.')
+      toast.error('Please enter the guardian\'s address.')
       return
     }
     
     // Validate children
     const validChildren = children.filter(child => child.firstName.trim() && child.lastName.trim())
     if (validChildren.length === 0) {
-      alert('Please enter at least one child\'s information.')
+      toast.error('Please enter at least one child\'s information.')
       return
     }
     
@@ -118,36 +119,36 @@ export function PublicApplicationForm({ org, classes }: PublicApplicationFormPro
       const child = children[i]
       if (child.firstName.trim() || child.lastName.trim()) {
         if (!child.firstName.trim()) {
-          alert(`Please enter the first name for Child ${i + 1}.`)
+          toast.error(`Please enter the first name for Child ${i + 1}.`)
           return
         }
         if (!child.lastName.trim()) {
-          alert(`Please enter the last name for Child ${i + 1}.`)
+          toast.error(`Please enter the last name for Child ${i + 1}.`)
           return
         }
         if (!child.dob.trim()) {
-          alert(`Please enter the date of birth for Child ${i + 1}.`)
+          toast.error(`Please enter the date of birth for Child ${i + 1}.`)
           return
         }
         if (!child.gender.trim()) {
-          alert(`Please select the gender for Child ${i + 1}.`)
+          toast.error(`Please select the gender for Child ${i + 1}.`)
           return
         }
       }
     }
     
     if (!preferredClass.trim()) {
-      alert('Please select a preferred class.')
+      toast.error('Please select a preferred class.')
       return
     }
     
     if (!preferredStartDate.trim()) {
-      alert('Please enter a preferred start date.')
+      toast.error('Please enter a preferred start date.')
       return
     }
     
     if (!agreed) {
-      alert('Please confirm that the information is accurate.')
+      toast.error('Please confirm that the information is accurate.')
       return
     }
 
@@ -180,7 +181,7 @@ export function PublicApplicationForm({ org, classes }: PublicApplicationFormPro
       }
     } catch (error: any) {
       const errorMessage = error.message || 'There was an error submitting your application. Please try again.'
-      alert(errorMessage)
+      toast.error(errorMessage)
     } finally {
       setIsSubmitting(false)
     }
@@ -368,9 +369,10 @@ export function PublicApplicationForm({ org, classes }: PublicApplicationFormPro
               </Button>
             </div>
             
-            <div className="space-y-4">
+            <div>
               {children.map((child, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-4">
+                <div key={index}>
+                  <div className="p-4">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-medium text-gray-900">
                       Child {index + 1}
@@ -447,6 +449,10 @@ export function PublicApplicationForm({ org, classes }: PublicApplicationFormPro
                       </div>
                     </div>
                   </div>
+                  </div>
+                  {index < children.length - 1 && (
+                    <div className="border-b border-gray-200" />
+                  )}
                 </div>
               ))}
             </div>

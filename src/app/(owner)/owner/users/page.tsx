@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { SplitTitle } from '@/components/ui/split-title'
 import { Badge } from '@/components/ui/badge'
@@ -200,7 +201,7 @@ export default function OwnerUsersPage() {
     })
     
     if (exportData.length === 0) {
-      alert('No data to export')
+      toast.error('No data to export')
       return
     }
     
@@ -459,10 +460,11 @@ export default function OwnerUsersPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div>
             {filteredUsers.length > 0 ? (
-              filteredUsers.map((user) => (
-                <div key={user.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors w-full min-w-0">
+              filteredUsers.map((user, index) => (
+                <div key={user.id}>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 hover:bg-gray-50 transition-colors w-full min-w-0">
                   <div className="flex items-center space-x-3 min-w-0 flex-1">
                     <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center shrink-0">
                       <span className="text-sm font-medium text-gray-600">
@@ -491,6 +493,10 @@ export default function OwnerUsersPage() {
                       </Button>
                     </div>
                   </div>
+                  </div>
+                  {index < filteredUsers.length - 1 && (
+                    <div className="border-b border-gray-200" />
+                  )}
                 </div>
               ))
             ) : (

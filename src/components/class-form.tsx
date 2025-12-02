@@ -23,7 +23,6 @@ interface ClassFormData {
   }
   teacherId: string
   monthlyFee: number
-  feeDueDay: number | null
 }
 
 interface ClassFormProps {
@@ -68,8 +67,7 @@ export function ClassForm({ initialData, isEditing = false, onSubmit, onCancel }
       endTime: initialData?.schedule?.endTime || '5:00 PM'
     },
     teacherId: initialData?.teacherId || '',
-    monthlyFee: initialData?.monthlyFee || 0,
-    feeDueDay: initialData?.feeDueDay || null
+    monthlyFee: initialData?.monthlyFee || 0
   })
 
   // Fetch teachers on mount
@@ -243,22 +241,6 @@ export function ClassForm({ initialData, isEditing = false, onSubmit, onCancel }
               required
             />
             <p className="text-sm text-gray-500">Fixed monthly fee for this class. This will be used when creating payment records.</p>
-          </div>
-
-          {/* Fee Due Day */}
-          <div className="space-y-2">
-            <Label htmlFor="feeDueDay">Fee Due Day (Day of Month) *</Label>
-            <Input
-              id="feeDueDay"
-              type="number"
-              min="1"
-              max="31"
-              value={formData.feeDueDay || ''}
-              onChange={(e) => handleInputChange('feeDueDay', e.target.value ? parseInt(e.target.value) : null)}
-              placeholder="e.g., 1 (for 1st of each month)"
-              required
-            />
-            <p className="text-sm text-gray-500">Day of the month when fees are due. Payments not received within 48 hours will be marked as late, and after 96 hours as overdue.</p>
           </div>
 
           {/* Schedule */}

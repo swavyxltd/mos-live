@@ -34,10 +34,17 @@ async function handlePOST(request: NextRequest) {
       return NextResponse.json({ error: 'No students found' }, { status: 400 })
     }
     
+    // Get org feeDueDay setting
+    const org = await prisma.org.findUnique({
+      where: { id: orgId },
+      select: { feeDueDay: true }
+    })
+    const orgFeeDueDay = (org as any)?.feeDueDay || 1
+    
     const now = new Date()
-    const dueDate = new Date(now)
-    dueDate.setMonth(dueDate.getMonth() + 1)
-    dueDate.setDate(1) // First day of next month
+    // Calculate due date based on org feeDueDay for next month
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, orgFeeDueDay)
+    const dueDate = nextMonth
     
     const createdInvoices = []
     

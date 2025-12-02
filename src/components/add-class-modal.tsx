@@ -61,8 +61,7 @@ export function AddClassModal({ isOpen, onClose, onSave }: AddClassModalProps) {
       startTime: '5:00 PM',
       endTime: '7:00 PM'
     },
-    monthlyFee: 0,
-    feeDueDay: 1
+    monthlyFee: 0
   })
 
   // Fetch teachers when modal opens
@@ -149,8 +148,7 @@ export function AddClassModal({ isOpen, onClose, onSave }: AddClassModalProps) {
           description: formData.description || null,
           schedule: scheduleString,
           teacherId: formData.teacherId || null,
-          monthlyFeeP: Math.round(formData.monthlyFee * 100), // Convert to pence
-          feeDueDay: formData.feeDueDay || null
+          monthlyFeeP: Math.round(formData.monthlyFee * 100) // Convert to pence
         })
       })
 
@@ -191,8 +189,7 @@ export function AddClassModal({ isOpen, onClose, onSave }: AddClassModalProps) {
         startTime: '5:00 PM',
         endTime: '7:00 PM'
       },
-      monthlyFee: 0,
-      feeDueDay: 1
+      monthlyFee: 0
     })
     setError('')
     setIsSubmitting(false)
@@ -370,20 +367,6 @@ export function AddClassModal({ isOpen, onClose, onSave }: AddClassModalProps) {
                 required
               />
               <p className="text-sm text-gray-500">Fixed monthly fee for this class. This will be used when creating payment records.</p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="feeDueDay">Fee Due Day (Day of Month) *</Label>
-              <Input
-                id="feeDueDay"
-                type="number"
-                min="1"
-                max="31"
-                value={formData.feeDueDay}
-                onChange={(e) => handleInputChange('feeDueDay', parseInt(e.target.value) || 1)}
-                placeholder="e.g., 1 (for 1st of each month)"
-                required
-              />
-              <p className="text-sm text-gray-500">Day of the month when fees are due. Payments not received within 48 hours will be marked as late, and after 96 hours as overdue.</p>
             </div>
         </div>
 

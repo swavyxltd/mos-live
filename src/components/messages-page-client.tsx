@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { SendMessageModal } from './send-message-modal'
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -113,10 +114,10 @@ export function MessagesPageClient() {
         await fetchMessages(page)
         setIsModalOpen(false)
       } else {
-        alert('Failed to send message. Please try again.')
+        toast.error('Failed to send message. Please try again.')
       }
     } catch (error) {
-      alert('Error sending message. Please try again.')
+      toast.error('Error sending message. Please try again.')
     }
   }
 

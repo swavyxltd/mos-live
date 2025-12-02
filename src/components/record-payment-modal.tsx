@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -36,12 +37,12 @@ export function RecordPaymentModal({
     try {
       const paymentAmount = parseFloat(amount)
       if (isNaN(paymentAmount) || paymentAmount <= 0) {
-        alert('Please enter a valid amount')
+        toast.error('Please enter a valid amount')
         return
       }
 
       if (!method) {
-        alert('Please select a payment method')
+        toast.error('Please select a payment method')
         return
       }
 
@@ -57,7 +58,7 @@ export function RecordPaymentModal({
       setNotes('')
       onClose()
     } catch (error) {
-      alert('Failed to record payment')
+      toast.error('Failed to record payment')
     } finally {
       setLoading(false)
     }

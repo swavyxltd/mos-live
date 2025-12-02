@@ -143,6 +143,10 @@ export default function PaymentRecordsPageClient() {
       }
 
       toast.success('Payment marked as paid. Confirmation email sent to parent.')
+      
+      // Trigger refresh event for finance dashboard
+      window.dispatchEvent(new CustomEvent('refresh-dashboard'))
+      
       await fetchRecords()
       setShowEditModal(false)
       setSelectedRecord(null)

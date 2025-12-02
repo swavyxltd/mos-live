@@ -24,8 +24,7 @@ export function NewClassForm() {
           description: data.description || null,
           schedule: scheduleString,
           teacherId: data.teacherId || null,
-          monthlyFeeP: data.monthlyFee || 0,
-          feeDueDay: data.feeDueDay || null
+          monthlyFeeP: data.monthlyFee || 0
         })
       })
 

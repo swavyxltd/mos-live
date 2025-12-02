@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import { QuickAddMenu } from '@/components/quick-add-menu'
 import { RestrictedAction } from '@/components/restricted-action'
 import { useState, useEffect } from 'react'
@@ -43,7 +44,9 @@ import {
   Eye,
   FileText,
   MessageSquare,
-  ArrowRight
+  ArrowRight,
+  Send,
+  Zap
 } from 'lucide-react'
 import type { DashboardStats as DashboardStatsType } from '@/lib/dashboard-stats'
 
@@ -77,6 +80,7 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
   const [isAddTeacherModalOpen, setIsAddTeacherModalOpen] = useState(false)
   const [isAddClassModalOpen, setIsAddClassModalOpen] = useState(false)
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false)
+  const [quickActionLoading, setQuickActionLoading] = useState<string | null>(null)
   const [classes, setClasses] = useState<Array<{ id: string; name: string; grade: string }>>([])
   const [recentActivity, setRecentActivity] = useState<any[]>([])
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([])
@@ -214,9 +218,12 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
           .map((event: any) => ({
             id: event.id,
             title: event.title,
-            date: new Date(event.date).toLocaleDateString(),
+            date: new Date(event.date),
+            dateString: new Date(event.date).toLocaleDateString(),
             description: event.description || event.Class?.name || '',
-            type: event.type || 'event'
+            type: event.type || 'EVENT',
+            isHoliday: event.isHoliday || false,
+            endDate: event.endDate ? new Date(event.endDate) : null
           }))
         setUpcomingEvents(upcoming)
       } else {
@@ -373,16 +380,68 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
         document.body.removeChild(a)
                   } else {
                     const errorData = await response.json()
-                    alert(`Failed to generate report: ${errorData.details || errorData.error}`)
+                    toast.error(`Failed to generate report: ${errorData.details || errorData.error}`)
                   }
                 } catch (error) {
-                  alert(`Error generating report: ${error instanceof Error ? error.message : 'Unknown error'}`)
+                  toast.error(`Error generating report: ${error instanceof Error ? error.message : 'Unknown error'}`)
                 }
   }
 
   // Dashboard type is determined by subrole template, not individual permissions
   const isTeacher = staffSubrole === 'TEACHER'
   const isAdmin = userRole === 'ADMIN' || staffSubrole === 'ADMIN'
+
+  // Quick action handlers
+  const handleQuickAction = async (taskId: string, action: string) => {
+    setQuickActionLoading(taskId)
+    try {
+      switch (taskId) {
+        case 'applications':
+          // Quick review - navigate to applications with NEW filter
+          window.location.href = '/applications?status=NEW'
+          break
+        case 'overdue-payments':
+          // Send reminder to all overdue payments
+          const response = await fetch('/api/payments/send-reminders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filter: 'overdue' })
+          })
+          if (response.ok) {
+            toast.success('Payment reminders sent successfully!')
+            fetchTodaysTasks() // Refresh tasks
+          } else {
+            toast.error('Failed to send reminders. Please try again.')
+          }
+          break
+        case 'pending-invoices':
+          // Send all pending invoices
+          const invoiceResponse = await fetch('/api/invoices/send-all', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'PENDING' })
+          })
+          if (invoiceResponse.ok) {
+            toast.success('Invoices sent successfully!')
+            fetchTodaysTasks() // Refresh tasks
+          } else {
+            toast.error('Failed to send invoices. Please try again.')
+          }
+          break
+        case 'attendance':
+          // Navigate to attendance page for today
+          window.location.href = '/attendance?date=today'
+          break
+        default:
+          break
+      }
+    } catch (error) {
+      console.error('Quick action error:', error)
+      toast.error('An error occurred. Please try again.')
+    } finally {
+      setQuickActionLoading(null)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -517,8 +576,8 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
                 <p className="text-sm text-[var(--muted-foreground)]">All caught up! No tasks for today.</p>
               </div>
             ) : (
-              <div className="space-y-2">
-                {todaysTasks.map((task) => {
+              <div>
+                {todaysTasks.map((task, index) => {
                   const IconComponent = 
                     task.icon === 'FileText' ? FileText :
                     task.icon === 'AlertCircle' ? AlertCircle :
@@ -526,36 +585,81 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
                     task.icon === 'UserCheck' ? UserCheck :
                     task.icon === 'Calendar' ? Calendar : FileText
 
+                  // Determine quick action label and icon based on task type
+                  const getQuickAction = () => {
+                    switch (task.id) {
+                      case 'applications':
+                        return { label: 'Quick Review', icon: Eye, action: 'review' }
+                      case 'overdue-payments':
+                        return { label: 'Send Reminder', icon: Send, action: 'remind' }
+                      case 'pending-invoices':
+                        return { label: 'Send All', icon: Send, action: 'send' }
+                      case 'attendance':
+                        return { label: 'Mark Now', icon: Zap, action: 'mark' }
+                      default:
+                        return null
+                    }
+                  }
+
+                  const quickAction = getQuickAction()
+
                   return (
-                    <Link
-                      key={task.id}
-                      href={task.link}
-                      className="block p-4 border border-[var(--border)] rounded-lg bg-[var(--card)] hover:bg-[var(--accent)] transition-colors"
-                    >
-                      <div className="flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                          <div className="w-10 h-10 bg-[var(--muted)] rounded-lg flex items-center justify-center flex-shrink-0">
-                            <IconComponent className="h-5 w-5 text-[var(--foreground)]" />
+                    <div key={task.id}>
+                      <div className="flex items-center gap-2 p-4 hover:bg-[var(--accent)] transition-colors">
+                        <Link
+                          href={task.link}
+                          className="flex items-center justify-between gap-4 flex-1 min-w-0"
+                        >
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <div className="w-10 h-10 bg-[var(--muted)] rounded-lg flex items-center justify-center flex-shrink-0">
+                              <IconComponent className="h-5 w-5 text-[var(--foreground)]" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-sm font-semibold text-[var(--foreground)] mb-1">
+                                {task.title}
+                              </h3>
+                              <p className="text-sm text-[var(--muted-foreground)]">
+                                {task.description}
+                              </p>
+                            </div>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="text-sm font-semibold text-[var(--foreground)] mb-1">
-                              {task.title}
-                            </h3>
-                            <p className="text-sm text-[var(--muted-foreground)]">
-                              {task.description}
-                            </p>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            {task.count > 0 && (
+                              <span className="px-2 py-1 rounded-full text-xs font-semibold bg-[var(--muted)] text-[var(--foreground)]">
+                                {task.count}
+                              </span>
+                            )}
+                            <ArrowRight className="h-4 w-4 text-[var(--muted-foreground)]" />
                           </div>
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          {task.count > 0 && (
-                            <span className="px-2 py-1 rounded-full text-xs font-semibold bg-[var(--muted)] text-[var(--foreground)]">
-                              {task.count}
-                            </span>
-                          )}
-                          <ArrowRight className="h-4 w-4 text-[var(--muted-foreground)]" />
-                        </div>
+                        </Link>
+                        {quickAction && (() => {
+                          const QuickActionIcon = quickAction.icon
+                          return (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-shrink-0 h-8 px-3 text-xs"
+                              onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                handleQuickAction(task.id, quickAction.action)
+                              }}
+                              disabled={quickActionLoading === task.id}
+                            >
+                              {quickActionLoading === task.id ? (
+                                <Clock className="h-3 w-3 mr-1 animate-spin" />
+                              ) : (
+                                <QuickActionIcon className="h-3 w-3 mr-1" />
+                              )}
+                              {quickAction.label}
+                            </Button>
+                          )
+                        })()}
                       </div>
-                    </Link>
+                      {index < todaysTasks.length - 1 && (
+                        <div className="border-b border-[var(--border)]" />
+                      )}
+                    </div>
                   )
                 })}
               </div>
@@ -582,9 +686,10 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
             </CardHeader>
             <CardContent className="flex-1 flex flex-col">
               {recentActivity.length > 0 ? (
-                <div className="space-y-3">
-                  {recentActivity.map((activity) => (
-                    <div key={activity.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-[var(--muted)]/50 transition-colors">
+                <div>
+                  {recentActivity.map((activity, index) => (
+                    <div key={activity.id}>
+                      <div className="flex items-start gap-3 p-2 hover:bg-[var(--muted)]/50 transition-colors">
                       <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${
                         activity.type === 'enrollment' ? 'bg-green-100 text-green-700' :
                         activity.type === 'payment' ? 'bg-blue-100 text-blue-700' :
@@ -609,6 +714,10 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
                           {activity.timestamp}
                         </p>
                       </div>
+                      </div>
+                      {index < recentActivity.length - 1 && (
+                        <div className="border-b border-[var(--border)]" />
+                      )}
                     </div>
                   ))}
                 </div>
@@ -633,25 +742,94 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
             </CardHeader>
             <CardContent className="flex-1 flex flex-col">
               {upcomingEvents.length > 0 ? (
-                <div className="space-y-4">
-                  {upcomingEvents.map((event, index) => (
-                    <div key={index} className="flex items-start gap-3">
-                      <div className={`w-2 h-2 rounded-full mt-2 ${
-                        event.type === 'exam' ? 'bg-red-500' :
-                        event.type === 'meeting' ? 'bg-blue-500' :
-                        'bg-gray-500'
-                      }`} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium">{event.title}</p>
-                        <p className="text-sm text-muted-foreground">{event.date}</p>
-                        <p className="text-sm text-muted-foreground">{event.description}</p>
+                <div>
+                  {upcomingEvents.map((event: any, index: number) => {
+                    const eventDate = event.date instanceof Date ? event.date : new Date(event.date)
+                    const today = new Date()
+                    today.setHours(0, 0, 0, 0)
+                    const eventDateOnly = new Date(eventDate)
+                    eventDateOnly.setHours(0, 0, 0, 0)
+                    const isToday = eventDateOnly.toDateString() === today.toDateString()
+                    
+                    return (
+                      <div key={event.id}>
+                        <div 
+                          className={`flex flex-col sm:flex-row sm:items-start sm:justify-between p-3 sm:p-4 hover:bg-[var(--accent)]/30 transition-all ${
+                            isToday ? 'bg-[var(--primary)]/5' : ''
+                          }`}
+                        >
+                        <div className="flex items-start gap-3 flex-1 min-w-0">
+                          <div className={`w-3 h-3 rounded-full mt-1.5 flex-shrink-0 ${
+                            event.isHoliday || event.type === 'HOLIDAY' ? 'bg-green-500' : 
+                            event.type === 'EXAM' ? 'bg-yellow-500' : 
+                            event.type === 'MEETING' ? 'bg-blue-500' : 
+                            'bg-purple-500'
+                          }`} />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
+                              <h4 className="font-semibold text-[var(--foreground)] break-words">{event.title}</h4>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {isToday && (
+                                  <Badge variant="outline" className="text-xs">Today</Badge>
+                                )}
+                                <Badge 
+                                  variant="outline"
+                                  className={`sm:hidden ${
+                                    event.isHoliday || event.type === 'HOLIDAY' ? 'border-green-500 text-green-700 bg-green-50' : 
+                                    event.type === 'EXAM' ? 'border-yellow-500 text-yellow-700 bg-yellow-50' : 
+                                    event.type === 'MEETING' ? 'border-blue-500 text-blue-700 bg-blue-50' : 
+                                    'border-purple-500 text-purple-700 bg-purple-50'
+                                  }`}
+                                >
+                                  {event.isHoliday || event.type === 'HOLIDAY' ? 'Holiday' : 
+                                   event.type === 'EXAM' ? 'Exam' :
+                                   event.type === 'MEETING' ? 'Meeting' :
+                                   'Event'}
+                                </Badge>
+                              </div>
+                            </div>
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm text-[var(--muted-foreground)]">
+                              <div className="flex items-start sm:items-center gap-2">
+                                <Calendar className="h-3 w-3 flex-shrink-0 mt-0.5 sm:mt-0" />
+                                <span className="break-words">
+                                  {event.endDate && (event.isHoliday || event.type === 'HOLIDAY') ? (
+                                    <>
+                                      <span className="sm:hidden">
+                                        {eventDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} - {event.endDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                      </span>
+                                      <span className="hidden sm:inline">
+                                        {eventDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} - {event.endDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <span className="sm:hidden">
+                                        {eventDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                      </span>
+                                      <span className="hidden sm:inline">
+                                        {eventDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                                      </span>
+                                    </>
+                                  )}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        {index < upcomingEvents.length - 1 && (
+                          <div className="border-b border-[var(--border)]" />
+                        )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p className="text-sm">No upcoming events</p>
+                <div className="text-center py-8">
+                  <Calendar className="h-12 w-12 text-[var(--muted-foreground)] mx-auto mb-4 opacity-50" />
+                  <p className="text-sm text-[var(--muted-foreground)]">
+                    No upcoming events scheduled
+                  </p>
                 </div>
               )}
             </CardContent>

@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Download, Calendar, FileText, AlertCircle, CheckCircle, XCircle, Clock, History, Search, TrendingUp, Users, Mail, Filter, CheckSquare, Square, FileDown, Loader2, FileSpreadsheet, Info, ChevronDown, ChevronUp } from 'lucide-react'
 import { toast } from 'sonner'
 import { Modal } from '@/components/ui/modal'
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 
 interface GiftAidRow {
   id: string
@@ -33,6 +34,8 @@ export function GiftAidPageClient() {
   const [endDate, setEndDate] = useState('')
   const [activeTab, setActiveTab] = useState<'active' | 'pending' | 'declined' | 'history' | 'analytics'>('active')
   const [data, setData] = useState<GiftAidRow[]>([])
+  const [showMissingDataConfirm, setShowMissingDataConfirm] = useState(false)
+  const [pendingDownload, setPendingDownload] = useState<{ data: GiftAidRow[], missingCount: number } | null>(null)
   const [pendingData, setPendingData] = useState<GiftAidRow[]>([])
   const [declinedData, setDeclinedData] = useState<GiftAidRow[]>([])
   const [loading, setLoading] = useState(false)
@@ -278,14 +281,15 @@ export function GiftAidPageClient() {
     }
     
     if (missingDataCount > 0) {
-      const proceed = confirm(
-        `Warning: ${missingDataCount} entries are missing address or postcode information. ` +
-        `The file will still be generated, but you should review and complete these fields before submitting to HMRC. ` +
-        `For non-UK donors, the postcode will be set to 'X' automatically. Continue?`
-      )
-      if (!proceed) return
+      setPendingDownload({ data, missingCount: missingDataCount })
+      setShowMissingDataConfirm(true)
+      return
     }
 
+    proceedWithDownload(data)
+  }
+
+  const proceedWithDownload = (dataToDownload: GiftAidRow[]) => {
     setDownloading(true)
     setShowProgressModal(true)
     setProgress(0)
@@ -1362,6 +1366,26 @@ export function GiftAidPageClient() {
           </div>
         </div>
       </Modal>
+      
+      <ConfirmationDialog
+        isOpen={showMissingDataConfirm}
+        onClose={() => {
+          setShowMissingDataConfirm(false)
+          setPendingDownload(null)
+        }}
+        onConfirm={() => {
+          if (pendingDownload) {
+            setShowMissingDataConfirm(false)
+            proceedWithDownload(pendingDownload.data)
+            setPendingDownload(null)
+          }
+        }}
+        title="Missing Address Information"
+        message={`Warning: ${pendingDownload?.missingCount || 0} entries are missing address or postcode information. The file will still be generated, but you should review and complete these fields before submitting to HMRC. For non-UK donors, the postcode will be set to 'X' automatically. Continue?`}
+        confirmText="Continue"
+        cancelText="Cancel"
+        variant="warning"
+      />
     </div>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
@@ -260,7 +261,7 @@ export function InvoicesPageClient({ initialInvoices = [] }: InvoicesPageClientP
       const result = await response.json()
 
       if (result.success) {
-        alert('Payment recorded successfully!')
+        toast.success('Payment recorded successfully!')
         // Trigger finance dashboard refresh
         window.dispatchEvent(new CustomEvent('refresh-dashboard'))
         // Refresh the invoices list
@@ -268,10 +269,10 @@ export function InvoicesPageClient({ initialInvoices = [] }: InvoicesPageClientP
         setIsPaymentModalOpen(false)
         setPaymentInvoiceId(null)
       } else {
-        alert('Failed to record payment: ' + result.error)
+        toast.error('Failed to record payment: ' + result.error)
       }
     } catch (error) {
-      alert('Failed to record payment')
+      toast.error('Failed to record payment')
     }
   }
 

@@ -127,7 +127,7 @@ async function handleGET(request: NextRequest) {
         description: `${pendingApplications} application${pendingApplications !== 1 ? 's' : ''} pending review`,
         count: pendingApplications,
         priority: 'high',
-        link: '/applications',
+        link: '/applications?status=NEW',
         icon: 'FileText'
       })
     }
@@ -139,7 +139,7 @@ async function handleGET(request: NextRequest) {
         description: `${overduePayments} payment${overduePayments !== 1 ? 's' : ''} overdue`,
         count: overduePayments,
         priority: 'high',
-        link: '/payments',
+        link: '/payments?filter=overdue',
         icon: 'AlertCircle'
       })
     }
@@ -151,7 +151,7 @@ async function handleGET(request: NextRequest) {
         description: `${pendingInvoices} invoice${pendingInvoices !== 1 ? 's' : ''} due today or overdue`,
         count: pendingInvoices,
         priority: 'medium',
-        link: '/invoices',
+        link: '/invoices?status=PENDING',
         icon: 'DollarSign'
       })
     }
@@ -163,7 +163,7 @@ async function handleGET(request: NextRequest) {
         description: `${classesNeedingAttendance.length} class${classesNeedingAttendance.length !== 1 ? 'es' : ''} need attendance marked`,
         count: classesNeedingAttendance.length,
         priority: 'high',
-        link: '/attendance',
+        link: '/attendance?date=today',
         icon: 'UserCheck'
       })
     }
@@ -175,7 +175,7 @@ async function handleGET(request: NextRequest) {
         description: `${todaysEvents.length} event${todaysEvents.length !== 1 ? 's' : ''} scheduled today`,
         count: todaysEvents.length,
         priority: 'low',
-        link: '/calendar',
+        link: '/calendar?date=today',
         icon: 'Calendar'
       })
     }

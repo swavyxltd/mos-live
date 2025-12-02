@@ -165,14 +165,7 @@ export default function ParentCalendarPage() {
     )
   }
 
-  // Demo org data
-  const org = {
-    id: 'demo-org-1',
-    name: 'Leicester Islamic Centre',
-    slug: 'leicester-islamic-centre'
-  }
-
-  const userRole = 'PARENT'
+  // Org and role are handled server-side via session
 
   // Group events by date
   const eventsByDate = events.reduce((acc, event) => {
@@ -238,18 +231,18 @@ export default function ParentCalendarPage() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div>
                 {upcomingEvents.map((event, index) => {
                   const eventDate = new Date(event.date)
                   const isToday = eventDate.toDateString() === today.toDateString()
                   
                   return (
-                    <div 
-                      key={`${event.id}-${index}`} 
-                      className={`flex flex-col sm:flex-row sm:items-start sm:justify-between p-3 sm:p-4 border border-[var(--border)] rounded-[var(--radius-md)] hover:bg-[var(--accent)]/30 transition-all ${
-                        isToday ? 'border-[var(--primary)]/50 bg-[var(--primary)]/5' : ''
-                      }`}
-                    >
+                    <div key={`${event.id}-${index}`}>
+                      <div 
+                        className={`flex flex-col sm:flex-row sm:items-start sm:justify-between p-3 sm:p-4 hover:bg-[var(--accent)]/30 transition-all ${
+                          isToday ? 'bg-[var(--primary)]/5' : ''
+                        }`}
+                      >
                       <div className="flex items-start gap-3 flex-1 min-w-0">
                         <div className={`w-3 h-3 rounded-full mt-1.5 flex-shrink-0 ${
                           event.isHoliday || event.type === 'HOLIDAY' ? 'bg-green-500' : 
@@ -357,6 +350,10 @@ export default function ParentCalendarPage() {
                          event.type === 'MEETING' ? 'Meeting' :
                          'Event'}
                       </Badge>
+                      </div>
+                      {index < upcomingEvents.length - 1 && (
+                        <div className="border-b border-[var(--border)]" />
+                      )}
                     </div>
                   )
                 })}

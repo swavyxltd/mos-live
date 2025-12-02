@@ -62,14 +62,15 @@ export function RecentActivity({ logs }: RecentActivityProps) {
         <CardTitle>Recent Activity</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {logs.map((log) => {
+        <div>
+          {logs.map((log, index) => {
             const Icon = actionIcons[log.action] || actionIcons.DEFAULT
             const actionLabel = actionLabels[log.action] || log.action.toLowerCase().replace(/_/g, ' ')
             const userName = log.user?.name || log.user?.email || 'System'
             
             return (
-              <div key={log.id} className="flex items-start space-x-3">
+              <div key={log.id}>
+                <div className="flex items-start space-x-3 py-3">
                 <div className="flex-shrink-0">
                   <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
                     <Icon className="h-4 w-4 text-gray-600" />
@@ -87,6 +88,10 @@ export function RecentActivity({ logs }: RecentActivityProps) {
                     {formatDateTime(log.createdAt)}
                   </p>
                 </div>
+                </div>
+                {index < logs.length - 1 && (
+                  <div className="border-b border-[var(--border)]" />
+                )}
               </div>
             )
           })}

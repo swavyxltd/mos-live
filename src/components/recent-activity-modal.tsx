@@ -16,7 +16,7 @@ import {
 interface FinancialActivity {
   action: string
   timestamp: string
-  user: { name: string; email: string }
+  user?: { name: string; email: string }
   type: 'payment' | 'invoice' | 'reminder' | 'cash_payment'
   amount: string
   studentName?: string
@@ -42,7 +42,7 @@ export function RecentActivityModal({ isOpen, onClose, activities }: RecentActiv
   const filteredActivities = activities.filter(activity => {
     const matchesSearch = activity.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          activity.studentName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         activity.user.name.toLowerCase().includes(searchTerm.toLowerCase())
+                         activity.user?.name?.toLowerCase().includes(searchTerm.toLowerCase())
     
     const matchesFilter = filterType === 'all' || activity.type === filterType
     
@@ -136,7 +136,7 @@ export function RecentActivityModal({ isOpen, onClose, activities }: RecentActiv
         </div>
 
         {/* Activity List */}
-        <div className="space-y-4 max-h-96 overflow-y-auto">
+        <div className="max-h-96 overflow-y-auto">
           {currentActivities.length === 0 ? (
             <div className="text-center py-8">
               <Activity className="h-12 w-12 text-gray-300 mx-auto mb-4" />
@@ -144,8 +144,8 @@ export function RecentActivityModal({ isOpen, onClose, activities }: RecentActiv
             </div>
           ) : (
             currentActivities.map((activity, index) => (
-              <Card key={index} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
+              <div key={index}>
+                <div className="p-4 hover:bg-gray-50 transition-colors">
                   <div className="flex items-start gap-4">
                     <div className={`w-3 h-3 rounded-full mt-2 ${getTypeColor(activity.type)}`} />
                     <div className="flex-1 min-w-0">
@@ -157,7 +157,7 @@ export function RecentActivityModal({ isOpen, onClose, activities }: RecentActiv
                       </div>
                       <p className="text-sm text-gray-500 mb-2">{activity.timestamp}</p>
                       <div className="flex items-center gap-4 text-sm text-gray-600">
-                        <span>By: {activity.user.name}</span>
+                        {activity.user?.name && <span>By: {activity.user.name}</span>}
                         {activity.studentName && <span>Student: {activity.studentName}</span>}
                         {activity.class && <span>Class: {activity.class}</span>}
                         {activity.paymentMethod && <span>Method: {activity.paymentMethod}</span>}
@@ -169,8 +169,11 @@ export function RecentActivityModal({ isOpen, onClose, activities }: RecentActiv
                       </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+                {index < currentActivities.length - 1 && (
+                  <div className="border-b border-gray-200" />
+                )}
+              </div>
             ))
           )}
         </div>

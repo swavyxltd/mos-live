@@ -262,6 +262,10 @@ export function PaymentsPageClient({ classes }: PaymentsPageClientProps) {
       }))
 
       toast.success('Payment marked as paid successfully')
+      
+      // Trigger refresh event for finance dashboard
+      window.dispatchEvent(new CustomEvent('refresh-dashboard'))
+      
       setMarkPaidModalOpen(false)
       setSelectedRecord(null)
       setPaymentReference('')

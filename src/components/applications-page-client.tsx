@@ -288,7 +288,7 @@ export function ApplicationsPageClient({ orgSlug }: ApplicationsPageClientProps)
       </div>
 
       {/* Applications List */}
-      <div className="space-y-3 sm:space-y-4">
+      <div>
         {filteredApplications.length === 0 ? (
           <Card className="p-8 text-center">
             <div className="text-gray-500">
@@ -299,12 +299,13 @@ export function ApplicationsPageClient({ orgSlug }: ApplicationsPageClientProps)
             </div>
           </Card>
         ) : (
-          filteredApplications.map((application) => (
-            <Card 
-              key={application.id} 
-              className="p-4 sm:p-6 cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => handleApplicationClick(application)}
-            >
+          <Card>
+            {filteredApplications.map((application, index) => (
+              <div key={application.id}>
+                <div 
+                  className="p-4 sm:p-6 cursor-pointer hover:bg-[var(--accent)]/30 transition-colors"
+                  onClick={() => handleApplicationClick(application)}
+                >
               <div className="flex items-start sm:items-center justify-between gap-3 sm:gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start sm:items-center space-x-3 sm:space-x-4">
@@ -339,8 +340,13 @@ export function ApplicationsPageClient({ orgSlug }: ApplicationsPageClientProps)
                   </Button>
                 </div>
               </div>
-            </Card>
-          ))
+                </div>
+                {index < filteredApplications.length - 1 && (
+                  <div className="border-b border-[var(--border)]" />
+                )}
+              </div>
+            ))}
+          </Card>
         )}
       </div>
 

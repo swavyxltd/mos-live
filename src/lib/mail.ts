@@ -105,12 +105,44 @@ export async function sendParentInvite({
   orgName: string
   inviteUrl: string
 }) {
+  const headerHtml = `
+    <div style="max-width: 360px; margin: 8px auto 48px auto; text-align: center;">
+      <div style="
+        display: inline-block;
+        text-align: left;
+        border-left: 4px solid #22c55e;
+        padding: 0 24px 0 16px;
+      ">
+        <div style="
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          font-size: 18px;
+          font-weight: 700;
+          color: #111827;
+          margin-bottom: 2px;
+        ">
+          ${orgName}
+        </div>
+        <div style="
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          font-size: 12px;
+          text-transform: uppercase;
+          letter-spacing: 0.12em;
+          color: #6b7280;
+        ">
+          Official Communication
+        </div>
+      </div>
+    </div>
+  `
+
   const html = await generateEmailTemplate({
     title: "Assalamu'alaikum!",
     description: `You've been invited to join <strong>${orgName}</strong> on Madrasah OS. Click below to complete your account setup.`,
+    headerHtml,
     buttonText: 'Complete Setup',
     buttonUrl: inviteUrl,
-    footerText: 'If you have any questions, please contact your madrasah administrator.'
+    footerText: 'If you have any questions, please contact your madrasah administrator.',
+    showLogo: false
   })
   
   return sendEmail({
@@ -591,7 +623,8 @@ export async function sendPaymentConfirmationEmail({
   month,
   amount,
   paymentMethod,
-  reference
+  reference,
+  paidAt
 }: {
   to: string
   orgName: string
@@ -601,11 +634,49 @@ export async function sendPaymentConfirmationEmail({
   amount: number
   paymentMethod: string
   reference?: string | null
+  paidAt?: Date | string | null
 }) {
   const amountFormatted = `£${(amount / 100).toFixed(2)}`
   const methodLabel = paymentMethod === 'CASH' ? 'Cash' 
     : paymentMethod === 'BANK_TRANSFER' ? 'Bank Transfer' 
     : paymentMethod
+  const paidDateText = paidAt
+    ? new Date(paidAt).toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      })
+    : '—'
+
+  const headerHtml = `
+    <div style="max-width: 360px; margin: 8px auto 48px auto; text-align: center;">
+      <div style="
+        display: inline-block;
+        text-align: left;
+        border-left: 4px solid #22c55e;
+        padding: 0 24px 0 16px;
+      ">
+        <div style="
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          font-size: 18px;
+          font-weight: 700;
+          color: #111827;
+          margin-bottom: 2px;
+        ">
+          ${orgName}
+        </div>
+        <div style="
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          font-size: 12px;
+          text-transform: uppercase;
+          letter-spacing: 0.12em;
+          color: #6b7280;
+        ">
+          Official Communication
+        </div>
+      </div>
+    </div>
+  `
 
   const content = `
     <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
@@ -613,30 +684,28 @@ export async function sendPaymentConfirmationEmail({
         <td>
           <table width="100%" cellpadding="0" cellspacing="0">
             <tr>
-              <td style="padding: 0 0 12px 0; font-size: 14px; color: #6b7280;">Student:</td>
-              <td align="right" style="padding: 0 0 12px 0; font-size: 14px; font-weight: 600; color: #111827;">${studentName}</td>
+              <td style="padding: 0 0 12px 0; font-size: 14px; color: #6b7280; text-align: left;">Student:</td>
+              <td align="right" style="padding: 0 0 12px 0; font-size: 14px; font-weight: 600; color: #111827; text-align: right;">${studentName}</td>
             </tr>
             <tr>
-              <td style="padding: 0 0 12px 0; font-size: 14px; color: #6b7280;">Class:</td>
-              <td align="right" style="padding: 0 0 12px 0; font-size: 14px; font-weight: 600; color: #111827;">${className}</td>
+              <td style="padding: 0 0 12px 0; font-size: 14px; color: #6b7280; text-align: left;">Class:</td>
+              <td align="right" style="padding: 0 0 12px 0; font-size: 14px; font-weight: 600; color: #111827; text-align: right;">${className}</td>
             </tr>
             <tr>
-              <td style="padding: 0 0 12px 0; font-size: 14px; color: #6b7280;">Month:</td>
-              <td align="right" style="padding: 0 0 12px 0; font-size: 14px; font-weight: 600; color: #111827;">${month}</td>
+              <td style="padding: 0 0 12px 0; font-size: 14px; color: #6b7280; text-align: left;">Month:</td>
+              <td align="right" style="padding: 0 0 12px 0; font-size: 14px; font-weight: 600; color: #111827; text-align: right;">${month}</td>
             </tr>
             <tr>
-              <td style="padding: 0 0 12px 0; font-size: 14px; color: #6b7280;">Payment Method:</td>
-              <td align="right" style="padding: 0 0 12px 0; font-size: 14px; font-weight: 600; color: #111827;">${methodLabel}</td>
+              <td style="padding: 0 0 12px 0; font-size: 14px; color: #6b7280; text-align: left;">Payment Method:</td>
+              <td align="right" style="padding: 0 0 12px 0; font-size: 14px; font-weight: 600; color: #111827; text-align: right;">${methodLabel}</td>
             </tr>
-            ${reference ? `
             <tr>
-              <td style="padding: 0 0 12px 0; font-size: 14px; color: #6b7280;">Reference:</td>
-              <td align="right" style="padding: 0 0 12px 0; font-size: 14px; font-weight: 600; color: #111827; font-family: monospace;">${reference}</td>
+              <td style="padding: 0 0 12px 0; font-size: 14px; color: #6b7280; text-align: left;">Date Paid:</td>
+              <td align="right" style="padding: 0 0 12px 0; font-size: 14px; font-weight: 600; color: #111827; text-align: right;">${paidDateText}</td>
             </tr>
-            ` : ''}
             <tr>
-              <td style="padding: 16px 0 0 0; border-top: 2px solid #e5e7eb; font-size: 16px; font-weight: 600; color: #111827;">Amount Paid:</td>
-              <td align="right" style="padding: 16px 0 0 0; border-top: 2px solid #e5e7eb; font-size: 20px; font-weight: 700; color: #059669;">${amountFormatted}</td>
+              <td style="padding: 16px 0 0 0; border-top: 2px solid #e5e7eb; font-size: 16px; font-weight: 600; color: #111827; text-align: left;">Amount Paid:</td>
+              <td align="right" style="padding: 16px 0 0 0; border-top: 2px solid #e5e7eb; font-size: 20px; font-weight: 700; color: #059669; text-align: right;">${amountFormatted}</td>
             </tr>
           </table>
         </td>
@@ -655,14 +724,16 @@ export async function sendPaymentConfirmationEmail({
   const html = await generateEmailTemplate({
     title: 'Payment Confirmation',
     description: "Assalamu'alaikum! This email confirms that your payment has been received and processed.",
-    content
+    headerHtml,
+    content,
+    showLogo: false
   })
   
   return sendEmail({
     to,
     subject: `Payment Confirmation - ${orgName}`,
     html,
-    text: `Payment Confirmation - ${orgName}\n\nAssalamu'alaikum!\n\nThis email confirms that your payment has been received and processed.\n\nStudent: ${studentName}\nClass: ${className}\nMonth: ${month}\nPayment Method: ${methodLabel}\n${reference ? `Reference: ${reference}\n` : ''}Amount Paid: ${amountFormatted}\n\nJazakallahu Khairan\nThank you for your payment. We appreciate your continued support.\n\nBest regards,\n${orgName}`
+    text: `Payment Confirmation - ${orgName}\n\nAssalamu'alaikum!\n\nThis email confirms that your payment has been received and processed.\n\nStudent: ${studentName}\nClass: ${className}\nMonth: ${month}\nPayment Method: ${methodLabel}\nDate Paid: ${paidDateText}\nAmount Paid: ${amountFormatted}\n\nJazakallahu Khairan\nThank you for your payment. We appreciate your continued support.\n\nBest regards,\n${orgName}`
   })
 }
 
@@ -694,6 +765,36 @@ export async function sendApplicationAcceptanceEmail({
     ? `${childrenNames[0]} and ${childrenNames[1]}`
     : `${childrenNames.slice(0, -1).join(', ')}, and ${childrenNames[childrenNames.length - 1]}`
   
+  const headerHtml = `
+    <div style="max-width: 360px; margin: 8px auto 48px auto; text-align: center;">
+      <div style="
+        display: inline-block;
+        text-align: left;
+        border-left: 4px solid #22c55e;
+        padding: 0 24px 0 16px;
+      ">
+        <div style="
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          font-size: 18px;
+          font-weight: 700;
+          color: #111827;
+          margin-bottom: 2px;
+        ">
+          ${orgName}
+        </div>
+        <div style="
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          font-size: 12px;
+          text-transform: uppercase;
+          letter-spacing: 0.12em;
+          color: #6b7280;
+        ">
+          Official Communication
+        </div>
+      </div>
+    </div>
+  `
+
   const content = `
     <!-- Congratulations Message -->
     <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #22c55e; border-radius: 8px; padding: 20px; margin-bottom: 24px; text-align: center;">
@@ -748,13 +849,12 @@ export async function sendApplicationAcceptanceEmail({
             <p style="margin: 0; font-size: 13px; color: #6b7280; line-height: 1.5;">Stay informed about school holidays and events</p>
           </td>
         </tr>
-        <tr style="height: 12px;"><td colspan="3"></td></tr>
         <!-- Row 2 -->
         <tr>
           <td style="padding: 16px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center; width: 50%;">
             <div style="font-size: 28px; margin-bottom: 8px;">📊</div>
-            <h3 style="margin: 0 0 6px 0; font-size: 15px; font-weight: 600; color: #111827;">Monitor Progress</h3>
-            <p style="margin: 0; font-size: 13px; color: #6b7280; line-height: 1.5;">Track your child's academic progress and achievements</p>
+            <h3 style="margin: 0 0 6px 0; font-size: 15px; font-weight: 600; color: #111827;">Manage Payments</h3>
+            <p style="margin: 0; font-size: 13px; color: #6b7280; line-height: 1.5;">See what you've paid and what's coming up, all in one place</p>
           </td>
           <td style="width: 12px;"></td>
           <td style="padding: 16px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center; width: 50%;">
@@ -763,7 +863,6 @@ export async function sendApplicationAcceptanceEmail({
             <p style="margin: 0; font-size: 13px; color: #6b7280; line-height: 1.5;">Receive announcements and messages from teachers</p>
           </td>
         </tr>
-        <tr style="height: 12px;"><td colspan="3"></td></tr>
         <!-- Row 3 -->
         <tr>
           <td style="padding: 16px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center; width: 50%;">
@@ -790,9 +889,10 @@ export async function sendApplicationAcceptanceEmail({
   const html = await generateEmailTemplate({
     title: 'Application Accepted - Alhamdulillah!',
     description: '',
+    headerHtml,
     content,
     footerText: `If you have any questions, please don't hesitate to contact us. We're here to help!`,
-    showLogo: true
+    showLogo: false
   })
   
   const text = `Application Accepted - ${orgName}
@@ -815,7 +915,7 @@ Why Sign Up? Here's What You'll Get:
 
 ✅ Track Attendance - See your child's daily attendance in real-time
 📅 View Holidays - Stay informed about school holidays and events
-📊 Monitor Progress - Track your child's academic progress and achievements
+📊 Manage Payments - See what you've paid and what's coming up, all in one place
 💬 Stay Connected - Receive announcements and messages from teachers
 💰 Easy Payments - Pay fees securely online and view payment history
 📱 Mobile Friendly - Access everything from your phone, anytime, anywhere
@@ -830,6 +930,124 @@ The ${orgName} Team`
   return sendEmail({
     to,
     subject: `Application Accepted - Welcome to ${orgName}!`,
+    html,
+    text
+  })
+}
+
+export async function sendApplicationSubmissionConfirmation({
+  to,
+  orgName,
+  parentName,
+  applicationId
+}: {
+  to: string
+  orgName: string
+  parentName: string
+  applicationId: string
+}) {
+  const headerHtml = `
+    <div style="max-width: 360px; margin: 0 auto 24px auto; text-align: left;">
+      <div style="
+        border-left: 4px solid #22c55e;
+        padding-left: 12px;
+      ">
+        <div style="
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          font-size: 18px;
+          font-weight: 700;
+          color: #111827;
+          margin-bottom: 2px;
+        ">
+          ${orgName}
+        </div>
+        <div style="
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          font-size: 12px;
+          text-transform: uppercase;
+          letter-spacing: 0.12em;
+          color: #6b7280;
+        ">
+          Parent Communication
+        </div>
+      </div>
+    </div>
+  `
+
+  const content = `
+    <!-- Confirmation Message -->
+    <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #22c55e; border-radius: 8px; padding: 20px; margin-bottom: 24px; text-align: center;">
+      <p style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: #166534;">
+        Application Received ✓
+      </p>
+      <p style="margin: 0; font-size: 16px; color: #15803d; line-height: 1.6;">
+        Thank you for submitting your application to <strong>${orgName}</strong>
+      </p>
+    </div>
+    
+    <!-- Welcome Message -->
+    <p style="margin: 0 0 16px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">
+      Assalamu'alaikum <strong>${parentName}</strong>,
+    </p>
+    
+    <p style="margin: 0 0 24px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">
+      We have successfully received your application. Our team will review it and get back to you shortly, inshallah.
+    </p>
+    
+    <!-- Next Steps -->
+    <div style="margin: 32px 0;">
+      <h2 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 600; color: #111827; text-align: center;">
+        What Happens Next?
+      </h2>
+      
+      <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+        <tr>
+          <td style="padding: 16px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center;">
+            <div style="font-size: 24px; margin-bottom: 8px;">📋</div>
+            <h3 style="margin: 0 0 6px 0; font-size: 14px; font-weight: 600; color: #111827;">Review</h3>
+            <p style="margin: 0; font-size: 12px; color: #6b7280; line-height: 1.4;">Our team will review your application</p>
+          </td>
+        </tr>
+      </table>
+    </div>
+    
+    <!-- Closing Message -->
+    <p style="margin: 32px 0 0 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">
+      If you have any questions, please don't hesitate to contact us. We're here to help!
+    </p>
+  `
+  
+  const html = await generateEmailTemplate({
+    title: 'Application Received - Thank You!',
+    description: '',
+    headerHtml,
+    content,
+    footerText: `Best regards,<br>The ${orgName} Team`,
+    showLogo: false
+  })
+  
+  const text = `Application Received - ${orgName}
+
+Application Received ✓
+
+Thank you for submitting your application to ${orgName}
+
+Assalamu'alaikum ${parentName},
+
+We have successfully received your application. Our team will review it and get back to you shortly, inshallah.
+
+What Happens Next?
+
+📋 Review - Our team will review your application
+
+If you have any questions, please don't hesitate to contact us. We're here to help!
+
+Best regards,
+The ${orgName} Team`
+  
+  return sendEmail({
+    to,
+    subject: `Application Received - ${orgName}`,
     html,
     text
   })

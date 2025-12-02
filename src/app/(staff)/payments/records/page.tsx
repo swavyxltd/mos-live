@@ -150,6 +150,10 @@ export default function PaymentRecordsPage() {
       }
 
       toast.success('Payment marked as paid')
+      
+      // Trigger refresh event for finance dashboard
+      window.dispatchEvent(new CustomEvent('refresh-dashboard'))
+      
       await fetchRecords()
       setShowEditModal(false)
       setSelectedRecord(null)

@@ -265,6 +265,7 @@ model Org {
   postcode             String?
   publicEmail          String?
   publicPhone          String?
+  feeDueDay            Int?                  @default(1)
   deactivatedAt        DateTime?
   deactivatedReason    String?
   Application          Application[]

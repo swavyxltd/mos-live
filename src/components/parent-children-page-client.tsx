@@ -292,13 +292,18 @@ export function ParentChildrenPageClient({ students: initialStudents }: ParentCh
                         Classes
                       </h3>
                     </div>
-                    <div className="space-y-2">
-                      {viewingStudent.classes.map((cls) => (
-                        <div key={cls.id} className="p-3 border border-[var(--border)] rounded-[var(--radius-md)]">
-                          <div className="font-medium text-[var(--foreground)]">{cls.name}</div>
-                          <div className="text-sm text-[var(--muted-foreground)] mt-1">
-                            Teacher: {cls.teacher}
+                    <div>
+                      {viewingStudent.classes.map((cls, index) => (
+                        <div key={cls.id}>
+                          <div className="p-3">
+                            <div className="font-medium text-[var(--foreground)]">{cls.name}</div>
+                            <div className="text-sm text-[var(--muted-foreground)] mt-1">
+                              Teacher: {cls.teacher}
+                            </div>
                           </div>
+                          {index < viewingStudent.classes.length - 1 && (
+                            <div className="border-b border-[var(--border)]" />
+                          )}
                         </div>
                       ))}
                     </div>

@@ -79,7 +79,7 @@ export function UpcomingClasses({ classes }: UpcomingClassesProps) {
         <CardTitle>Upcoming Classes</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
+        <div>
           {upcomingClasses.map((cls, index) => {
             // Parse schedule from JSON string if needed
             let schedule: any = {}
@@ -96,7 +96,8 @@ export function UpcomingClasses({ classes }: UpcomingClassesProps) {
             const endTime = schedule?.endTime || 'TBD'
             
             return (
-              <div key={`${cls.id}-${cls.date.getTime()}`} className="flex items-center space-x-4">
+              <div key={`${cls.id}-${cls.date.getTime()}`}>
+                <div className="flex items-center space-x-4 py-3">
                 <div className="flex-shrink-0">
                   <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
                     <Calendar className="h-5 w-5 text-indigo-600" />
@@ -120,6 +121,10 @@ export function UpcomingClasses({ classes }: UpcomingClassesProps) {
                 <div className="flex-shrink-0 text-sm text-gray-500">
                   {formatDate(cls.date)}
                 </div>
+                </div>
+                {index < upcomingClasses.length - 1 && (
+                  <div className="border-b border-[var(--border)]" />
+                )}
               </div>
             )
           })}

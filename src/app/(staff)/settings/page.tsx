@@ -26,6 +26,7 @@ interface OrganizationSettings {
   name: string
   timezone: string
   lateThreshold: number
+  feeDueDay: number
   address: string
   addressLine1: string
   postcode: string
@@ -68,6 +69,7 @@ export default function SettingsPage() {
     name: '',
     timezone: 'Europe/London',
     lateThreshold: 15,
+    feeDueDay: 1,
     address: '',
     addressLine1: '',
     postcode: '',
@@ -164,6 +166,7 @@ export default function SettingsPage() {
           name: data.name || '',
           timezone: data.timezone || 'Europe/London',
           lateThreshold: data.lateThreshold || 15,
+          feeDueDay: data.feeDueDay || 1,
           address: data.address || '',
           addressLine1: data.addressLine1 || '',
           postcode: data.postcode || '',
@@ -626,6 +629,20 @@ export default function SettingsPage() {
                   onChange={(e) => handleOrgSettingsChange('lateThreshold', parseInt(e.target.value) || 0)}
                   placeholder="Enter late threshold"
                 />
+              </div>
+              <div>
+                <Label htmlFor="fee-due-day">Fee Due Day (Day of Month) *</Label>
+                <Input
+                  id="fee-due-day"
+                  type="number"
+                  min="1"
+                  max="31"
+                  value={orgSettings.feeDueDay}
+                  onChange={(e) => handleOrgSettingsChange('feeDueDay', parseInt(e.target.value) || 1)}
+                  placeholder="e.g., 1 (for 1st of each month)"
+                  required
+                />
+                <p className="text-sm text-gray-500 mt-1">Day of the month when fees are due for all classes. Payments not received within 48 hours will be marked as late, and after 96 hours as overdue.</p>
               </div>
             </div>
 

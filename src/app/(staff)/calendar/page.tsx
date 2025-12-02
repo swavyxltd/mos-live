@@ -178,20 +178,20 @@ export default function CalendarPage() {
                 No upcoming events scheduled
               </p>
             </div>
-          ) : (
-            <div className="space-y-3">
-              {upcomingEvents.map((event) => {
+            ) : (
+            <div>
+              {upcomingEvents.map((event, index) => {
                 const eventDate = new Date(event.date)
                 const isToday = eventDate.toDateString() === today.toDateString()
                 
                 return (
-                  <div 
-                    key={event.id} 
-                    className={`flex flex-col sm:flex-row sm:items-start sm:justify-between p-3 sm:p-4 border border-[var(--border)] rounded-[var(--radius-md)] hover:bg-[var(--accent)]/30 transition-all cursor-pointer ${
-                      isToday ? 'border-[var(--primary)]/50 bg-[var(--primary)]/5' : ''
-                    }`}
-                    onClick={() => handleEventClick(event)}
-                  >
+                  <div key={event.id}>
+                    <div 
+                      className={`flex flex-col sm:flex-row sm:items-start sm:justify-between p-3 sm:p-4 hover:bg-[var(--accent)]/30 transition-all cursor-pointer ${
+                        isToday ? 'bg-[var(--primary)]/5' : ''
+                      }`}
+                      onClick={() => handleEventClick(event)}
+                    >
                       <div className="flex items-start gap-3 flex-1 min-w-0">
                         <div className={`w-3 h-3 rounded-full mt-1.5 flex-shrink-0 ${
                           event.isHoliday || event.type === 'HOLIDAY' ? 'bg-green-500' : 
@@ -304,6 +304,10 @@ export default function CalendarPage() {
                        event.type === 'MEETING' ? 'Meeting' :
                        'Event'}
                     </Badge>
+                    </div>
+                    {index < upcomingEvents.length - 1 && (
+                      <div className="border-b border-[var(--border)]" />
+                    )}
                   </div>
                 )
               })}

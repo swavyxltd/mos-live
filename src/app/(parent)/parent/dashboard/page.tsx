@@ -196,8 +196,50 @@ export default async function ParentDashboardPage() {
       }
     }
 
-    // Get upcoming events (mock for now - can be added later)
-    upcomingEvents = []
+    // Get upcoming events for parent's org and their children's classes
+    // Reuse today variable from above
+    const todayForEvents = new Date()
+    todayForEvents.setHours(0, 0, 0, 0)
+    const next30Days = new Date(todayForEvents)
+    next30Days.setDate(todayForEvents.getDate() + 30)
+    
+    // Get events for the org that are:
+    // 1. Org-wide events (classId is null)
+    // 2. Events for parent's children's classes
+    // 3. Meetings for parent's children (studentId matches)
+    const studentIds = students.map(s => s.id)
+    
+    upcomingEvents = await prisma.event.findMany({
+      where: {
+        orgId: org.id,
+        date: {
+          gte: todayForEvents,
+          lte: next30Days
+        },
+        OR: [
+          { classId: null }, // Org-wide events
+          { classId: { in: classIds } }, // Events for parent's children's classes
+          { studentId: { in: studentIds } } // Meetings for parent's children
+        ]
+      },
+      include: {
+        Class: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        Student: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true
+          }
+        }
+      },
+      orderBy: { date: 'asc' },
+      take: 10 // Limit to 10 most upcoming
+    })
   } catch (error: any) {
     // Keep empty arrays if database query fails
   }
@@ -397,14 +439,14 @@ export default async function ParentDashboardPage() {
                   <p className="text-sm text-[var(--muted-foreground)]">No announcements yet</p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {announcements.slice(0, 3).map((announcement: any) => (
-                    <Link 
-                      key={announcement.id} 
-                      href="/parent/announcements"
-                      className="block group"
-                    >
-                      <div className="p-3 border border-[var(--border)] rounded-[var(--radius-md)] hover:border-[var(--primary)] hover:bg-[var(--accent)]/50 transition-all cursor-pointer">
+                <div>
+                  {announcements.slice(0, 3).map((announcement: any, index: number) => (
+                    <div key={announcement.id}>
+                      <Link 
+                        href="/parent/announcements"
+                        className="block group"
+                      >
+                        <div className="p-3 hover:bg-[var(--accent)]/50 transition-all cursor-pointer">
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1 min-w-0">
                             <h4 className="font-medium text-[var(--foreground)] group-hover:text-[var(--primary)] transition-colors line-clamp-1">
@@ -421,8 +463,12 @@ export default async function ParentDashboardPage() {
                           </div>
                           <ChevronRight className="h-4 w-4 text-[var(--muted-foreground)] opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-1" />
                         </div>
-                      </div>
-                    </Link>
+                        </div>
+                      </Link>
+                      {index < Math.min(announcements.length, 3) - 1 && (
+                        <div className="border-b border-[var(--border)]" />
+                      )}
+                    </div>
                   ))}
                 </div>
               )}

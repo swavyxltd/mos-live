@@ -82,6 +82,9 @@ export default async function PaymentsPage() {
   })
 
   // Transform classes with payment statistics
+  // Get org feeDueDay setting
+  const orgFeeDueDay = (org as any)?.feeDueDay || 1
+
   const classesWithStats = classes.map(cls => {
     // Include all payment records (no filtering by date)
     const recentRecords = cls.MonthlyPaymentRecord
@@ -91,7 +94,7 @@ export default async function PaymentsPage() {
       const newStatus = calculatePaymentStatus(
         record.status,
         record.month,
-        cls.feeDueDay || null,
+        orgFeeDueDay,
         record.paidAt
       )
       return { ...record, status: newStatus }

@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { Card } from '@/components/ui/card'
 import { MapPin, Phone, Clock, AlertCircle } from 'lucide-react'
-import { isDemoMode } from '@/lib/demo-mode'
 import { PhoneLink } from '@/components/phone-link'
 
 interface OrgContactInfo {
@@ -23,28 +22,16 @@ export default function ParentSupportPage() {
   useEffect(() => {
     if (status === 'loading') return
 
-    if (isDemoMode()) {
-      // Demo contact information
-      setContactInfo({
-        name: 'Leicester Islamic Centre',
-        address: '123 High Street\nLeicester, LE1 1AA\nUnited Kingdom',
-        phone: '+44 116 123 4567',
-        email: 'info@leicesterislamiccentre.org',
-        officeHours: 'Monday - Friday: 9:00 AM - 5:00 PM\nSaturday: 10:00 AM - 2:00 PM\nSunday: Closed'
+    // Always fetch real contact information from organization settings
+    fetch('/api/org/contact-info')
+      .then(res => res.json())
+      .then(data => {
+        setContactInfo(data)
+        setLoading(false)
       })
-      setLoading(false)
-    } else {
-      // Fetch real contact information from organization settings
-      fetch('/api/org/contact-info')
-        .then(res => res.json())
-        .then(data => {
-          setContactInfo(data)
-          setLoading(false)
-        })
-        .catch(err => {
-          setLoading(false)
-        })
-    }
+      .catch(err => {
+        setLoading(false)
+      })
   }, [status])
 
   if (!session?.user?.id) {

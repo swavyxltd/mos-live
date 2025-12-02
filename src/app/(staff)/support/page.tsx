@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -112,10 +113,10 @@ export default function SupportPage() {
         setNewTicket({ subject: '', body: '', role: 'STAFF' })
         setShowCreateTicket(false)
       } else {
-        alert('Failed to create support ticket')
+        toast.error('Failed to create support ticket')
       }
     } catch (error) {
-      alert('Failed to create support ticket')
+      toast.error('Failed to create support ticket')
     }
   }
 

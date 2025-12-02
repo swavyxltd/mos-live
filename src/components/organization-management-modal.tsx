@@ -37,6 +37,7 @@ import {
   Filter
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 
 interface OrgWithStats {
   id: string
@@ -113,99 +114,95 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
   const [searchTerm, setSearchTerm] = useState('')
   const [isChangingStatus, setIsChangingStatus] = useState(false)
   const [statusChangeReason, setStatusChangeReason] = useState('')
+  const [showReactivateConfirm, setShowReactivateConfirm] = useState(false)
+  const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false)
 
   // Update active tab when initialTab prop changes
   useEffect(() => {
     setActiveTab(initialTab)
   }, [initialTab])
 
-  // Demo data for students and teachers
-  const [students] = useState<Student[]>([
-    {
-      id: '1',
-      firstName: 'Ahmad',
-      lastName: 'Hassan',
-      email: 'ahmad@example.com',
-      phone: '+44 7700 900123',
-      dateOfBirth: new Date('2010-05-15'),
-      grade: 'Year 6',
-      status: 'ACTIVE',
-      attendanceRate: 95,
-      parentName: 'Mohammed Hassan',
-      parentEmail: 'm.hassan@example.com',
-      parentPhone: '+44 7700 900124',
-      createdAt: new Date('2024-01-15')
-    },
-    {
-      id: '2',
-      firstName: 'Fatima',
-      lastName: 'Ali',
-      email: 'fatima@example.com',
-      phone: '+44 7700 900125',
-      dateOfBirth: new Date('2011-08-22'),
-      grade: 'Year 5',
-      status: 'ACTIVE',
-      attendanceRate: 88,
-      parentName: 'Sarah Ali',
-      parentEmail: 's.ali@example.com',
-      parentPhone: '+44 7700 900126',
-      createdAt: new Date('2024-02-10')
-    },
-    {
-      id: '3',
-      firstName: 'Omar',
-      lastName: 'Khan',
-      email: 'omar@example.com',
-      dateOfBirth: new Date('2009-12-03'),
-      grade: 'Year 7',
-      status: 'INACTIVE',
-      attendanceRate: 75,
-      parentName: 'Ibrahim Khan',
-      parentEmail: 'i.khan@example.com',
-      createdAt: new Date('2024-01-20')
-    }
-  ])
+  // Real data for students and teachers - fetched from API
+  const [students, setStudents] = useState<Student[]>([])
+  const [teachers, setTeachers] = useState<Teacher[]>([])
+  const [loadingStudents, setLoadingStudents] = useState(false)
+  const [loadingTeachers, setLoadingTeachers] = useState(false)
 
-  const [teachers] = useState<Teacher[]>([
-    {
-      id: '1',
-      firstName: 'Sheikh',
-      lastName: 'Abdullah',
-      email: 'sheikh.abdullah@example.com',
-      phone: '+44 7700 900127',
-      subject: 'Quran & Islamic Studies',
-      experience: 15,
-      status: 'ACTIVE',
-      classesCount: 3,
-      studentsCount: 25,
-      createdAt: new Date('2024-01-01')
-    },
-    {
-      id: '2',
-      firstName: 'Ustadha',
-      lastName: 'Aisha',
-      email: 'ustadha.aisha@example.com',
-      phone: '+44 7700 900128',
-      subject: 'Arabic Language',
-      experience: 8,
-      status: 'ACTIVE',
-      classesCount: 2,
-      studentsCount: 15,
-      createdAt: new Date('2024-01-15')
-    },
-    {
-      id: '3',
-      firstName: 'Imam',
-      lastName: 'Yusuf',
-      email: 'imam.yusuf@example.com',
-      subject: 'Islamic History',
-      experience: 12,
-      status: 'ON_LEAVE',
-      classesCount: 1,
-      studentsCount: 10,
-      createdAt: new Date('2024-02-01')
+  // Fetch students and teachers when modal opens and organization is set
+  useEffect(() => {
+    if (isOpen && organization) {
+      fetchStudents()
+      fetchTeachers()
+    } else {
+      // Reset when modal closes
+      setStudents([])
+      setTeachers([])
     }
-  ])
+  }, [isOpen, organization?.id])
+
+  const fetchStudents = async () => {
+    if (!organization) return
+    setLoadingStudents(true)
+    try {
+      const response = await fetch(`/api/owner/orgs/${organization.id}/students`)
+      if (response.ok) {
+        const data = await response.json()
+        // Transform API data to match Student interface
+        const transformedStudents: Student[] = data.map((s: any) => ({
+          id: s.id,
+          firstName: s.firstName,
+          lastName: s.lastName,
+          email: s.email || '',
+          phone: s.phone || undefined,
+          dateOfBirth: s.dob ? new Date(s.dob) : new Date(),
+          grade: s.grade || 'N/A',
+          status: s.isArchived ? 'INACTIVE' : 'ACTIVE',
+          attendanceRate: s.attendanceRate || 0,
+          parentName: s.parentName || 'N/A',
+          parentEmail: s.parentEmail || '',
+          parentPhone: s.parentPhone || undefined,
+          createdAt: new Date(s.createdAt)
+        }))
+        setStudents(transformedStudents)
+      }
+    } catch (error) {
+      console.error('Error fetching students:', error)
+      setStudents([])
+    } finally {
+      setLoadingStudents(false)
+    }
+  }
+
+  const fetchTeachers = async () => {
+    if (!organization) return
+    setLoadingTeachers(true)
+    try {
+      const response = await fetch(`/api/owner/orgs/${organization.id}/staff`)
+      if (response.ok) {
+        const data = await response.json()
+        // Transform API data to match Teacher interface
+        const transformedTeachers: Teacher[] = data.map((t: any) => ({
+          id: t.id,
+          firstName: t.firstName || t.name?.split(' ')[0] || '',
+          lastName: t.lastName || t.name?.split(' ').slice(1).join(' ') || '',
+          email: t.email || '',
+          phone: t.phone || undefined,
+          subject: t.subject || 'General',
+          experience: t.experience || 0,
+          status: t.status || 'ACTIVE',
+          classesCount: t.classesCount || 0,
+          studentsCount: t.studentsCount || 0,
+          createdAt: new Date(t.createdAt || new Date())
+        }))
+        setTeachers(transformedTeachers)
+      }
+    } catch (error) {
+      console.error('Error fetching teachers:', error)
+      setTeachers([])
+    } finally {
+      setLoadingTeachers(false)
+    }
+  }
 
   if (!organization) return null
 
@@ -312,12 +309,14 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
   }
 
 
-  const handleReactivateAccount = async () => {
+  const handleReactivateAccount = () => {
     if (!organization) return
-    
-    const confirmed = confirm(`✅ Are you sure you want to REACTIVATE this organization?\n\nThis will restore access to ALL admin, staff, and teacher accounts.`)
-    if (!confirmed) return
-    
+    setShowReactivateConfirm(true)
+  }
+
+  const confirmReactivate = async () => {
+    if (!organization) return
+    setShowReactivateConfirm(false)
     setIsChangingStatus(true)
     try {
       const response = await fetch(`/api/orgs/${organization.id}/reactivate`, {
@@ -344,12 +343,14 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
     }
   }
 
-  const handleDeactivateAccount = async () => {
+  const handleDeactivateAccount = () => {
     if (!organization) return
-    
-    const confirmed = confirm(`⚠️ Are you sure you want to DEACTIVATE this organization?\n\nThis will permanently disable the organization and lock all accounts.\n\nThis action requires manual review to reverse.`)
-    if (!confirmed) return
-    
+    setShowDeactivateConfirm(true)
+  }
+
+  const confirmDeactivate = async () => {
+    if (!organization) return
+    setShowDeactivateConfirm(false)
     setIsChangingStatus(true)
     try {
       // Deactivate is the same as suspend - permanently disable
@@ -1141,6 +1142,31 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
           </Button>
         </div>
       </div>
+      
+      {/* Confirmation Dialogs */}
+      <ConfirmationDialog
+        isOpen={showReactivateConfirm}
+        onClose={() => setShowReactivateConfirm(false)}
+        onConfirm={confirmReactivate}
+        title="Reactivate Organization"
+        message="Are you sure you want to REACTIVATE this organization? This will restore access to ALL admin, staff, and teacher accounts."
+        confirmText="Reactivate"
+        cancelText="Cancel"
+        variant="default"
+        isLoading={isChangingStatus}
+      />
+      
+      <ConfirmationDialog
+        isOpen={showDeactivateConfirm}
+        onClose={() => setShowDeactivateConfirm(false)}
+        onConfirm={confirmDeactivate}
+        title="Deactivate Organization"
+        message="Are you sure you want to DEACTIVATE this organization? This will permanently disable the organization and lock all accounts. This action requires manual review to reverse."
+        confirmText="Deactivate"
+        cancelText="Cancel"
+        variant="warning"
+        isLoading={isChangingStatus}
+      />
     </Modal>
   )
 }

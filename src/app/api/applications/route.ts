@@ -135,8 +135,26 @@ async function handlePOST(request: NextRequest) {
       }
     })
 
-    // TODO: Send confirmation email if Resend is configured
-    // This would be implemented here if email functionality is available
+    // Send confirmation email to parent
+    try {
+      const { sendApplicationSubmissionConfirmation } = await import('@/lib/mail')
+      await sendApplicationSubmissionConfirmation({
+        to: sanitizedGuardianEmail,
+        orgName: org.name,
+        parentName: sanitizedGuardianName,
+        applicationId: application.id
+      })
+      logger.info('Application submission confirmation email sent', {
+        to: sanitizedGuardianEmail,
+        applicationId: application.id
+      })
+    } catch (emailError: any) {
+      logger.error('Failed to send application confirmation email', emailError, {
+        to: sanitizedGuardianEmail,
+        applicationId: application.id
+      })
+      // Don't fail the request if email fails, but log it
+    }
 
     return NextResponse.json(application, { status: 201 })
   } catch (error) {

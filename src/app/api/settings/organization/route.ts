@@ -25,7 +25,8 @@ async function handlePUT(request: NextRequest) {
     const { 
       name, 
       timezone, 
-      lateThreshold, 
+      lateThreshold,
+      feeDueDay,
       address, 
       addressLine1,
       postcode,
@@ -98,6 +99,14 @@ async function handlePUT(request: NextRequest) {
       newSlug = finalSlug
     }
 
+    // Validate feeDueDay if provided
+    if (feeDueDay !== undefined && (feeDueDay < 1 || feeDueDay > 31)) {
+      return NextResponse.json(
+        { error: 'Fee due day must be between 1 and 31' },
+        { status: 400 }
+      )
+    }
+
     // Update organization settings
     const updatedOrg = await prisma.org.update({
       where: { id: org.id },
@@ -105,6 +114,7 @@ async function handlePUT(request: NextRequest) {
         ...(sanitizedName && { name: sanitizedName }),
         slug: newSlug,
         ...(timezone && { timezone }),
+        ...(feeDueDay !== undefined && { feeDueDay }),
         ...(sanitizedAddress !== undefined && { address: sanitizedAddress }),
         ...(sanitizedAddressLine1 !== undefined && { addressLine1: sanitizedAddressLine1 }),
         ...(sanitizedPostcode !== undefined && { postcode: sanitizedPostcode }),
@@ -157,6 +167,7 @@ async function handleGET() {
       slug: org.slug,
       timezone: org.timezone,
       lateThreshold: settings.lateThreshold || 15,
+      feeDueDay: (org as any).feeDueDay || 1,
       address: org.address || '',
       addressLine1: (org as any).addressLine1 || '',
       postcode: (org as any).postcode || '',

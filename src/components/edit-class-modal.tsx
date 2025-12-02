@@ -58,8 +58,7 @@ export function EditClassModal({ classId, isOpen, onClose, onSave }: EditClassMo
       startTime: '5:00 PM',
       endTime: '7:00 PM'
     },
-    monthlyFee: 0,
-    feeDueDay: 1
+    monthlyFee: 0
   })
 
   // Fetch class data and teachers when modal opens
@@ -78,8 +77,7 @@ export function EditClassModal({ classId, isOpen, onClose, onSave }: EditClassMo
           startTime: '5:00 PM',
           endTime: '7:00 PM'
         },
-        monthlyFee: 0,
-        feeDueDay: 1
+        monthlyFee: 0
       })
       setError('')
     }
@@ -115,8 +113,7 @@ export function EditClassModal({ classId, isOpen, onClose, onSave }: EditClassMo
             startTime: parsedSchedule.startTime || '5:00 PM',
             endTime: parsedSchedule.endTime || '7:00 PM'
           },
-          monthlyFee: data.monthlyFeeP ? data.monthlyFeeP / 100 : 0,
-          feeDueDay: data.feeDueDay || 1
+          monthlyFee: data.monthlyFeeP ? data.monthlyFeeP / 100 : 0
         })
       } else {
         toast.error('Failed to load class data')
@@ -217,8 +214,7 @@ export function EditClassModal({ classId, isOpen, onClose, onSave }: EditClassMo
         description: formData.description || null,
         schedule: scheduleString,
         teacherId: formData.teacherId || null,
-        monthlyFeeP: Math.round(formData.monthlyFee * 100), // Convert to pence
-        feeDueDay: formData.feeDueDay || null
+        monthlyFeeP: Math.round(formData.monthlyFee * 100) // Convert to pence
       }
 
       console.log('Updating class with:', requestBody)
@@ -401,20 +397,6 @@ export function EditClassModal({ classId, isOpen, onClose, onSave }: EditClassMo
                   required
                 />
                 <p className="text-sm text-gray-500">Fixed monthly fee for this class. This will be used when creating payment records.</p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="feeDueDay">Fee Due Day (Day of Month) *</Label>
-                <Input
-                  id="feeDueDay"
-                  type="number"
-                  min="1"
-                  max="31"
-                  value={formData.feeDueDay}
-                  onChange={(e) => handleInputChange('feeDueDay', parseInt(e.target.value) || 1)}
-                  placeholder="e.g., 1 (for 1st of each month)"
-                  required
-                />
-                <p className="text-sm text-gray-500">Day of the month when fees are due. Payments not received within 48 hours will be marked as late, and after 96 hours as overdue.</p>
               </div>
             </div>
 

@@ -415,10 +415,11 @@ export default function OwnerStudentsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div>
             {filteredStudents.length > 0 ? (
-              filteredStudents.map((student: any) => (
-                <div key={student.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors w-full min-w-0">
+              filteredStudents.map((student: any, index: number) => (
+                <div key={student.id}>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 hover:bg-gray-50 transition-colors w-full min-w-0">
                   <div className="flex items-center space-x-3 min-w-0 flex-1">
                     <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center shrink-0">
                       <span className="text-sm font-medium text-gray-600">
@@ -483,6 +484,10 @@ export default function OwnerStudentsPage() {
                       </Button>
                     </div>
                   </div>
+                  </div>
+                  {index < filteredStudents.length - 1 && (
+                    <div className="border-b border-gray-200" />
+                  )}
                 </div>
               ))
             ) : (

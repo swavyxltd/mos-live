@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -184,12 +185,12 @@ export function AddEventModal({ onEventAdded, trigger }: AddEventModalProps) {
           } else {
             const error = await response.json().catch(() => ({ error: 'Failed to create holiday' }))
             console.error('Error creating holiday:', error)
-            alert(error.error || 'Failed to create holiday')
+            toast.error(error.error || 'Failed to create holiday')
           }
         } else {
           // For meetings, validate student is selected
           if (isMeeting && !formData.studentId) {
-            alert('Please select a student for the meeting')
+            toast.error('Please select a student for the meeting')
             setLoading(false)
             return
           }
@@ -243,7 +244,7 @@ export function AddEventModal({ onEventAdded, trigger }: AddEventModalProps) {
               console.error('Error reading error response:', e)
               errorMessage = `Failed to create event (Status: ${response.status})`
             }
-            alert(errorMessage)
+            toast.error(errorMessage)
             setLoading(false)
             return
           }
@@ -255,7 +256,7 @@ export function AddEventModal({ onEventAdded, trigger }: AddEventModalProps) {
           resetForm()
           } catch (e) {
             console.error('Error parsing success response:', e)
-            alert('Event created but failed to parse response')
+            toast.error('Event created but failed to parse response')
           }
         }
       }
