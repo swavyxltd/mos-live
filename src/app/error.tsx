@@ -20,7 +20,7 @@ export default function Error({
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-md p-8 text-center">
+      <Card className="w-full max-w-[50vw] min-w-[320px] p-8 text-center">
         <div className="mb-4 flex justify-center">
           <AlertTriangle className="h-16 w-16 text-red-500" />
         </div>
