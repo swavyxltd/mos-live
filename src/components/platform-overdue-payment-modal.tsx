@@ -199,7 +199,7 @@ export function PlatformOverduePaymentModal({
         }
       }}
     >
-      <div className="w-[75vw]">
+      <div className="w-[95vw] sm:w-[90vw] md:w-[75vw]">
         <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-md overflow-hidden">
           <div className="p-6 border-b border-[var(--border)]">
             <div className="text-center">

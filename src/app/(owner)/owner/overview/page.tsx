@@ -68,15 +68,6 @@ export default function OwnerOverviewPage() {
     activeUsers: number
   } | null>(null)
   
-  if (status === 'loading') {
-    return <div>Loading...</div>
-  }
-  
-  if (!session?.user?.id) {
-    router.push('/auth/signin')
-    return <div>Redirecting...</div>
-  }
-
   // Load initial data
   useEffect(() => {
     // Fetch dashboard data
@@ -259,6 +250,16 @@ export default function OwnerOverviewPage() {
     router.push('/owner/system-health')
   }
 
+  // Conditional returns after all hooks
+  if (status === 'loading') {
+    return <div>Loading...</div>
+  }
+  
+  if (!session?.user?.id) {
+    router.push('/auth/signin')
+    return <div>Redirecting...</div>
+  }
+
   if (!dashboardData) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -271,124 +272,125 @@ export default function OwnerOverviewPage() {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-4 sm:space-y-6 w-full min-w-0">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-        <div className="min-w-0 flex-1">
-          <h1 className="text-2xl sm:text-3xl font-bold text-[var(--foreground)] break-words">Madrasah OS Dashboard</h1>
-          <p className="mt-1 text-sm text-[var(--muted-foreground)] break-words">
+      <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-start w-full min-w-0">
+        <div className="flex-1 min-w-0 pr-0 md:pr-4">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-[var(--foreground)] break-words">Madrasah OS Dashboard</h1>
+          <p className="mt-1 text-xs sm:text-sm text-[var(--muted-foreground)] break-words">
             Complete overview of our platform performance and business metrics
           </p>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-xs sm:text-sm text-gray-500 mt-1">
             Last updated: {lastUpdated.toLocaleTimeString()}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2 shrink-0">
+        <div className="flex flex-wrap gap-2 shrink-0 w-full md:w-auto">
           <Button 
             variant="outline" 
             size="sm" 
             onClick={handleRefresh}
             disabled={isRefreshing}
+            className="flex-1 md:flex-initial"
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+            <RefreshCw className={`h-4 w-4 md:mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span className="hidden md:inline">{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={handleExportData}>
-            <Download className="h-4 w-4 mr-2" />
-            Export
+          <Button variant="outline" size="sm" onClick={handleExportData} className="flex-1 md:flex-initial">
+            <Download className="h-4 w-4 md:mr-2" />
+            <span className="hidden md:inline">Export</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={handleViewAnalytics}>
-            <Eye className="h-4 w-4 mr-2" />
-            View Analytics
+          <Button variant="outline" size="sm" onClick={handleViewAnalytics} className="flex-1 md:flex-initial">
+            <Eye className="h-4 w-4 md:mr-2" />
+            <span className="hidden md:inline">View Analytics</span>
           </Button>
-          <Button size="sm" onClick={handleSettings}>
-            <Settings className="h-4 w-4 mr-2" />
-            Settings
+          <Button size="sm" onClick={handleSettings} className="flex-1 md:flex-initial">
+            <Settings className="h-4 w-4 md:mr-2" />
+            <span className="hidden md:inline">Settings</span>
           </Button>
         </div>
       </div>
 
       {/* Key Metrics Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 w-full min-w-0">
         {/* MRR */}
-        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={handleViewRevenue}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Card className="hover:shadow-md transition-shadow cursor-pointer w-full min-w-0" onClick={handleViewRevenue}>
+          <CardHeader className="flex flex-row items-start sm:items-center justify-between space-y-0 pb-2 gap-2">
             <div className="flex-1 min-w-0">
               {/* Mobile: 2 lines, Desktop: 1 line */}
-              <div className="md:hidden">
-                <CardTitle className="text-sm font-medium leading-tight">Monthly Recurring</CardTitle>
-                <CardTitle className="text-sm font-medium leading-tight">Revenue</CardTitle>
+              <div className="lg:hidden">
+                <CardTitle className="text-xs sm:text-sm font-medium leading-tight break-words">Monthly Recurring</CardTitle>
+                <CardTitle className="text-xs sm:text-sm font-medium leading-tight break-words">Revenue</CardTitle>
               </div>
-              <CardTitle className="hidden md:block text-sm font-medium">Monthly Recurring Revenue</CardTitle>
+              <CardTitle className="hidden lg:block text-sm font-medium break-words">Monthly Recurring Revenue</CardTitle>
             </div>
-            <DollarSign className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0 mt-1 sm:mt-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">£{(dashboardData.mrr ?? 0).toLocaleString()}</div>
-            <p className="text-sm text-muted-foreground">
+          <CardContent className="pt-2">
+            <div className="text-xl sm:text-2xl font-bold break-words">£{(dashboardData.mrr ?? 0).toLocaleString()}</div>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1 break-words">
               <span className="text-green-600">+{((dashboardData.revenueGrowth ?? 0).toFixed(1))}%</span> from last month
             </p>
           </CardContent>
         </Card>
 
         {/* Total Organizations */}
-        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={handleViewOrganizations}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Card className="hover:shadow-md transition-shadow cursor-pointer w-full min-w-0" onClick={handleViewOrganizations}>
+          <CardHeader className="flex flex-row items-start sm:items-center justify-between space-y-0 pb-2 gap-2">
             <div className="flex-1 min-w-0">
               {/* Mobile: 2 lines, Desktop: 1 line */}
-              <div className="md:hidden">
-                <CardTitle className="text-sm font-medium leading-tight">Total</CardTitle>
-                <CardTitle className="text-sm font-medium leading-tight">Organisations</CardTitle>
+              <div className="lg:hidden">
+                <CardTitle className="text-xs sm:text-sm font-medium leading-tight break-words">Total</CardTitle>
+                <CardTitle className="text-xs sm:text-sm font-medium leading-tight break-words">Organisations</CardTitle>
               </div>
-              <CardTitle className="hidden md:block text-sm font-medium">Total Organisations</CardTitle>
+              <CardTitle className="hidden lg:block text-sm font-medium break-words">Total Organisations</CardTitle>
             </div>
-            <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0 mt-1 sm:mt-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{dashboardData.totalOrgs}</div>
-            <p className="text-sm text-muted-foreground">
+          <CardContent className="pt-2">
+            <div className="text-xl sm:text-2xl font-bold break-words">{dashboardData.totalOrgs}</div>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1 break-words">
               <span className="text-green-600">+{dashboardData.newOrgsThisMonth}</span> this month
             </p>
           </CardContent>
         </Card>
 
         {/* Total Students */}
-        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={handleViewUsers}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Card className="hover:shadow-md transition-shadow cursor-pointer w-full min-w-0" onClick={handleViewUsers}>
+          <CardHeader className="flex flex-row items-start sm:items-center justify-between space-y-0 pb-2 gap-2">
             <div className="flex-1 min-w-0">
               {/* Mobile: 2 lines, Desktop: 1 line */}
-              <div className="md:hidden">
-                <CardTitle className="text-sm font-medium leading-tight">Total</CardTitle>
-                <CardTitle className="text-sm font-medium leading-tight">Students</CardTitle>
+              <div className="lg:hidden">
+                <CardTitle className="text-xs sm:text-sm font-medium leading-tight break-words">Total</CardTitle>
+                <CardTitle className="text-xs sm:text-sm font-medium leading-tight break-words">Students</CardTitle>
               </div>
-              <CardTitle className="hidden md:block text-sm font-medium">Total Students</CardTitle>
+              <CardTitle className="hidden lg:block text-sm font-medium break-words">Total Students</CardTitle>
             </div>
-            <Users className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <Users className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0 mt-1 sm:mt-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{(dashboardData.totalStudents ?? 0).toLocaleString()}</div>
-            <p className="text-sm text-muted-foreground">
+          <CardContent className="pt-2">
+            <div className="text-xl sm:text-2xl font-bold break-words">{(dashboardData.totalStudents ?? 0).toLocaleString()}</div>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1 break-words">
               <span className="text-green-600">+{Math.round((dashboardData.totalStudents ?? 0) * 0.08)}</span> this month
             </p>
           </CardContent>
         </Card>
 
         {/* ARR */}
-        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={handleViewRevenue}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Card className="hover:shadow-md transition-shadow cursor-pointer w-full min-w-0" onClick={handleViewRevenue}>
+          <CardHeader className="flex flex-row items-start sm:items-center justify-between space-y-0 pb-2 gap-2">
             <div className="flex-1 min-w-0">
               {/* Mobile: 2 lines, Desktop: 1 line */}
-              <div className="md:hidden">
-                <CardTitle className="text-sm font-medium leading-tight">Annual Recurring</CardTitle>
-                <CardTitle className="text-sm font-medium leading-tight">Revenue</CardTitle>
+              <div className="lg:hidden">
+                <CardTitle className="text-xs sm:text-sm font-medium leading-tight break-words">Annual Recurring</CardTitle>
+                <CardTitle className="text-xs sm:text-sm font-medium leading-tight break-words">Revenue</CardTitle>
               </div>
-              <CardTitle className="hidden md:block text-sm font-medium">Annual Recurring Revenue</CardTitle>
+              <CardTitle className="hidden lg:block text-sm font-medium break-words">Annual Recurring Revenue</CardTitle>
             </div>
-            <TrendingUp className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0 mt-1 sm:mt-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">£{(dashboardData.arr ?? 0).toLocaleString()}</div>
-            <p className="text-sm text-muted-foreground">
+          <CardContent className="pt-2">
+            <div className="text-xl sm:text-2xl font-bold break-words">£{(dashboardData.arr ?? 0).toLocaleString()}</div>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1 break-words">
               <span className="text-green-600">+{((dashboardData.revenueGrowth ?? 0).toFixed(1))}%</span> growth
             </p>
           </CardContent>
@@ -396,82 +398,82 @@ export default function OwnerOverviewPage() {
       </div>
 
       {/* Secondary Metrics */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={handleViewRevenue}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 w-full min-w-0">
+        <Card className="hover:shadow-md transition-shadow cursor-pointer w-full min-w-0" onClick={handleViewRevenue}>
+          <CardHeader className="flex flex-row items-start sm:items-center justify-between space-y-0 pb-2 gap-2">
             <div className="flex-1 min-w-0">
               {/* Mobile: 2 lines, Desktop: 1 line */}
-              <div className="md:hidden">
-                <CardTitle className="text-sm font-medium leading-tight">Payment Success</CardTitle>
-                <CardTitle className="text-sm font-medium leading-tight">Rate</CardTitle>
+              <div className="lg:hidden">
+                <CardTitle className="text-xs sm:text-sm font-medium leading-tight break-words">Payment Success</CardTitle>
+                <CardTitle className="text-xs sm:text-sm font-medium leading-tight break-words">Rate</CardTitle>
               </div>
-              <CardTitle className="hidden md:block text-sm font-medium">Payment Success Rate</CardTitle>
+              <CardTitle className="hidden lg:block text-sm font-medium break-words">Payment Success Rate</CardTitle>
             </div>
-            <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+            <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0 mt-1 sm:mt-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{dashboardData.paymentSuccessRate}%</div>
-            <p className="text-sm text-muted-foreground">Last 30 days</p>
+          <CardContent className="pt-2">
+            <div className="text-xl sm:text-2xl font-bold break-words">{dashboardData.paymentSuccessRate}%</div>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1 break-words">Last 30 days</p>
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push('/owner/dunning')}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Card className="hover:shadow-md transition-shadow cursor-pointer w-full min-w-0" onClick={() => router.push('/owner/dunning')}>
+          <CardHeader className="flex flex-row items-start sm:items-center justify-between space-y-0 pb-2 gap-2">
             <div className="flex-1 min-w-0">
               {/* Mobile: 2 lines, Desktop: 1 line */}
-              <div className="md:hidden">
-                <CardTitle className="text-sm font-medium leading-tight">Overdue</CardTitle>
-                <CardTitle className="text-sm font-medium leading-tight">Accounts</CardTitle>
+              <div className="lg:hidden">
+                <CardTitle className="text-xs sm:text-sm font-medium leading-tight break-words">Overdue</CardTitle>
+                <CardTitle className="text-xs sm:text-sm font-medium leading-tight break-words">Accounts</CardTitle>
               </div>
-              <CardTitle className="hidden md:block text-sm font-medium">Overdue Accounts</CardTitle>
+              <CardTitle className="hidden lg:block text-sm font-medium break-words">Overdue Accounts</CardTitle>
             </div>
-            <AlertTriangle className="h-4 w-4 text-orange-600" />
+            <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600 flex-shrink-0 mt-1 sm:mt-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{dashboardData.overdueCount}</div>
-            <p className="text-sm text-muted-foreground">Requires attention</p>
+          <CardContent className="pt-2">
+            <div className="text-xl sm:text-2xl font-bold break-words">{dashboardData.overdueCount}</div>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1 break-words">Requires attention</p>
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={handleViewAnalytics}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Card className="hover:shadow-md transition-shadow cursor-pointer w-full min-w-0" onClick={handleViewAnalytics}>
+          <CardHeader className="flex flex-row items-start sm:items-center justify-between space-y-0 pb-2 gap-2">
             <div className="flex-1 min-w-0">
               {/* Mobile: 2 lines, Desktop: 1 line */}
-              <div className="md:hidden">
-                <CardTitle className="text-sm font-medium leading-tight">Churn</CardTitle>
-                <CardTitle className="text-sm font-medium leading-tight">Rate</CardTitle>
+              <div className="lg:hidden">
+                <CardTitle className="text-xs sm:text-sm font-medium leading-tight break-words">Churn</CardTitle>
+                <CardTitle className="text-xs sm:text-sm font-medium leading-tight break-words">Rate</CardTitle>
               </div>
-              <CardTitle className="hidden md:block text-sm font-medium">Churn Rate</CardTitle>
+              <CardTitle className="hidden lg:block text-sm font-medium break-words">Churn Rate</CardTitle>
             </div>
-            <ArrowDownRight className="h-4 w-4 text-red-600" />
+            <ArrowDownRight className="h-4 w-4 sm:h-5 sm:w-5 text-red-600 flex-shrink-0 mt-1 sm:mt-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{dashboardData.churnRate}%</div>
-            <p className="text-sm text-muted-foreground">Monthly churn</p>
+          <CardContent className="pt-2">
+            <div className="text-xl sm:text-2xl font-bold break-words">{dashboardData.churnRate}%</div>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1 break-words">Monthly churn</p>
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={handleViewAnalytics}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Card className="hover:shadow-md transition-shadow cursor-pointer w-full min-w-0" onClick={handleViewAnalytics}>
+          <CardHeader className="flex flex-row items-start sm:items-center justify-between space-y-0 pb-2 gap-2">
             <div className="flex-1 min-w-0">
               {/* Mobile: 2 lines, Desktop: 1 line */}
-              <div className="md:hidden">
-                <CardTitle className="text-sm font-medium leading-tight">Avg Revenue</CardTitle>
-                <CardTitle className="text-sm font-medium leading-tight">per Org</CardTitle>
+              <div className="lg:hidden">
+                <CardTitle className="text-xs sm:text-sm font-medium leading-tight break-words">Avg Revenue</CardTitle>
+                <CardTitle className="text-xs sm:text-sm font-medium leading-tight break-words">per Org</CardTitle>
               </div>
-              <CardTitle className="hidden md:block text-sm font-medium">Avg Revenue per Org</CardTitle>
+              <CardTitle className="hidden lg:block text-sm font-medium break-words">Avg Revenue per Org</CardTitle>
             </div>
-            <BarChart3 className="h-4 w-4 text-blue-600" />
+            <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0 mt-1 sm:mt-0" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">£{((dashboardData.avgRevenuePerOrg ?? 0).toFixed(0))}</div>
-            <p className="text-sm text-muted-foreground">Per month</p>
+          <CardContent className="pt-2">
+            <div className="text-xl sm:text-2xl font-bold break-words">£{((dashboardData.avgRevenuePerOrg ?? 0).toFixed(0))}</div>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1 break-words">Per month</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Charts and Tables Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full min-w-0">
         {/* Revenue Trend Chart */}
         {dashboardData && dashboardData.monthlyRevenue && (
           <WaveChart
@@ -495,114 +497,122 @@ export default function OwnerOverviewPage() {
         )}
 
         {/* Top Organisations */}
-        <Card>
+        <Card className="w-full min-w-0">
           <CardHeader>
-            <CardTitle>Top Performing Organisations</CardTitle>
-            <CardDescription>Organisations by student count and revenue</CardDescription>
+            <CardTitle className="text-base sm:text-lg break-words">Top Performing Organisations</CardTitle>
+            <CardDescription className="text-xs sm:text-sm break-words">Organisations by student count and revenue</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {dashboardData.topOrgs.map((org, index) => (
-                <div key={index} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer" onClick={handleViewOrganizations}>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                      <span className="text-sm font-medium text-blue-600">#{index + 1}</span>
+            <div className="space-y-3 sm:space-y-4">
+              {dashboardData.topOrgs && dashboardData.topOrgs.length > 0 ? (
+                dashboardData.topOrgs.map((org, index) => (
+                <div key={index} className="flex items-center justify-between p-2 sm:p-3 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer gap-2 min-w-0">
+                  <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs sm:text-sm font-medium text-blue-600">#{index + 1}</span>
                     </div>
-                    <div>
-                      <p className="font-medium">{org.name}</p>
-                      <p className="text-sm text-gray-500">{org.students} students</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-sm sm:text-base truncate">{org.name}</p>
+                      <p className="text-xs sm:text-sm text-gray-500 truncate">{org.students} students</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-medium">£{org.revenue}</p>
-                    <div className="flex items-center">
+                  <div className="text-right flex-shrink-0">
+                    <p className="font-medium text-sm sm:text-base">£{org.revenue}</p>
+                    <div className="flex items-center justify-end">
                       {org.growth > 0 ? (
                         <ArrowUpRight className="h-3 w-3 text-green-600 mr-1" />
                       ) : (
                         <ArrowDownRight className="h-3 w-3 text-red-600 mr-1" />
                       )}
-                      <span className={`text-sm ${org.growth > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      <span className={`text-xs sm:text-sm ${org.growth > 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {org.growth > 0 ? '+' : ''}{org.growth.toFixed(1)}%
                       </span>
                     </div>
                   </div>
                 </div>
-              ))}
+              ))
+              ) : (
+                <p className="text-xs sm:text-sm text-muted-foreground text-center py-4">No organisations data available</p>
+              )}
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Recent Activity and System Health */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full min-w-0">
         {/* Recent Activity */}
-        <Card>
+        <Card className="w-full min-w-0">
           <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>Latest platform events and transactions</CardDescription>
+            <CardTitle className="text-base sm:text-lg break-words">Recent Activity</CardTitle>
+            <CardDescription className="text-xs sm:text-sm break-words">Latest platform events and transactions</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {dashboardData.recentActivity.map((activity, index) => (
-                <div key={index} className="flex items-start space-x-3">
-                  <div className={`w-2 h-2 rounded-full mt-2 ${
+            <div className="space-y-3 sm:space-y-4">
+              {dashboardData.recentActivity && dashboardData.recentActivity.length > 0 ? (
+                dashboardData.recentActivity.map((activity, index) => (
+                <div key={index} className="flex items-start space-x-2 sm:space-x-3 min-w-0">
+                  <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
                     activity.status === 'success' ? 'bg-green-500' :
                     activity.status === 'error' ? 'bg-red-500' : 'bg-blue-500'
                   }`} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium">{activity.message}</p>
+                    <p className="text-xs sm:text-sm font-medium break-words">{activity.message}</p>
                     {activity.amount && (
-                      <p className="text-sm text-green-600 font-medium">£{activity.amount}</p>
+                      <p className="text-xs sm:text-sm text-green-600 font-medium break-words">£{activity.amount}</p>
                     )}
-                    <p className="text-sm text-gray-500">{activity.time}</p>
+                    <p className="text-xs sm:text-sm text-gray-500 break-words">{activity.time}</p>
                   </div>
                 </div>
-              ))}
+              ))
+              ) : (
+                <p className="text-xs sm:text-sm text-muted-foreground text-center py-4">No recent activity</p>
+              )}
             </div>
           </CardContent>
         </Card>
 
         {/* System Health */}
-        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={handleViewSystemHealth}>
+        <Card className="hover:shadow-md transition-shadow cursor-pointer w-full min-w-0" onClick={handleViewSystemHealth}>
           <CardHeader>
-            <CardTitle>System Health</CardTitle>
-            <CardDescription>Platform performance and reliability metrics</CardDescription>
+            <CardTitle className="text-base sm:text-lg break-words">System Health</CardTitle>
+            <CardDescription className="text-xs sm:text-sm break-words">Platform performance and reliability metrics</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Activity className="h-4 w-4 text-green-600" />
-                  <span className="text-sm font-medium">Uptime</span>
+            <div className="space-y-3 sm:space-y-4">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center space-x-2 min-w-0">
+                  <Activity className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm font-medium break-words">Uptime</span>
                 </div>
-                <Badge variant="outline" className="text-green-600">
+                <Badge variant="outline" className="text-green-600 flex-shrink-0 text-xs sm:text-sm">
                   {systemHealth?.uptime?.toFixed(1) || dashboardData?.systemHealth?.uptime || 0}%
                 </Badge>
               </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Clock className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-medium">Response Time</span>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center space-x-2 min-w-0">
+                  <Clock className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm font-medium break-words">Response Time</span>
                 </div>
-                <Badge variant="outline">
+                <Badge variant="outline" className="flex-shrink-0 text-xs sm:text-sm">
                   {systemHealth?.responseTime || dashboardData?.systemHealth?.responseTime || 0}ms
                 </Badge>
               </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <XCircle className="h-4 w-4 text-orange-600" />
-                  <span className="text-sm font-medium">Error Rate</span>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center space-x-2 min-w-0">
+                  <XCircle className="h-4 w-4 text-orange-600 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm font-medium break-words">Error Rate</span>
                 </div>
-                <Badge variant="outline">
+                <Badge variant="outline" className="flex-shrink-0 text-xs sm:text-sm">
                   {systemHealth?.errorRate?.toFixed(2) || dashboardData?.systemHealth?.errorRate || 0}%
                 </Badge>
               </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <UserCheck className="h-4 w-4 text-purple-600" />
-                  <span className="text-sm font-medium">Active Users</span>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center space-x-2 min-w-0">
+                  <UserCheck className="h-4 w-4 text-purple-600 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm font-medium break-words">Active Users</span>
                 </div>
-                <Badge variant="outline">
+                <Badge variant="outline" className="flex-shrink-0 text-xs sm:text-sm">
                   {systemHealth?.activeUsers || dashboardData?.systemHealth?.activeUsers || 0}
                 </Badge>
               </div>

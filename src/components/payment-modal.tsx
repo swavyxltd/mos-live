@@ -99,7 +99,7 @@ export function PaymentModal({ isOpen, onClose, overdueAmount, onPaymentSuccess 
 
   return (
     <div className="fixed inset-0 bg-white/20 backdrop-blur-md flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="w-[75vw] my-8 max-h-[90vh]">
+      <div className="w-[95vw] sm:w-[90vw] md:w-[75vw] my-8 max-h-[90vh]">
         <Card className="border border-[var(--border)] shadow-lg overflow-hidden flex flex-col max-h-[90vh]">
           <CardHeader>
             <div className="flex items-center justify-between">

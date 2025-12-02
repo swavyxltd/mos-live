@@ -123,6 +123,34 @@ const emailTypes: EmailPreview[] = [
     description: 'Sent automatically when owner responds to support ticket',
     type: 'support-notification',
     category: 'automatic'
+  },
+  {
+    id: 'lead-initial-outreach',
+    name: 'Lead Initial Outreach',
+    description: 'Sent manually when owner sends initial outreach email to a lead',
+    type: 'lead-initial-outreach',
+    category: 'manual'
+  },
+  {
+    id: 'lead-follow-up-1',
+    name: 'Lead Follow-up Email',
+    description: 'Sent manually when owner sends first follow-up email to a lead',
+    type: 'lead-follow-up-1',
+    category: 'manual'
+  },
+  {
+    id: 'lead-follow-up-2',
+    name: 'Lead Second Follow-up',
+    description: 'Sent manually when owner sends second follow-up email to a lead',
+    type: 'lead-follow-up-2',
+    category: 'manual'
+  },
+  {
+    id: 'lead-final-follow-up',
+    name: 'Lead Final Follow-up',
+    description: 'Sent manually when owner sends final follow-up email to a lead',
+    type: 'lead-final-follow-up',
+    category: 'manual'
   }
 ]
 

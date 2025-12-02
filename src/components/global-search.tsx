@@ -68,6 +68,7 @@ const iconMap: Record<string, LucideIcon> = {
 }
 
 export function GlobalSearch() {
+  const [mounted, setMounted] = React.useState(false)
   const [query, setQuery] = React.useState('')
   const [results, setResults] = React.useState<SearchResult[]>([])
   const [isOpen, setIsOpen] = React.useState(false)
@@ -76,6 +77,11 @@ export function GlobalSearch() {
   const [isMobileSearchOpen, setIsMobileSearchOpen] = React.useState(false)
 
   const searchTimeoutRef = React.useRef<NodeJS.Timeout>()
+
+  // Ensure component only renders on client to prevent hydration mismatch
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const handleSearch = async (searchQuery: string) => {
     if (searchQuery.length < 2) {
@@ -116,6 +122,8 @@ export function GlobalSearch() {
 
   // Keyboard shortcut handler (⌘K or Ctrl+K)
   React.useEffect(() => {
+    if (!mounted) return
+
     const handleKeyDown = (event: KeyboardEvent) => {
       // Check for ⌘K (Mac) or Ctrl+K (Windows/Linux)
       if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
@@ -134,10 +142,12 @@ export function GlobalSearch() {
 
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, isMobileSearchOpen])
+  }, [mounted, isOpen, isMobileSearchOpen])
 
   // Close search when clicking outside
   React.useEffect(() => {
+    if (!mounted) return
+
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement
       if (isOpen && !target.closest('.search-container')) {
@@ -152,7 +162,7 @@ export function GlobalSearch() {
       document.addEventListener('mousedown', handleClickOutside)
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [isOpen, isMobileSearchOpen])
+  }, [mounted, isOpen, isMobileSearchOpen])
 
   const handleClear = () => {
     setQuery('')
@@ -188,6 +198,33 @@ export function GlobalSearch() {
       case 'guide': return 'bg-teal-50 text-teal-700 border-teal-200'
       default: return 'bg-gray-50 text-gray-700 border-gray-200'
     }
+  }
+
+  // Prevent hydration mismatch by not rendering until mounted
+  if (!mounted) {
+    return (
+      <div className="relative search-container">
+        {/* Mobile: Search Icon Button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden h-10 w-10 hover:bg-gray-100 flex-shrink-0"
+          disabled
+        >
+          <Search className="h-5 w-5" />
+        </Button>
+
+        {/* Desktop: Search Icon Button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="hidden md:flex h-10 w-10 hover:bg-gray-100 flex-shrink-0"
+          disabled
+        >
+          <Search className="h-5 w-5" />
+        </Button>
+      </div>
+    )
   }
 
   return (

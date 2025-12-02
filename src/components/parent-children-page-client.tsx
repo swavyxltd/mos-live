@@ -219,7 +219,7 @@ export function ParentChildrenPageClient({ students: initialStudents }: ParentCh
             }
           }}
         >
-          <div className="w-full max-w-3xl my-8">
+          <div className="w-[95vw] sm:w-[90vw] md:max-w-3xl my-8">
             <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-md overflow-hidden">
               <div className="p-4 sm:p-6 border-b border-[var(--border)]">
                 <div className="flex items-start justify-between gap-4">

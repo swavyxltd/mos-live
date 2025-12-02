@@ -126,14 +126,6 @@ export async function generateEmailTemplate({
                                   madrasah.io
                                 </a>
                               </td>
-                              <td style="padding: 0 16px;">
-                                <span style="font-size: 12px; color: #d1d5db;">•</span>
-                              </td>
-                              <td align="center" style="padding: 0 16px;">
-                                <a href="https://app.madrasah.io/support" style="font-size: 12px; color: #6b7280; text-decoration: none; line-height: 1.6;">
-                                  Support
-                                </a>
-                              </td>
                             </tr>
                           </table>
                           <p style="margin: 24px 0 0 0; font-size: 11px; color: #9ca3af; text-align: center;">

@@ -38,7 +38,8 @@ import {
   Search,
   Moon,
   Sun,
-  Receipt
+  Receipt,
+  Target
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -79,6 +80,7 @@ const staffNavigation = [
 const ownerNavigation = [
   { name: 'Dashboard', href: '/owner/overview', icon: BarChart3 },
   { name: 'Analytics', href: '/owner/analytics', icon: TrendingUp },
+  { name: 'Leads', href: '/owner/leads/dashboard', icon: Target },
   { name: 'Organisations', href: '/owner/orgs', icon: Building2 },
   { name: 'Revenue', href: '/owner/revenue', icon: DollarSign },
   { name: 'Users', href: '/owner/users', icon: Users },
@@ -265,7 +267,9 @@ export function Sidebar({ user: initialUser, org, userRole, staffSubrole, permis
           {/* Navigation */}
           <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
             {currentNavigation.map((item) => {
-              const isActive = pathname === item.href
+              // For Leads, also check if we're on any leads page
+              const isActive = pathname === item.href || (item.href === '/owner/leads/dashboard' && pathname.startsWith('/owner/leads'))
+              const Icon = item.icon
               return (
                 <Link
                   key={item.name}
@@ -278,7 +282,7 @@ export function Sidebar({ user: initialUser, org, userRole, staffSubrole, permis
                   )}
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  <item.icon
+                  <Icon
                     className={cn(
                       "mr-3 h-5 w-5 flex-shrink-0",
                       isActive ? "text-[var(--secondary-foreground)]" : "text-[var(--muted-foreground)] group-hover:text-[var(--sidebar-accent-foreground)]"

@@ -501,6 +501,176 @@ export async function GET(request: NextRequest) {
         break
       }
 
+      case 'lead-initial-outreach': {
+        const content = `
+          <p style="margin: 0 0 20px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">Assalamu Alaikum ${demoData.parentName},</p>
+          
+          <p style="margin: 0 0 20px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">I hope this message finds you well.</p>
+          
+          <p style="margin: 0 0 20px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">I'm reaching out from Madrasah OS. We help madrasahs manage students, track attendance, handle payments, and communicate with parents—all in one system.</p>
+          
+          <p style="margin: 0 0 20px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">I noticed <strong>${demoData.orgName}</strong> and thought you might find our platform useful. Many madrasahs have found it helps them save time on administrative tasks.</p>
+          
+          <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; margin: 24px 0;">
+            <h3 style="margin: 0 0 20px 0; font-size: 18px; font-weight: 600; color: #111827; text-align: center;">Our best features:</h3>
+            <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+              <tr>
+                <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb; width: 50%; padding-right: 16px;">
+                  <div style="font-size: 20px; margin-bottom: 4px;">📋</div>
+                  <div style="font-size: 15px; font-weight: 600; color: #111827;">Student Management</div>
+                  <div style="font-size: 14px; color: #6b7280; margin-top: 4px;">Complete student records, enrollment & tracking</div>
+                </td>
+                <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; width: 50%; padding-left: 16px;">
+                  <div style="font-size: 20px; margin-bottom: 4px;">✅</div>
+                  <div style="font-size: 15px; font-weight: 600; color: #111827;">Attendance Tracking</div>
+                  <div style="font-size: 14px; color: #6b7280; margin-top: 4px;">Quick daily marking with automated reports</div>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb; padding-right: 16px;">
+                  <div style="font-size: 20px; margin-bottom: 4px;">💳</div>
+                  <div style="font-size: 15px; font-weight: 600; color: #111827;">Payment Management</div>
+                  <div style="font-size: 14px; color: #6b7280; margin-top: 4px;">Track fees, invoices & payment history</div>
+                </td>
+                <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; padding-left: 16px;">
+                  <div style="font-size: 20px; margin-bottom: 4px;">💬</div>
+                  <div style="font-size: 15px; font-weight: 600; color: #111827;">Parent Communication</div>
+                  <div style="font-size: 14px; color: #6b7280; margin-top: 4px;">Send messages, announcements & updates</div>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 12px 0; border-right: 1px solid #e5e7eb; padding-right: 16px;">
+                  <div style="font-size: 20px; margin-bottom: 4px;">📊</div>
+                  <div style="font-size: 15px; font-weight: 600; color: #111827;">Reports & Analytics</div>
+                  <div style="font-size: 14px; color: #6b7280; margin-top: 4px;">Insights on attendance, payments & performance</div>
+                </td>
+                <td style="padding: 12px 0; padding-left: 16px;">
+                  <div style="font-size: 20px; margin-bottom: 4px;">📅</div>
+                  <div style="font-size: 15px; font-weight: 600; color: #111827;">Calendar & Events</div>
+                  <div style="font-size: 14px; color: #6b7280; margin-top: 4px;">Manage holidays, events & schedules</div>
+                </td>
+              </tr>
+            </table>
+          </div>
+          
+          <p style="margin: 0 0 24px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">Would you be open to a brief conversation? I'd be happy to show you how it works and answer any questions.</p>
+        `
+        html = await generateEmailTemplate({
+          title: `Management system for ${demoData.orgName}`,
+          description: '',
+          content,
+          footerText: `JazakAllah Khair,<br>Platform Owner<br>Madrasah OS`
+        })
+        break
+      }
+
+      case 'lead-follow-up-1': {
+        const content = `
+          <p style="margin: 0 0 20px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">Assalamu Alaikum ${demoData.parentName},</p>
+          
+          <p style="margin: 0 0 20px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">I hope this message finds you well.</p>
+          
+          <p style="margin: 0 0 20px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">I wanted to follow up on my previous message about Madrasah OS and how it could benefit <strong>${demoData.orgName}</strong>.</p>
+          
+          <p style="margin: 0 0 20px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">I understand you're busy, so I'll keep this brief. Our platform helps madrasahs:</p>
+          
+          <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; margin: 24px 0;">
+            <h3 style="margin: 0 0 20px 0; font-size: 18px; font-weight: 600; color: #111827; text-align: center;">Our best features:</h3>
+            <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+              <tr>
+                <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb; width: 50%; padding-right: 16px;">
+                  <div style="font-size: 20px; margin-bottom: 4px;">📋</div>
+                  <div style="font-size: 15px; font-weight: 600; color: #111827;">Student Management</div>
+                  <div style="font-size: 14px; color: #6b7280; margin-top: 4px;">Complete student records, enrollment & tracking</div>
+                </td>
+                <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; width: 50%; padding-left: 16px;">
+                  <div style="font-size: 20px; margin-bottom: 4px;">✅</div>
+                  <div style="font-size: 15px; font-weight: 600; color: #111827;">Attendance Tracking</div>
+                  <div style="font-size: 14px; color: #6b7280; margin-top: 4px;">Quick daily marking with automated reports</div>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb; padding-right: 16px;">
+                  <div style="font-size: 20px; margin-bottom: 4px;">💳</div>
+                  <div style="font-size: 15px; font-weight: 600; color: #111827;">Payment Management</div>
+                  <div style="font-size: 14px; color: #6b7280; margin-top: 4px;">Track fees, invoices & payment history</div>
+                </td>
+                <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; padding-left: 16px;">
+                  <div style="font-size: 20px; margin-bottom: 4px;">💬</div>
+                  <div style="font-size: 15px; font-weight: 600; color: #111827;">Parent Communication</div>
+                  <div style="font-size: 14px; color: #6b7280; margin-top: 4px;">Send messages, announcements & updates</div>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 12px 0; border-right: 1px solid #e5e7eb; padding-right: 16px;">
+                  <div style="font-size: 20px; margin-bottom: 4px;">📊</div>
+                  <div style="font-size: 15px; font-weight: 600; color: #111827;">Reports & Analytics</div>
+                  <div style="font-size: 14px; color: #6b7280; margin-top: 4px;">Insights on attendance, payments & performance</div>
+                </td>
+                <td style="padding: 12px 0; padding-left: 16px;">
+                  <div style="font-size: 20px; margin-bottom: 4px;">📅</div>
+                  <div style="font-size: 15px; font-weight: 600; color: #111827;">Calendar & Events</div>
+                  <div style="font-size: 14px; color: #6b7280; margin-top: 4px;">Manage holidays, events & schedules</div>
+                </td>
+              </tr>
+            </table>
+          </div>
+          
+          <p style="margin: 0 0 24px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">If you're interested, I'd be happy to show you how it works and answer any questions.</p>
+          
+          <p style="margin: 0 0 24px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">Looking forward to hearing from you.</p>
+        `
+        html = await generateEmailTemplate({
+          title: `Following up: Management system for ${demoData.orgName}`,
+          description: '',
+          content,
+          footerText: `JazakAllah Khair,<br>Platform Owner<br>Madrasah OS`
+        })
+        break
+      }
+
+      case 'lead-follow-up-2': {
+        const content = `
+          <p style="margin: 0 0 20px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">Assalamu Alaikum ${demoData.parentName},</p>
+          
+          <p style="margin: 0 0 20px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">I hope you're well.</p>
+          
+          <p style="margin: 0 0 20px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">I wanted to reach out one more time about Madrasah OS for <strong>${demoData.orgName}</strong>.</p>
+          
+          <p style="margin: 0 0 20px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">I know you're busy, but I believe our platform could genuinely help streamline your operations. Many madrasahs have found it helps them save time on administrative tasks.</p>
+          
+          <p style="margin: 0 0 24px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">If you're interested, I'm here to help. If not, I completely understand and won't trouble you further.</p>
+        `
+        html = await generateEmailTemplate({
+          title: `One more follow-up: Management system for ${demoData.orgName}`,
+          description: '',
+          content,
+          footerText: `JazakAllah Khair,<br>Platform Owner<br>Madrasah OS`
+        })
+        break
+      }
+
+      case 'lead-final-follow-up': {
+        const content = `
+          <p style="margin: 0 0 20px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">Assalamu Alaikum ${demoData.parentName},</p>
+          
+          <p style="margin: 0 0 20px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">I hope this message finds you well.</p>
+          
+          <p style="margin: 0 0 20px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">This will be my final follow-up regarding Madrasah OS for <strong>${demoData.orgName}</strong>.</p>
+          
+          <p style="margin: 0 0 20px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">I wanted to make sure you had all the information you needed. If you're interested in learning more, please don't hesitate to reach out.</p>
+          
+          <p style="margin: 0 0 24px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">Thank you for your time.</p>
+        `
+        html = await generateEmailTemplate({
+          title: `Final follow-up: Management system for ${demoData.orgName}`,
+          description: '',
+          content,
+          footerText: `JazakAllah Khair,<br>Platform Owner<br>Madrasah OS`
+        })
+        break
+      }
+
       default:
         return NextResponse.json({ error: 'Invalid email type' }, { status: 400 })
     }

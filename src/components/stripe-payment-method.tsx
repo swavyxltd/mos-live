@@ -235,7 +235,7 @@ export function StripePaymentMethodModal({ onSuccess, onCancel, clientSecret, is
         }
       }}
     >
-      <div className="w-[75vw] my-8">
+      <div className="w-[95vw] sm:w-[90vw] md:w-[75vw] my-8">
         <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-md overflow-hidden">
           {/* Header */}
           <div className="p-6 border-b border-[var(--border)]">

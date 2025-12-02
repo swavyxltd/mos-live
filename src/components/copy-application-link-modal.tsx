@@ -31,7 +31,7 @@ export function CopyApplicationLinkModal({ orgSlug, onClose }: CopyApplicationLi
 
   return (
     <div className="fixed inset-0 bg-white/20 backdrop-blur-md flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl w-[75vw]">
+      <div className="bg-white rounded-lg shadow-xl w-[95vw] sm:w-[90vw] md:w-[75vw]">
         <div className="p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">

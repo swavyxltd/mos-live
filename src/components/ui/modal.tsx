@@ -25,7 +25,7 @@ export function Modal({ isOpen, onClose, title, children, className }: ModalProp
       
       {/* Modal */}
       <div className={cn(
-        "relative bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-xl w-[75vw] max-h-[90vh] flex flex-col",
+        "relative bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-xl w-[95vw] sm:w-[90vw] md:w-[75vw] max-h-[90vh] flex flex-col",
         className
       )}>
         {/* Header */}

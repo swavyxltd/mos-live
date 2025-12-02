@@ -417,7 +417,7 @@ export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent }: Sen
         />
         
         {/* Modal */}
-        <div className="relative bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-xl w-[75vw] max-h-[90vh] flex flex-col">
+        <div className="relative bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-xl w-[95vw] sm:w-[90vw] md:w-[75vw] max-h-[90vh] flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-[var(--border)] flex-shrink-0">
             <h2 className="text-lg font-semibold text-[var(--foreground)]">WhatsApp Message</h2>

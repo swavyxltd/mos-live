@@ -265,7 +265,7 @@ model Org {
   postcode             String?
   publicEmail          String?
   publicPhone          String?
-  feeDueDay            Int?                  @default(1)
+  feeDueDay            Int?                   @default(1)
   deactivatedAt        DateTime?
   deactivatedReason    String?
   Application          Application[]
@@ -291,6 +291,7 @@ model Org {
   Term                 Term[]
   UserOrgMembership    UserOrgMembership[]
   GiftAidSubmission    GiftAidSubmission[]
+  ConvertedLeads       Lead[]
 }
 
 model GiftAidSubmission {
@@ -523,6 +524,8 @@ model User {
   SupportTicketResponse  SupportTicketResponse[]
   UserOrgMembership      UserOrgMembership[]
   GiftAidSubmission      GiftAidSubmission[]
+  AssignedLeads          Lead[]
+  CreatedLeadActivities  LeadActivity[]
 }
 
 model UserOrgMembership {
@@ -595,6 +598,57 @@ model platform_settings {
   passwordRequireLowercase    Boolean   @default(true)
   passwordRequireNumbers      Boolean   @default(true)
   passwordRequireSpecial      Boolean   @default(false)
+  ownerCalendlyUrl            String?
   createdAt                   DateTime  @default(now())
   updatedAt                   DateTime
+}
+
+model Lead {
+  id                      String         @id @default(cuid())
+  orgName                 String
+  city                    String?
+  country                 String         @default("UK")
+  estimatedStudents       Int?
+  contactName             String?
+  contactEmail            String?
+  contactPhone            String?
+  status                  String         @default("NEW") // NEW, CONTACTED, FOLLOW_UP, DEMO_BOOKED, WON, LOST, ON_HOLD
+  source                  String?
+  lastContactAt           DateTime?
+  nextContactAt           DateTime?
+  notes                   String?        @db.Text
+  assignedToUserId        String?
+  convertedOrgId          String?
+  lastEmailSentAt         DateTime?
+  lastEmailStage          String?        // INITIAL, FOLLOW_UP_1, FOLLOW_UP_2, FINAL
+  emailOutreachCompleted  Boolean         @default(false)
+  createdAt               DateTime       @default(now())
+  updatedAt               DateTime       @updatedAt
+  AssignedTo              User?          @relation(fields: [assignedToUserId], references: [id])
+  ConvertedOrg            Org?           @relation(fields: [convertedOrgId], references: [id])
+  Activities              LeadActivity[]
+
+  @@index([status])
+  @@index([assignedToUserId])
+  @@index([nextContactAt])
+  @@index([status, assignedToUserId])
+  @@index([convertedOrgId])
+  @@index([emailOutreachCompleted, nextContactAt])
+  @@index([lastEmailStage])
+}
+
+model LeadActivity {
+  id              String   @id @default(cuid())
+  leadId          String
+  type            String // CALL, WHATSAPP, EMAIL, MEETING, NOTE, STATUS_CHANGE
+  description     String   @db.Text
+  outcome         String?  // For CALL type: "No answer", "Busy / Couldn't talk", "Spoke – interested", "Spoke – not interested", "Asked to call back later", "Wrong number"
+  createdAt       DateTime @default(now())
+  createdByUserId String?
+  Lead            Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  CreatedBy       User?    @relation(fields: [createdByUserId], references: [id])
+
+  @@index([leadId])
+  @@index([createdAt])
+  @@index([type])
 }

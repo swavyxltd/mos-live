@@ -105,6 +105,7 @@ async function handlePUT(request: NextRequest) {
     if (body.passwordRequireLowercase !== undefined) updateData.passwordRequireLowercase = body.passwordRequireLowercase
     if (body.passwordRequireNumbers !== undefined) updateData.passwordRequireNumbers = body.passwordRequireNumbers
     if (body.passwordRequireSpecial !== undefined) updateData.passwordRequireSpecial = body.passwordRequireSpecial
+    if (body.ownerCalendlyUrl !== undefined) updateData.ownerCalendlyUrl = body.ownerCalendlyUrl
 
     if (!settings) {
       settings = await prisma.platformSettings.create({
