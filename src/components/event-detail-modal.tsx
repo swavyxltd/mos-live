@@ -142,26 +142,25 @@ export function EventDetailModal({
     if (!event) return
     setShowDeleteConfirm(false)
     setLoading(true)
-      try {
-        const { isDemoMode } = await import('@/lib/demo-mode')
-        
-        if (isDemoMode()) {
+    try {
+      const { isDemoMode } = await import('@/lib/demo-mode')
+      
+      if (isDemoMode()) {
+        onEventDeleted?.(event.id)
+        onOpenChange(false)
+      } else {
+        const response = await fetch(`/api/calendar/${event.id}`, {
+          method: 'DELETE',
+        })
+
+        if (response.ok) {
           onEventDeleted?.(event.id)
           onOpenChange(false)
-        } else {
-          const response = await fetch(`/api/calendar/${event.id}`, {
-            method: 'DELETE',
-          })
-
-          if (response.ok) {
-            onEventDeleted?.(event.id)
-            onOpenChange(false)
-          }
         }
-      } catch (error) {
-      } finally {
-        setLoading(false)
       }
+    } catch (error) {
+    } finally {
+      setLoading(false)
     }
   }
 

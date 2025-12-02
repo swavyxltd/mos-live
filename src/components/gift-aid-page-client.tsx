@@ -289,7 +289,7 @@ export function GiftAidPageClient() {
     proceedWithDownload(data)
   }
 
-  const proceedWithDownload = (dataToDownload: GiftAidRow[]) => {
+  const proceedWithDownload = async (dataToDownload: GiftAidRow[]) => {
     setDownloading(true)
     setShowProgressModal(true)
     setProgress(0)
