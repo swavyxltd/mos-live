@@ -14,6 +14,7 @@ async function handleGET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
+    const excludeStatus = searchParams.get('excludeStatus')
     const assignedTo = searchParams.get('assignedTo')
     const city = searchParams.get('city')
     const search = searchParams.get('search')
@@ -24,6 +25,10 @@ async function handleGET(request: NextRequest) {
     if (status) {
       const statuses = status.split(',')
       where.status = { in: statuses }
+    } else if (excludeStatus) {
+      // Only apply excludeStatus if status is not explicitly set
+      const excludedStatuses = excludeStatus.split(',')
+      where.status = { notIn: excludedStatuses }
     }
 
     if (assignedTo) {

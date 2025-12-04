@@ -59,6 +59,7 @@ export default function LeadsPage() {
   const [assignedFilter, setAssignedFilter] = useState<string>('all')
   const [cityFilter, setCityFilter] = useState('')
   const [sortBy, setSortBy] = useState<string>('createdAt_desc')
+  const [showWonOnly, setShowWonOnly] = useState(false)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -71,13 +72,20 @@ export default function LeadsPage() {
       return
     }
     loadLeads()
-  }, [session, status, router, statusFilter, assignedFilter, cityFilter, sortBy])
+  }, [session, status, router, statusFilter, assignedFilter, cityFilter, sortBy, showWonOnly])
 
   const loadLeads = async () => {
     setIsLoading(true)
     try {
       const params = new URLSearchParams()
-      if (statusFilter !== 'all') params.append('status', statusFilter)
+      if (showWonOnly) {
+        // If showing won only, set status to WON
+        params.append('status', 'WON')
+      } else {
+        // By default, exclude WON status
+        params.append('excludeStatus', 'WON')
+        if (statusFilter !== 'all') params.append('status', statusFilter)
+      }
       if (assignedFilter !== 'all') params.append('assignedTo', assignedFilter)
       if (cityFilter) params.append('city', cityFilter)
       if (searchTerm) params.append('search', searchTerm)
@@ -239,7 +247,7 @@ export default function LeadsPage() {
               </SelectContent>
             </Select>
           </div>
-          <div className="mt-4 flex gap-2">
+          <div className="mt-4 flex gap-2 flex-wrap">
             <Button onClick={handleSearch} size="sm">
               <Search className="h-4 w-4 mr-2" />
               Search
@@ -251,12 +259,31 @@ export default function LeadsPage() {
                 setAssignedFilter('all')
                 setCityFilter('')
                 setSortBy('createdAt_desc')
+                setShowWonOnly(false)
                 loadLeads()
               }}
               variant="outline"
               size="sm"
             >
               Clear
+            </Button>
+            <Button
+              onClick={() => {
+                const newShowWonOnly = !showWonOnly
+                setShowWonOnly(newShowWonOnly)
+                setStatusFilter('all')
+                // Clear other filters when toggling
+                if (newShowWonOnly) {
+                  setSearchTerm('')
+                  setCityFilter('')
+                  setAssignedFilter('all')
+                }
+                // loadLeads will be called by useEffect
+              }}
+              variant={showWonOnly ? "default" : "outline"}
+              size="sm"
+            >
+              {showWonOnly ? 'View All' : 'View Won'}
             </Button>
           </div>
         </CardContent>
@@ -265,7 +292,9 @@ export default function LeadsPage() {
       {/* Leads Table */}
       <Card className="w-full min-w-0">
         <CardHeader>
-          <CardTitle className="text-base sm:text-lg break-words">All Leads</CardTitle>
+          <CardTitle className="text-base sm:text-lg break-words">
+            {showWonOnly ? 'Won Leads' : 'All Leads'}
+          </CardTitle>
           <CardDescription className="text-xs sm:text-sm break-words">
             {leads.length} lead{leads.length !== 1 ? 's' : ''} found
           </CardDescription>
