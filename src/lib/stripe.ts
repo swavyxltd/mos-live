@@ -442,8 +442,17 @@ export async function createConnectAccount(orgId: string, email: string) {
 
   // Validate API key format
   const apiKey = process.env.STRIPE_SECRET_KEY
-  if (!apiKey || (!apiKey.startsWith('sk_live_') && !apiKey.startsWith('sk_test_'))) {
-    throw new Error('Invalid Stripe API key format. Key must start with sk_live_ or sk_test_')
+  if (!apiKey) {
+    throw new Error('STRIPE_SECRET_KEY environment variable is not set')
+  }
+  
+  // Check if it's a restricted key (which won't work for Connect)
+  if (apiKey.startsWith('rk_live_') || apiKey.startsWith('rk_test_')) {
+    throw new Error('Restricted keys (rk_live_/rk_test_) cannot create Connect accounts. Please use a secret key (sk_live_/sk_test_) instead. Get your secret key from: https://dashboard.stripe.com/apikeys')
+  }
+  
+  if (!apiKey.startsWith('sk_live_') && !apiKey.startsWith('sk_test_')) {
+    throw new Error('Invalid Stripe API key format. Key must start with sk_live_ or sk_test_ (not rk_live_ or rk_test_)')
   }
 
   // Check if using test or live mode
