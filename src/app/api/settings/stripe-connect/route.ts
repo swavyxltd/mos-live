@@ -62,23 +62,32 @@ async function handlePOST(request: NextRequest) {
       onboardingUrl: accountLink.url
     })
   } catch (error: any) {
-    logger.error('Error creating Stripe Connect account', { error: error.message, stack: error.stack })
+    logger.error('Error creating Stripe Connect account', { 
+      error: error.message, 
+      stack: error.stack,
+      type: error?.type,
+      code: error?.code,
+      statusCode: error?.statusCode
+    })
     const isDevelopment = process.env.NODE_ENV === 'development'
     
     // Return more specific error message
     const errorMessage = error?.message || 'Failed to create Stripe Connect account'
     
-    return NextResponse.json(
-      {
-        error: errorMessage,
-        ...(isDevelopment && { 
-          details: error?.message,
-          stack: error?.stack,
-          type: error?.type
-        })
-      },
-      { status: 500 }
-    )
+    // Include full error details in development
+    const errorDetails: any = {
+      error: errorMessage
+    }
+    
+    if (isDevelopment) {
+      errorDetails.details = error?.message
+      errorDetails.type = error?.type
+      errorDetails.code = error?.code
+      errorDetails.statusCode = error?.statusCode
+      errorDetails.rawError = error?.raw?.message || error?.raw
+    }
+    
+    return NextResponse.json(errorDetails, { status: 500 })
   }
 }
 

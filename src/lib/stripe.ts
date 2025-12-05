@@ -451,20 +451,8 @@ export async function createConnectAccount(orgId: string, email: string) {
   const modeText = isTestMode ? 'Test Mode' : 'Live Mode'
   
   try {
-    // First, verify we can access the platform account (this confirms Connect is enabled)
-    try {
-      await stripe.accounts.retrieve()
-    } catch (verifyError: any) {
-      // If we can't retrieve the account, Connect might not be enabled
-      if (verifyError.code === 'account_invalid' || verifyError.message?.includes('Connect')) {
-        const dashboardUrl = isTestMode 
-          ? 'https://dashboard.stripe.com/test/settings/connect'
-          : 'https://dashboard.stripe.com/settings/connect'
-        throw new Error(`Stripe Connect is not fully enabled. Please go to ${dashboardUrl} and complete the Connect platform setup. You may need to accept terms, complete business verification, or finish the onboarding process.`)
-      }
-    }
-
-    // Create Express account for the organization
+    // Try to create the Express account directly
+    // The error message from Stripe will tell us exactly what's wrong
     const account = await stripe.accounts.create({
       type: 'express',
       country: 'GB',
@@ -492,7 +480,14 @@ export async function createConnectAccount(orgId: string, email: string) {
           ? 'https://dashboard.stripe.com/test/settings/connect'
           : 'https://dashboard.stripe.com/settings/connect'
         const helpUrl = 'https://stripe.com/docs/connect/quickstart'
-        throw new Error(`Stripe Connect is not enabled for your account in ${modeText}. Please go to Settings → Connect in your Stripe Dashboard (${dashboardUrl}) and complete the Connect setup. If you've already enabled it, try refreshing the page or wait a few minutes for changes to propagate. Learn more: ${helpUrl}`)
+        
+        // Provide more detailed troubleshooting
+        let troubleshooting = ''
+        if (error.message?.includes("signed up for Connect")) {
+          troubleshooting = '\n\nTroubleshooting:\n1. Go to Settings → Connect in your Stripe Dashboard\n2. Look for "Get started" or "Complete setup" button\n3. Accept Connect terms of service\n4. Complete any required business verification\n5. Ensure you\'re using the correct API key (Live vs Test mode must match)\n6. Contact Stripe Support if the issue persists: https://support.stripe.com/'
+        }
+        
+        throw new Error(`Stripe Connect is not enabled for your account in ${modeText}. ${error.message}${troubleshooting}\n\nDashboard: ${dashboardUrl}\nDocumentation: ${helpUrl}`)
       }
       throw new Error(`Invalid Stripe request: ${error.message}`)
     }
