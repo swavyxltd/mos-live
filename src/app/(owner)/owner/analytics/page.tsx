@@ -5,6 +5,7 @@ import { SplitTitle } from '@/components/ui/split-title'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { AnalyticsRevenueChart } from '@/components/analytics-revenue-chart'
+import { Skeleton, StatCardSkeleton, CardSkeleton } from '@/components/loading/skeleton'
 import { 
   TrendingUp, 
   TrendingDown,
@@ -25,7 +26,16 @@ export default async function OwnerAnalyticsPage() {
   const session = await getServerSession(authOptions)
   
   if (!session?.user?.id) {
-    return <div>Loading...</div>
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-64 mb-2" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <StatCardSkeleton key={i} />
+          ))}
+        </div>
+      </div>
+    )
   }
 
   // Fetch analytics data from API
@@ -49,6 +59,47 @@ export default async function OwnerAnalyticsPage() {
       analyticsData = await analyticsRes.json()
     }
   } catch (error) {
+  }
+
+  // Show skeleton if no data
+  if (!analyticsData || Object.keys(analyticsData).length === 0) {
+    return (
+      <div className="space-y-6">
+        {/* Header Skeleton */}
+        <div className="flex justify-between items-center">
+          <div>
+            <Skeleton className="h-8 w-64 mb-2" />
+            <Skeleton className="h-4 w-96" />
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-9 w-24" />
+            <Skeleton className="h-9 w-24" />
+          </div>
+        </div>
+
+        {/* KPI Cards Skeleton */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <StatCardSkeleton key={i} />
+          ))}
+        </div>
+
+        {/* Charts Row Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <CardSkeleton className="h-80" />
+          <CardSkeleton className="h-80" />
+        </div>
+
+        {/* Geographic and User Analytics Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <CardSkeleton className="h-64" />
+          <CardSkeleton className="h-64" />
+        </div>
+
+        {/* Payment Analytics Skeleton */}
+        <CardSkeleton className="h-48" />
+      </div>
+    )
   }
 
   return (

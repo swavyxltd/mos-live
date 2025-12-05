@@ -9,23 +9,18 @@ import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { 
   Activity, 
-  Server,
-  Database,
-  Globe,
   AlertTriangle,
   CheckCircle,
   Clock,
   RefreshCw,
   Download,
-  Eye,
   Zap,
   Shield,
   HardDrive,
   Cpu,
-  Wifi,
-  Monitor,
   Users
 } from 'lucide-react'
+import { Skeleton, StatCardSkeleton, CardSkeleton } from '@/components/loading/skeleton'
 
 export default function OwnerSystemHealthPage() {
   const { data: session, status } = useSession()
@@ -62,7 +57,40 @@ export default function OwnerSystemHealthPage() {
   }, [status, session])
 
   if (status === 'loading' || loading || !systemHealth) {
-    return <div>Loading...</div>
+    return (
+      <div className="space-y-4 sm:space-y-6 w-full overflow-x-hidden">
+        {/* Header Skeleton */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+          <div>
+            <Skeleton className="h-8 w-64 mb-2" />
+            <Skeleton className="h-4 w-96" />
+          </div>
+          <div className="flex flex-wrap gap-2 shrink-0">
+            <Skeleton className="h-9 w-24" />
+            <Skeleton className="h-9 w-32" />
+          </div>
+        </div>
+
+        {/* Overall Status Cards Skeleton */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <StatCardSkeleton key={i} />
+          ))}
+        </div>
+
+        {/* Service Status Skeleton */}
+        <CardSkeleton className="h-96" />
+
+        {/* Performance Metrics and Security Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <CardSkeleton className="h-80" />
+          <CardSkeleton className="h-80" />
+        </div>
+
+        {/* Infrastructure Skeleton */}
+        <CardSkeleton className="h-64" />
+      </div>
+    )
   }
 
   if (!session?.user?.id) {
@@ -77,19 +105,6 @@ export default function OwnerSystemHealthPage() {
         return <Badge variant="outline" className="text-yellow-600">Degraded</Badge>
       case 'outage':
         return <Badge variant="outline" className="text-red-600">Outage</Badge>
-      default:
-        return <Badge variant="outline">Unknown</Badge>
-    }
-  }
-
-  const getSeverityBadge = (severity: string) => {
-    switch (severity) {
-      case 'critical':
-        return <Badge variant="destructive">Critical</Badge>
-      case 'major':
-        return <Badge variant="outline" className="text-red-600">Major</Badge>
-      case 'minor':
-        return <Badge variant="outline" className="text-yellow-600">Minor</Badge>
       default:
         return <Badge variant="outline">Unknown</Badge>
     }
@@ -235,6 +250,7 @@ export default function OwnerSystemHealthPage() {
                   <div>
                     <p className="font-medium">{service.name}</p>
                     <p className="text-sm text-gray-500">
+                      {service.provider && <span className="text-muted-foreground">{service.provider} • </span>}
                       Last checked: {new Date(service.lastCheck).toLocaleString()}
                     </p>
                   </div>
@@ -265,48 +281,61 @@ export default function OwnerSystemHealthPage() {
             <CardDescription>System performance and resource utilization</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
+            <div className="space-y-0">
+              <div className="flex items-center justify-between py-3">
                 <div className="flex items-center space-x-2">
                   <Zap className="h-4 w-4 text-blue-600" />
                   <span className="text-sm font-medium">Avg Response Time</span>
                 </div>
                 <Badge variant="outline">{Math.round(systemHealth.performance.averageResponseTime)}ms</Badge>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="border-t border-gray-200"></div>
+              <div className="flex items-center justify-between py-3">
                 <div className="flex items-center space-x-2">
                   <Activity className="h-4 w-4 text-green-600" />
                   <span className="text-sm font-medium">Requests/Min</span>
                 </div>
                 <Badge variant="outline">{systemHealth.performance.requestsPerMinute}</Badge>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="border-t border-gray-200"></div>
+              <div className="flex items-center justify-between py-3">
                 <div className="flex items-center space-x-2">
                   <Users className="h-4 w-4 text-purple-600" />
                   <span className="text-sm font-medium">Concurrent Users</span>
                 </div>
                 <Badge variant="outline">{systemHealth.performance.concurrentUsers}</Badge>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="border-t border-gray-200"></div>
+              <div className="flex items-center justify-between py-3">
                 <div className="flex items-center space-x-2">
                   <Database className="h-4 w-4 text-orange-600" />
                   <span className="text-sm font-medium">DB Connections</span>
                 </div>
                 <Badge variant="outline">{systemHealth.performance.databaseConnections}</Badge>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="border-t border-gray-200"></div>
+              <div className="flex items-center justify-between py-3">
                 <div className="flex items-center space-x-2">
                   <Cpu className="h-4 w-4 text-red-600" />
                   <span className="text-sm font-medium">CPU Usage</span>
                 </div>
-                <Badge variant="outline">{systemHealth.performance.cpuUsage.toFixed(1)}%</Badge>
+                <Badge variant="outline">
+                  {systemHealth.performance.cpuUsage > 0 
+                    ? `${systemHealth.performance.cpuUsage.toFixed(1)}%` 
+                    : '—'}
+                </Badge>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="border-t border-gray-200"></div>
+              <div className="flex items-center justify-between py-3">
                 <div className="flex items-center space-x-2">
                   <HardDrive className="h-4 w-4 text-gray-600" />
                   <span className="text-sm font-medium">Memory Usage</span>
                 </div>
-                <Badge variant="outline">{systemHealth.performance.memoryUsage.toFixed(1)}%</Badge>
+                <Badge variant="outline">
+                  {systemHealth.performance.memoryUsage > 0 
+                    ? `${systemHealth.performance.memoryUsage.toFixed(1)}%` 
+                    : '—'}
+                </Badge>
               </div>
             </div>
           </CardContent>
@@ -319,43 +348,50 @@ export default function OwnerSystemHealthPage() {
             <CardDescription>Security monitoring and threat detection</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
+            <div className="space-y-0">
+              <div className="flex items-center justify-between py-3">
                 <div className="flex items-center space-x-2">
                   <Shield className="h-4 w-4 text-green-600" />
                   <span className="text-sm font-medium">Firewall Status</span>
                 </div>
                 <Badge variant="outline" className="text-green-600 bg-green-50 border-0">Active</Badge>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="border-t border-gray-200"></div>
+              <div className="flex items-center justify-between py-3">
                 <div className="flex items-center space-x-2">
                   <AlertTriangle className="h-4 w-4 text-red-600" />
                   <span className="text-sm font-medium">Failed Logins</span>
                 </div>
                 <Badge variant="outline">{systemHealth.security.failedLoginAttempts}</Badge>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="border-t border-gray-200"></div>
+              <div className="flex items-center justify-between py-3">
                 <div className="flex items-center space-x-2">
                   <Shield className="h-4 w-4 text-orange-600" />
                   <span className="text-sm font-medium">Blocked IPs</span>
                 </div>
                 <Badge variant="outline">{systemHealth.security.blockedIPs}</Badge>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="border-t border-gray-200"></div>
+              <div className="flex items-center justify-between py-3">
                 <div className="flex items-center space-x-2">
                   <AlertTriangle className="h-4 w-4 text-yellow-600" />
                   <span className="text-sm font-medium">Security Alerts</span>
                 </div>
                 <Badge variant="outline">{systemHealth.security.securityAlerts}</Badge>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="border-t border-gray-200"></div>
+              <div className="flex items-center justify-between py-3">
                 <div className="flex items-center space-x-2">
                   <Globe className="h-4 w-4 text-blue-600" />
                   <span className="text-sm font-medium">SSL Certificate</span>
                 </div>
-                <Badge variant="outline" className="text-green-600">Valid</Badge>
+                <Badge variant="outline" className={systemHealth.security.sslValid ? "text-green-600" : "text-yellow-600"}>
+                  {systemHealth.security.sslValid ? 'Valid' : 'Unknown'}
+                </Badge>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="border-t border-gray-200"></div>
+              <div className="flex items-center justify-between py-3">
                 <div className="flex items-center space-x-2">
                   <Clock className="h-4 w-4 text-gray-600" />
                   <span className="text-sm font-medium">Last Security Scan</span>
@@ -369,44 +405,6 @@ export default function OwnerSystemHealthPage() {
         </Card>
       </div>
 
-      {/* Recent Incidents */}
-      {systemHealth.recentIncidents && systemHealth.recentIncidents.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Incidents</CardTitle>
-            <CardDescription>System incidents and outages from the past 30 days</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {systemHealth.recentIncidents.map((incident: any) => (
-                <div key={incident.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3">
-                      <div>
-                        <p className="font-medium">{incident.title}</p>
-                        <p className="text-sm text-gray-500">{incident.description}</p>
-                      </div>
-                      {getSeverityBadge(incident.severity)}
-                      <Badge variant={incident.status === 'resolved' ? 'outline' : 'secondary'}>
-                        {incident.status}
-                      </Badge>
-                    </div>
-                    <div className="mt-2 flex items-center space-x-4 text-sm text-gray-500">
-                      <span>Duration: {incident.duration}</span>
-                      <span>Services: {incident.affectedServices.join(', ')}</span>
-                      <span>Started: {new Date(incident.startTime).toLocaleString()}</span>
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    <Eye className="h-4 w-4 mr-2" />
-                    Details
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Infrastructure */}
       <Card>
@@ -415,28 +413,7 @@ export default function OwnerSystemHealthPage() {
           <CardDescription>Platform infrastructure and resources</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-              <div className="flex items-center space-x-2">
-                <Server className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-medium">Servers</span>
-              </div>
-              <Badge variant="outline">{systemHealth.infrastructure.servers}</Badge>
-            </div>
-            <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-              <div className="flex items-center space-x-2">
-                <Database className="h-4 w-4 text-orange-600" />
-                <span className="text-sm font-medium">Databases</span>
-              </div>
-              <Badge variant="outline">{systemHealth.infrastructure.databases}</Badge>
-            </div>
-            <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-              <div className="flex items-center space-x-2">
-                <Globe className="h-4 w-4 text-green-600" />
-                <span className="text-sm font-medium">CDN Nodes</span>
-              </div>
-              <Badge variant="outline">{systemHealth.infrastructure.cdnNodes}</Badge>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
               <div className="flex items-center space-x-2">
                 <HardDrive className="h-4 w-4 text-purple-600" />
@@ -446,24 +423,40 @@ export default function OwnerSystemHealthPage() {
             </div>
             <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
               <div className="flex items-center space-x-2">
-                <Wifi className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-medium">Bandwidth</span>
-              </div>
-              <Badge variant="outline">{systemHealth.infrastructure.bandwidthUsage}</Badge>
-            </div>
-            <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-              <div className="flex items-center space-x-2">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <span className="text-sm font-medium">Backup Status</span>
               </div>
-              <Badge variant="outline" className="text-green-600">
-                {systemHealth.infrastructure.backupStatus}
+              <Badge 
+                variant="outline" 
+                className={
+                  systemHealth.infrastructure.backupStatus === 'healthy' 
+                    ? 'text-green-600' 
+                    : systemHealth.infrastructure.backupStatus === 'warning'
+                    ? 'text-yellow-600'
+                    : systemHealth.infrastructure.backupStatus === 'unhealthy'
+                    ? 'text-red-600'
+                    : ''
+                }
+              >
+                {systemHealth.infrastructure.backupStatus === 'healthy' ? 'Healthy' :
+                 systemHealth.infrastructure.backupStatus === 'warning' ? 'Warning' :
+                 systemHealth.infrastructure.backupStatus === 'unhealthy' ? 'Unhealthy' :
+                 systemHealth.infrastructure.backupStatus === 'no_backups' ? 'No Backups' :
+                 systemHealth.infrastructure.backupStatus === 'not_configured' ? 'Not Configured' :
+                 'Unknown'}
               </Badge>
             </div>
           </div>
-          <div className="mt-4 text-sm text-gray-500">
-            Last backup: {new Date(systemHealth.infrastructure.lastBackup).toLocaleString()}
-          </div>
+          {systemHealth.infrastructure.lastBackup && (
+            <div className="mt-4 text-sm text-gray-500">
+              Last backup: {new Date(systemHealth.infrastructure.lastBackup).toLocaleString()}
+            </div>
+          )}
+          {!systemHealth.infrastructure.lastBackup && (
+            <div className="mt-4 text-sm text-yellow-600">
+              Backup information not available
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

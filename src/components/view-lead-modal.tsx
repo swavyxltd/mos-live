@@ -26,12 +26,14 @@ import {
   XCircle,
   Send,
   ChevronDown,
+  Trash2,
 } from 'lucide-react'
 import { LeadEmailComposerModal } from '@/components/lead-email-composer-modal'
 import { ConvertLeadModal } from '@/components/convert-lead-modal'
 import { LogCallModal } from '@/components/log-call-modal'
 import { formatDate, formatDateTime } from '@/lib/utils'
 import { toast } from 'sonner'
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 
 interface Lead {
   id: string
@@ -104,6 +106,10 @@ export function ViewLeadModal({ isOpen, onClose, onUpdate, leadId, onEdit, autoO
   
   // Log call modal state
   const [isLogCallModalOpen, setIsLogCallModalOpen] = useState(false)
+  
+  // Delete confirmation state
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     if (isOpen && leadId) {
@@ -250,6 +256,32 @@ export function ViewLeadModal({ isOpen, onClose, onUpdate, leadId, onEdit, autoO
     window.location.href = `/owner/orgs/${orgId}`
   }
 
+  const handleDeleteLead = async () => {
+    if (!leadId || !lead) return
+
+    setIsDeleting(true)
+    try {
+      const res = await fetch(`/api/owner/leads/${leadId}`, {
+        method: 'DELETE',
+      })
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to delete lead')
+      }
+      toast.success(`Lead "${lead.orgName}" deleted successfully`)
+      setIsDeleteDialogOpen(false)
+      onUpdate({})
+      onClose()
+      // Refresh the page to update the leads list
+      window.location.reload()
+    } catch (error: any) {
+      console.error('Error deleting lead:', error)
+      toast.error(error.message || 'Failed to delete lead')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   const formatStatus = (status: string) => {
     return status
       .split('_')
@@ -371,12 +403,23 @@ export function ViewLeadModal({ isOpen, onClose, onUpdate, leadId, onEdit, autoO
               </Badge>
             )}
           </div>
-          {onEdit && (
-            <Button variant="outline" size="sm" onClick={onEdit}>
-              <Edit className="h-4 w-4 mr-2" />
-              Edit
+          <div className="flex gap-2">
+            {onEdit && (
+              <Button variant="outline" size="sm" onClick={onEdit}>
+                <Edit className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+            )}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setIsDeleteDialogOpen(true)}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
             </Button>
-          )}
+          </div>
         </div>
 
         {/* Key Contact Information */}
@@ -744,6 +787,19 @@ export function ViewLeadModal({ isOpen, onClose, onUpdate, leadId, onEdit, autoO
           leadPhone={lead.contactPhone}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={handleDeleteLead}
+        title="Delete Lead"
+        message={`Are you sure you want to delete "${lead?.orgName}"? This action cannot be undone and will also delete all associated activities.`}
+        confirmText="Delete Lead"
+        cancelText="Cancel"
+        variant="destructive"
+        isLoading={isDeleting}
+      />
     </Modal>
   )
 }

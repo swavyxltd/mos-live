@@ -16,14 +16,26 @@ async function handleGET(request: NextRequest) {
       )
     }
 
-    // Get total active organizations
-    const totalOrgs = await prisma.org.count({
-      where: { status: 'ACTIVE' }
+    // Get demo org ID to exclude from counts
+    const demoOrg = await prisma.org.findUnique({
+      where: { slug: 'leicester-islamic-centre' },
+      select: { id: true }
     })
 
-    // Get total active students across all orgs
+    // Get total active organizations (excluding demo org)
+    const totalOrgs = await prisma.org.count({
+      where: { 
+        status: 'ACTIVE',
+        slug: { not: 'leicester-islamic-centre' }
+      }
+    })
+
+    // Get total active students across all orgs (excluding demo org)
     const totalStudents = await prisma.student.count({
-      where: { isArchived: false }
+      where: { 
+        isArchived: false,
+        ...(demoOrg ? { orgId: { not: demoOrg.id } } : {})
+      }
     })
 
     // Get platform settings to calculate expected revenue

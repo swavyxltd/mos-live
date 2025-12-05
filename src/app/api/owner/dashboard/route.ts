@@ -113,7 +113,7 @@ async function handleGET(request: NextRequest) {
       totalRecent,
       paidRecent,
       newOrgsThisMonth,
-      churnedOrgs
+      totalLeads
     ] = await Promise.all([
       prisma.invoice.count({
         where: {
@@ -139,16 +139,14 @@ async function handleGET(request: NextRequest) {
           slug: { not: 'leicester-islamic-centre' } // Exclude demo org
         }
       }),
-      prisma.org.count({
+      prisma.lead.count({
         where: {
-          status: { not: 'ACTIVE' },
-          updatedAt: { gte: thisMonth }
+          status: { notIn: ['WON', 'LOST'] } // Active leads (excluding won/lost)
         }
       })
     ])
     
     const paymentSuccessRate = totalRecent > 0 ? (paidRecent / totalRecent) * 100 : 100
-    const churnRate = totalOrgs > 0 ? (churnedOrgs / totalOrgs) * 100 : 0
 
     // Calculate average revenue per org
     const avgRevenuePerOrg = totalOrgs > 0 ? mrr / totalOrgs : 0
@@ -305,7 +303,7 @@ async function handleGET(request: NextRequest) {
       overdueCount,
       paymentSuccessRate,
       newOrgsThisMonth,
-      churnRate,
+      totalLeads,
       avgRevenuePerOrg,
       monthlyRevenue,
       topOrgs,

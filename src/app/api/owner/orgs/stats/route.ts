@@ -99,10 +99,14 @@ async function handleGET(request: NextRequest) {
           }
         })
 
-        // Get platform billing status (mock for now)
+        // Get platform billing status
+        // TODO: Implement real platform billing status from Stripe:
+        // - Query Stripe subscription status for org
+        // - Get current period end from Stripe subscription
+        // - Track billing status changes
         const platformBilling = {
-          status: 'ACTIVE',
-          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+          status: 'ACTIVE', // Would come from Stripe subscription status
+          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // Would come from Stripe
         }
 
         return {

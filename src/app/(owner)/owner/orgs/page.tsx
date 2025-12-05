@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Modal } from '@/components/ui/modal'
 import { AddOrganisationForm } from '@/components/add-organisation-form'
 import { Plus, Search } from 'lucide-react'
+import { Skeleton, CardSkeleton, TableSkeleton } from '@/components/loading/skeleton'
 
 export default function OwnerOrgsPage() {
   const { data: session, status } = useSession()
@@ -47,7 +48,24 @@ export default function OwnerOrgsPage() {
   }, [status])
 
   if (status === 'loading' || loading) {
-    return <div>Loading...</div>
+    return (
+      <div className="space-y-6">
+        {/* Header Skeleton */}
+        <div className="flex justify-between items-center">
+          <div>
+            <Skeleton className="h-8 w-64 mb-2" />
+            <Skeleton className="h-4 w-96" />
+          </div>
+          <Skeleton className="h-10 w-40" />
+        </div>
+
+        {/* Search Bar Skeleton */}
+        <Skeleton className="h-10 w-full max-w-md" />
+
+        {/* Table Skeleton */}
+        <TableSkeleton rows={8} />
+      </div>
+    )
   }
 
   if (!session?.user?.id) {

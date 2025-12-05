@@ -20,19 +20,32 @@ async function handleGET(request: NextRequest) {
     const now = new Date()
     const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
 
-    // Get student stats
+    // Get demo org ID to exclude from counts
+    const demoOrg = await prisma.org.findUnique({
+      where: { slug: 'leicester-islamic-centre' },
+      select: { id: true }
+    })
+
+    // Get student stats (excluding demo org)
     const totalStudents = await prisma.student.count({
-      where: { isArchived: false }
+      where: { 
+        isArchived: false,
+        ...(demoOrg ? { orgId: { not: demoOrg.id } } : {})
+      }
     })
 
     const activeStudents = await prisma.student.count({
-      where: { isArchived: false }
+      where: { 
+        isArchived: false,
+        ...(demoOrg ? { orgId: { not: demoOrg.id } } : {})
+      }
     })
 
     const newStudentsThisMonth = await prisma.student.count({
       where: {
         createdAt: { gte: thisMonth },
-        isArchived: false
+        isArchived: false,
+        ...(demoOrg ? { orgId: { not: demoOrg.id } } : {})
       }
     })
 
@@ -40,7 +53,8 @@ async function handleGET(request: NextRequest) {
       where: {
         isArchived: false,
         allergies: { not: null },
-        NOT: { allergies: 'None' }
+        NOT: { allergies: 'None' },
+        ...(demoOrg ? { orgId: { not: demoOrg.id } } : {})
       }
     })
 
@@ -48,9 +62,12 @@ async function handleGET(request: NextRequest) {
       where: { isArchived: true }
     })
 
-    // Get all students with their details
+    // Get all students with their details (excluding demo org)
     const students = await prisma.student.findMany({
-      where: { isArchived: false },
+      where: { 
+        isArchived: false,
+        ...(demoOrg ? { orgId: { not: demoOrg.id } } : {})
+      },
       include: {
         org: { select: { name: true } },
         primaryParent: {

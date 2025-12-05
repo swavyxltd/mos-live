@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -70,94 +70,83 @@ export function OrganizationDetailModal({ isOpen, onClose, organization, onRefre
   const [isManagementModalOpen, setIsManagementModalOpen] = useState(false)
   const [managementModalInitialTab, setManagementModalInitialTab] = useState<'overview' | 'students' | 'teachers' | 'settings'>('overview')
   const [searchTerm, setSearchTerm] = useState('')
+  const [students, setStudents] = useState<any[]>([])
+  const [teachers, setTeachers] = useState<any[]>([])
+  const [loadingStudents, setLoadingStudents] = useState(false)
+  const [loadingTeachers, setLoadingTeachers] = useState(false)
 
-  // Demo data for students and teachers
-  const students = [
-    {
-      id: '1',
-      firstName: 'Ahmad',
-      lastName: 'Hassan',
-      email: 'ahmad@example.com',
-      phone: '+44 7700 900123',
-      dateOfBirth: new Date('2010-05-15'),
-      grade: 'Year 6',
-      status: 'ACTIVE' as const,
-      attendanceRate: 95,
-      parentName: 'Mohammed Hassan',
-      parentEmail: 'm.hassan@example.com',
-      parentPhone: '+44 7700 900124',
-      createdAt: new Date('2024-01-15')
-    },
-    {
-      id: '2',
-      firstName: 'Fatima',
-      lastName: 'Ali',
-      email: 'fatima@example.com',
-      phone: '+44 7700 900125',
-      dateOfBirth: new Date('2011-08-22'),
-      grade: 'Year 5',
-      status: 'ACTIVE' as const,
-      attendanceRate: 88,
-      parentName: 'Sarah Ali',
-      parentEmail: 's.ali@example.com',
-      parentPhone: '+44 7700 900126',
-      createdAt: new Date('2024-02-10')
-    },
-    {
-      id: '3',
-      firstName: 'Omar',
-      lastName: 'Khan',
-      email: 'omar@example.com',
-      dateOfBirth: new Date('2009-12-03'),
-      grade: 'Year 7',
-      status: 'INACTIVE' as const,
-      attendanceRate: 75,
-      parentName: 'Ibrahim Khan',
-      parentEmail: 'i.khan@example.com',
-      createdAt: new Date('2024-01-20')
+  // Fetch real students and teachers data from API
+  useEffect(() => {
+    if (isOpen && organization) {
+      if (activeTab === 'students') {
+        fetchStudents()
+      } else if (activeTab === 'teachers') {
+        fetchTeachers()
+      }
     }
-  ]
+  }, [isOpen, organization?.id, activeTab])
 
-  const teachers = [
-    {
-      id: '1',
-      firstName: 'Sheikh',
-      lastName: 'Abdullah',
-      email: 'sheikh.abdullah@example.com',
-      phone: '+44 7700 900127',
-      subject: 'Quran & Islamic Studies',
-      experience: 15,
-      status: 'ACTIVE' as const,
-      classesCount: 3,
-      studentsCount: 25,
-      createdAt: new Date('2024-01-01')
-    },
-    {
-      id: '2',
-      firstName: 'Ustadha',
-      lastName: 'Aisha',
-      email: 'ustadha.aisha@example.com',
-      phone: '+44 7700 900128',
-      subject: 'Arabic Language',
-      experience: 8,
-      status: 'ACTIVE' as const,
-      classesCount: 2,
-      studentsCount: 15,
-      createdAt: new Date('2024-01-15')
-    },
-    {
-      id: '3',
-      firstName: 'Imam',
-      lastName: 'Yusuf',
-      email: 'imam.yusuf@example.com',
-      subject: 'Islamic History',
-      experience: 12,
-      status: 'ON_LEAVE' as const,
-      classesCount: 1,
-      studentsCount: 10,
-      createdAt: new Date('2024-02-01')
+  const fetchStudents = async () => {
+    if (!organization?.id) return
+    setLoadingStudents(true)
+    try {
+      const res = await fetch(`/api/owner/orgs/${organization.id}/students`)
+      if (res.ok) {
+        const data = await res.json()
+        // Transform API data to match component expectations
+        const transformed = data.map((s: any) => ({
+          id: s.id,
+          firstName: s.firstName,
+          lastName: s.lastName,
+          email: s.email || '',
+          phone: s.phone || '',
+          dateOfBirth: s.dob ? new Date(s.dob) : null,
+          grade: s.grade || 'N/A',
+          status: s.isArchived ? 'INACTIVE' as const : 'ACTIVE' as const,
+          attendanceRate: s.attendanceRate || 0,
+          parentName: s.parentName || 'N/A',
+          parentEmail: s.parentEmail || '',
+          parentPhone: s.parentPhone || '',
+          createdAt: new Date(s.createdAt)
+        }))
+        setStudents(transformed)
+      }
+    } catch (error) {
+      console.error('Error fetching students:', error)
+    } finally {
+      setLoadingStudents(false)
     }
-  ]
+  }
+
+  const fetchTeachers = async () => {
+    if (!organization?.id) return
+    setLoadingTeachers(true)
+    try {
+      const res = await fetch(`/api/owner/orgs/${organization.id}/staff`)
+      if (res.ok) {
+        const data = await res.json()
+        // Transform API data to match component expectations
+        const transformed = data.map((t: any) => ({
+          id: t.id,
+          firstName: t.name?.split(' ')[0] || '',
+          lastName: t.name?.split(' ').slice(1).join(' ') || '',
+          email: t.email || '',
+          phone: t.phone || '',
+          subject: t.subject || 'General',
+          experience: t.experience || 0,
+          status: t.status || 'ACTIVE' as const,
+          classesCount: t.classesCount || 0,
+          studentsCount: t.studentsCount || 0,
+          createdAt: new Date(t.createdAt)
+        }))
+        setTeachers(transformed)
+      }
+    } catch (error) {
+      console.error('Error fetching teachers:', error)
+    } finally {
+      setLoadingTeachers(false)
+    }
+  }
 
   const filteredStudents = students.filter(student =>
     `${student.firstName} ${student.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -261,8 +250,8 @@ export function OrganizationDetailModal({ isOpen, onClose, organization, onRefre
           <nav className="-mb-px flex space-x-8">
             {[
               { id: 'overview', label: 'Overview', icon: BarChart3 },
-              { id: 'students', label: `Students (${students.length})`, icon: Users },
-              { id: 'teachers', label: `Teachers (${teachers.length})`, icon: UserCheck },
+              { id: 'students', label: `Students (${loadingStudents ? '...' : students.length})`, icon: Users },
+              { id: 'teachers', label: `Teachers (${loadingTeachers ? '...' : teachers.length})`, icon: UserCheck },
               { id: 'billing', label: 'Billing', icon: CreditCard },
               { id: 'activity', label: 'Activity', icon: Activity }
             ].map((tab) => {
@@ -428,27 +417,37 @@ export function OrganizationDetailModal({ isOpen, onClose, organization, onRefre
             </div>
 
             <div className="space-y-4">
-              {filteredStudents.map((student) => (
-                <Card key={student.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        <div>
-                          <h3 className="font-medium">{student.firstName} {student.lastName}</h3>
-                          <p className="text-sm text-gray-500">{student.email}</p>
-                          <p className="text-sm text-gray-500">Grade: {student.grade} • Attendance: {student.attendanceRate}%</p>
-                          <p className="text-sm text-gray-500">Parent: {student.parentName} ({student.parentEmail})</p>
+              {loadingStudents ? (
+                <div className="text-center py-8">
+                  <p className="text-sm text-gray-500">Loading students...</p>
+                </div>
+              ) : filteredStudents.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-sm text-gray-500">No students found</p>
+                </div>
+              ) : (
+                filteredStudents.map((student) => (
+                  <Card key={student.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <div>
+                            <h3 className="font-medium">{student.firstName} {student.lastName}</h3>
+                            <p className="text-sm text-gray-500">{student.email}</p>
+                            <p className="text-sm text-gray-500">Grade: {student.grade} • Attendance: {student.attendanceRate}%</p>
+                            <p className="text-sm text-gray-500">Parent: {student.parentName} ({student.parentEmail})</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge className={getStatusColor(student.status)}>
+                            {student.status}
+                          </Badge>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge className={getStatusColor(student.status)}>
-                          {student.status}
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                ))
+              )}
             </div>
           </div>
         )}
@@ -474,27 +473,37 @@ export function OrganizationDetailModal({ isOpen, onClose, organization, onRefre
             </div>
 
             <div className="space-y-4">
-              {filteredTeachers.map((teacher) => (
-                <Card key={teacher.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        <div>
-                          <h3 className="font-medium">{teacher.firstName} {teacher.lastName}</h3>
-                          <p className="text-sm text-gray-500">{teacher.email}</p>
-                          <p className="text-sm text-gray-500">{teacher.subject} • {teacher.experience} years experience</p>
-                          <p className="text-sm text-gray-500">{teacher.classesCount} classes • {teacher.studentsCount} students</p>
+              {loadingTeachers ? (
+                <div className="text-center py-8">
+                  <p className="text-sm text-gray-500">Loading teachers...</p>
+                </div>
+              ) : filteredTeachers.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-sm text-gray-500">No teachers found</p>
+                </div>
+              ) : (
+                filteredTeachers.map((teacher) => (
+                  <Card key={teacher.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <div>
+                            <h3 className="font-medium">{teacher.firstName} {teacher.lastName}</h3>
+                            <p className="text-sm text-gray-500">{teacher.email}</p>
+                            <p className="text-sm text-gray-500">{teacher.subject} • {teacher.experience} years experience</p>
+                            <p className="text-sm text-gray-500">{teacher.classesCount} classes • {teacher.studentsCount} students</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge className={getStatusColor(teacher.status)}>
+                            {teacher.status}
+                          </Badge>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge className={getStatusColor(teacher.status)}>
-                          {teacher.status}
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                ))
+              )}
             </div>
           </div>
         )}

@@ -17,34 +17,59 @@ async function handleGET(request: NextRequest) {
       )
     }
 
-    // Get total students for MRR calculation
+    // Get demo org ID to exclude from counts
+    const demoOrg = await prisma.org.findUnique({
+      where: { slug: 'leicester-islamic-centre' },
+      select: { id: true }
+    })
+
+    // Get total students for MRR calculation (excluding demo org)
     const totalStudents = await prisma.student.count({
-      where: { isArchived: false }
+      where: { 
+        isArchived: false,
+        ...(demoOrg ? { orgId: { not: demoOrg.id } } : {})
+      }
     })
 
     const now = new Date()
     const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
     const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0)
 
     // Calculate MRR (Monthly Recurring Revenue) - sum of all active students * £1
     const mrr = totalStudents * 1
+    
+    // Calculate last month's MRR for growth calculation
+    const lastMonthStudents = await prisma.student.count({
+      where: { 
+        isArchived: false,
+        createdAt: { lt: thisMonth },
+        ...(demoOrg ? { orgId: { not: demoOrg.id } } : {})
+      }
+    })
+    const lastMonthMRR = lastMonthStudents * 1
+    const mrrGrowth = lastMonthMRR > 0 ? ((mrr - lastMonthMRR) / lastMonthMRR) * 100 : 0
+    
     const arr = mrr * 12
 
-    // Get revenue from paid invoices (only those with paidAt set and in this month)
+    // Get revenue from paid invoices (only those with paidAt set and in this month, excluding demo org)
     const thisMonthInvoices = await prisma.invoice.findMany({
       where: {
         status: 'PAID',
         paidAt: {
           not: null,
           gte: thisMonth
-        }
+        },
+        ...(demoOrg ? { orgId: { not: demoOrg.id } } : {})
       },
       select: { amountP: true }
     })
 
     const allTimeInvoices = await prisma.invoice.findMany({
       where: {
-        status: 'PAID'
+        status: 'PAID',
+        ...(demoOrg ? { orgId: { not: demoOrg.id } } : {})
       },
       select: { amountP: true }
     })
@@ -52,22 +77,24 @@ async function handleGET(request: NextRequest) {
     const thisMonthCollected = thisMonthInvoices.reduce((sum, inv) => sum + Number(inv.amountP || 0) / 100, 0)
     const totalRevenue = allTimeInvoices.reduce((sum, inv) => sum + Number(inv.amountP || 0) / 100, 0)
 
-    // Get pending invoices
+    // Get pending invoices (excluding demo org)
     const pendingInvoices = await prisma.invoice.findMany({
       where: {
         status: 'PENDING',
-        dueDate: { gte: now }
+        dueDate: { gte: now },
+        ...(demoOrg ? { orgId: { not: demoOrg.id } } : {})
       },
       select: { amountP: true }
     })
 
     const pendingRevenue = pendingInvoices.reduce((sum, inv) => sum + Number(inv.amountP || 0) / 100, 0)
 
-    // Get failed payments (invoices with failed status or overdue)
+    // Get failed payments (invoices with failed status or overdue, excluding demo org)
     const failedInvoices = await prisma.invoice.findMany({
       where: {
         status: 'OVERDUE',
-        dueDate: { lt: now }
+        dueDate: { lt: now },
+        ...(demoOrg ? { orgId: { not: demoOrg.id } } : {})
       },
       select: { amountP: true }
     })
@@ -76,20 +103,33 @@ async function handleGET(request: NextRequest) {
 
     // Calculate breakdown
     const subscriptionRevenue = mrr
-    const oneTimePayments = 0 // Could be calculated from one-time invoice types if we add that
-    const refunds = 0 // Would need refund tracking
-    const chargebacks = 0 // Would need chargeback tracking
+    // TODO: Implement one-time payment tracking:
+    // - Add invoice type field (SUBSCRIPTION, ONE_TIME) to Invoice model
+    // - Calculate oneTimePayments from invoices with type='ONE_TIME'
+    const oneTimePayments = 0
+    // TODO: Implement refund tracking:
+    // - Add refund status/amount fields to Invoice model or create Refund table
+    // - Calculate refunds from refunded invoices
+    const refunds = 0
+    // TODO: Implement chargeback tracking:
+    // - Create Chargeback table or add chargeback fields to Invoice
+    // - Track chargeback events from Stripe webhooks
+    const chargebacks = 0
     const netRevenue = thisMonthCollected - refunds - chargebacks
 
-    // Get payment status counts
+    // Get payment status counts (excluding demo org)
     const allInvoices = await prisma.invoice.findMany({
+      where: { ...(demoOrg ? { orgId: { not: demoOrg.id } } : {}) },
       select: { status: true }
     })
 
     const successful = allInvoices.filter(inv => inv.status === 'PAID').length
     const pending = allInvoices.filter(inv => inv.status === 'PENDING').length
     const failed = allInvoices.filter(inv => inv.status === 'OVERDUE').length
-    const refunded = 0 // Would need refund status
+    // TODO: Implement refund status tracking:
+    // - Add refund status field to Invoice model or query Refund table
+    // - Count invoices with refund status
+    const refunded = 0
     const totalPayments = allInvoices.length
     const successRate = totalPayments > 0 ? (successful / totalPayments) * 100 : 100
 
@@ -99,7 +139,8 @@ async function handleGET(request: NextRequest) {
       failedPaymentsList = await prisma.invoice.findMany({
         where: {
           status: 'OVERDUE',
-          dueDate: { lt: now }
+          dueDate: { lt: now },
+          ...(demoOrg ? { orgId: { not: demoOrg.id } } : {})
         },
         include: {
           org: { select: { name: true } },
@@ -127,9 +168,12 @@ async function handleGET(request: NextRequest) {
       organizationId: inv.orgId
     }))
 
-    // Get top revenue generators (orgs by student count)
+    // Get top revenue generators (orgs by student count, excluding demo org)
     const orgs = await prisma.org.findMany({
-      where: { status: 'ACTIVE' },
+      where: { 
+        status: 'ACTIVE',
+        slug: { not: 'leicester-islamic-centre' }
+      },
       select: {
         id: true,
         name: true,
@@ -156,7 +200,8 @@ async function handleGET(request: NextRequest) {
             paidAt: {
               not: null,
               gte: lastMonth
-            }
+            },
+            ...(demoOrg ? { orgId: { not: demoOrg.id } } : {}) // Redundant but safe
           },
           select: { amountP: true }
         })
@@ -173,7 +218,8 @@ async function handleGET(request: NextRequest) {
               not: null,
               gte: prevMonthStart,
               lt: lastMonth
-            }
+            },
+            ...(demoOrg ? { orgId: { not: demoOrg.id } } : {}) // Redundant but safe
           },
           select: { amountP: true }
         })
@@ -193,6 +239,7 @@ async function handleGET(request: NextRequest) {
     return NextResponse.json({
       current: {
         mrr,
+        mrrGrowth,
         arr,
         totalRevenue,
         thisMonthCollected,

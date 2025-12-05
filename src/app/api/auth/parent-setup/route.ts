@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs'
 import { logger } from '@/lib/logger'
 import { sanitizeText, isValidPhone, MAX_STRING_LENGTHS } from '@/lib/input-validation'
 import { withRateLimit } from '@/lib/api-middleware'
+import { createSetupIntent, ensureParentCustomer } from '@/lib/stripe'
 
 async function handlePOST(request: NextRequest) {
   try {
@@ -118,8 +119,9 @@ async function handlePOST(request: NextRequest) {
 
     // Validate payment method is allowed
     const allowedMethods = []
-    if (invitation.org.cashPaymentEnabled) allowedMethods.push('CASH')
-    if (invitation.org.bankTransferEnabled) allowedMethods.push('BANK_TRANSFER')
+    if (invitation.org.acceptsCash ?? invitation.org.cashPaymentEnabled ?? true) allowedMethods.push('CASH')
+    if (invitation.org.acceptsBankTransfer ?? invitation.org.bankTransferEnabled ?? true) allowedMethods.push('BANK_TRANSFER')
+    if (invitation.org.acceptsCard && invitation.org.stripeConnectAccountId) allowedMethods.push('CARD')
     if (invitation.org.stripeEnabled) allowedMethods.push('STRIPE')
 
     if (!allowedMethods.includes(paymentMethod)) {
@@ -203,11 +205,13 @@ async function handlePOST(request: NextRequest) {
           lastName: sanitizedStudentLastName || invitation.student.lastName,
           dob: validatedDob || invitation.student.dob,
           allergies: sanitizedAllergies || invitation.student.allergies,
-          medicalNotes: sanitizedMedicalNotes || invitation.student.medicalNotes
+          medicalNotes: sanitizedMedicalNotes || invitation.student.medicalNotes,
+          paymentMethod: paymentMethod
         }
       })
 
       // Create or update parent billing profile
+      const isCardPayment = paymentMethod === 'CARD'
       await tx.parentBillingProfile.upsert({
         where: {
           orgId_parentUserId: {
@@ -219,11 +223,11 @@ async function handlePOST(request: NextRequest) {
           orgId: invitation.orgId,
           parentUserId: parentUser.id,
           preferredPaymentMethod: paymentMethod,
-          autoPayEnabled: paymentMethod === 'STRIPE'
+          autoPayEnabled: isCardPayment
         },
         update: {
           preferredPaymentMethod: paymentMethod,
-          autoPayEnabled: paymentMethod === 'STRIPE'
+          autoPayEnabled: isCardPayment
         }
       })
 
@@ -251,14 +255,24 @@ async function handlePOST(request: NextRequest) {
       return { parentUser }
     })
 
-    // If Stripe is selected, return flag to route to Stripe setup
-    const needsStripeSetup = paymentMethod === 'STRIPE'
+    // If CARD is selected, create SetupIntent for card setup
+    let setupIntentClientSecret: string | null = null
+    if (paymentMethod === 'CARD') {
+      try {
+        const setupIntent = await createSetupIntent(invitation.orgId, result.parentUser.id)
+        setupIntentClientSecret = setupIntent.client_secret
+      } catch (error: any) {
+        logger.error('Error creating SetupIntent', error)
+        // Continue anyway - parent can set up card later
+      }
+    }
 
     return NextResponse.json({
       success: true,
       userId: result.parentUser.id,
       email: result.parentUser.email,
-      needsStripeSetup
+      needsCardSetup: paymentMethod === 'CARD',
+      setupIntentClientSecret
     })
   } catch (error: any) {
     logger.error('Error completing parent setup', error)

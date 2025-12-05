@@ -211,7 +211,7 @@ export async function hasPlatformPaymentMethod(orgId: string): Promise<boolean> 
   return !!billing?.defaultPaymentMethodId
 }
 
-// Parent billing
+// Parent billing - Create customer under org's Connect account
 export async function ensureParentCustomer(orgId: string, parentUserId: string) {
   const existing = await prisma.parentBillingProfile.findUnique({
     where: {
@@ -242,7 +242,11 @@ export async function ensureParentCustomer(orgId: string, parentUserId: string) 
     throw new Error('Organization not found')
   }
   
-  // Create Stripe customer
+  if (!org.stripeConnectAccountId) {
+    throw new Error('Organization has not connected Stripe account')
+  }
+  
+  // Create Stripe customer under the org's Connect account
   const customer = await stripe.customers.create({
     email: parent.email,
     name: parent.name || undefined,
@@ -251,6 +255,8 @@ export async function ensureParentCustomer(orgId: string, parentUserId: string) 
       parentUserId,
       type: 'parent'
     }
+  }, {
+    stripeAccount: org.stripeConnectAccountId
   })
   
   return prisma.parentBillingProfile.upsert({
@@ -295,6 +301,14 @@ export async function getActiveStudentCount(orgId: string): Promise<number> {
 }
 
 export async function createPaymentIntent(orgId: string, parentUserId: string, amountP: number, invoiceId: string) {
+  const org = await prisma.org.findUnique({
+    where: { id: orgId }
+  })
+  
+  if (!org?.stripeConnectAccountId) {
+    throw new Error('Organization has not connected Stripe account')
+  }
+  
   const profile = await ensureParentCustomer(orgId, parentUserId)
   
   const paymentIntent = await stripe.paymentIntents.create({
@@ -307,6 +321,8 @@ export async function createPaymentIntent(orgId: string, parentUserId: string, a
       parentUserId,
       invoiceId
     }
+  }, {
+    stripeAccount: org.stripeConnectAccountId
   })
   
   // Create pending payment record
@@ -325,6 +341,14 @@ export async function createPaymentIntent(orgId: string, parentUserId: string, a
 }
 
 export async function createSetupIntent(orgId: string, parentUserId: string) {
+  const org = await prisma.org.findUnique({
+    where: { id: orgId }
+  })
+  
+  if (!org?.stripeConnectAccountId) {
+    throw new Error('Organization has not connected Stripe account')
+  }
+  
   const profile = await ensureParentCustomer(orgId, parentUserId)
   
   return stripe.setupIntents.create({
@@ -334,10 +358,20 @@ export async function createSetupIntent(orgId: string, parentUserId: string) {
       orgId,
       parentUserId
     }
+  }, {
+    stripeAccount: org.stripeConnectAccountId
   })
 }
 
 export async function attemptOffSessionPayment(orgId: string, parentUserId: string, invoiceId: string, amountP: number) {
+  const org = await prisma.org.findUnique({
+    where: { id: orgId }
+  })
+  
+  if (!org?.stripeConnectAccountId) {
+    return null
+  }
+  
   const profile = await prisma.parentBillingProfile.findUnique({
     where: {
       orgId_parentUserId: {
@@ -364,12 +398,49 @@ export async function attemptOffSessionPayment(orgId: string, parentUserId: stri
         parentUserId,
         invoiceId
       }
+    }, {
+      stripeAccount: org.stripeConnectAccountId
     })
     
     return paymentIntent
   } catch (error) {
     return null
   }
+}
+
+// Stripe Connect onboarding
+export async function createConnectAccountLink(accountId: string, returnUrl: string, refreshUrl: string) {
+  if (!stripe) {
+    throw new Error('Stripe is not initialized')
+  }
+  
+  return stripe.accountLinks.create({
+    account: accountId,
+    refresh_url: refreshUrl,
+    return_url: returnUrl,
+    type: 'account_onboarding'
+  })
+}
+
+export async function createConnectAccount(orgId: string, email: string) {
+  if (!stripe) {
+    throw new Error('Stripe is not initialized')
+  }
+  
+  const account = await stripe.accounts.create({
+    type: 'express',
+    country: 'GB',
+    email,
+    capabilities: {
+      card_payments: { requested: true },
+      transfers: { requested: true }
+    },
+    metadata: {
+      orgId
+    }
+  })
+  
+  return account
 }
 
 // Report usage to Stripe for metered billing

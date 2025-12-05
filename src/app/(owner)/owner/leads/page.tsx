@@ -23,9 +23,12 @@ import {
   MapPin,
   Users,
   RefreshCw,
+  Trash2,
 } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import { toast } from 'sonner'
+import { Skeleton, TableSkeleton, StatCardSkeleton, CardSkeleton } from '@/components/loading/skeleton'
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 
 interface Lead {
   id: string
@@ -64,6 +67,9 @@ export default function LeadsPage() {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [leadToDelete, setLeadToDelete] = useState<{ id: string; name: string } | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     if (status === 'loading') return
@@ -129,6 +135,35 @@ export default function LeadsPage() {
     loadLeads()
   }
 
+  const handleDeleteLead = (leadId: string, leadName: string) => {
+    setLeadToDelete({ id: leadId, name: leadName })
+    setIsDeleteDialogOpen(true)
+  }
+
+  const confirmDeleteLead = async () => {
+    if (!leadToDelete) return
+
+    setIsDeleting(true)
+    try {
+      const res = await fetch(`/api/owner/leads/${leadToDelete.id}`, {
+        method: 'DELETE',
+      })
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to delete lead')
+      }
+      toast.success(`Lead "${leadToDelete.name}" deleted successfully`)
+      setIsDeleteDialogOpen(false)
+      setLeadToDelete(null)
+      loadLeads()
+    } catch (error: any) {
+      console.error('Error deleting lead:', error)
+      toast.error(error.message || 'Failed to delete lead')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   const formatStatus = (status: string) => {
     return status
       .split('_')
@@ -149,10 +184,26 @@ export default function LeadsPage() {
     return colors[status] || 'bg-gray-100 text-gray-700'
   }
 
-  if (status === 'loading') {
+  if (status === 'loading' || isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <RefreshCw className="h-8 w-8 animate-spin" />
+      <div className="space-y-4 sm:space-y-6 w-full min-w-0">
+        {/* Header Skeleton */}
+        <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-start w-full min-w-0">
+          <div className="flex-1 min-w-0 pr-0 md:pr-4">
+            <Skeleton className="h-8 w-48 mb-2" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <div className="flex gap-2 shrink-0 w-full md:w-auto">
+            <Skeleton className="h-9 w-24" />
+            <Skeleton className="h-9 w-32" />
+          </div>
+        </div>
+
+        {/* Filters Skeleton */}
+        <CardSkeleton className="h-48" />
+
+        {/* Table Skeleton */}
+        <TableSkeleton rows={8} />
       </div>
     )
   }
@@ -379,6 +430,18 @@ export default function LeadsPage() {
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDeleteLead(lead.id, lead.orgName)
+                            }}
+                            title="Delete"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -421,6 +484,22 @@ export default function LeadsPage() {
           setSelectedLeadId(null)
         }}
         leadId={selectedLeadId}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => {
+          setIsDeleteDialogOpen(false)
+          setLeadToDelete(null)
+        }}
+        onConfirm={confirmDeleteLead}
+        title="Delete Lead"
+        message={`Are you sure you want to delete "${leadToDelete?.name}"? This action cannot be undone and will also delete all associated activities.`}
+        confirmText="Delete Lead"
+        cancelText="Cancel"
+        variant="destructive"
+        isLoading={isDeleting}
       />
     </div>
   )

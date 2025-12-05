@@ -13,6 +13,7 @@ import { Save, Globe, CreditCard, Calendar, Building2, Shield, Settings, Image, 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { useToast } from '@/hooks/use-toast'
 import { toast } from 'sonner'
+import { Skeleton, CardSkeleton, StatCardSkeleton } from '@/components/loading/skeleton'
 
 interface PlatformSettings {
   id: string
@@ -178,8 +179,29 @@ export default function OwnerSettingsPage() {
 
   if (loadingData) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-gray-500">Loading settings...</p>
+      <div className="space-y-6">
+        {/* Header Skeleton */}
+        <div className="flex justify-between items-center">
+          <div>
+            <Skeleton className="h-8 w-64 mb-2" />
+            <Skeleton className="h-4 w-96" />
+          </div>
+          <Skeleton className="h-10 w-32" />
+        </div>
+
+        {/* Tabs Skeleton */}
+        <div className="border-b border-[var(--border)]">
+          <div className="flex gap-4">
+            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-10 w-32" />
+          </div>
+        </div>
+
+        {/* Settings Form Skeleton */}
+        <CardSkeleton className="h-96" />
+        <CardSkeleton className="h-64" />
       </div>
     )
   }

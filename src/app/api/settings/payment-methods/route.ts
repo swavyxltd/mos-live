@@ -27,6 +27,12 @@ async function handleGET() {
       autoPaymentEnabled: org.autoPaymentEnabled,
       cashPaymentEnabled: org.cashPaymentEnabled,
       bankTransferEnabled: org.bankTransferEnabled,
+      acceptsCard: org.acceptsCard ?? false,
+      acceptsCash: org.acceptsCash ?? true,
+      acceptsBankTransfer: org.acceptsBankTransfer ?? true,
+      billingDay: org.billingDay ?? org.feeDueDay ?? 1,
+      stripeConnectAccountId: org.stripeConnectAccountId,
+      hasStripeConnect: !!org.stripeConnectAccountId,
       paymentInstructions: org.paymentInstructions,
       bankAccountName: org.bankAccountName,
       bankSortCode: org.bankSortCode,
@@ -68,16 +74,40 @@ async function handlePUT(request: NextRequest) {
       autoPaymentEnabled,
       cashPaymentEnabled,
       bankTransferEnabled,
+      acceptsCard,
+      acceptsCash,
+      acceptsBankTransfer,
+      billingDay,
       paymentInstructions,
       bankAccountName,
       bankSortCode,
       bankAccountNumber
     } = body
 
+    // Validate billing day (1-28)
+    if (billingDay !== undefined && (billingDay < 1 || billingDay > 28)) {
+      return NextResponse.json(
+        { error: 'Billing day must be between 1 and 28' },
+        { status: 400 }
+      )
+    }
+
     // Validate that at least one payment method is enabled
-    if (!autoPaymentEnabled && !cashPaymentEnabled && !bankTransferEnabled) {
+    const cardEnabled = acceptsCard ?? false
+    const cashEnabled = acceptsCash ?? true
+    const bankEnabled = acceptsBankTransfer ?? true
+    
+    if (!cardEnabled && !cashEnabled && !bankEnabled) {
       return NextResponse.json(
         { error: 'At least one payment method must be enabled' },
+        { status: 400 }
+      )
+    }
+
+    // Validate card payment requires Stripe Connect
+    if (acceptsCard && !org.stripeConnectAccountId) {
+      return NextResponse.json(
+        { error: 'Stripe Connect account must be connected to enable card payments' },
         { status: 400 }
       )
     }
@@ -101,6 +131,10 @@ async function handlePUT(request: NextRequest) {
         autoPaymentEnabled,
         cashPaymentEnabled,
         bankTransferEnabled,
+        acceptsCard: acceptsCard ?? false,
+        acceptsCash: acceptsCash ?? true,
+        acceptsBankTransfer: acceptsBankTransfer ?? true,
+        billingDay: billingDay !== undefined ? billingDay : null,
         paymentInstructions,
         bankAccountName: bankAccountName || null,
         bankSortCode: bankSortCode || null,
@@ -116,11 +150,16 @@ async function handlePUT(request: NextRequest) {
         autoPaymentEnabled: updatedOrg.autoPaymentEnabled,
         cashPaymentEnabled: updatedOrg.cashPaymentEnabled,
         bankTransferEnabled: updatedOrg.bankTransferEnabled,
+        acceptsCard: updatedOrg.acceptsCard ?? false,
+        acceptsCash: updatedOrg.acceptsCash ?? true,
+        acceptsBankTransfer: updatedOrg.acceptsBankTransfer ?? true,
+        billingDay: updatedOrg.billingDay ?? updatedOrg.feeDueDay ?? 1,
         paymentInstructions: updatedOrg.paymentInstructions,
         bankAccountName: updatedOrg.bankAccountName,
         bankSortCode: updatedOrg.bankSortCode,
         bankAccountNumber: updatedOrg.bankAccountNumber,
-        hasStripeConfigured: !!(updatedOrg.stripePublishableKey && updatedOrg.stripeSecretKey)
+        hasStripeConfigured: !!(updatedOrg.stripePublishableKey && updatedOrg.stripeSecretKey),
+        hasStripeConnect: !!updatedOrg.stripeConnectAccountId
       }
     })
   } catch (error: any) {

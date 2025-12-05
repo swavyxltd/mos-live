@@ -17,24 +17,49 @@ async function handleGET(
 
     const lead = await prisma.lead.findUnique({
       where: { id: params.id },
-      include: {
-        AssignedTo: {
+      select: {
+        id: true,
+        orgName: true,
+        city: true,
+        country: true,
+        estimatedStudents: true,
+        contactName: true,
+        contactEmail: true,
+        contactPhone: true,
+        status: true,
+        source: true,
+        lastContactAt: true,
+        nextContactAt: true,
+        notes: true,
+        assignedToUserId: true,
+        convertedOrgId: true,
+        createdAt: true,
+        updatedAt: true,
+        emailOutreachCompleted: true,
+        lastEmailSentAt: true,
+        lastEmailStage: true,
+        User: {
           select: {
             id: true,
             name: true,
             email: true,
           },
         },
-        ConvertedOrg: {
+        Org: {
           select: {
             id: true,
             name: true,
             slug: true,
           },
         },
-        Activities: {
-          include: {
-            CreatedBy: {
+        LeadActivity: {
+          select: {
+            id: true,
+            type: true,
+            description: true,
+            outcome: true,
+            createdAt: true,
+            User: {
               select: {
                 id: true,
                 name: true,
@@ -49,18 +74,22 @@ async function handleGET(
       },
     })
 
-    // Ensure new fields are included in response
-    if (lead) {
-      lead.lastEmailSentAt = lead.lastEmailSentAt || null
-      lead.lastEmailStage = lead.lastEmailStage || null
-      lead.emailOutreachCompleted = lead.emailOutreachCompleted || false
-    }
-
     if (!lead) {
       return NextResponse.json({ error: 'Lead not found' }, { status: 404 })
     }
 
-    return NextResponse.json({ lead })
+    // Map relations to expected frontend format
+    const mappedLead = {
+      ...lead,
+      AssignedTo: lead.User,
+      ConvertedOrg: lead.Org,
+      Activities: lead.LeadActivity.map(activity => ({
+        ...activity,
+        CreatedBy: activity.User,
+      })),
+    }
+
+    return NextResponse.json({ lead: mappedLead })
   } catch (error: any) {
     console.error('Error fetching lead:', error)
     console.error('Error details:', {
@@ -163,15 +192,35 @@ async function handlePUT(
     const lead = await prisma.lead.update({
       where: { id: params.id },
       data: updateData,
-      include: {
-        AssignedTo: {
+      select: {
+        id: true,
+        orgName: true,
+        city: true,
+        country: true,
+        estimatedStudents: true,
+        contactName: true,
+        contactEmail: true,
+        contactPhone: true,
+        status: true,
+        source: true,
+        lastContactAt: true,
+        nextContactAt: true,
+        notes: true,
+        assignedToUserId: true,
+        convertedOrgId: true,
+        createdAt: true,
+        updatedAt: true,
+        emailOutreachCompleted: true,
+        lastEmailSentAt: true,
+        lastEmailStage: true,
+        User: {
           select: {
             id: true,
             name: true,
             email: true,
           },
         },
-        ConvertedOrg: {
+        Org: {
           select: {
             id: true,
             name: true,
@@ -181,7 +230,14 @@ async function handlePUT(
       },
     })
 
-    return NextResponse.json({ lead })
+    // Map relations to expected frontend format
+    const mappedLead = {
+      ...lead,
+      AssignedTo: lead.User,
+      ConvertedOrg: lead.Org,
+    }
+
+    return NextResponse.json({ lead: mappedLead })
   } catch (error: any) {
     console.error('Error updating lead:', error)
     return NextResponse.json(
@@ -191,6 +247,67 @@ async function handlePUT(
   }
 }
 
+async function handleDELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user?.id || !session.user.isSuperAdmin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const lead = await prisma.lead.findUnique({
+      where: { id: params.id },
+      select: {
+        id: true,
+        orgName: true,
+      },
+    })
+
+    if (!lead) {
+      return NextResponse.json({ error: 'Lead not found' }, { status: 404 })
+    }
+
+    // Check if lead has been converted to an organization
+    const convertedLead = await prisma.lead.findUnique({
+      where: { id: params.id },
+      select: {
+        convertedOrgId: true,
+      },
+    })
+
+    if (convertedLead?.convertedOrgId) {
+      return NextResponse.json(
+        { error: 'Cannot delete a lead that has been converted to an organization' },
+        { status: 400 }
+      )
+    }
+
+    // Delete the lead (LeadActivity will be cascade deleted)
+    await prisma.lead.delete({
+      where: { id: params.id },
+    })
+
+    return NextResponse.json({ 
+      success: true,
+      message: `Lead "${lead.orgName}" deleted successfully` 
+    })
+  } catch (error: any) {
+    console.error('Error deleting lead:', error)
+    return NextResponse.json(
+      { 
+        error: 'Failed to delete lead',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      },
+      { status: 500 }
+    )
+  }
+}
+
 export const GET = withRateLimit(handleGET)
 export const PUT = withRateLimit(handlePUT)
+export const DELETE = withRateLimit(handleDELETE)
+
 

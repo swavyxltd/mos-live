@@ -327,6 +327,7 @@ export default function PaymentRecordsPage() {
                   <SelectItem value="">All statuses</SelectItem>
                   <SelectItem value="PENDING">Pending</SelectItem>
                   <SelectItem value="PAID">Paid</SelectItem>
+                  <SelectItem value="FAILED">Failed</SelectItem>
                   <SelectItem value="LATE">Late</SelectItem>
                 </SelectContent>
               </Select>

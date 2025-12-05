@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ToastContainer } from '@/components/ui/toast'
+import { Skeleton, CardSkeleton } from '@/components/loading/skeleton'
 
 interface Org {
   id: string

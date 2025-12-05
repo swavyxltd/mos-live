@@ -26,9 +26,11 @@ import {
   RefreshCw,
   Download,
   Bell,
-  ExternalLink
+  ExternalLink,
+  Target
 } from 'lucide-react'
 import { WaveChart } from '@/components/ui/wave-chart'
+import { Skeleton, StatCardSkeleton, CardSkeleton } from '@/components/loading/skeleton'
 
 interface DashboardData {
   totalOrgs: number
@@ -42,7 +44,7 @@ interface DashboardData {
   overdueCount: number
   paymentSuccessRate: number
   newOrgsThisMonth: number
-  churnRate: number
+  totalLeads: number
   avgRevenuePerOrg: number
   monthlyRevenue: Array<{ month: string; revenue: number; students: number }>
   topOrgs: Array<{ name: string; students: number; revenue: number; growth: number; status: string }>
@@ -99,7 +101,7 @@ export default function OwnerOverviewPage() {
           overdueCount: 0,
           paymentSuccessRate: 0,
           newOrgsThisMonth: 0,
-          churnRate: 0,
+          totalLeads: 0,
           avgRevenuePerOrg: 0,
           monthlyRevenue: [],
           topOrgs: [],
@@ -220,7 +222,7 @@ export default function OwnerOverviewPage() {
       ['Annual Recurring Revenue', `£${(dashboardData.arr ?? 0).toLocaleString()}`],
       ['Payment Success Rate', `${dashboardData.paymentSuccessRate ?? 0}%`],
       ['Overdue Accounts', dashboardData.overdueCount ?? 0],
-      ['Churn Rate', `${dashboardData.churnRate ?? 0}%`],
+      ['Total Leads', dashboardData.totalLeads ?? 0],
       ['Average Revenue per Org', `£${(dashboardData.avgRevenuePerOrg ?? 0).toFixed(0)}`]
     ]
     
@@ -252,7 +254,16 @@ export default function OwnerOverviewPage() {
 
   // Conditional returns after all hooks
   if (status === 'loading') {
-    return <div>Loading...</div>
+    return (
+      <div className="space-y-4 sm:space-y-6 w-full min-w-0">
+        <Skeleton className="h-8 w-64 mb-2" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <StatCardSkeleton key={i} />
+          ))}
+        </div>
+      </div>
+    )
   }
   
   if (!session?.user?.id) {
@@ -262,10 +273,40 @@ export default function OwnerOverviewPage() {
 
   if (!dashboardData) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p>Loading dashboard data...</p>
+      <div className="space-y-4 sm:space-y-6 w-full min-w-0">
+        {/* Header Skeleton */}
+        <div className="flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-start w-full min-w-0">
+          <div className="flex-1 min-w-0 pr-0 lg:pr-4">
+            <Skeleton className="h-8 w-64 mb-2" />
+            <Skeleton className="h-4 w-96" />
+            <Skeleton className="h-3 w-48 mt-1" />
+          </div>
+          <div className="flex flex-wrap gap-2 shrink-0 w-full lg:w-auto">
+            <Skeleton className="h-9 w-24" />
+            <Skeleton className="h-9 w-24" />
+            <Skeleton className="h-9 w-32" />
+            <Skeleton className="h-9 w-24" />
+          </div>
+        </div>
+
+        {/* Key Metrics Grid Skeleton */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 w-full min-w-0">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <StatCardSkeleton key={i} />
+          ))}
+        </div>
+
+        {/* Secondary Metrics Grid Skeleton */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 w-full min-w-0">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <StatCardSkeleton key={i} />
+          ))}
+        </div>
+
+        {/* Charts and Tables Row Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full min-w-0">
+          <CardSkeleton className="h-80" />
+          <CardSkeleton className="h-80" />
         </div>
       </div>
     )
@@ -274,8 +315,8 @@ export default function OwnerOverviewPage() {
   return (
     <div className="space-y-4 sm:space-y-6 w-full min-w-0">
       {/* Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-start w-full min-w-0">
-        <div className="flex-1 min-w-0 pr-0 md:pr-4">
+      <div className="flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-start w-full min-w-0">
+        <div className="flex-1 min-w-0 pr-0 lg:pr-4">
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-[var(--foreground)] break-words">Madrasah OS Dashboard</h1>
           <p className="mt-1 text-xs sm:text-sm text-[var(--muted-foreground)] break-words">
             Complete overview of our platform performance and business metrics
@@ -284,26 +325,26 @@ export default function OwnerOverviewPage() {
             Last updated: {lastUpdated.toLocaleTimeString()}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2 shrink-0 w-full md:w-auto">
+        <div className="flex flex-wrap gap-2 shrink-0 w-full lg:w-auto">
           <Button 
             variant="outline" 
             size="sm" 
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="flex-1 md:flex-initial"
+            className="flex-1 lg:flex-initial"
           >
             <RefreshCw className={`h-4 w-4 md:mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
             <span className="hidden md:inline">{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={handleExportData} className="flex-1 md:flex-initial">
+          <Button variant="outline" size="sm" onClick={handleExportData} className="flex-1 lg:flex-initial">
             <Download className="h-4 w-4 md:mr-2" />
             <span className="hidden md:inline">Export</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={handleViewAnalytics} className="flex-1 md:flex-initial">
+          <Button variant="outline" size="sm" onClick={handleViewAnalytics} className="flex-1 lg:flex-initial">
             <Eye className="h-4 w-4 md:mr-2" />
             <span className="hidden md:inline">View Analytics</span>
           </Button>
-          <Button size="sm" onClick={handleSettings} className="flex-1 md:flex-initial">
+          <Button size="sm" onClick={handleSettings} className="flex-1 lg:flex-initial">
             <Settings className="h-4 w-4 md:mr-2" />
             <span className="hidden md:inline">Settings</span>
           </Button>
@@ -347,7 +388,7 @@ export default function OwnerOverviewPage() {
             <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0 mt-1 sm:mt-0" />
           </CardHeader>
           <CardContent className="pt-2">
-            <div className="text-xl sm:text-2xl font-bold break-words">{dashboardData.totalOrgs}</div>
+            <div className="text-xl sm:text-2xl font-bold break-words">{dashboardData.totalOrgs ?? 0}</div>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1 break-words">
               <span className="text-green-600">+{dashboardData.newOrgsThisMonth}</span> this month
             </p>
@@ -412,7 +453,7 @@ export default function OwnerOverviewPage() {
             <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0 mt-1 sm:mt-0" />
           </CardHeader>
           <CardContent className="pt-2">
-            <div className="text-xl sm:text-2xl font-bold break-words">{dashboardData.paymentSuccessRate}%</div>
+            <div className="text-xl sm:text-2xl font-bold break-words">{(dashboardData.paymentSuccessRate ?? 0).toFixed(1)}%</div>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1 break-words">Last 30 days</p>
           </CardContent>
         </Card>
@@ -430,26 +471,26 @@ export default function OwnerOverviewPage() {
             <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600 flex-shrink-0 mt-1 sm:mt-0" />
           </CardHeader>
           <CardContent className="pt-2">
-            <div className="text-xl sm:text-2xl font-bold break-words">{dashboardData.overdueCount}</div>
+            <div className="text-xl sm:text-2xl font-bold break-words">{dashboardData.overdueCount ?? 0}</div>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1 break-words">Requires attention</p>
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-md transition-shadow cursor-pointer w-full min-w-0" onClick={handleViewAnalytics}>
+        <Card className="hover:shadow-md transition-shadow cursor-pointer w-full min-w-0" onClick={() => router.push('/owner/leads')}>
           <CardHeader className="flex flex-row items-start sm:items-center justify-between space-y-0 pb-2 gap-2">
             <div className="flex-1 min-w-0">
               {/* Mobile: 2 lines, Desktop: 1 line */}
               <div className="lg:hidden">
-                <CardTitle className="text-xs sm:text-sm font-medium leading-tight break-words">Churn</CardTitle>
-                <CardTitle className="text-xs sm:text-sm font-medium leading-tight break-words">Rate</CardTitle>
+                <CardTitle className="text-xs sm:text-sm font-medium leading-tight break-words">Total</CardTitle>
+                <CardTitle className="text-xs sm:text-sm font-medium leading-tight break-words">Leads</CardTitle>
               </div>
-              <CardTitle className="hidden lg:block text-sm font-medium break-words">Churn Rate</CardTitle>
+              <CardTitle className="hidden lg:block text-sm font-medium break-words">Total Leads</CardTitle>
             </div>
-            <ArrowDownRight className="h-4 w-4 sm:h-5 sm:w-5 text-red-600 flex-shrink-0 mt-1 sm:mt-0" />
+            <Target className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0 mt-1 sm:mt-0" />
           </CardHeader>
           <CardContent className="pt-2">
-            <div className="text-xl sm:text-2xl font-bold break-words">{dashboardData.churnRate}%</div>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-1 break-words">Monthly churn</p>
+            <div className="text-xl sm:text-2xl font-bold break-words">{dashboardData.totalLeads ?? 0}</div>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1 break-words">Active leads</p>
           </CardContent>
         </Card>
 

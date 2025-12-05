@@ -41,6 +41,7 @@ interface InvitationData {
   paymentMethods: {
     cash: boolean
     bankTransfer: boolean
+    card: boolean
     stripe: boolean
   }
   bankDetails: {
@@ -242,8 +243,16 @@ function ParentSetupForm() {
   }
 
   const availableMethods = []
-  if (invitationData.paymentMethods.cash) availableMethods.push({ value: 'CASH', label: 'Cash', icon: Coins })
-  if (invitationData.paymentMethods.bankTransfer) availableMethods.push({ value: 'BANK_TRANSFER', label: 'Bank Transfer', icon: TrendingUp })
+  // Show card first if available
+  if (invitationData.paymentMethods.card) {
+    availableMethods.push({ value: 'CARD', label: 'Card (automatic)', icon: CreditCard })
+  }
+  if (invitationData.paymentMethods.bankTransfer) {
+    availableMethods.push({ value: 'BANK_TRANSFER', label: 'Bank Transfer', icon: TrendingUp })
+  }
+  if (invitationData.paymentMethods.cash) {
+    availableMethods.push({ value: 'CASH', label: 'Cash', icon: Coins })
+  }
 
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">

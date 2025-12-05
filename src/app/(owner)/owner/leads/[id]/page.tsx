@@ -32,6 +32,7 @@ import {
 } from 'lucide-react'
 import { formatDate, formatDateTime } from '@/lib/utils'
 import { toast } from 'sonner'
+import { Skeleton, CardSkeleton } from '@/components/loading/skeleton'
 
 interface Lead {
   id: string
@@ -298,8 +299,17 @@ export default function LeadDetailPage() {
 
   if (status === 'loading' || isLoading || !lead) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <RefreshCw className="h-8 w-8 animate-spin" />
+      <div className="space-y-4 sm:space-y-6 w-full min-w-0">
+        {/* Header Skeleton */}
+        <div className="flex flex-col gap-4 md:flex-row md:items-center w-full min-w-0">
+          <Skeleton className="h-9 w-20" />
+          <Skeleton className="h-8 w-64" />
+        </div>
+
+        {/* Form Skeleton */}
+        <CardSkeleton className="h-96" />
+        <CardSkeleton className="h-64" />
+        <CardSkeleton className="h-64" />
       </div>
     )
   }

@@ -26,6 +26,7 @@ import { formatDate } from '@/lib/utils'
 import { toast } from 'sonner'
 import { ViewLeadModal } from '@/components/view-lead-modal'
 import { LeadEmailComposerModal } from '@/components/lead-email-composer-modal'
+import { Skeleton, StatCardSkeleton, CardSkeleton, TableSkeleton } from '@/components/loading/skeleton'
 
 interface DashboardStats {
   totalLeads: number
@@ -42,7 +43,7 @@ interface FollowUp {
   id: string
   orgName: string
   status: string
-  nextContactAt: string
+  nextContactAt: string | null
   AssignedTo: {
     id: string
     name: string | null
@@ -58,7 +59,7 @@ interface EmailTask {
   contactName: string | null
   contactEmail: string | null
   lastEmailStage: string | null
-  nextContactAt: string
+  nextContactAt: string | null
   lastEmailSentAt: string | null
 }
 
@@ -106,7 +107,14 @@ export default function LeadsDashboardPage() {
       const res = await fetch('/api/owner/leads/dashboard/stats')
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}))
-        throw new Error(errorData.error || `Failed to load stats (${res.status})`)
+        const errorMessage = errorData.error || errorData.message || `Failed to load stats (${res.status})`
+        const errorDetails = errorData.details ? `\n\nDetails: ${JSON.stringify(errorData.details, null, 2)}` : ''
+        console.error('API Error:', {
+          status: res.status,
+          statusText: res.statusText,
+          error: errorData,
+        })
+        throw new Error(`${errorMessage}${errorDetails}`)
       }
       const data = await res.json()
       setStats(data.stats)
@@ -115,6 +123,11 @@ export default function LeadsDashboardPage() {
       setRecentActivities(data.recentActivities || [])
     } catch (error: any) {
       console.error('Error loading dashboard:', error)
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+      })
       toast.error(error.message || 'Failed to load dashboard data')
     }
   }
@@ -179,8 +192,30 @@ export default function LeadsDashboardPage() {
 
   if (status === 'loading' || !stats) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <RefreshCw className="h-8 w-8 animate-spin" />
+      <div className="space-y-4 sm:space-y-6 w-full min-w-0">
+        {/* Header Skeleton */}
+        <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-start w-full min-w-0">
+          <div className="flex-1 min-w-0 pr-0 md:pr-4">
+            <Skeleton className="h-8 w-48 mb-2" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <div className="flex gap-2 shrink-0 w-full md:w-auto">
+            <Skeleton className="h-9 w-24" />
+            <Skeleton className="h-9 w-32" />
+          </div>
+        </div>
+
+        {/* Stats Grid Skeleton */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <StatCardSkeleton key={i} />
+          ))}
+        </div>
+
+        {/* Panels Skeleton */}
+        <CardSkeleton className="h-64" />
+        <CardSkeleton className="h-64" />
+        <CardSkeleton className="h-64" />
       </div>
     )
   }
@@ -332,7 +367,7 @@ export default function LeadsDashboardPage() {
                             <p className="text-sm text-[var(--muted-foreground)]">
                               {followUp.hasCallActivity && followUp.lastCallOutcome === 'Asked to call back later' 
                                 ? `Call back today (${followUp.lastCallOutcome})`
-                                : `Follow-up: ${formatDate(followUp.nextContactAt)}`}
+                                : followUp.nextContactAt ? `Follow-up: ${formatDate(followUp.nextContactAt)}` : 'No follow-up date'}
                               {followUp.AssignedTo && ` • Assigned to: ${followUp.AssignedTo.name || followUp.AssignedTo.email}`}
                             </p>
                           </div>
@@ -395,7 +430,7 @@ export default function LeadsDashboardPage() {
                                 {task.orgName}
                               </h3>
                               <p className="text-sm text-[var(--muted-foreground)]">
-                                {getEmailLabel()} • {formatDate(task.nextContactAt)}
+                                {getEmailLabel()} • {task.nextContactAt ? formatDate(task.nextContactAt) : 'No date'}
                                 {task.contactName && ` • ${task.contactName}`}
                               </p>
                             </div>

@@ -121,12 +121,12 @@ model Event {
   teacher     String?
   description String?
   classId     String?
-  studentId   String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime
+  studentId   String?
   Class       Class?   @relation(fields: [classId], references: [id], onDelete: Cascade)
-  Student     Student? @relation(fields: [studentId], references: [id], onDelete: Cascade)
   Org         Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  Student     Student? @relation(fields: [studentId], references: [id], onDelete: Cascade)
 }
 
 model Exam {
@@ -152,6 +152,24 @@ model FeesPlan {
   createdAt DateTime @default(now())
   updatedAt DateTime
   Org       Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+}
+
+model GiftAidSubmission {
+  id            String   @id
+  orgId         String
+  generatedById String
+  startDate     DateTime
+  endDate       DateTime
+  totalAmount   Float
+  totalCount    Int
+  filename      String
+  createdAt     DateTime @default(now())
+  User          User     @relation(fields: [generatedById], references: [id])
+  Org           Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@index([generatedById])
+  @@index([orgId])
 }
 
 model Holiday {
@@ -192,6 +210,56 @@ model Invoice {
   Org        Org       @relation(fields: [orgId], references: [id], onDelete: Cascade)
   Student    Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
   Payment    Payment[]
+}
+
+model Lead {
+  id                     String         @id
+  orgName                String
+  city                   String?
+  country                String         @default("UK")
+  estimatedStudents      Int?
+  contactName            String?
+  contactEmail           String?
+  contactPhone           String?
+  status                 String         @default("NEW")
+  source                 String?
+  lastContactAt          DateTime?
+  nextContactAt          DateTime?
+  notes                  String?
+  assignedToUserId       String?
+  convertedOrgId         String?
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime
+  emailOutreachCompleted Boolean        @default(false)
+  lastEmailSentAt        DateTime?
+  lastEmailStage         String?
+  User                   User?          @relation(fields: [assignedToUserId], references: [id])
+  Org                    Org?           @relation(fields: [convertedOrgId], references: [id])
+  LeadActivity           LeadActivity[]
+
+  @@index([assignedToUserId])
+  @@index([convertedOrgId])
+  @@index([emailOutreachCompleted, nextContactAt])
+  @@index([lastEmailStage])
+  @@index([nextContactAt])
+  @@index([status, assignedToUserId])
+  @@index([status])
+}
+
+model LeadActivity {
+  id              String   @id
+  leadId          String
+  type            String
+  description     String
+  createdAt       DateTime @default(now())
+  createdByUserId String?
+  outcome         String?
+  User            User?    @relation(fields: [createdByUserId], references: [id])
+  Lead            Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@index([leadId])
+  @@index([type])
 }
 
 model Message {
@@ -257,17 +325,22 @@ model Org {
   cashPaymentEnabled   Boolean                @default(true)
   bankTransferEnabled  Boolean                @default(true)
   paymentInstructions  String?
-  bankAccountName      String?
-  bankSortCode         String?
-  bankAccountNumber    String?
   addressLine1         String?
   city                 String?
   postcode             String?
   publicEmail          String?
   publicPhone          String?
-  feeDueDay            Int?                   @default(1)
   deactivatedAt        DateTime?
   deactivatedReason    String?
+  bankAccountName      String?
+  bankAccountNumber    String?
+  bankSortCode         String?
+  feeDueDay            Int?                   @default(1)
+  stripeConnectAccountId String?
+  acceptsCard          Boolean                @default(false)
+  acceptsCash          Boolean                @default(true)
+  acceptsBankTransfer  Boolean                @default(true)
+  billingDay           Int?                   @default(1)
   Application          Application[]
   Attendance           Attendance[]
   AuditLog             AuditLog[]
@@ -275,9 +348,11 @@ model Org {
   Event                Event[]
   Exam                 Exam[]
   FeesPlan             FeesPlan[]
+  GiftAidSubmission    GiftAidSubmission[]
   Holiday              Holiday[]
   Invitation           Invitation[]
   Invoice              Invoice[]
+  Lead                 Lead[]
   Message              Message[]
   MonthlyPaymentRecord MonthlyPaymentRecord[]
   ParentBillingProfile ParentBillingProfile[]
@@ -290,26 +365,6 @@ model Org {
   SupportTicket        SupportTicket[]
   Term                 Term[]
   UserOrgMembership    UserOrgMembership[]
-  GiftAidSubmission    GiftAidSubmission[]
-  ConvertedLeads       Lead[]
-}
-
-model GiftAidSubmission {
-  id            String   @id @default(cuid())
-  orgId         String
-  generatedById String
-  startDate     DateTime
-  endDate       DateTime
-  totalAmount   Float
-  totalCount    Int
-  filename      String
-  createdAt     DateTime @default(now())
-  Org           Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  GeneratedBy   User     @relation(fields: [generatedById], references: [id])
-
-  @@index([orgId])
-  @@index([generatedById])
-  @@index([createdAt])
 }
 
 model ParentBillingProfile {
@@ -387,8 +442,8 @@ model PlatformOrgBilling {
   subscriptionStatus       String?
   trialEndDate             DateTime?
   firstPaymentFailureDate  DateTime?
-  paymentRetryCount        Int       @default(0)
   lastPaymentRetryDate     DateTime?
+  paymentRetryCount        Int       @default(0)
   warningEmailSent         Boolean   @default(false)
   Org                      Org       @relation(fields: [orgId], references: [id], onDelete: Cascade)
 }
@@ -413,6 +468,29 @@ model Session {
   User         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model StaffPermission {
+  id                        String                      @id
+  key                       String                      @unique
+  name                      String
+  description               String?
+  category                  String?
+  createdAt                 DateTime                    @default(now())
+  updatedAt                 DateTime
+  StaffPermissionAssignment StaffPermissionAssignment[]
+}
+
+model StaffPermissionAssignment {
+  id                String            @id
+  membershipId      String
+  permissionId      String
+  createdAt         DateTime          @default(now())
+  UserOrgMembership UserOrgMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  StaffPermission   StaffPermission   @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([membershipId, permissionId])
+  @@index([membershipId])
+}
+
 model Student {
   id                   String                 @id
   orgId                String
@@ -422,16 +500,17 @@ model Student {
   allergies            String?
   medicalNotes         String?
   primaryParentId      String?
+  paymentMethod        String?
   isArchived           Boolean                @default(false)
   archivedAt           DateTime?
   createdAt            DateTime               @default(now())
   updatedAt            DateTime
   Attendance           Attendance[]
+  Event                Event[]
   Invoice              Invoice[]
   MonthlyPaymentRecord MonthlyPaymentRecord[]
   ParentInvitation     ParentInvitation[]
   ProgressLog          ProgressLog[]
-  Event                Event[]
   Org                  Org                    @relation(fields: [orgId], references: [id], onDelete: Cascade)
   User                 User?                  @relation(fields: [primaryParentId], references: [id])
   StudentClass         StudentClass[]
@@ -493,12 +572,6 @@ model User {
   image                  String?
   phone                  String?
   password               String?
-  address                String?
-  city                   String?
-  postcode               String?
-  title                  String? // Title (Mr, Mrs, Miss, Ms, Dr, etc.) for Gift Aid
-  giftAidStatus          String? // 'YES', 'NO', 'NOT_SURE'
-  giftAidDeclaredAt      DateTime?
   isSuperAdmin           Boolean                 @default(false)
   isArchived             Boolean                 @default(false)
   archivedAt             DateTime?
@@ -511,10 +584,19 @@ model User {
   twoFactorCode          String?
   twoFactorCodeExpiry    DateTime?
   twoFactorEnabled       Boolean                 @default(true)
+  address                String?
+  giftAidDeclaredAt      DateTime?
+  giftAidStatus          String?
+  postcode               String?
+  title                  String?
+  city                   String?
   Account                Account[]
   Application            Application[]
   AuditLog               AuditLog[]
   Class                  Class[]
+  GiftAidSubmission      GiftAidSubmission[]
+  Lead                   Lead[]
+  LeadActivity           LeadActivity[]
   ParentBillingProfile   ParentBillingProfile?
   PasswordResetToken     PasswordResetToken[]
   ProgressLog            ProgressLog[]
@@ -523,21 +605,18 @@ model User {
   SupportTicket          SupportTicket[]
   SupportTicketResponse  SupportTicketResponse[]
   UserOrgMembership      UserOrgMembership[]
-  GiftAidSubmission      GiftAidSubmission[]
-  AssignedLeads          Lead[]
-  CreatedLeadActivities  LeadActivity[]
 }
 
 model UserOrgMembership {
-  id             String                      @id
-  userId         String
-  orgId          String
-  role           String
-  staffSubrole   String? // ADMIN, TEACHER, FINANCE_OFFICER, or null for custom
-  isInitialAdmin Boolean                     @default(false)
-  Org            Org                         @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  User           User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  Permissions    StaffPermissionAssignment[]
+  id                        String                      @id
+  userId                    String
+  orgId                     String
+  role                      String
+  isInitialAdmin            Boolean                     @default(false)
+  staffSubrole              String?
+  StaffPermissionAssignment StaffPermissionAssignment[]
+  Org                       Org                         @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  User                      User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, orgId])
 }
@@ -548,29 +627,6 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
-}
-
-model StaffPermission {
-  id          String                      @id
-  key         String                      @unique // e.g., 'access_dashboard', 'access_classes'
-  name        String // Display name
-  description String? // Optional description
-  category    String? // Group permissions (e.g., 'pages', 'actions')
-  createdAt   DateTime                    @default(now())
-  updatedAt   DateTime
-  Assignments StaffPermissionAssignment[]
-}
-
-model StaffPermissionAssignment {
-  id           String            @id
-  membershipId String
-  permissionId String
-  createdAt    DateTime          @default(now())
-  Membership   UserOrgMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
-  Permission   StaffPermission   @relation(fields: [permissionId], references: [id], onDelete: Cascade)
-
-  @@unique([membershipId, permissionId])
-  @@index([membershipId])
 }
 
 model platform_settings {
@@ -598,57 +654,7 @@ model platform_settings {
   passwordRequireLowercase    Boolean   @default(true)
   passwordRequireNumbers      Boolean   @default(true)
   passwordRequireSpecial      Boolean   @default(false)
-  ownerCalendlyUrl            String?
   createdAt                   DateTime  @default(now())
   updatedAt                   DateTime
-}
-
-model Lead {
-  id                      String         @id @default(cuid())
-  orgName                 String
-  city                    String?
-  country                 String         @default("UK")
-  estimatedStudents       Int?
-  contactName             String?
-  contactEmail            String?
-  contactPhone            String?
-  status                  String         @default("NEW") // NEW, CONTACTED, FOLLOW_UP, DEMO_BOOKED, WON, LOST, ON_HOLD
-  source                  String?
-  lastContactAt           DateTime?
-  nextContactAt           DateTime?
-  notes                   String?        @db.Text
-  assignedToUserId        String?
-  convertedOrgId          String?
-  lastEmailSentAt         DateTime?
-  lastEmailStage          String?        // INITIAL, FOLLOW_UP_1, FOLLOW_UP_2, FINAL
-  emailOutreachCompleted  Boolean         @default(false)
-  createdAt               DateTime       @default(now())
-  updatedAt               DateTime       @updatedAt
-  AssignedTo              User?          @relation(fields: [assignedToUserId], references: [id])
-  ConvertedOrg            Org?           @relation(fields: [convertedOrgId], references: [id])
-  Activities              LeadActivity[]
-
-  @@index([status])
-  @@index([assignedToUserId])
-  @@index([nextContactAt])
-  @@index([status, assignedToUserId])
-  @@index([convertedOrgId])
-  @@index([emailOutreachCompleted, nextContactAt])
-  @@index([lastEmailStage])
-}
-
-model LeadActivity {
-  id              String   @id @default(cuid())
-  leadId          String
-  type            String // CALL, WHATSAPP, EMAIL, MEETING, NOTE, STATUS_CHANGE
-  description     String   @db.Text
-  outcome         String?  // For CALL type: "No answer", "Busy / Couldn't talk", "Spoke – interested", "Spoke – not interested", "Asked to call back later", "Wrong number"
-  createdAt       DateTime @default(now())
-  createdByUserId String?
-  Lead            Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  CreatedBy       User?    @relation(fields: [createdByUserId], references: [id])
-
-  @@index([leadId])
-  @@index([createdAt])
-  @@index([type])
+  ownerCalendlyUrl            String?
 }

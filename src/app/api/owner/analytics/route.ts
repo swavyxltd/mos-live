@@ -21,18 +21,28 @@ async function handleGET(request: NextRequest) {
     const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
     const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
 
-    // Get total students for MRR
+    // Get demo org ID to exclude from counts
+    const demoOrg = await prisma.org.findUnique({
+      where: { slug: 'leicester-islamic-centre' },
+      select: { id: true }
+    })
+
+    // Get total students for MRR (excluding demo org)
     const totalStudents = await prisma.student.count({
-      where: { isArchived: false }
+      where: { 
+        isArchived: false,
+        ...(demoOrg ? { orgId: { not: demoOrg.id } } : {})
+      }
     })
 
     const currentMRR = totalStudents * 1
 
-    // Get last month's students
+    // Get last month's students (excluding demo org)
     const lastMonthStudents = await prisma.student.count({
       where: {
         createdAt: { lt: thisMonth },
-        isArchived: false
+        isArchived: false,
+        ...(demoOrg ? { orgId: { not: demoOrg.id } } : {})
       }
     })
 
@@ -41,9 +51,12 @@ async function handleGET(request: NextRequest) {
 
     const arr = currentMRR * 12
 
-    // Get lifetime revenue
+    // Get lifetime revenue (excluding demo org invoices)
     const allInvoices = await prisma.invoice.findMany({
-      where: { status: 'PAID' },
+      where: { 
+        status: 'PAID',
+        ...(demoOrg ? { orgId: { not: demoOrg.id } } : {})
+      },
       select: { amountP: true }
     })
 
@@ -56,18 +69,20 @@ async function handleGET(request: NextRequest) {
 
     const averageRevenuePerUser = totalUsers > 0 ? lifetimeValue / totalUsers : 0
 
-    // Growth metrics
+    // Growth metrics (excluding demo org)
     const newOrgsThisMonth = await prisma.org.count({
       where: {
         status: 'ACTIVE',
-        createdAt: { gte: thisMonth }
+        createdAt: { gte: thisMonth },
+        slug: { not: 'leicester-islamic-centre' }
       }
     })
 
     const newStudentsThisMonth = await prisma.student.count({
       where: {
         createdAt: { gte: thisMonth },
-        isArchived: false
+        isArchived: false,
+        ...(demoOrg ? { orgId: { not: demoOrg.id } } : {})
       }
     })
 
@@ -79,7 +94,10 @@ async function handleGET(request: NextRequest) {
     })
 
     const totalOrgs = await prisma.org.count({
-      where: { status: 'ACTIVE' }
+      where: { 
+        status: 'ACTIVE',
+        slug: { not: 'leicester-islamic-centre' }
+      }
     })
 
     const churnRate = totalOrgs > 0 ? (churnedOrgs / totalOrgs) * 100 : 0
@@ -97,14 +115,23 @@ async function handleGET(request: NextRequest) {
       ? (newUsersThisMonth / (totalUsers - newUsersThisMonth)) * 100 
       : 0
 
-    // Geographic distribution (would need city field in org model)
+    // Geographic distribution (excluding demo org)
     const orgs = await prisma.org.findMany({
-      where: { status: 'ACTIVE' },
+      where: { 
+        status: 'ACTIVE',
+        slug: { not: 'leicester-islamic-centre' }
+      },
       select: {
         city: true,
+        id: true,
         _count: {
           select: {
-            students: { where: { isArchived: false } }
+            students: { 
+              where: { 
+                isArchived: false,
+                ...(demoOrg ? { orgId: { not: demoOrg.id } } : {})
+              } 
+            }
           }
         }
       }
@@ -151,10 +178,15 @@ async function handleGET(request: NextRequest) {
       size.percentage = totalOrgsWithStudents > 0 ? Math.round((size.count / totalOrgsWithStudents) * 100) : 0
     })
 
-    // Payment analytics
-    const allInvoicesCount = await prisma.invoice.count()
+    // Payment analytics (excluding demo org)
+    const allInvoicesCount = await prisma.invoice.count({
+      where: { ...(demoOrg ? { orgId: { not: demoOrg.id } } : {}) }
+    })
     const paidInvoices = await prisma.invoice.count({
-      where: { status: 'PAID' }
+      where: { 
+        status: 'PAID',
+        ...(demoOrg ? { orgId: { not: demoOrg.id } } : {})
+      }
     })
 
     const successRate = allInvoicesCount > 0 ? (paidInvoices / allInvoicesCount) * 100 : 100
@@ -171,7 +203,8 @@ async function handleGET(request: NextRequest) {
           paidAt: {
             gte: monthStart,
             lte: monthEnd
-          }
+          },
+          ...(demoOrg ? { orgId: { not: demoOrg.id } } : {})
         },
         select: { amountP: true }
       })
@@ -188,7 +221,8 @@ async function handleGET(request: NextRequest) {
           paidAt: {
             gte: prevMonthStart,
             lte: prevMonthEnd
-          }
+          },
+          ...(demoOrg ? { orgId: { not: demoOrg.id } } : {})
         },
         select: { amountP: true }
       })
@@ -217,14 +251,21 @@ async function handleGET(request: NextRequest) {
         newStudentsThisMonth,
         churnRate,
         retentionRate,
-        expansionRevenue: 0, // Would need tracking
+        // TODO: Implement expansion/contraction revenue tracking:
+        // - expansionRevenue: Track when orgs upgrade plans or add more students
+        // - contractionRevenue: Track when orgs downgrade or reduce students
+        expansionRevenue: 0,
         contractionRevenue: 0
       },
       users: {
         totalActiveUsers: totalUsers,
         newUsersThisMonth,
         userGrowthRate,
-        averageSessionDuration: 0, // Would need session tracking
+        // TODO: Implement session tracking table to calculate:
+        // - averageSessionDuration: Track user sessions with start/end times
+        // - pageViewsPerSession: Track page views per session
+        // - bounceRate: Calculate from single-page sessions
+        averageSessionDuration: 0,
         pageViewsPerSession: 0,
         bounceRate: 0
       },
@@ -234,8 +275,13 @@ async function handleGET(request: NextRequest) {
       orgSizes,
       payments: {
         successRate,
-        averagePaymentTime: 0, // Would need tracking
+        // TODO: Implement payment processing time tracking:
+        // - averagePaymentTime: Track time from invoice creation to payment completion
+        averagePaymentTime: 0,
         failedPayments: await prisma.invoice.count({ where: { status: 'OVERDUE' } }),
+        // TODO: Implement refund and chargeback tracking:
+        // - refunds: Track refunded invoices (add refund status/amount to Invoice model)
+        // - chargebacks: Track chargeback events (add chargeback tracking table)
         refunds: 0,
         chargebacks: 0
       },

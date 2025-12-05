@@ -49,6 +49,10 @@ async function handleGET(request: NextRequest) {
             cashPaymentEnabled: true,
             bankTransferEnabled: true,
             stripeEnabled: true,
+            acceptsCard: true,
+            acceptsCash: true,
+            acceptsBankTransfer: true,
+            stripeConnectAccountId: true,
             bankAccountName: true,
             bankSortCode: true,
             bankAccountNumber: true
@@ -115,8 +119,9 @@ async function handleGET(request: NextRequest) {
         name: invitation.org.name
       },
       paymentMethods: {
-        cash: invitation.org.cashPaymentEnabled,
-        bankTransfer: invitation.org.bankTransferEnabled,
+        cash: invitation.org.acceptsCash ?? invitation.org.cashPaymentEnabled ?? true,
+        bankTransfer: invitation.org.acceptsBankTransfer ?? invitation.org.bankTransferEnabled ?? true,
+        card: invitation.org.acceptsCard ?? false && !!invitation.org.stripeConnectAccountId,
         stripe: invitation.org.stripeEnabled
       },
       bankDetails: {

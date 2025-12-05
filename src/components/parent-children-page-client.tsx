@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -58,6 +59,27 @@ interface ParentChildrenPageClientProps {
 }
 
 export function ParentChildrenPageClient({ students: initialStudents }: ParentChildrenPageClientProps) {
+  const [paymentHistory, setPaymentHistory] = useState<any[]>([])
+  const [loadingPayments, setLoadingPayments] = useState(false)
+
+  useEffect(() => {
+    fetchPaymentHistory()
+  }, [])
+
+  const fetchPaymentHistory = async () => {
+    try {
+      setLoadingPayments(true)
+      const response = await fetch('/api/parent/payments/history')
+      if (response.ok) {
+        const data = await response.json()
+        setPaymentHistory(data.payments || [])
+      }
+    } catch (error) {
+      console.error('Error fetching payment history:', error)
+    } finally {
+      setLoadingPayments(false)
+    }
+  }
   const [students, setStudents] = useState<Student[]>(initialStudents)
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -340,6 +362,50 @@ export function ParentChildrenPageClient({ students: initialStudents }: ParentCh
                     </div>
                   )
                 })()}
+
+                {/* Payment History */}
+                {paymentHistory.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <CreditCard className="h-5 w-5 text-[var(--muted-foreground)]" />
+                      <h3 className="text-sm font-semibold text-[var(--foreground)] uppercase tracking-wide">
+                        Recent Payments
+                      </h3>
+                    </div>
+                    <div className="space-y-2">
+                      {paymentHistory.map((payment) => (
+                        <div key={payment.id} className="p-3 border border-[var(--border)] rounded-lg">
+                          <div className="flex items-center justify-between mb-1">
+                            <div>
+                              <div className="font-medium text-[var(--foreground)]">
+                                {payment.studentName} - {payment.className}
+                              </div>
+                              <div className="text-sm text-[var(--muted-foreground)]">
+                                {payment.month}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-semibold text-[var(--foreground)]">
+                                £{(payment.amount / 100).toFixed(2)}
+                              </div>
+                              <Badge 
+                                variant={payment.status === 'PAID' ? 'default' : payment.status === 'FAILED' ? 'destructive' : 'secondary'}
+                                className="text-xs"
+                              >
+                                {payment.status}
+                              </Badge>
+                            </div>
+                          </div>
+                          {payment.paidAt && (
+                            <div className="text-xs text-[var(--muted-foreground)] mt-1">
+                              Paid: {formatDate(payment.paidAt)}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Medical Information */}
                 <div>

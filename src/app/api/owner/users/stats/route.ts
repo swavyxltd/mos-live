@@ -19,62 +19,185 @@ async function handleGET(request: NextRequest) {
 
     const now = new Date()
     const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
 
-    // Get user stats
-    const totalUsers = await prisma.user.count({
-      where: { isArchived: false }
+    // Get demo org to exclude from queries - "Test Islamic School"
+    let demoOrg = await prisma.org.findFirst({
+      where: { 
+        OR: [
+          { slug: 'test-islamic-school' },
+          { name: { contains: 'Test Islamic School', mode: 'insensitive' } },
+          { slug: { contains: 'test', mode: 'insensitive' } },
+          { slug: 'leicester-islamic-centre' },
+          { name: { contains: 'Leicester', mode: 'insensitive' } }
+        ]
+      },
+      select: { id: true, slug: true, name: true }
     })
+    
+    if (demoOrg) {
+      logger.info(`Excluding demo org: ${demoOrg.name} (${demoOrg.slug})`)
+    } else {
+      logger.warn('Demo org not found - all users will be included')
+    }
 
-    const adminUsers = await prisma.userOrgMembership.count({
-      where: { role: 'ADMIN' }
-    })
+    // Get demo org user IDs for exclusion (needed for count queries)
+    const demoOrgUserIds = demoOrg 
+      ? (await prisma.userOrgMembership.findMany({
+          where: { orgId: demoOrg.id },
+          select: { userId: true }
+        })).map(m => m.userId)
+      : []
+    
+    // Also exclude specific demo user emails
+    const excludedEmails = ['hassan.teacher@test.com', 'fatima.teacher@test.com']
 
-    const staffUsers = await prisma.userOrgMembership.count({
-      where: { role: 'STAFF' }
-    })
+    // Parallelize all count queries for better performance (excluding demo org users)
+    const [
+      totalUsers,
+      adminUsers,
+      staffUsers,
+      parentUsers,
+      newUsersThisMonth,
+      inactiveUsers,
+      ownerCount
+    ] = await Promise.all([
+      prisma.user.count({
+        where: { 
+          isArchived: false,
+          isSuperAdmin: false, // Exclude owner accounts
+          email: { notIn: excludedEmails },
+          ...(demoOrgUserIds.length > 0 ? {
+            id: { notIn: demoOrgUserIds }
+          } : {})
+        }
+      }),
+      prisma.userOrgMembership.count({
+        where: { 
+          role: 'ADMIN',
+          ...(demoOrg ? {
+            orgId: { not: demoOrg.id }
+          } : {})
+        }
+      }),
+      prisma.userOrgMembership.count({
+        where: { 
+          role: 'STAFF',
+          ...(demoOrg ? {
+            orgId: { not: demoOrg.id }
+          } : {})
+        }
+      }),
+      // Count parent memberships, but exclude users who have any demo org membership
+      demoOrg && demoOrgUserIds.length > 0
+        ? prisma.userOrgMembership.count({
+            where: { 
+              role: 'PARENT',
+              orgId: { not: demoOrg.id },
+              userId: { notIn: demoOrgUserIds } // Exclude users who have any demo org membership
+            }
+          })
+        : prisma.userOrgMembership.count({
+            where: { 
+              role: 'PARENT',
+              ...(demoOrg ? {
+                orgId: { not: demoOrg.id }
+              } : {})
+            }
+          }),
+      prisma.user.count({
+        where: {
+          createdAt: { gte: thisMonth },
+          isArchived: false,
+          isSuperAdmin: false, // Exclude owner accounts
+          email: { notIn: excludedEmails },
+          ...(demoOrgUserIds.length > 0 ? {
+            id: { notIn: demoOrgUserIds }
+          } : {})
+        }
+      }),
+      prisma.user.count({
+        where: {
+          isArchived: true,
+          isSuperAdmin: false, // Exclude owner accounts
+          email: { notIn: excludedEmails },
+          ...(demoOrgUserIds.length > 0 ? {
+            id: { notIn: demoOrgUserIds }
+          } : {})
+        }
+      }),
+      prisma.user.count({ 
+        where: { 
+          isSuperAdmin: true, 
+          isArchived: false,
+          email: { notIn: excludedEmails },
+          ...(demoOrgUserIds.length > 0 ? {
+            id: { notIn: demoOrgUserIds }
+          } : {})
+        } 
+      })
+    ])
 
-    const parentUsers = await prisma.userOrgMembership.count({
-      where: { role: 'PARENT' }
-    })
-
-    const newUsersThisMonth = await prisma.user.count({
-      where: {
-        createdAt: { gte: thisMonth },
-        isArchived: false
-      }
-    })
-
-    const inactiveUsers = await prisma.user.count({
-      where: {
-        isArchived: true
-      }
-    })
-
-    // Get all users with their details
-    const users = await prisma.user.findMany({
-      where: { isArchived: false },
-      include: {
-        memberships: {
-          include: {
-            org: { select: { name: true } }
+    // Get all users with their primary membership (optimized query)
+    // Exclude users who have ANY membership in demo org using NOT clause (same pattern as dashboard)
+    // Also exclude specific demo user emails that shouldn't be shown
+    const allUsersQuery = await prisma.user.findMany({
+      where: { 
+        isArchived: false,
+        isSuperAdmin: false, // Exclude owner accounts
+        email: { notIn: excludedEmails }, // excludedEmails defined above
+        ...(demoOrg ? {
+          NOT: {
+            UserOrgMembership: {
+              some: {
+                orgId: demoOrg.id
+              }
+            }
+          }
+        } : {})
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        isSuperAdmin: true,
+        createdAt: true,
+        updatedAt: true,
+        UserOrgMembership: {
+          select: {
+            role: true,
+            orgId: true,
+            Org: {
+              select: {
+                id: true,
+                name: true,
+                slug: true
+              }
+            }
           }
         }
       },
       orderBy: { createdAt: 'desc' }
     })
 
-    const allUsers = users.map(user => {
-      const membership = Array.isArray(user.memberships) && user.memberships.length > 0 ? user.memberships[0] : null
+    // No need to filter in JavaScript - already filtered by Prisma
+    const filteredUsers = allUsersQuery
+
+    const allUsers = filteredUsers.map(user => {
+      // Get first non-demo org membership, or first membership if no demo org
+      const memberships = user.UserOrgMembership || []
+      const membership = demoOrg
+        ? memberships.find(m => m.Org?.id !== demoOrg.id && m.Org?.slug !== demoOrg.slug) || memberships[0] || null
+        : memberships[0] || null
       const role = user.isSuperAdmin ? 'OWNER' : (membership?.role || null)
       return {
         id: user.id,
         name: user.name || 'Unknown',
         email: user.email || '',
         role: role,
-        orgName: membership?.org?.name || null,
+        orgName: membership?.Org?.name || null,
         lastActive: user.updatedAt ? user.updatedAt.toISOString() : new Date().toISOString(),
-        status: user.isArchived ? 'inactive' : 'active',
+        status: 'active',
         joinDate: user.createdAt ? user.createdAt.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
         phone: user.phone || null,
         location: null, // Could add location field later
@@ -82,9 +205,8 @@ async function handleGET(request: NextRequest) {
       }
     })
 
-    // Get role distribution
+    // Get role distribution (exclude OWNER from display since we're excluding owners from the page)
     const roleDistribution = [
-      { role: 'OWNER', count: await prisma.user.count({ where: { isSuperAdmin: true, isArchived: false } }), percentage: 0 },
       { role: 'ADMIN', count: adminUsers, percentage: 0 },
       { role: 'STAFF', count: staffUsers, percentage: 0 },
       { role: 'PARENT', count: parentUsers, percentage: 0 }
@@ -103,13 +225,13 @@ async function handleGET(request: NextRequest) {
         include: {
           _count: {
             select: {
-              memberships: true
+              UserOrgMembership: true
             }
           }
         },
         orderBy: {
           _count: {
-            memberships: 'desc'
+            UserOrgMembership: 'desc'
           }
         },
         take: 5
@@ -117,8 +239,8 @@ async function handleGET(request: NextRequest) {
 
       topOrgsByUsers = orgsWithUsers.map(org => ({
         orgName: org.name,
-        userCount: org._count.memberships,
-        activeUsers: org._count.memberships // Simplified for now
+        userCount: org._count.UserOrgMembership,
+        activeUsers: org._count.UserOrgMembership // Simplified for now
       }))
     } catch (error) {
       logger.error('Error fetching top orgs', error)

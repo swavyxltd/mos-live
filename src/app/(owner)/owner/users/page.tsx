@@ -32,10 +32,15 @@ import {
   X,
   RefreshCw
 } from 'lucide-react'
+import { Skeleton, StatCardSkeleton, CardSkeleton, TableSkeleton } from '@/components/loading/skeleton'
+import { ViewUserModal } from '@/components/view-user-modal'
+import { EditUserModal } from '@/components/edit-user-modal'
 
 export default function OwnerUsersPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  
+  // All hooks must be declared before any conditional returns
   const [searchTerm, setSearchTerm] = useState('')
   const [roleFilter, setRoleFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -61,18 +66,13 @@ export default function OwnerUsersPage() {
     parentEmail: false,
     parentPhone: false
   })
-  
-  if (status === 'loading') {
-    return <div>Loading...</div>
-  }
-  
-  if (!session?.user?.id) {
-    return <div>Please sign in to access this page.</div>
-  }
-
-  // User management data
   const [userData, setUserData] = useState<any>(null)
   const [dataLoading, setDataLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 20
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
   const fetchUsers = async () => {
     try {
@@ -93,22 +93,72 @@ export default function OwnerUsersPage() {
     }
   }
 
-  // Fetch user data
+  // Fetch user data - must be before conditional returns
   useEffect(() => {
     if (status === 'loading') return
+    if (!session?.user?.id) return
     fetchUsers()
-  }, [status])
+  }, [status, session])
+
+  // Reset to page 1 when filters change - must be before conditional returns
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, roleFilter, statusFilter, orgFilter, dateFilter])
+  
+  if (status === 'loading') {
+    return (
+      <div className="space-y-4 sm:space-y-6 w-full min-w-0">
+        <Skeleton className="h-8 w-64 mb-2" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <StatCardSkeleton key={i} />
+          ))}
+        </div>
+      </div>
+    )
+  }
+  
+  if (!session?.user?.id) {
+    return <div>Please sign in to access this page.</div>
+  }
 
   if (status === 'loading' || dataLoading || !userData) {
-    return <div>Loading...</div>
+    return (
+      <div className="space-y-4 sm:space-y-6 w-full min-w-0">
+        {/* Header Skeleton */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+          <div>
+            <Skeleton className="h-8 w-48 mb-2" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-9 w-24" />
+            <Skeleton className="h-9 w-32" />
+          </div>
+        </div>
+
+        {/* Stats Grid Skeleton */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <StatCardSkeleton key={i} />
+          ))}
+        </div>
+
+        {/* Filters Skeleton */}
+        <CardSkeleton className="h-48" />
+
+        {/* Table Skeleton */}
+        <TableSkeleton rows={8} />
+      </div>
+    )
   }
 
   // Filter users based on search and filters
   const filteredUsers = (userData.allUsers || []).filter(user => {
     const matchesSearch = !searchTerm || 
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.orgName.toLowerCase().includes(searchTerm.toLowerCase())
+      user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.orgName?.toLowerCase().includes(searchTerm.toLowerCase())
     
     const matchesRole = roleFilter === 'all' || user.role === roleFilter
     const matchesStatus = statusFilter === 'all' || user.status === statusFilter
@@ -144,7 +194,13 @@ export default function OwnerUsersPage() {
   })
 
   // Get unique organizations for filter
-  const uniqueOrgs = [...new Set((userData.allUsers || []).map(user => user.orgName))]
+  const uniqueOrgs = [...new Set((userData.allUsers || []).map(user => user.orgName).filter(Boolean))]
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedUsers = filteredUsers.slice(startIndex, endIndex)
 
   // Handler functions
   const handleRefresh = async () => {
@@ -461,14 +517,14 @@ export default function OwnerUsersPage() {
         </CardHeader>
         <CardContent>
           <div>
-            {filteredUsers.length > 0 ? (
-              filteredUsers.map((user, index) => (
+            {paginatedUsers.length > 0 ? (
+              paginatedUsers.map((user, index) => (
                 <div key={user.id}>
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 hover:bg-gray-50 transition-colors w-full min-w-0">
                   <div className="flex items-center space-x-3 min-w-0 flex-1">
                     <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center shrink-0">
                       <span className="text-sm font-medium text-gray-600">
-                        {user.name.split(' ').map(n => n[0]).join('')}
+                        {user.name ? user.name.split(' ').map(n => n[0]).join('') : 'U'}
                       </span>
                     </div>
                     <div className="min-w-0 flex-1">
@@ -478,23 +534,39 @@ export default function OwnerUsersPage() {
                     </div>
                   </div>
                   <div className="flex items-center flex-wrap gap-2 shrink-0 sm:flex-nowrap">
-                    <Badge variant={getRoleBadgeVariant(user.role)} className="flex items-center space-x-1 whitespace-nowrap">
-                      {getRoleIcon(user.role)}
-                      <span className="hidden sm:inline">{user.role}</span>
-                      <span className="sm:hidden">{user.role.substring(0, 3)}</span>
+                    <Badge variant={getRoleBadgeVariant(user.role || 'NONE')} className="flex items-center space-x-1 whitespace-nowrap">
+                      {getRoleIcon(user.role || 'NONE')}
+                      <span className="hidden sm:inline">{user.role || 'N/A'}</span>
+                      <span className="sm:hidden">{user.role ? user.role.substring(0, 3) : 'N/A'}</span>
                     </Badge>
                     {getStatusBadge(user.status)}
                     <div className="flex space-x-1">
-                      <Button variant="ghost" size="sm" className="shrink-0">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="shrink-0"
+                        onClick={() => {
+                          setSelectedUserId(user.id)
+                          setIsViewModalOpen(true)
+                        }}
+                      >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" className="shrink-0">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="shrink-0"
+                        onClick={() => {
+                          setSelectedUserId(user.id)
+                          setIsEditModalOpen(true)
+                        }}
+                      >
                         <Edit className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
                   </div>
-                  {index < filteredUsers.length - 1 && (
+                  {index < paginatedUsers.length - 1 && (
                     <div className="border-b border-gray-200" />
                   )}
                 </div>
@@ -507,6 +579,58 @@ export default function OwnerUsersPage() {
               </div>
             )}
           </div>
+          
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
+              <div className="text-sm text-gray-600">
+                Showing {startIndex + 1}-{Math.min(endIndex, filteredUsers.length)} of {filteredUsers.length} users
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum
+                    if (totalPages <= 5) {
+                      pageNum = i + 1
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i
+                    } else {
+                      pageNum = currentPage - 2 + i
+                    }
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className="min-w-[40px]"
+                      >
+                        {pageNum}
+                      </Button>
+                    )
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -783,6 +907,34 @@ export default function OwnerUsersPage() {
           </div>
         </div>
       </Modal>
+
+      {/* View User Modal */}
+      <ViewUserModal
+        isOpen={isViewModalOpen}
+        onClose={() => {
+          setIsViewModalOpen(false)
+          setSelectedUserId(null)
+        }}
+        onEdit={(userId) => {
+          setSelectedUserId(userId)
+          setIsViewModalOpen(false)
+          setIsEditModalOpen(true)
+        }}
+        userId={selectedUserId}
+      />
+
+      {/* Edit User Modal */}
+      <EditUserModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false)
+          setSelectedUserId(null)
+        }}
+        onSave={() => {
+          fetchUsers()
+        }}
+        userId={selectedUserId}
+      />
     </div>
   )
 }

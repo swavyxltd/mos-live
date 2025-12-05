@@ -3,12 +3,31 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { DunningTable } from '@/components/dunning-table'
 import { DunningStats } from '@/components/dunning-stats'
+import { Skeleton, StatCardSkeleton, CardSkeleton, TableSkeleton } from '@/components/loading/skeleton'
 
 export default async function OwnerDunningPage() {
   const session = await getServerSession(authOptions)
   
   if (!session?.user?.id) {
-    return <div>Loading...</div>
+    return (
+      <div className="space-y-6">
+        {/* Header Skeleton */}
+        <div>
+          <Skeleton className="h-8 w-64 mb-2" />
+          <Skeleton className="h-4 w-96" />
+        </div>
+
+        {/* Stats Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <StatCardSkeleton key={i} />
+          ))}
+        </div>
+
+        {/* Table Skeleton */}
+        <TableSkeleton rows={8} />
+      </div>
+    )
   }
 
   // Get organizations with overdue invoices (billing failures)
@@ -18,19 +37,24 @@ export default async function OwnerDunningPage() {
       dueDate: { lt: new Date() }
     },
     include: {
-      org: {
+      Org: {
         include: {
-          memberships: {
+          UserOrgMembership: {
             where: { role: 'ADMIN' },
             include: {
-              user: {
+              User: {
                 select: { name: true, email: true }
               }
             }
           },
+          PlatformOrgBilling: {
+            select: {
+              stripeCustomerId: true
+            }
+          },
           _count: {
             select: {
-              students: { where: { isArchived: false } }
+              Student: { where: { isArchived: false } }
             }
           }
         }
@@ -46,11 +70,11 @@ export default async function OwnerDunningPage() {
     const orgId = invoice.orgId
     if (!orgFailures.has(orgId)) {
       orgFailures.set(orgId, {
-        id: invoice.org.id,
-        name: invoice.org.name,
-        owner: invoice.org.memberships[0]?.user || null,
-        studentCount: invoice.org._count.students,
-        stripeCustomerId: invoice.org.platformBilling?.stripeCustomerId || null,
+        id: invoice.Org.id,
+        name: invoice.Org.name,
+        owner: invoice.Org.UserOrgMembership[0]?.User || null,
+        studentCount: invoice.Org._count.Student,
+        stripeCustomerId: invoice.Org.platformBilling?.stripeCustomerId || null,
         lastFailureDate: invoice.dueDate,
         failureReason: 'payment_overdue',
         retryCount: 0,

@@ -19,7 +19,8 @@ import {
   Info,
   Shield,
   Edit,
-  X
+  X,
+  Calendar
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useStaffPermissions } from '@/lib/staff-permissions'
@@ -29,6 +30,12 @@ interface PaymentMethodSettings {
   autoPaymentEnabled: boolean
   cashPaymentEnabled: boolean
   bankTransferEnabled: boolean
+  acceptsCard: boolean
+  acceptsCash: boolean
+  acceptsBankTransfer: boolean
+  billingDay: number
+  stripeConnectAccountId: string | null
+  hasStripeConnect: boolean
   paymentInstructions: string
   bankAccountName: string | null
   bankSortCode: string | null
@@ -47,12 +54,19 @@ export function PaymentMethodsTab() {
     autoPaymentEnabled: true,
     cashPaymentEnabled: true,
     bankTransferEnabled: true,
+    acceptsCard: false,
+    acceptsCash: true,
+    acceptsBankTransfer: true,
+    billingDay: 1,
+    stripeConnectAccountId: null,
+    hasStripeConnect: false,
     paymentInstructions: '',
     bankAccountName: null,
     bankSortCode: null,
     bankAccountNumber: null,
     hasStripeConfigured: false
   })
+  const [connectingStripe, setConnectingStripe] = useState(false)
   const [stripeKeys, setStripeKeys] = useState({
     publishableKey: '',
     secretKey: '',
@@ -118,6 +132,10 @@ export function PaymentMethodsTab() {
           stripePublishableKey: stripeKeys.publishableKey,
           stripeSecretKey: stripeKeys.secretKey,
           stripeWebhookSecret: stripeKeys.webhookSecret,
+          acceptsCard: settings.acceptsCard,
+          acceptsCash: settings.acceptsCash,
+          acceptsBankTransfer: settings.acceptsBankTransfer,
+          billingDay: settings.billingDay,
           bankAccountName: settings.bankAccountName,
           bankSortCode: settings.bankSortCode,
           bankAccountNumber: settings.bankAccountNumber
@@ -204,6 +222,38 @@ export function PaymentMethodsTab() {
     setStripeKeys(prev => ({ ...prev, [key]: value }))
   }
 
+  const handleConnectStripe = async () => {
+    if (!hasPermission('access_settings')) {
+      toast.error('You do not have permission to connect Stripe')
+      return
+    }
+
+    setConnectingStripe(true)
+    try {
+      const response = await fetch('/api/settings/stripe-connect', {
+        method: 'POST'
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.onboardingUrl) {
+          // Redirect to Stripe onboarding
+          window.location.href = data.onboardingUrl
+        } else {
+          toast.success('Stripe account connected')
+          await fetchPaymentSettings()
+        }
+      } else {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to connect Stripe account')
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to connect Stripe account')
+    } finally {
+      setConnectingStripe(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -226,25 +276,61 @@ export function PaymentMethodsTab() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Cash Payments */}
-          <div className="flex items-center justify-between p-4 border border-[var(--border)] rounded-lg">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-gray-100 rounded-full">
-                <Coins className="h-5 w-5 text-gray-500" strokeWidth={1.5} />
+          {/* Stripe Connect Setup */}
+          {!settings.hasStripeConnect && (
+            <div className="flex items-center justify-between p-4 border border-[var(--border)] rounded-lg">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-gray-100 rounded-full">
+                  <CreditCard className="h-5 w-5 text-gray-500" strokeWidth={1.5} />
+                </div>
+                <div>
+                  <h3 className="font-medium">Card Payments (Automatic)</h3>
+                  <p className="text-sm text-[var(--muted-foreground)]">
+                    Connect your Stripe account to enable automatic card payments
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-medium">Cash Payments</h3>
-                <p className="text-sm text-[var(--muted-foreground)]">
-                  Parents can pay in cash at the school office
-                </p>
-              </div>
+              <Button
+                onClick={handleConnectStripe}
+                disabled={connectingStripe || !hasPermission('access_settings')}
+                variant="default"
+              >
+                {connectingStripe ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Connecting...
+                  </>
+                ) : (
+                  'Connect Stripe Account'
+                )}
+              </Button>
             </div>
-            <Switch
-              checked={settings.cashPaymentEnabled}
-              onCheckedChange={(checked) => handleSettingChange('cashPaymentEnabled', checked)}
-              disabled={!hasPermission('access_settings')}
-            />
-          </div>
+          )}
+
+          {/* Automatic Card Payments */}
+          {settings.hasStripeConnect && (
+            <div className="flex items-center justify-between p-4 border border-[var(--border)] rounded-lg">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-gray-100 rounded-full">
+                  <CreditCard className="h-5 w-5 text-gray-500" strokeWidth={1.5} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-medium">Card Payments (Automatic)</h3>
+                    <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded">Connected</span>
+                  </div>
+                  <p className="text-sm text-[var(--muted-foreground)]">
+                    Parents can set up automatic payments via credit/debit cards
+                  </p>
+                </div>
+              </div>
+              <Switch
+                checked={settings.acceptsCard}
+                onCheckedChange={(checked) => handleSettingChange('acceptsCard', checked)}
+                disabled={!hasPermission('access_settings')}
+              />
+            </div>
+          )}
 
           {/* Bank Transfer */}
           <div className="flex items-center justify-between p-4 border border-[var(--border)] rounded-lg">
@@ -260,31 +346,35 @@ export function PaymentMethodsTab() {
               </div>
             </div>
             <Switch
-              checked={settings.bankTransferEnabled}
-              onCheckedChange={(checked) => handleSettingChange('bankTransferEnabled', checked)}
+              checked={settings.acceptsBankTransfer ?? settings.bankTransferEnabled}
+              onCheckedChange={(checked) => {
+                handleSettingChange('acceptsBankTransfer', checked)
+                handleSettingChange('bankTransferEnabled', checked)
+              }}
               disabled={!hasPermission('access_settings')}
             />
           </div>
 
-          {/* Automatic Card Payments */}
-          <div className="flex items-center justify-between p-4 border border-[var(--border)] rounded-lg opacity-50 pointer-events-none">
+          {/* Cash Payments */}
+          <div className="flex items-center justify-between p-4 border border-[var(--border)] rounded-lg">
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-gray-100 rounded-full">
-                <CreditCard className="h-5 w-5 text-gray-400" />
+                <Coins className="h-5 w-5 text-gray-500" strokeWidth={1.5} />
               </div>
               <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-medium text-gray-500">Automatic Card Payments</h3>
-                  <span className="text-sm bg-gray-200 text-gray-600 px-2 py-0.5 rounded">Coming soon</span>
-                </div>
-                <p className="text-sm text-gray-400">
-                  Parents can set up automatic payments via credit/debit cards
+                <h3 className="font-medium">Cash Payments</h3>
+                <p className="text-sm text-[var(--muted-foreground)]">
+                  Parents can pay in cash at the school office
                 </p>
               </div>
             </div>
             <Switch
-              checked={false}
-              disabled={true}
+              checked={settings.acceptsCash ?? settings.cashPaymentEnabled}
+              onCheckedChange={(checked) => {
+                handleSettingChange('acceptsCash', checked)
+                handleSettingChange('cashPaymentEnabled', checked)
+              }}
+              disabled={!hasPermission('access_settings')}
             />
           </div>
         </CardContent>
@@ -400,6 +490,33 @@ export function PaymentMethodsTab() {
           </CardContent>
         </Card>
       )}
+
+      {/* Billing Day */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Calendar className="h-5 w-5" />
+            <span>Billing Day</span>
+          </CardTitle>
+          <CardDescription>
+            The day of the month when automatic card payments will be charged (1-28)
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="max-w-xs">
+            <Label htmlFor="billingDay">Billing Day</Label>
+            <Input
+              id="billingDay"
+              type="number"
+              min="1"
+              max="28"
+              value={settings.billingDay}
+              onChange={(e) => handleSettingChange('billingDay', parseInt(e.target.value) || 1)}
+              disabled={!hasPermission('access_settings')}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Payment Instructions */}
       <Card>

@@ -63,15 +63,26 @@ async function handleGET(request: NextRequest) {
 
     const leads = await prisma.lead.findMany({
       where,
-      include: {
-        AssignedTo: {
+      select: {
+        id: true,
+        orgName: true,
+        city: true,
+        country: true,
+        estimatedStudents: true,
+        contactName: true,
+        contactEmail: true,
+        contactPhone: true,
+        status: true,
+        lastContactAt: true,
+        nextContactAt: true,
+        User: {
           select: {
             id: true,
             name: true,
             email: true,
           },
         },
-        ConvertedOrg: {
+        Org: {
           select: {
             id: true,
             name: true,
@@ -80,14 +91,24 @@ async function handleGET(request: NextRequest) {
         },
         _count: {
           select: {
-            Activities: true,
+            LeadActivity: true,
           },
         },
       },
       orderBy,
     })
 
-    return NextResponse.json({ leads })
+    // Map User to AssignedTo and Org to ConvertedOrg for frontend compatibility
+    const mappedLeads = leads.map(lead => ({
+      ...lead,
+      AssignedTo: lead.User,
+      ConvertedOrg: lead.Org,
+      _count: {
+        Activities: lead._count.LeadActivity,
+      },
+    }))
+
+    return NextResponse.json({ leads: mappedLeads })
   } catch (error: any) {
     console.error('Error fetching leads:', error)
     console.error('Error stack:', error.stack)
@@ -164,8 +185,28 @@ async function handlePOST(request: NextRequest) {
         notes,
         assignedToUserId,
       },
-      include: {
-        AssignedTo: {
+      select: {
+        id: true,
+        orgName: true,
+        city: true,
+        country: true,
+        estimatedStudents: true,
+        contactName: true,
+        contactEmail: true,
+        contactPhone: true,
+        status: true,
+        source: true,
+        lastContactAt: true,
+        nextContactAt: true,
+        notes: true,
+        assignedToUserId: true,
+        convertedOrgId: true,
+        createdAt: true,
+        updatedAt: true,
+        emailOutreachCompleted: true,
+        lastEmailSentAt: true,
+        lastEmailStage: true,
+        User: {
           select: {
             id: true,
             name: true,
@@ -187,7 +228,13 @@ async function handlePOST(request: NextRequest) {
       })
     }
 
-    return NextResponse.json({ lead }, { status: 201 })
+    // Map User to AssignedTo for frontend compatibility
+    const mappedLead = {
+      ...lead,
+      AssignedTo: lead.User,
+    }
+
+    return NextResponse.json({ lead: mappedLead }, { status: 201 })
   } catch (error: any) {
     console.error('Error creating lead:', error)
     return NextResponse.json(

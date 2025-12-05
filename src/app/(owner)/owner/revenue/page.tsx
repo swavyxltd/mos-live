@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Modal } from '@/components/ui/modal'
 import { ToastContainer } from '@/components/ui/toast'
+import { Skeleton, StatCardSkeleton, CardSkeleton, TableSkeleton } from '@/components/loading/skeleton'
 import { 
   DollarSign, 
   TrendingUp,
@@ -83,11 +84,37 @@ export default function OwnerRevenuePage() {
 
   if (loading || !revenueData) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p>Loading revenue data...</p>
+      <div className="space-y-4 sm:space-y-6">
+        {/* Header Skeleton */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+          <div className="min-w-0 flex-1">
+            <Skeleton className="h-8 w-64 mb-2" />
+            <Skeleton className="h-4 w-96" />
+          </div>
+          <div className="flex flex-wrap gap-2 shrink-0">
+            <Skeleton className="h-9 w-24" />
+            <Skeleton className="h-9 w-24" />
+          </div>
         </div>
+
+        {/* Key Revenue Metrics Skeleton */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <StatCardSkeleton key={i} />
+          ))}
+        </div>
+
+        {/* Revenue Breakdown and Payment Status Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <CardSkeleton className="h-64" />
+          <CardSkeleton className="h-64" />
+        </div>
+
+        {/* Failed Payments Skeleton */}
+        <CardSkeleton className="h-96" />
+
+        {/* Top Revenue Generators Skeleton */}
+        <CardSkeleton className="h-64" />
       </div>
     )
   }
@@ -218,7 +245,13 @@ export default function OwnerRevenuePage() {
           <CardContent>
             <div className="text-2xl font-bold">£{revenueData?.current?.mrr?.toLocaleString() || '0'}</div>
             <p className="text-sm text-muted-foreground">
-              <span className="text-green-600">+8.4%</span> from last month
+              {revenueData?.current?.mrrGrowth !== undefined ? (
+                <span className={revenueData.current.mrrGrowth >= 0 ? 'text-green-600' : 'text-red-600'}>
+                  {revenueData.current.mrrGrowth >= 0 ? '+' : ''}{revenueData.current.mrrGrowth.toFixed(1)}%
+                </span>
+              ) : (
+                <span>—</span>
+              )} from last month
             </p>
           </CardContent>
         </Card>

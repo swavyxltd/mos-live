@@ -15,6 +15,7 @@ import {
   Target,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { Skeleton, CardSkeleton } from '@/components/loading/skeleton'
 
 export default function NewLeadPage() {
   const { data: session, status } = useSession()
@@ -79,7 +80,19 @@ export default function NewLeadPage() {
   }
 
   if (status === 'loading') {
-    return <div>Loading...</div>
+    return (
+      <div className="space-y-4 sm:space-y-6 w-full min-w-0">
+        {/* Header Skeleton */}
+        <div className="flex flex-col gap-4 md:flex-row md:items-center w-full min-w-0">
+          <Skeleton className="h-9 w-20" />
+          <Skeleton className="h-8 w-64" />
+        </div>
+
+        {/* Form Skeleton */}
+        <CardSkeleton className="h-96" />
+        <CardSkeleton className="h-64" />
+      </div>
+    )
   }
 
   return (

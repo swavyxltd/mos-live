@@ -27,12 +27,22 @@ import {
   TrendingUp,
   Users
 } from 'lucide-react'
+import { Skeleton, StatCardSkeleton, CardSkeleton } from '@/components/loading/skeleton'
 
 export default async function OwnerSupportPage() {
   const session = await getServerSession(authOptions)
   
   if (!session?.user?.id) {
-    return <div>Loading...</div>
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-64 mb-2" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <StatCardSkeleton key={i} />
+          ))}
+        </div>
+      </div>
+    )
   }
 
   // Fetch support tickets from API
@@ -99,6 +109,47 @@ export default async function OwnerSupportPage() {
       }
     }
   } catch (error) {
+  }
+
+  // Show skeleton if no data
+  if (!supportData || supportData.stats.totalTickets === 0 && supportData.recentTickets.length === 0) {
+    return (
+      <div className="space-y-6">
+        {/* Header Skeleton */}
+        <div className="flex justify-between items-center">
+          <div>
+            <Skeleton className="h-8 w-64 mb-2" />
+            <Skeleton className="h-4 w-96" />
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-9 w-24" />
+            <Skeleton className="h-9 w-32" />
+          </div>
+        </div>
+
+        {/* Support Statistics Skeleton */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <StatCardSkeleton key={i} />
+          ))}
+        </div>
+
+        {/* Search and Filters Skeleton */}
+        <CardSkeleton className="h-32" />
+
+        {/* Recent Tickets Skeleton */}
+        <CardSkeleton className="h-96" />
+
+        {/* Team Performance and Common Issues Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <CardSkeleton className="h-64" />
+          <CardSkeleton className="h-64" />
+        </div>
+
+        {/* Customer Satisfaction Trends Skeleton */}
+        <CardSkeleton className="h-80" />
+      </div>
+    )
   }
 
   const getStatusBadge = (status: string) => {
@@ -176,7 +227,8 @@ export default async function OwnerSupportPage() {
           <CardContent>
             <div className="text-2xl font-bold">{supportData.stats.totalTickets}</div>
             <p className="text-sm text-muted-foreground">
-              <span className="text-green-600">+5</span> this week
+              {/* TODO: Calculate tickets created this week for growth indicator */}
+              All tickets
             </p>
           </CardContent>
         </Card>
@@ -213,9 +265,14 @@ export default async function OwnerSupportPage() {
             <TrendingUp className="h-4 w-4 text-green-600 flex-shrink-0" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{supportData.stats.customerSatisfaction}/5</div>
+            <div className="text-2xl font-bold">
+              {supportData.stats.customerSatisfaction > 0 ? `${supportData.stats.customerSatisfaction}/5` : '—'}
+            </div>
             <p className="text-sm text-muted-foreground">
-              Average rating
+              {/* TODO: Implement customer satisfaction tracking:
+                  - Add rating field to SupportTicketResponse model
+                  - Calculate average rating from ticket responses */}
+              {supportData.stats.customerSatisfaction > 0 ? 'Average rating' : 'Not available'}
             </p>
           </CardContent>
         </Card>

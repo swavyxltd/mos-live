@@ -78,15 +78,20 @@ async function handleGET(request: NextRequest) {
           },
           status: { notIn: ['WON', 'LOST'] },
         },
-        include: {
-          AssignedTo: {
+        select: {
+          id: true,
+          orgName: true,
+          status: true,
+          nextContactAt: true,
+          assignedToUserId: true,
+          User: {
             select: {
               id: true,
               name: true,
               email: true,
             },
           },
-          Activities: {
+          LeadActivity: {
             where: {
               type: 'CALL',
             },
@@ -111,9 +116,7 @@ async function handleGET(request: NextRequest) {
           nextContactAt: {
             lte: now,
           },
-          emailOutreachCompleted: {
-            not: true, // This handles both false and null
-          },
+          emailOutreachCompleted: false, // Since it has @default(false), this should work
           status: { 
             notIn: ['WON', 'LOST'] 
           },
@@ -146,13 +149,15 @@ async function handleGET(request: NextRequest) {
           description: true,
           outcome: true,
           createdAt: true,
+          leadId: true,
+          createdByUserId: true,
           Lead: {
             select: {
               id: true,
               orgName: true,
             },
           },
-          CreatedBy: {
+          User: {
             select: {
               id: true,
               name: true,
@@ -201,10 +206,14 @@ async function handleGET(request: NextRequest) {
         id: lead.id,
         orgName: lead.orgName,
         status: lead.status,
-        nextContactAt: lead.nextContactAt?.toISOString(),
-        AssignedTo: lead.AssignedTo,
-        lastCallOutcome: lead.Activities[0]?.outcome || null,
-        hasCallActivity: lead.Activities.length > 0,
+        nextContactAt: lead.nextContactAt?.toISOString() || null,
+        AssignedTo: lead.User ? {
+          id: lead.User.id,
+          name: lead.User.name,
+          email: lead.User.email,
+        } : null,
+        lastCallOutcome: lead.LeadActivity?.[0]?.outcome || null,
+        hasCallActivity: (lead.LeadActivity?.length || 0) > 0,
       })),
       emailTasks: emailTasks.map(lead => ({
         id: lead.id,
@@ -212,22 +221,45 @@ async function handleGET(request: NextRequest) {
         contactName: lead.contactName,
         contactEmail: lead.contactEmail,
         lastEmailStage: lead.lastEmailStage,
-        nextContactAt: lead.nextContactAt?.toISOString(),
-        lastEmailSentAt: lead.lastEmailSentAt?.toISOString(),
+        nextContactAt: lead.nextContactAt?.toISOString() || null,
+        lastEmailSentAt: lead.lastEmailSentAt?.toISOString() || null,
       })),
-      recentActivities,
+      recentActivities: recentActivities.map(activity => ({
+        id: activity.id,
+        type: activity.type,
+        description: activity.description,
+        outcome: activity.outcome,
+        createdAt: activity.createdAt.toISOString(),
+        Lead: activity.Lead,
+        CreatedBy: activity.User ? {
+          id: activity.User.id,
+          name: activity.User.name,
+          email: activity.User.email,
+        } : null,
+      })),
     })
   } catch (error: any) {
     console.error('Error fetching lead stats:', error)
     console.error('Error stack:', error.stack)
     console.error('Error name:', error.name)
+    
+    // Check for Prisma-specific errors
+    if (error.code) {
+      console.error('Prisma error code:', error.code)
+    }
+    if (error.meta) {
+      console.error('Prisma error meta:', error.meta)
+    }
+    
     return NextResponse.json(
       { 
         error: 'Failed to fetch lead stats',
-        message: error.message,
+        message: error.message || 'An unknown error occurred',
         details: process.env.NODE_ENV === 'development' ? {
           message: error.message,
           name: error.name,
+          code: error.code,
+          meta: error.meta,
           stack: error.stack,
         } : undefined
       },

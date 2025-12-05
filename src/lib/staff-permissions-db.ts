@@ -19,9 +19,9 @@ export async function getStaffPermissionsFromDb(
       },
     },
     include: {
-      Permissions: {
+      StaffPermissionAssignment: {
         include: {
-          Permission: true,
+          StaffPermission: true,
         },
       },
     },
@@ -37,8 +37,8 @@ export async function getStaffPermissionsFromDb(
   }
 
   // If permissions exist in database, use those (base + additional)
-  if (membership.Permissions && membership.Permissions.length > 0) {
-    return membership.Permissions.map((assignment) => assignment.Permission.key as StaffPermissionKey)
+  if (membership.StaffPermissionAssignment && membership.StaffPermissionAssignment.length > 0) {
+    return membership.StaffPermissionAssignment.map((assignment) => assignment.StaffPermission.key as StaffPermissionKey)
   }
 
   // Otherwise, fall back to preset based on staffSubrole
