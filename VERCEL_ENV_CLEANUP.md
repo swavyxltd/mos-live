@@ -41,16 +41,18 @@
 Only keep if you're using WhatsApp features:
 - `META_APP_ID`
 - `META_APP_SECRET`
-- `META_GRAPH_VERSION` (defaults to `v18.0`)
-- `META_GRAPH_BASE` (defaults to `https://graph.facebook.com`)
+- `META_GRAPH_VERSION` (defaults to `v18.0` if not set)
+- `META_GRAPH_BASE` (defaults to `https://graph.facebook.com` if not set)
 - `WHATSAPP_EMBEDDED_REDIRECT_URL`
 - `WHATSAPP_VERIFY_TOKEN`
-- `WHATSAPP_DEV_ACCESS_TOKEN` (development only)
-- `WHATSAPP_DEV_PHONE_NUMBER_ID` (development only)
-- `WHATSAPP_DEV_WABA_ID` (development only)
+- `WHATSAPP_DEV_ACCESS_TOKEN` (development only - remove from production)
+- `WHATSAPP_DEV_PHONE_NUMBER_ID` (development only - remove from production)
+- `WHATSAPP_DEV_WABA_ID` (development only - remove from production)
 
-### Development Only (Remove from Production)
+### Development/Demo Only (Remove from Production)
 - `FORCE_EMAIL_SEND` - Development only
+- `ENABLE_DEMO_MODE` - Demo/testing only
+- `SETUP_SECRET` - Setup/onboarding only (if not needed after initial setup)
 - Any variables starting with `WHATSAPP_DEV_`
 
 ### Legacy/Unused (Can Remove)
