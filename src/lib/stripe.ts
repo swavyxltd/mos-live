@@ -411,36 +411,68 @@ export async function attemptOffSessionPayment(orgId: string, parentUserId: stri
 // Stripe Connect onboarding
 export async function createConnectAccountLink(accountId: string, returnUrl: string, refreshUrl: string) {
   if (!stripe) {
-    throw new Error('Stripe is not initialized')
+    throw new Error('Stripe is not initialized. Please check STRIPE_SECRET_KEY environment variable.')
   }
   
-  return stripe.accountLinks.create({
-    account: accountId,
-    refresh_url: refreshUrl,
-    return_url: returnUrl,
-    type: 'account_onboarding'
-  })
+  try {
+    return await stripe.accountLinks.create({
+      account: accountId,
+      refresh_url: refreshUrl,
+      return_url: returnUrl,
+      type: 'account_onboarding'
+    })
+  } catch (error: any) {
+    // Provide more specific error messages
+    if (error.type === 'StripeConnectionError' || error.type === 'StripeAPIError') {
+      throw new Error(`Stripe connection error: ${error.message}. Please check your internet connection and Stripe service status.`)
+    } else if (error.type === 'StripeAuthenticationError') {
+      throw new Error('Stripe authentication failed. Please check your STRIPE_SECRET_KEY environment variable.')
+    } else if (error.type === 'StripeInvalidRequestError') {
+      throw new Error(`Invalid Stripe request: ${error.message}`)
+    }
+    
+    throw new Error(`Stripe API error: ${error.message || 'Failed to create account link'}`)
+  }
 }
 
 export async function createConnectAccount(orgId: string, email: string) {
   if (!stripe) {
-    throw new Error('Stripe is not initialized')
+    throw new Error('Stripe is not initialized. Please check STRIPE_SECRET_KEY environment variable.')
+  }
+
+  // Validate API key format
+  const apiKey = process.env.STRIPE_SECRET_KEY
+  if (!apiKey || (!apiKey.startsWith('sk_live_') && !apiKey.startsWith('sk_test_'))) {
+    throw new Error('Invalid Stripe API key format. Key must start with sk_live_ or sk_test_')
   }
   
-  const account = await stripe.accounts.create({
-    type: 'express',
-    country: 'GB',
-    email,
-    capabilities: {
-      card_payments: { requested: true },
-      transfers: { requested: true }
-    },
-    metadata: {
-      orgId
+  try {
+    const account = await stripe.accounts.create({
+      type: 'express',
+      country: 'GB',
+      email,
+      capabilities: {
+        card_payments: { requested: true },
+        transfers: { requested: true }
+      },
+      metadata: {
+        orgId
+      }
+    })
+    
+    return account
+  } catch (error: any) {
+    // Provide more specific error messages
+    if (error.type === 'StripeConnectionError' || error.type === 'StripeAPIError') {
+      throw new Error(`Stripe connection error: ${error.message}. Please check your internet connection and Stripe service status.`)
+    } else if (error.type === 'StripeAuthenticationError') {
+      throw new Error('Stripe authentication failed. Please check your STRIPE_SECRET_KEY environment variable.')
+    } else if (error.type === 'StripeInvalidRequestError') {
+      throw new Error(`Invalid Stripe request: ${error.message}`)
     }
-  })
-  
-  return account
+    
+    throw new Error(`Stripe API error: ${error.message || 'Failed to create Connect account'}`)
+  }
 }
 
 // Report usage to Stripe for metered billing
