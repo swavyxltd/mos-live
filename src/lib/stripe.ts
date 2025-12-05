@@ -468,6 +468,10 @@ export async function createConnectAccount(orgId: string, email: string) {
     } else if (error.type === 'StripeAuthenticationError') {
       throw new Error('Stripe authentication failed. Please check your STRIPE_SECRET_KEY environment variable.')
     } else if (error.type === 'StripeInvalidRequestError') {
+      // Check for specific Connect-related errors
+      if (error.message?.includes('Connect') || error.message?.includes('connect') || error.code === 'account_invalid') {
+        throw new Error(`Stripe Connect is not enabled for your account. Please enable Connect in your Stripe Dashboard: https://dashboard.stripe.com/settings/connect`)
+      }
       throw new Error(`Invalid Stripe request: ${error.message}`)
     }
     

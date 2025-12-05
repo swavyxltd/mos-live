@@ -245,10 +245,28 @@ export function PaymentMethodsTab() {
         }
       } else {
         const error = await response.json()
-        throw new Error(error.error || 'Failed to connect Stripe account')
+        const errorMessage = error.error || 'Failed to connect Stripe account'
+        
+        // If it's a Connect not enabled error, show helpful message
+        if (errorMessage.includes('Connect is not enabled')) {
+          toast.error(errorMessage, {
+            duration: 10000,
+            action: {
+              label: 'Open Dashboard',
+              onClick: () => window.open('https://dashboard.stripe.com/settings/connect', '_blank')
+            }
+          })
+        } else {
+          toast.error(errorMessage)
+        }
+        
+        throw new Error(errorMessage)
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to connect Stripe account')
+      // Error already handled above
+      if (!(error instanceof Error && error.message.includes('Connect is not enabled'))) {
+        toast.error(error instanceof Error ? error.message : 'Failed to connect Stripe account')
+      }
     } finally {
       setConnectingStripe(false)
     }
