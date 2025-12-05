@@ -477,7 +477,8 @@ export async function createConnectAccount(orgId: string, email: string) {
         const dashboardUrl = isTestMode 
           ? 'https://dashboard.stripe.com/test/settings/connect'
           : 'https://dashboard.stripe.com/settings/connect'
-        throw new Error(`Stripe Connect is not enabled for your account in ${modeText}. Please enable Connect in your Stripe Dashboard: ${dashboardUrl}. Make sure you're enabling it in the same mode (Test/Live) as your API key.`)
+        const helpUrl = 'https://stripe.com/docs/connect/quickstart'
+        throw new Error(`Stripe Connect is not enabled for your account in ${modeText}. Please go to Settings → Connect in your Stripe Dashboard (${dashboardUrl}) and complete the Connect setup. If you've already enabled it, try refreshing the page or wait a few minutes for changes to propagate. Learn more: ${helpUrl}`)
       }
       throw new Error(`Invalid Stripe request: ${error.message}`)
     }
