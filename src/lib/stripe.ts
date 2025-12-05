@@ -451,6 +451,20 @@ export async function createConnectAccount(orgId: string, email: string) {
   const modeText = isTestMode ? 'Test Mode' : 'Live Mode'
   
   try {
+    // First, verify we can access the platform account (this confirms Connect is enabled)
+    try {
+      await stripe.accounts.retrieve()
+    } catch (verifyError: any) {
+      // If we can't retrieve the account, Connect might not be enabled
+      if (verifyError.code === 'account_invalid' || verifyError.message?.includes('Connect')) {
+        const dashboardUrl = isTestMode 
+          ? 'https://dashboard.stripe.com/test/settings/connect'
+          : 'https://dashboard.stripe.com/settings/connect'
+        throw new Error(`Stripe Connect is not fully enabled. Please go to ${dashboardUrl} and complete the Connect platform setup. You may need to accept terms, complete business verification, or finish the onboarding process.`)
+      }
+    }
+
+    // Create Express account for the organization
     const account = await stripe.accounts.create({
       type: 'express',
       country: 'GB',
