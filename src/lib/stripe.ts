@@ -445,6 +445,10 @@ export async function createConnectAccount(orgId: string, email: string) {
   if (!apiKey || (!apiKey.startsWith('sk_live_') && !apiKey.startsWith('sk_test_'))) {
     throw new Error('Invalid Stripe API key format. Key must start with sk_live_ or sk_test_')
   }
+
+  // Check if using test or live mode
+  const isTestMode = apiKey.startsWith('sk_test_')
+  const modeText = isTestMode ? 'Test Mode' : 'Live Mode'
   
   try {
     const account = await stripe.accounts.create({
@@ -470,7 +474,10 @@ export async function createConnectAccount(orgId: string, email: string) {
     } else if (error.type === 'StripeInvalidRequestError') {
       // Check for specific Connect-related errors
       if (error.message?.includes('Connect') || error.message?.includes('connect') || error.code === 'account_invalid') {
-        throw new Error(`Stripe Connect is not enabled for your account. Please enable Connect in your Stripe Dashboard: https://dashboard.stripe.com/settings/connect`)
+        const dashboardUrl = isTestMode 
+          ? 'https://dashboard.stripe.com/test/settings/connect'
+          : 'https://dashboard.stripe.com/settings/connect'
+        throw new Error(`Stripe Connect is not enabled for your account in ${modeText}. Please enable Connect in your Stripe Dashboard: ${dashboardUrl}. Make sure you're enabling it in the same mode (Test/Live) as your API key.`)
       }
       throw new Error(`Invalid Stripe request: ${error.message}`)
     }
