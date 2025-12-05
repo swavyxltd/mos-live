@@ -125,6 +125,12 @@ async function handlePOST(request: NextRequest) {
       errorDetails.code = error?.code
       errorDetails.statusCode = error?.statusCode
       errorDetails.rawError = error?.raw?.message || error?.raw
+      errorDetails.apiKeyPrefix = process.env.STRIPE_SECRET_KEY?.substring(0, 7) // Show sk_live or sk_test
+    }
+    
+    // If it's a Connect error, provide specific guidance
+    if (error?.message?.includes('Connect') || error?.code === 'account_invalid') {
+      errorDetails.suggestion = 'Since you can create accounts manually in Stripe Dashboard, Connect is enabled. The API error suggests your platform account may have restrictions. Contact Stripe Support for assistance.'
     }
     
     return NextResponse.json(errorDetails, { status: 500 })

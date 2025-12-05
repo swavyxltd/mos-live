@@ -451,6 +451,20 @@ export async function createConnectAccount(orgId: string, email: string) {
   const modeText = isTestMode ? 'Test Mode' : 'Live Mode'
   
   try {
+    // First, verify the platform account can create Connect accounts
+    // by checking if we can list accounts (this confirms Connect is fully enabled)
+    try {
+      await stripe.accounts.list({ limit: 1 })
+    } catch (listError: any) {
+      // If listing fails, Connect might not be fully enabled
+      if (listError.code === 'account_invalid' || listError.message?.includes('Connect')) {
+        const dashboardUrl = isTestMode 
+          ? 'https://dashboard.stripe.com/test/settings/connect'
+          : 'https://dashboard.stripe.com/settings/connect'
+        throw new Error(`Stripe Connect API access is restricted. Please check:\n1. Your platform account has no restrictions\n2. API key has full permissions\n3. Contact Stripe Support: https://support.stripe.com/\n\nDashboard: ${dashboardUrl}`)
+      }
+    }
+
     // Try to create the Express account directly
     // The error message from Stripe will tell us exactly what's wrong
     const account = await stripe.accounts.create({
