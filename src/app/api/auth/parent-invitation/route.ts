@@ -121,7 +121,7 @@ async function handleGET(request: NextRequest) {
       paymentMethods: {
         cash: invitation.org.acceptsCash ?? invitation.org.cashPaymentEnabled ?? true,
         bankTransfer: invitation.org.acceptsBankTransfer ?? invitation.org.bankTransferEnabled ?? true,
-        card: invitation.org.acceptsCard ?? false && !!invitation.org.stripeConnectAccountId,
+        card: (invitation.org.acceptsCard ?? false) && !!invitation.org.stripeConnectAccountId,
         stripe: invitation.org.stripeEnabled
       },
       bankDetails: {
