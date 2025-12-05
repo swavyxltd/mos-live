@@ -7,7 +7,7 @@ import { prisma } from '@/lib/prisma'
 import { requireRole } from '@/lib/roles'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
-import { createConnectAccount, createConnectAccountLink } from '@/lib/stripe'
+import { createConnectAccount, createConnectAccountLink, stripe } from '@/lib/stripe'
 
 async function handlePOST(request: NextRequest) {
   try {
