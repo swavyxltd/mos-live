@@ -1,7 +1,8 @@
 # Vercel Environment Variables Cleanup - Summary
 
-## ✅ Successfully Removed (6 variables)
+## ✅ Successfully Removed (All Environments)
 
+### Production Environment:
 1. **STRIPE_PRODUCT_ID** - Not used in code (only STRIPE_PRICE_ID is used)
 2. **DATABASE_URL** - Duplicate (using POSTGRES_PRISMA_URL instead)
 3. **GOOGLE_CLIENT_ID** - Not used in codebase
@@ -10,6 +11,21 @@
 6. **SUPABASE_URL** - Not used in codebase
 7. **SUPABASE_ANON_KEY** - Not used in codebase
 8. **SUPABASE_SERVICE_ROLE_KEY** - Not used in codebase
+
+### Preview Environment:
+- **OWNER_EMAILS** - Removed
+- **GOOGLE_CLIENT_ID** - Removed
+- **GOOGLE_CLIENT_SECRET** - Removed
+- **DATABASE_URL** - Removed
+
+### Development Environment:
+- **OWNER_EMAILS** - Removed
+- **GOOGLE_CLIENT_ID** - Removed
+- **GOOGLE_CLIENT_SECRET** - Removed
+- **DATABASE_URL** - Removed
+- **SUPABASE_URL** - Removed ✅
+- **SUPABASE_ANON_KEY** - Removed ✅
+- **SUPABASE_SERVICE_ROLE_KEY** - Removed ✅
 
 ## ✅ Required Variables (All Present)
 
