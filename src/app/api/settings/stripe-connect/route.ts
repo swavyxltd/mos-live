@@ -28,6 +28,46 @@ async function handlePOST(request: NextRequest) {
       })
     }
 
+    const body = await request.json().catch(() => ({}))
+    const { accountId } = body
+
+    // If accountId is provided, link existing account instead of creating new one
+    if (accountId && accountId.startsWith('acct_')) {
+      // Verify the account exists and is accessible
+      try {
+        const account = await stripe.accounts.retrieve(accountId)
+        
+        // Update org with existing Connect account ID
+        await prisma.org.update({
+          where: { id: org.id },
+          data: {
+            stripeConnectAccountId: accountId
+          }
+        })
+
+        // Create account link for onboarding if needed
+        const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+        const accountLink = await createConnectAccountLink(
+          accountId,
+          `${baseUrl}/settings?stripe_connected=true`,
+          `${baseUrl}/settings?stripe_connected=true`
+        )
+
+        return NextResponse.json({
+          success: true,
+          accountId: accountId,
+          onboardingUrl: accountLink.url,
+          message: 'Existing Stripe account linked successfully'
+        })
+      } catch (error: any) {
+        logger.error('Error linking existing Stripe account', error)
+        return NextResponse.json(
+          { error: `Failed to link account: ${error.message}` },
+          { status: 400 }
+        )
+      }
+    }
+
     // Get org email for Connect account
     const orgEmail = org.email || org.publicEmail
     if (!orgEmail) {
