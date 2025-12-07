@@ -54,16 +54,12 @@ function SignUpForm() {
           errorData = data || {}
           const errorMessage = errorData.error || errorData.message || `HTTP ${res.status} ${res.statusText}`
           
-          // Log detailed error information
-          console.error('[Signup] API error:', {
-            status: res.status,
-            statusText: res.statusText,
-            errorData: JSON.stringify(errorData, null, 2),
-            responseText: responseText.substring(0, 1000),
-            tokenPrefix: token.substring(0, 8),
-            tokenLength: token.length,
-            errorMessage: errorMessage
-          })
+          // Log detailed error information - use multiple console statements to ensure visibility
+          console.error('[Signup] API error - Status:', res.status, res.statusText)
+          console.error('[Signup] API error - Response text:', responseText.substring(0, 1000))
+          console.error('[Signup] API error - Parsed data:', JSON.stringify(errorData, null, 2))
+          console.error('[Signup] API error - Token prefix:', token.substring(0, 8))
+          console.error('[Signup] API error - Error message:', errorMessage)
           
           throw new Error(errorMessage)
         }
@@ -82,14 +78,12 @@ function SignUpForm() {
         }
       })
       .catch(err => {
-        console.error('[Signup] Error fetching invitation:', {
-          errorType: typeof err,
-          errorMessage: err?.message,
-          errorName: err?.name,
-          errorStack: err?.stack,
-          errorString: String(err),
-          errorJSON: JSON.stringify(err, Object.getOwnPropertyNames(err))
-        })
+        // Log error details in separate statements for better visibility
+        console.error('[Signup] Error fetching invitation - Type:', typeof err)
+        console.error('[Signup] Error fetching invitation - Message:', err?.message)
+        console.error('[Signup] Error fetching invitation - Name:', err?.name)
+        console.error('[Signup] Error fetching invitation - Stack:', err?.stack)
+        console.error('[Signup] Error fetching invitation - Full error:', JSON.stringify(err, Object.getOwnPropertyNames(err), 2))
         setError(err.message || 'Failed to fetch invitation')
       })
       .finally(() => {
