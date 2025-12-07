@@ -46,92 +46,119 @@ async function handleGET(request: NextRequest) {
 
 
     // Get admin user for each org and calculate stats
+    // Wrap each org processing in try-catch so one failing org doesn't break the entire list
     const orgsWithStats = await Promise.all(
       orgs.map(async (org) => {
-        // Get admin user
-        const adminMembership = await prisma.userOrgMembership.findFirst({
-          where: {
-            orgId: org.id,
-            role: 'ADMIN'
-          },
-          include: {
-            user: {
-              select: {
-                name: true,
-                email: true
+        try {
+          // Get admin user
+          const adminMembership = await prisma.userOrgMembership.findFirst({
+            where: {
+              orgId: org.id,
+              role: 'ADMIN'
+            },
+            include: {
+              user: {
+                select: {
+                  name: true,
+                  email: true
+                }
               }
             }
+          })
+
+          // Get total revenue from paid invoices
+          const invoices = await prisma.invoice.findMany({
+            where: {
+              orgId: org.id,
+              status: 'PAID'
+            },
+            select: { amountP: true }
+          })
+          const totalRevenue = invoices.reduce((sum, inv) => sum + Number(inv.amountP || 0) / 100, 0)
+
+          // Get last activity (most recent invoice or student update)
+          const lastInvoice = await prisma.invoice.findFirst({
+            where: { orgId: org.id },
+            orderBy: { updatedAt: 'desc' },
+            select: { updatedAt: true }
+          })
+
+          const lastStudent = await prisma.student.findFirst({
+            where: { orgId: org.id },
+            orderBy: { updatedAt: 'desc' },
+            select: { updatedAt: true }
+          })
+
+          const lastActivity = lastInvoice && lastStudent
+            ? lastInvoice.updatedAt > lastStudent.updatedAt ? lastInvoice.updatedAt : lastStudent.updatedAt
+            : lastInvoice?.updatedAt || lastStudent?.updatedAt || org.updatedAt
+
+          // Get teacher count
+          const teacherCount = await prisma.userOrgMembership.count({
+            where: {
+              orgId: org.id,
+              role: { in: ['STAFF', 'ADMIN'] }
+            }
+          })
+
+          // Get platform billing status
+          // TODO: Implement real platform billing status from Stripe:
+          // - Query Stripe subscription status for org
+          // - Get current period end from Stripe subscription
+          // - Track billing status changes
+          const platformBilling = {
+            status: 'ACTIVE', // Would come from Stripe subscription status
+            currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // Would come from Stripe
           }
-        })
 
-        // Get total revenue from paid invoices
-        const invoices = await prisma.invoice.findMany({
-          where: {
-            orgId: org.id,
-            status: 'PAID'
-          },
-          select: { amountP: true }
-        })
-        const totalRevenue = invoices.reduce((sum, inv) => sum + Number(inv.amountP || 0) / 100, 0)
-
-        // Get last activity (most recent invoice or student update)
-        const lastInvoice = await prisma.invoice.findFirst({
-          where: { orgId: org.id },
-          orderBy: { updatedAt: 'desc' },
-          select: { updatedAt: true }
-        })
-
-        const lastStudent = await prisma.student.findFirst({
-          where: { orgId: org.id },
-          orderBy: { updatedAt: 'desc' },
-          select: { updatedAt: true }
-        })
-
-        const lastActivity = lastInvoice && lastStudent
-          ? lastInvoice.updatedAt > lastStudent.updatedAt ? lastInvoice.updatedAt : lastStudent.updatedAt
-          : lastInvoice?.updatedAt || lastStudent?.updatedAt || org.updatedAt
-
-        // Get teacher count
-        const teacherCount = await prisma.userOrgMembership.count({
-          where: {
-            orgId: org.id,
-            role: { in: ['STAFF', 'ADMIN'] }
+          return {
+            id: org.id,
+            name: org.name,
+            slug: org.slug,
+            city: org.city,
+            timezone: org.timezone,
+            status: org.status, // Include status in response
+            createdAt: org.createdAt,
+            updatedAt: org.updatedAt,
+            _count: {
+              students: org._count.students,
+              classes: org._count.classes,
+              memberships: org._count.memberships,
+              invoices: org._count.invoices,
+              teachers: teacherCount
+            },
+            platformBilling,
+            owner: adminMembership?.user ? {
+              name: adminMembership.user.name,
+              email: adminMembership.user.email
+            } : null,
+            totalRevenue,
+            lastActivity
           }
-        })
-
-        // Get platform billing status
-        // TODO: Implement real platform billing status from Stripe:
-        // - Query Stripe subscription status for org
-        // - Get current period end from Stripe subscription
-        // - Track billing status changes
-        const platformBilling = {
-          status: 'ACTIVE', // Would come from Stripe subscription status
-          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // Would come from Stripe
-        }
-
-        return {
-          id: org.id,
-          name: org.name,
-          slug: org.slug,
-          city: org.city,
-          timezone: org.timezone,
-          status: org.status, // Include status in response
-          createdAt: org.createdAt,
-          updatedAt: org.updatedAt,
-          _count: {
-            students: org._count.students,
-            classes: org._count.classes,
-            memberships: org._count.memberships,
-            invoices: org._count.invoices,
-            teachers: teacherCount
-          },
-          platformBilling,
-          owner: adminMembership?.user ? {
-            name: adminMembership.user.name,
-            email: adminMembership.user.email
-          } : null,
-          totalRevenue,
-          lastActivity
+        } catch (error: any) {
+          logger.error('Error processing org stats', error, { orgId: org.id, orgName: org.name })
+          // Return basic org info even if stats fail
+          return {
+            id: org.id,
+            name: org.name,
+            slug: org.slug,
+            city: org.city,
+            timezone: org.timezone,
+            status: org.status,
+            createdAt: org.createdAt,
+            updatedAt: org.updatedAt,
+            _count: {
+              students: org._count.students,
+              classes: org._count.classes,
+              memberships: org._count.memberships,
+              invoices: org._count.invoices,
+              teachers: 0
+            },
+            platformBilling: null,
+            owner: null,
+            totalRevenue: 0,
+            lastActivity: org.updatedAt
+          }
         }
       })
     )
