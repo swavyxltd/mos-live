@@ -111,6 +111,9 @@ export function ViewLeadModal({ isOpen, onClose, onUpdate, leadId, onEdit, autoO
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
+  // Resend invitation state
+  const [isResendingInvite, setIsResendingInvite] = useState(false)
+
   useEffect(() => {
     if (isOpen && leadId) {
       loadLead()
@@ -302,6 +305,30 @@ export function ViewLeadModal({ isOpen, onClose, onUpdate, leadId, onEdit, autoO
       toast.error(error.message || 'Failed to delete lead')
     } finally {
       setIsDeleting(false)
+    }
+  }
+
+  const handleResendInvite = async () => {
+    if (!lead?.convertedOrgId) return
+
+    setIsResendingInvite(true)
+    try {
+      const res = await fetch(`/api/owner/orgs/${lead.convertedOrgId}/resend-invitation`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to resend invitation')
+      }
+
+      toast.success('Invitation resent successfully')
+    } catch (error: any) {
+      console.error('Error resending invitation:', error)
+      toast.error(error.message || 'Failed to resend invitation')
+    } finally {
+      setIsResendingInvite(false)
     }
   }
 
@@ -610,17 +637,38 @@ export function ViewLeadModal({ isOpen, onClose, onUpdate, leadId, onEdit, autoO
                 Convert to Organisation
               </Button>
             ) : lead.ConvertedOrg ? (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  window.location.href = `/owner/orgs`
-                }}
-                className="justify-start"
-              >
-                <ExternalLink className="h-4 w-4 mr-2" />
-                View Organisation
-              </Button>
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    window.location.href = `/owner/orgs`
+                  }}
+                  className="justify-start"
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  View Organisation
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleResendInvite}
+                  disabled={isResendingInvite}
+                  className="justify-start"
+                >
+                  {isResendingInvite ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Resending...
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="h-4 w-4 mr-2" />
+                      Resend Invite
+                    </>
+                  )}
+                </Button>
+              </>
             ) : null}
           </div>
         </div>
