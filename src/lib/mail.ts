@@ -111,10 +111,11 @@ export async function sendEmail({
       
       if (isApiKeyError) {
         // Generic error message - the API key is working, so this is likely a different issue
-        throw new Error('Failed to send email. Please try again or contact support if the issue persists.')
+        // Check Vercel logs for detailed error information
+        throw new Error('Failed to send email. Please check the server logs for details or try again later.')
       } else {
         // For other errors, use a generic message but log the actual error
-        throw new Error(`Failed to send email. Please try again.`)
+        throw new Error('Failed to send email. Please check the server logs for details or try again later.')
       }
     }
     
