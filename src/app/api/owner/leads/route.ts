@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { withRateLimit } from '@/lib/api-middleware'
+import { randomUUID } from 'crypto'
 
 async function handleGET(request: NextRequest) {
   try {
@@ -172,6 +173,7 @@ async function handlePOST(request: NextRequest) {
 
     const lead = await prisma.lead.create({
       data: {
+        id: randomUUID(),
         orgName,
         city,
         country,
@@ -183,7 +185,7 @@ async function handlePOST(request: NextRequest) {
         status,
         nextContactAt: nextContactAt ? new Date(nextContactAt) : null,
         notes,
-        assignedToUserId,
+        assignedToUserId: assignedToUserId || null,
         updatedAt: new Date(),
       },
       select: {
@@ -221,6 +223,7 @@ async function handlePOST(request: NextRequest) {
     if (notes) {
       await prisma.leadActivity.create({
         data: {
+          id: randomUUID(),
           leadId: lead.id,
           type: 'NOTE',
           description: `Lead created: ${notes}`,
