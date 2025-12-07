@@ -46,17 +46,11 @@ async function handleGET(request: NextRequest) {
       )
     }
 
-    // Get all organizations, excluding demo ones
+    // Get all organizations - show everything including demo orgs
     let orgs
     try {
-      logger.info('Fetching orgs from database')
-      // Simplified query - just exclude by slug, filter by name on client side
+      logger.info('Fetching all orgs from database')
       orgs = await prisma.org.findMany({
-        where: {
-          slug: { 
-            notIn: ['test-islamic-school', 'leicester-islamic-centre']
-          }
-        },
         select: {
           id: true,
           name: true,
@@ -70,17 +64,6 @@ async function handleGET(request: NextRequest) {
         orderBy: { createdAt: 'desc' }
       })
       
-      // Filter out demo orgs by name as well
-      orgs = orgs.filter(org => {
-        const nameLower = org.name.toLowerCase()
-        return (
-          org.slug !== 'test-islamic-school' &&
-          org.slug !== 'leicester-islamic-centre' &&
-          !nameLower.includes('test islamic school') &&
-          !nameLower.includes('leicester islamic centre')
-        )
-      })
-      
       logger.info('Fetched orgs from database', { count: orgs.length })
     } catch (dbError: any) {
       logger.error('Error fetching orgs from database', dbError, {
@@ -90,46 +73,9 @@ async function handleGET(request: NextRequest) {
       throw dbError
     }
 
-    // Handle empty orgs array - if filtered query returns nothing, try getting all orgs
+    // Handle empty orgs array
     if (!orgs || orgs.length === 0) {
-      logger.warn('No orgs found after filtering, trying to fetch all orgs')
-      try {
-        const allOrgs = await prisma.org.findMany({
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            city: true,
-            timezone: true,
-            status: true,
-            createdAt: true,
-            updatedAt: true
-          },
-          orderBy: { createdAt: 'desc' },
-          take: 100 // Limit to prevent huge responses
-        })
-        logger.info('Fetched all orgs (unfiltered)', { count: allOrgs.length })
-        if (allOrgs.length > 0) {
-          // Use all orgs but still filter out demo ones
-          orgs = allOrgs.filter(org => {
-            const nameLower = org.name.toLowerCase()
-            return (
-              org.slug !== 'test-islamic-school' &&
-              org.slug !== 'leicester-islamic-centre' &&
-              !nameLower.includes('test islamic school') &&
-              !nameLower.includes('leicester islamic centre')
-            )
-          })
-          logger.info('After filtering demo orgs', { count: orgs.length })
-        }
-      } catch (fallbackError: any) {
-        logger.error('Error in fallback org fetch', fallbackError)
-      }
-    }
-
-    // If still no orgs, return empty array
-    if (!orgs || orgs.length === 0) {
-      logger.info('No orgs found in database after all attempts')
+      logger.info('No orgs found in database')
       return NextResponse.json([])
     }
 
