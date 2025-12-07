@@ -140,7 +140,16 @@ async function handlePOST(
     try {
       const baseUrl = process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'https://app.madrasah.io'
       const cleanBaseUrl = baseUrl.trim().replace(/\/+$/, '')
-      const signupUrl = `${cleanBaseUrl}/auth/signup?token=${token}`
+      // URL encode the token to ensure it's properly handled in the URL
+      const signupUrl = `${cleanBaseUrl}/auth/signup?token=${encodeURIComponent(token)}`
+      
+      logger.info('Generated signup URL', {
+        baseUrl: cleanBaseUrl,
+        tokenLength: token.length,
+        tokenPrefix: token.substring(0, 8),
+        signupUrlLength: signupUrl.length,
+        urlEncoded: signupUrl.includes(encodeURIComponent(token))
+      })
       
       logger.info('Sending org setup invitation for converted lead', {
         to: adminEmail,
