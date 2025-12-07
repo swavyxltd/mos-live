@@ -9,7 +9,7 @@ import { randomUUID } from 'crypto'
 
 async function handleGET(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -18,8 +18,7 @@ async function handleGET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Handle params - in Next.js 16, params can be a Promise
-    const params = context.params
+    // Handle params - in Next.js 15+, params can be a Promise
     const resolvedParams = params instanceof Promise ? await params : params
     const { id } = resolvedParams
     
@@ -31,7 +30,7 @@ async function handleGET(
     })
     
     if (!id) {
-      console.error('[LEAD API] No ID provided:', { params, resolvedParams, context })
+      console.error('[LEAD API] No ID provided:', { params, resolvedParams })
       return NextResponse.json({ error: 'Lead ID is required' }, { status: 400 })
     }
     
@@ -133,7 +132,7 @@ async function handleGET(
 
 async function handlePUT(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -142,8 +141,7 @@ async function handlePUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Handle params - in Next.js 16, params can be a Promise
-    const params = context.params
+    // Handle params - in Next.js 15+, params can be a Promise
     const resolvedParams = params instanceof Promise ? await params : params
     const { id } = resolvedParams
     
@@ -283,7 +281,7 @@ async function handlePUT(
 
 async function handleDELETE(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -292,8 +290,7 @@ async function handleDELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Handle params - in Next.js 16, params can be a Promise
-    const params = context.params
+    // Handle params - in Next.js 15+, params can be a Promise
     const resolvedParams = params instanceof Promise ? await params : params
     const { id } = resolvedParams
     

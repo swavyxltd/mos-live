@@ -17,11 +17,11 @@ async function handleGET(request: NextRequest) {
     }
 
     // Get or create platform settings (singleton pattern)
-    let settings = await prisma.platformSettings.findFirst()
+    let settings = await prisma.platform_settings.findFirst()
     
     if (!settings) {
       // Create default settings if none exist
-      settings = await prisma.platformSettings.create({
+      settings = await prisma.platform_settings.create({
         data: {}
       })
     }
@@ -62,7 +62,7 @@ async function handlePUT(request: NextRequest) {
     const body = await request.json()
     
     // Get existing settings or create new
-    let settings = await prisma.platformSettings.findFirst()
+    let settings = await prisma.platform_settings.findFirst()
     
     // Handle masked values - don't update if they're masked (***)
     const updateData: any = {}
@@ -108,11 +108,11 @@ async function handlePUT(request: NextRequest) {
     if (body.ownerCalendlyUrl !== undefined) updateData.ownerCalendlyUrl = body.ownerCalendlyUrl
 
     if (!settings) {
-      settings = await prisma.platformSettings.create({
+      settings = await prisma.platform_settings.create({
         data: updateData
       })
     } else {
-      settings = await prisma.platformSettings.update({
+      settings = await prisma.platform_settings.update({
         where: { id: settings.id },
         data: updateData
       })
