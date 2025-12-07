@@ -28,6 +28,7 @@
     "validate-env": "tsx scripts/validate-env.ts",
     "test-db": "tsx scripts/test-db-connection.ts",
     "test-stripe": "tsx scripts/test-stripe-config.ts",
+    "delete:org": "tsx scripts/delete-org.ts",
     "test-resend": "tsx scripts/test-resend-config.ts",
     "verify-deployment": "tsx scripts/verify-deployment.ts",
     "load-test": "tsx scripts/load-test.ts",
