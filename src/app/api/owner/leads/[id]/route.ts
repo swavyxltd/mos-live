@@ -16,6 +16,9 @@ async function handleGET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Log the ID being searched for debugging
+    console.log('Fetching lead with ID:', params.id)
+    
     const lead = await prisma.lead.findUnique({
       where: { id: params.id },
       select: {
