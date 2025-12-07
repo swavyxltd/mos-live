@@ -22,32 +22,49 @@ export default function OwnerOrgsPage() {
       setLoading(true)
       // Add cache-busting parameter to ensure fresh data
       const response = await fetch(`/api/owner/orgs/stats?t=${Date.now()}`, {
+        method: 'GET',
+        credentials: 'include', // Ensure cookies are sent
         cache: 'no-store',
         headers: {
-          'Cache-Control': 'no-cache'
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Content-Type': 'application/json'
         }
       })
+      
+      const responseText = await response.text()
+      let data: any = null
+      
+      try {
+        data = responseText ? JSON.parse(responseText) : null
+      } catch (parseError) {
+        console.error('[Orgs Page] Failed to parse response:', parseError, 'Response:', responseText.substring(0, 200))
+        setOrgsWithStats([])
+        setLoading(false)
+        return
+      }
+      
       if (response.ok) {
-        const data = await response.json()
         if (Array.isArray(data)) {
+          console.log('[Orgs Page] Successfully fetched orgs:', data.length)
           setOrgsWithStats(data)
         } else {
-          console.error('[Orgs Page] Invalid data format - expected array, got:', typeof data)
+          console.error('[Orgs Page] Invalid data format - expected array, got:', typeof data, data)
           setOrgsWithStats([])
         }
       } else {
-        let errorData: any = null
-        try {
-          const text = await response.text()
-          errorData = text ? JSON.parse(text) : null
-        } catch (parseError) {
-          errorData = { error: 'Unknown error', status: response.status }
+        console.error('[Orgs Page] API error:', response.status, data)
+        if (response.status === 401) {
+          console.error('[Orgs Page] Authentication failed - session may be invalid')
         }
-        console.error('[Orgs Page] API error:', response.status, errorData)
         setOrgsWithStats([])
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('[Orgs Page] Fetch error:', err)
+      console.error('[Orgs Page] Error details:', {
+        message: err?.message,
+        stack: err?.stack
+      })
       setOrgsWithStats([])
     } finally {
       setLoading(false)
