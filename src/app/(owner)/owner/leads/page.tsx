@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -70,15 +70,28 @@ export default function LeadsPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [leadToDelete, setLeadToDelete] = useState<{ id: string; name: string } | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const hasInitiallyLoaded = useRef(false)
 
+  // Initial load and auth check
   useEffect(() => {
     if (status === 'loading') return
     if (!session?.user?.id || !session.user.isSuperAdmin) {
       router.push('/auth/signin')
       return
     }
+    if (!hasInitiallyLoaded.current) {
+      loadLeads()
+      hasInitiallyLoaded.current = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, status, router])
+
+  // Reload when filters change (but not on initial mount)
+  useEffect(() => {
+    if (status === 'loading' || !session?.user?.id || !hasInitiallyLoaded.current) return
     loadLeads()
-  }, [session, status, router, statusFilter, assignedFilter, cityFilter, sortBy, showWonOnly])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter, assignedFilter, cityFilter, sortBy, showWonOnly])
 
   const loadLeads = async () => {
     setIsLoading(true)
