@@ -69,11 +69,7 @@ Manage holidays, events & schedules
 
 Would you be open to a brief conversation? I'd be happy to show you how it works and answer any questions.
 
-[Calendly Link]
-
-JazakAllah Khair,
-[Your Name]
-Madrasah OS`
+[Calendly Link]`
   },
   FOLLOW_UP_1: {
     subject: 'Following up: Management system for [Madrasah Name]',
@@ -107,12 +103,7 @@ If you're interested, I'd be happy to show you how it works and answer any quest
 
 [Calendly Link]
 
-Looking forward to hearing from you.
-
-JazakAllah Khair,
-
-[Your Name]
-Madrasah OS`
+Looking forward to hearing from you.`
   },
   FOLLOW_UP_2: {
     subject: 'One more follow-up: Management system for [Madrasah Name]',
@@ -126,12 +117,7 @@ I know you're busy, but I believe our platform could genuinely help streamline y
 
 If you're interested, I'm here to help. If not, I completely understand and won't trouble you further.
 
-[Calendly Link]
-
-JazakAllah Khair,
-
-[Your Name]
-Madrasah OS`
+[Calendly Link]`
   },
   FINAL: {
     subject: 'Final follow-up: Management system for [Madrasah Name]',
