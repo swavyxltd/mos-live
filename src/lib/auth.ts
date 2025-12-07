@@ -22,7 +22,10 @@ async function getUserRoleHints(userId: string) {
     })
     
     const user = await prisma.user.findUnique({
-      where: { id: userId }
+      where: { id: userId },
+      select: {
+        isSuperAdmin: true
+      }
     })
     
     const isOwner = user?.isSuperAdmin || false
@@ -30,17 +33,23 @@ async function getUserRoleHints(userId: string) {
     const orgStaffOf: string[] = []
     let isParent = false
     
-        // Include organizations in role hints
-        for (const membership of memberships) {
-          // Skip if org is null
-          if (!membership.Org) {
-            continue
-          }
+    // Include organizations in role hints
+    for (const membership of memberships) {
+      // Skip if org is null
+      if (!membership.Org) {
+        continue
+      }
       
       if (membership.role === 'ADMIN') {
         orgAdminOf.push(membership.orgId)
-      } else if (['STAFF', 'ADMIN'].includes(membership.role)) {
-        orgStaffOf.push(membership.orgId)
+        // ADMIN is also staff
+        if (!orgStaffOf.includes(membership.orgId)) {
+          orgStaffOf.push(membership.orgId)
+        }
+      } else if (membership.role === 'STAFF') {
+        if (!orgStaffOf.includes(membership.orgId)) {
+          orgStaffOf.push(membership.orgId)
+        }
       } else if (membership.role === 'PARENT') {
         isParent = true
       }
@@ -52,9 +61,10 @@ async function getUserRoleHints(userId: string) {
       orgStaffOf,
       isParent
     }
-  } catch (error) {
+  } catch (error: any) {
     // Log error server-side only (not to console in production)
     if (process.env.NODE_ENV === 'development') {
+      console.error('[Auth] Error in getUserRoleHints:', error?.message, error?.stack)
     }
     // Return default role hints on error to allow authentication
     // Layouts will handle blocking if needed
@@ -178,8 +188,8 @@ export const authOptions: NextAuthOptions = {
           // Password is valid - but check if 2FA is enabled
           // If 2FA is enabled, we should not create session here
           // The custom signin API will handle 2FA flow
-          // For now, we'll allow it if 2FA is disabled
-          if (user.twoFactorEnabled) {
+          // Only block if 2FA is explicitly enabled (true)
+          if (user.twoFactorEnabled === true) {
             // 2FA is enabled - don't create session here
             // The custom signin API will handle the 2FA flow
             return null
@@ -206,7 +216,7 @@ export const authOptions: NextAuthOptions = {
         } catch (error: any) {
           // Log error server-side only (not to console in production)
           if (process.env.NODE_ENV === 'development') {
-            console.error('[Auth] Authorize error:', error)
+            console.error('[Auth] Authorize error:', error?.message, error?.stack)
           }
           // If database connection fails, don't fall back - return null to show error
           return null
@@ -292,9 +302,10 @@ export const authOptions: NextAuthOptions = {
 
         try {
           token.roleHints = await getUserRoleHints(userId)
-        } catch (error) {
+        } catch (error: any) {
           // Log error server-side only (not to console in production)
           if (process.env.NODE_ENV === 'development') {
+            console.error('[Auth] Error fetching role hints:', error?.message, error?.stack)
           }
           // Set default role hints on error to allow authentication
           token.roleHints = {
@@ -316,11 +327,17 @@ export const authOptions: NextAuthOptions = {
         session.user.image = token.image as string | null | undefined
         session.user.isSuperAdmin = (token.isSuperAdmin as boolean) ?? false
         session.user.staffSubrole = token.staffSubrole as string
-        session.user.roleHints = token.roleHints as {
+        // Ensure roleHints is always set, even if there was an error fetching it
+        session.user.roleHints = (token.roleHints as {
           isOwner: boolean
           orgAdminOf: string[]
           orgStaffOf: string[]
           isParent: boolean
+        }) || {
+          isOwner: false,
+          orgAdminOf: [],
+          orgStaffOf: [],
+          isParent: false
         }
       }
       return session

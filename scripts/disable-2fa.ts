@@ -7,7 +7,7 @@ dotenv.config({ path: resolve(process.cwd(), '.env') })
 const prisma = new PrismaClient()
 
 async function main() {
-  const email = 'boycotterapp@gmail.com'
+  const email = process.argv[2] || 'boycotterapp@gmail.com'
   
   console.log(`\n🔧 Disabling 2FA for: ${email}\n`)
   

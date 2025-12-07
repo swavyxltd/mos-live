@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Modal } from '@/components/ui/modal'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { OrganizationManagementModal } from '@/components/organization-management-modal'
+import { SplitTitle } from '@/components/ui/split-title'
 import { 
   Users, 
   GraduationCap, 
@@ -278,48 +279,56 @@ export function OrganizationDetailModal({ isOpen, onClose, organization, onRefre
         {activeTab === 'overview' && (
           <div className="space-y-6">
             {/* Key Metrics */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
               <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center">
-                    <Users className="h-8 w-8 text-blue-600" />
-                    <div className="ml-3">
-                      <p className="text-sm font-medium text-gray-500">Students</p>
-                      <p className="text-2xl font-bold">{organization._count.students}</p>
-                    </div>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <SplitTitle title="Students" />
+                  <div className="p-2 rounded-full bg-blue-100 flex-shrink-0">
+                    <Users className="h-4 w-4 text-blue-600" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-gray-900">
+                    {organization._count.students}
                   </div>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center">
-                    <UserCheck className="h-8 w-8 text-orange-600" />
-                    <div className="ml-3">
-                      <p className="text-sm font-medium text-gray-500">Teachers</p>
-                      <p className="text-2xl font-bold">{organization._count.teachers || 0}</p>
-                    </div>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <SplitTitle title="Teachers" />
+                  <div className="p-2 rounded-full bg-orange-100 flex-shrink-0">
+                    <UserCheck className="h-4 w-4 text-orange-600" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-gray-900">
+                    {organization._count.teachers || 0}
                   </div>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center">
-                    <GraduationCap className="h-8 w-8 text-green-600" />
-                    <div className="ml-3">
-                      <p className="text-sm font-medium text-gray-500">Classes</p>
-                      <p className="text-2xl font-bold">{organization._count.classes}</p>
-                    </div>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <SplitTitle title="Classes" />
+                  <div className="p-2 rounded-full bg-green-100 flex-shrink-0">
+                    <GraduationCap className="h-4 w-4 text-green-600" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-gray-900">
+                    {organization._count.classes}
                   </div>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center">
-                    <DollarSign className="h-8 w-8 text-purple-600" />
-                    <div className="ml-3">
-                      <p className="text-sm font-medium text-gray-500">Revenue</p>
-                      <p className="text-2xl font-bold">{formatCurrency(organization.totalRevenue)}</p>
-                    </div>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <SplitTitle title="Revenue" />
+                  <div className="p-2 rounded-full bg-purple-100 flex-shrink-0">
+                    <DollarSign className="h-4 w-4 text-purple-600" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-gray-900">
+                    {formatCurrency(organization.totalRevenue)}
                   </div>
                 </CardContent>
               </Card>
@@ -333,33 +342,27 @@ export function OrganizationDetailModal({ isOpen, onClose, organization, onRefre
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center space-x-3">
-                    <Globe className="h-5 w-5 text-gray-400" />
-                    <div>
-                      <p className="text-sm font-medium">Domain</p>
-                      <p className="text-sm text-gray-500">{organization.slug}.madrasah-os.com</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <MapPin className="h-5 w-5 text-gray-400" />
-                    <div>
-                      <p className="text-sm font-medium">Timezone</p>
-                      <p className="text-sm text-gray-500">{organization.timezone || 'Europe/London'}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3">
                     <Calendar className="h-5 w-5 text-gray-400" />
                     <div>
                       <p className="text-sm font-medium">Created</p>
-                      <p className="text-sm text-gray-500">{formatDate(organization.createdAt)}</p>
+                      <p className="text-sm text-gray-500">
+                        {organization.createdAt 
+                          ? formatDate(new Date(organization.createdAt)) 
+                          : 'N/A'}
+                      </p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-3">
-                    <Activity className="h-5 w-5 text-gray-400" />
-                    <div>
-                      <p className="text-sm font-medium">Last Activity</p>
-                      <p className="text-sm text-gray-500">{formatDate(organization.lastActivity)}</p>
+                  {organization.updatedAt && (
+                    <div className="flex items-center space-x-3">
+                      <Activity className="h-5 w-5 text-gray-400" />
+                      <div>
+                        <p className="text-sm font-medium">Last Updated</p>
+                        <p className="text-sm text-gray-500">
+                          {formatDate(new Date(organization.updatedAt))}
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
 

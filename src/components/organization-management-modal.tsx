@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Modal } from '@/components/ui/modal'
 import { formatCurrency, formatDate } from '@/lib/utils'
+import { SplitTitle } from '@/components/ui/split-title'
 import { 
   Users, 
   GraduationCap, 
@@ -127,18 +128,41 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
   const [teachers, setTeachers] = useState<Teacher[]>([])
   const [loadingStudents, setLoadingStudents] = useState(false)
   const [loadingTeachers, setLoadingTeachers] = useState(false)
+  
+  // Organization details - fetched from API
+  const [orgDetails, setOrgDetails] = useState<any>(null)
+  const [loadingOrgDetails, setLoadingOrgDetails] = useState(false)
 
-  // Fetch students and teachers when modal opens and organization is set
+  // Fetch organization details, students and teachers when modal opens
   useEffect(() => {
     if (isOpen && organization) {
+      fetchOrgDetails()
       fetchStudents()
       fetchTeachers()
     } else {
       // Reset when modal closes
       setStudents([])
       setTeachers([])
+      setOrgDetails(null)
     }
   }, [isOpen, organization?.id])
+
+  const fetchOrgDetails = async () => {
+    if (!organization?.id) return
+    setLoadingOrgDetails(true)
+    try {
+      // Fetch full org data from database
+      const response = await fetch(`/api/owner/orgs/${organization.id}`)
+      if (response.ok) {
+        const data = await response.json()
+        setOrgDetails(data)
+      }
+    } catch (error) {
+      console.error('Error fetching org details:', error)
+    } finally {
+      setLoadingOrgDetails(false)
+    }
+  }
 
   const fetchStudents = async () => {
     if (!organization) return
@@ -432,48 +456,56 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
         {activeTab === 'overview' && (
           <div className="space-y-6">
             {/* Key Metrics */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
               <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center">
-                    <Users className="h-8 w-8 text-blue-600" />
-                    <div className="ml-3">
-                      <p className="text-sm font-medium text-gray-500">Students</p>
-                      <p className="text-2xl font-bold">{organization._count.students}</p>
-                    </div>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <SplitTitle title="Students" />
+                  <div className="p-2 rounded-full bg-blue-100 flex-shrink-0">
+                    <Users className="h-4 w-4 text-blue-600" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-gray-900">
+                    {organization._count.students}
                   </div>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center">
-                    <UserCheck className="h-8 w-8 text-orange-600" />
-                    <div className="ml-3">
-                      <p className="text-sm font-medium text-gray-500">Teachers</p>
-                      <p className="text-2xl font-bold">{organization._count.teachers || 0}</p>
-                    </div>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <SplitTitle title="Teachers" />
+                  <div className="p-2 rounded-full bg-orange-100 flex-shrink-0">
+                    <UserCheck className="h-4 w-4 text-orange-600" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-gray-900">
+                    {organization._count.teachers || 0}
                   </div>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center">
-                    <GraduationCap className="h-8 w-8 text-green-600" />
-                    <div className="ml-3">
-                      <p className="text-sm font-medium text-gray-500">Classes</p>
-                      <p className="text-2xl font-bold">{organization._count.classes}</p>
-                    </div>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <SplitTitle title="Classes" />
+                  <div className="p-2 rounded-full bg-green-100 flex-shrink-0">
+                    <GraduationCap className="h-4 w-4 text-green-600" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-gray-900">
+                    {organization._count.classes}
                   </div>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center">
-                    <DollarSign className="h-8 w-8 text-purple-600" />
-                    <div className="ml-3">
-                      <p className="text-sm font-medium text-gray-500">Revenue</p>
-                      <p className="text-2xl font-bold">{formatCurrency(organization.totalRevenue)}</p>
-                    </div>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <SplitTitle title="Revenue" />
+                  <div className="p-2 rounded-full bg-purple-100 flex-shrink-0">
+                    <DollarSign className="h-4 w-4 text-purple-600" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-gray-900">
+                    {formatCurrency(organization.totalRevenue)}
                   </div>
                 </CardContent>
               </Card>
@@ -500,10 +532,6 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
                         <Label htmlFor="org-slug">Slug</Label>
                         <Input id="org-slug" defaultValue={organization.slug} />
                       </div>
-                      <div>
-                        <Label htmlFor="org-timezone">Timezone</Label>
-                        <Input id="org-timezone" defaultValue={organization.timezone || 'Europe/London'} />
-                      </div>
                       <div className="flex space-x-2">
                         <Button onClick={handleSaveOrganization}>
                           <Save className="h-4 w-4 mr-2" />
@@ -518,26 +546,27 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
                   ) : (
                     <>
                       <div className="flex items-center space-x-3">
-                        <Globe className="h-5 w-5 text-gray-400" />
-                        <div>
-                          <p className="text-sm font-medium">Domain</p>
-                          <p className="text-sm text-gray-500">{organization.slug}.madrasah-os.com</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <MapPin className="h-5 w-5 text-gray-400" />
-                        <div>
-                          <p className="text-sm font-medium">Timezone</p>
-                          <p className="text-sm text-gray-500">{organization.timezone || 'Europe/London'}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-3">
                         <Calendar className="h-5 w-5 text-gray-400" />
                         <div>
                           <p className="text-sm font-medium">Created</p>
-                          <p className="text-sm text-gray-500">{formatDate(organization.createdAt)}</p>
+                          <p className="text-sm text-gray-500">
+                            {organization.createdAt 
+                              ? formatDate(new Date(organization.createdAt)) 
+                              : 'N/A'}
+                          </p>
                         </div>
                       </div>
+                      {organization.updatedAt && (
+                        <div className="flex items-center space-x-3">
+                          <Activity className="h-5 w-5 text-gray-400" />
+                          <div>
+                            <p className="text-sm font-medium">Last Updated</p>
+                            <p className="text-sm text-gray-500">
+                              {formatDate(new Date(organization.updatedAt))}
+                            </p>
+                          </div>
+                        </div>
+                      )}
                     </>
                   )}
                 </CardContent>
@@ -919,7 +948,7 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
                   <Textarea 
                     id="org-description" 
                     placeholder="Enter organization description..." 
-                    defaultValue="A comprehensive Islamic educational center providing quality religious education and community services."
+                    defaultValue={orgDetails?.description || ""}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -928,7 +957,7 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
                     <Input 
                       id="org-address" 
                       placeholder="Enter organization address" 
-                      defaultValue="123 High Street, Leicester, LE1 4AB, United Kingdom"
+                      defaultValue={orgDetails?.address || orgDetails?.addressLine1 || ""}
                     />
                   </div>
                   <div>
@@ -936,7 +965,7 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
                     <Input 
                       id="org-phone" 
                       placeholder="Enter organization phone" 
-                      defaultValue="+44 116 123 4567"
+                      defaultValue={orgDetails?.phone || orgDetails?.publicPhone || ""}
                     />
                   </div>
                 </div>
@@ -945,44 +974,16 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
                   <Input 
                     id="org-website" 
                     placeholder="https://example.com" 
-                    defaultValue={`https://${organization.slug}.madrasah-os.com`}
+                    defaultValue={orgDetails?.website || ""}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="org-email">Contact Email</Label>
-                    <Input 
-                      id="org-email" 
-                      placeholder="Enter contact email" 
-                      defaultValue="info@leicester-islamic-centre.com"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="org-timezone">Timezone</Label>
-                    <Input 
-                      id="org-timezone" 
-                      placeholder="Enter timezone" 
-                      defaultValue={organization.timezone || "Europe/London"}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="org-established">Established</Label>
-                    <Input 
-                      id="org-established" 
-                      placeholder="Enter establishment date" 
-                      defaultValue="2015"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="org-capacity">Student Capacity</Label>
-                    <Input 
-                      id="org-capacity" 
-                      placeholder="Enter student capacity" 
-                      defaultValue="200"
-                    />
-                  </div>
+                <div>
+                  <Label htmlFor="org-email">Contact Email</Label>
+                  <Input 
+                    id="org-email" 
+                    placeholder="Enter contact email" 
+                    defaultValue={orgDetails?.email || orgDetails?.publicEmail || ""}
+                  />
                 </div>
                 <Button>
                   <Save className="h-4 w-4 mr-2" />

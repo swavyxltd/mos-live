@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { OrganizationDetailModal } from '@/components/organization-detail-modal'
-import { ExternalLink, Users, GraduationCap, AlertTriangle, Eye, Settings, UserCheck } from 'lucide-react'
+import { Users, GraduationCap, AlertTriangle, Eye, Settings, UserCheck } from 'lucide-react'
 
 interface OrgWithStats {
   id: string
@@ -100,9 +100,6 @@ export function AllOrgsTable({ orgs, onRefresh }: AllOrgsTableProps) {
                   </th>
                   <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
-                    Created
                   </th>
                   <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Actions
@@ -205,9 +202,6 @@ export function AllOrgsTable({ orgs, onRefresh }: AllOrgsTableProps) {
                         )
                       })()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(org.createdAt)}
-                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center space-x-2">
                         <Button 
@@ -226,17 +220,6 @@ export function AllOrgsTable({ orgs, onRefresh }: AllOrgsTableProps) {
                         >
                           <Settings className="h-4 w-4" />
                         </Button>
-                        {org.platformBilling && (
-                          <a
-                            href={`https://dashboard.stripe.com/customers/${org.platformBilling.stripeCustomerId}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-indigo-600 hover:text-indigo-900 p-1"
-                            title="View in Stripe Dashboard"
-                          >
-                            <ExternalLink className="h-4 w-4" />
-                          </a>
-                        )}
                       </div>
                     </td>
                   </tr>

@@ -123,8 +123,8 @@ async function handlePOST(request: NextRequest) {
       }
     })
 
-    // Check if 2FA is enabled (default to true for security)
-    const needsTwoFactor = user.twoFactorEnabled !== false // Default to enabled
+    // Check if 2FA is enabled (explicitly check for true)
+    const needsTwoFactor = user.twoFactorEnabled === true
 
     if (needsTwoFactor) {
       // Generate and send 2FA code

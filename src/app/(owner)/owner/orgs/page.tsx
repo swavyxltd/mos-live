@@ -27,17 +27,30 @@ export default function OwnerOrgsPage() {
           'Cache-Control': 'no-cache'
         }
       })
+      console.log('[Orgs Page] Response status:', response.status, response.ok)
       if (response.ok) {
         const data = await response.json()
+        console.log('[Orgs Page] Response data type:', typeof data, 'Is array:', Array.isArray(data))
+        console.log('[Orgs Page] Response data:', JSON.stringify(data, null, 2))
         if (Array.isArray(data)) {
-          console.log('[Orgs Page] Fetched orgs:', data.length, data)
+          console.log('[Orgs Page] Fetched orgs:', data.length, 'organizations')
+          if (data.length > 0) {
+            console.log('[Orgs Page] First org:', data[0])
+          }
           setOrgsWithStats(data)
         } else {
-          console.error('[Orgs Page] Invalid data format:', data)
+          console.error('[Orgs Page] Invalid data format - expected array, got:', typeof data, data)
           setOrgsWithStats([])
         }
       } else {
-        const errorData = await response.json().catch(() => null)
+        let errorData: any = null
+        try {
+          const text = await response.text()
+          errorData = text ? JSON.parse(text) : null
+        } catch (parseError) {
+          console.error('[Orgs Page] Failed to parse error response:', parseError)
+          errorData = { error: 'Unknown error', status: response.status }
+        }
         console.error('[Orgs Page] API error:', response.status, errorData)
         setOrgsWithStats([])
       }
