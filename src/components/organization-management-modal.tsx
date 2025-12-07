@@ -61,10 +61,10 @@ interface OrgWithStats {
   platformBilling: {
     stripeCustomerId: string
     status: string
-    currentPeriodEnd?: Date
+    currentPeriodEnd?: Date | string
   } | null
   totalRevenue: number
-  lastActivity: Date
+  lastActivity: Date | string
 }
 
 interface Student {

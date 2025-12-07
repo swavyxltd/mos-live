@@ -97,7 +97,7 @@ async function handleGET(request: NextRequest) {
     // Return basic org data with minimal stats
     try {
       const basicOrgsResponse = orgs.map(org => ({
-        id: String(org.id),
+        id: String(org.id || ''),
         name: String(org.name || ''),
         slug: String(org.slug || ''),
         city: org.city ? String(org.city) : null,

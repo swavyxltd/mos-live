@@ -127,9 +127,9 @@ export default function OwnerOrgsPage() {
     if (!searchTerm) return true
     const searchLower = searchTerm.toLowerCase()
     return (
-      org.name.toLowerCase().includes(searchLower) ||
-      org.city?.toLowerCase().includes(searchLower) ||
-      org.slug.toLowerCase().includes(searchLower)
+      (org.name || '').toLowerCase().includes(searchLower) ||
+      (org.city || '').toLowerCase().includes(searchLower) ||
+      (org.slug || '').toLowerCase().includes(searchLower)
     )
   })
 
