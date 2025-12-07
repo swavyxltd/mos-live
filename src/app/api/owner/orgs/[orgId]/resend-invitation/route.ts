@@ -200,20 +200,32 @@ async function handlePOST(
         errorName: emailError?.name,
         errorCode: emailError?.code,
         errorResponse: emailError?.response ? JSON.stringify(emailError.response) : undefined,
+        originalError: emailError?.originalError ? JSON.stringify(emailError.originalError) : undefined,
         fullError: process.env.NODE_ENV === 'development' ? JSON.stringify(emailError, Object.getOwnPropertyNames(emailError)) : undefined
       })
       
       // Provide more detailed error message
       let errorMessage = emailError?.message || 'Unknown error occurred'
       
+      // In development, try to get the original error from sendEmail
+      const isDevelopment = process.env.NODE_ENV === 'development'
+      if (isDevelopment && emailError?.originalError) {
+        // Use the original Resend error details if available
+        const originalError = emailError.originalError
+        if (originalError.message) {
+          errorMessage = originalError.message
+        }
+        if (originalError.error?.message) {
+          errorMessage = originalError.error.message
+        }
+      }
+      
       // Extract more specific error information if available
       if (emailError?.response) {
         errorMessage = `Email service error: ${emailError.response.message || errorMessage}`
-      } else if (emailError?.name === 'Error') {
+      } else if (emailError?.name === 'Error' && !emailError?.originalError) {
         errorMessage = emailError.message
       }
-      
-      const isDevelopment = process.env.NODE_ENV === 'development'
       
       return NextResponse.json(
         { 
@@ -221,6 +233,7 @@ async function handlePOST(
           message: errorMessage,
           ...(isDevelopment && { 
             details: emailError?.message,
+            originalError: emailError?.originalError,
             stack: emailError?.stack,
             name: emailError?.name,
             code: emailError?.code
