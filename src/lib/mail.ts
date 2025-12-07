@@ -93,13 +93,15 @@ export async function sendEmail({
     })
     
     if (error) {
-      console.error('❌ Resend API error:', {
+      const errorDetails = {
         error,
         message: error.message,
         name: error.name,
         statusCode: (error as any)?.statusCode,
         fullError: JSON.stringify(error, null, 2)
-      })
+      }
+      
+      console.error('❌ Resend API error:', errorDetails)
       
       // Don't expose internal error messages like "API key is invalid" 
       // since the API key is clearly working (other emails succeed)
@@ -109,13 +111,26 @@ export async function sendEmail({
                            errorMessage.toLowerCase().includes('invalid') ||
                            errorMessage.toLowerCase().includes('unauthorized')
       
+      // In development, include more details in the error
+      const isDevelopment = process.env.NODE_ENV === 'development'
+      
       if (isApiKeyError) {
         // Generic error message - the API key is working, so this is likely a different issue
-        // Check Vercel logs for detailed error information
-        throw new Error('Failed to send email. Please check the server logs for details or try again later.')
+        const genericError = new Error('Failed to send email. Please check the server logs for details or try again later.')
+        // Attach original error details for debugging
+        if (isDevelopment) {
+          (genericError as any).originalError = errorDetails
+        }
+        throw genericError
       } else {
-        // For other errors, use a generic message but log the actual error
-        throw new Error('Failed to send email. Please check the server logs for details or try again later.')
+        // For other errors, use a generic message but include original error in development
+        const genericError = new Error(isDevelopment 
+          ? `Failed to send email: ${errorMessage}` 
+          : 'Failed to send email. Please check the server logs for details or try again later.')
+        if (isDevelopment) {
+          (genericError as any).originalError = errorDetails
+        }
+        throw genericError
       }
     }
     
