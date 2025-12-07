@@ -18,7 +18,6 @@ import { Skeleton, CardSkeleton, StatCardSkeleton } from '@/components/loading/s
 interface PlatformSettings {
   id: string
   defaultTimezone: string
-  trialPeriodDays: number
   logoUrl: string | null
   faviconUrl: string | null
   resendApiKey: string | null
@@ -284,17 +283,6 @@ export default function OwnerSettingsPage() {
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-
-              <div>
-                <Label htmlFor="trial-days">Trial Period (days)</Label>
-                <Input
-                  id="trial-days"
-                  type="number"
-                  value={formData.trialPeriodDays || 14}
-                  onChange={(e) => handleInputChange('trialPeriodDays', parseInt(e.target.value))}
-                  placeholder="Enter trial period"
-                />
               </div>
 
               <div>

@@ -34,7 +34,6 @@ export async function getPlatformSettings() {
     return {
       id: '',
       defaultTimezone: 'Europe/London',
-      trialPeriodDays: 14,
       logoUrl: null,
       faviconUrl: null,
       resendApiKey: null,

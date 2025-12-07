@@ -68,7 +68,6 @@ async function handlePUT(request: NextRequest) {
     const updateData: any = {}
     
     if (body.defaultTimezone !== undefined) updateData.defaultTimezone = body.defaultTimezone
-    if (body.trialPeriodDays !== undefined) updateData.trialPeriodDays = body.trialPeriodDays
     if (body.logoUrl !== undefined) updateData.logoUrl = body.logoUrl
     if (body.faviconUrl !== undefined) updateData.faviconUrl = body.faviconUrl
     if (body.emailFromAddress !== undefined) updateData.emailFromAddress = body.emailFromAddress
