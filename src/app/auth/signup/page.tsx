@@ -25,8 +25,21 @@ function SignUpForm() {
       return
     }
     
-    fetch(`/api/auth/invitation?token=${token}`)
-      .then(res => res.json())
+    fetch(`/api/auth/invitation?token=${token}`, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    })
+      .then(async res => {
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({ error: 'Failed to fetch invitation' }))
+          throw new Error(errorData.error || `HTTP ${res.status}`)
+        }
+        return res.json()
+      })
       .then(data => {
         if (data.error) {
           setError(data.error)
@@ -37,7 +50,8 @@ function SignUpForm() {
         }
       })
       .catch(err => {
-        setError('Failed to load invitation')
+        console.error('[Signup] Error fetching invitation:', err)
+        setError(err.message || 'Failed to fetch invitation')
       })
       .finally(() => {
         setIsLoadingInvitation(false)
