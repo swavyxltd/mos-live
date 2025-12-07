@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { sendEmail } from '@/lib/mail'
 import { generateEmailTemplate } from '@/lib/email-template'
 import { withRateLimit } from '@/lib/api-middleware'
+import { randomUUID } from 'crypto'
 
 async function handlePOST(
   request: NextRequest,
@@ -140,6 +141,7 @@ async function handlePOST(
     
     await prisma.leadActivity.create({
       data: {
+        id: randomUUID(),
         leadId: params.id,
         type: 'EMAIL',
         description: `${activityDescription}: ${subject}`,

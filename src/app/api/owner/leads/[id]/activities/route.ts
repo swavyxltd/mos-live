@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { withRateLimit } from '@/lib/api-middleware'
+import { randomUUID } from 'crypto'
 
 async function handlePOST(
   request: NextRequest,
@@ -45,6 +46,7 @@ async function handlePOST(
     // Create activity
     const activity = await prisma.leadActivity.create({
       data: {
+        id: randomUUID(),
         leadId: params.id,
         type,
         description,

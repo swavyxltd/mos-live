@@ -35,7 +35,10 @@ export default function TestEmailPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || data.message || 'Failed to send email')
+        const errorMessage = data.message || data.error || 'Failed to send email'
+        const error = new Error(errorMessage)
+        ;(error as any).response = { data }
+        throw error
       }
 
       setResult({
@@ -44,11 +47,13 @@ export default function TestEmailPage() {
       })
       toast.success('Test email sent successfully!')
     } catch (error: any) {
+      const errorMessage = error.message || 'Failed to send test email'
       setResult({
         success: false,
-        error: error.message || 'Failed to send test email'
+        error: errorMessage,
+        details: error.response?.data || error.details
       })
-      toast.error(error.message || 'Failed to send test email')
+      toast.error(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -128,11 +133,16 @@ export default function TestEmailPage() {
                   ) : (
                     <div className="text-sm text-red-800 space-y-1">
                       <p><strong>Error:</strong> {result.error}</p>
-                      {result.message && <p>{result.message}</p>}
+                      {result.message && result.message !== result.error && <p>{result.message}</p>}
                       {result.details && (
-                        <pre className="mt-2 text-xs bg-red-100 p-2 rounded overflow-auto">
-                          {JSON.stringify(result.details, null, 2)}
-                        </pre>
+                        <div className="mt-2">
+                          <p className="font-semibold mb-1">Details:</p>
+                          <pre className="text-xs bg-red-100 p-2 rounded overflow-auto">
+                            {typeof result.details === 'string' 
+                              ? result.details 
+                              : JSON.stringify(result.details, null, 2)}
+                          </pre>
+                        </div>
                       )}
                     </div>
                   )}

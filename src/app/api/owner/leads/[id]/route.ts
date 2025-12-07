@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { withRateLimit } from '@/lib/api-middleware'
+import { randomUUID } from 'crypto'
 
 async function handleGET(
   request: NextRequest,
@@ -180,6 +181,7 @@ async function handlePUT(
       if (createStatusChangeActivity) {
         await prisma.leadActivity.create({
           data: {
+            id: randomUUID(),
             leadId: params.id,
             type: 'STATUS_CHANGE',
             description: `Status changed from ${existingLead.status} to ${status}`,

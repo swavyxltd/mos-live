@@ -6,6 +6,7 @@ import { withRateLimit } from '@/lib/api-middleware'
 import { sendOrgSetupInvitation } from '@/lib/mail'
 import { logger } from '@/lib/logger'
 import crypto from 'crypto'
+import { randomUUID } from 'crypto'
 
 async function handlePOST(
   request: NextRequest,
@@ -143,6 +144,7 @@ async function handlePOST(
     // Create conversion activity
     await prisma.leadActivity.create({
       data: {
+        id: randomUUID(),
         leadId: params.id,
         type: 'STATUS_CHANGE',
         description: `Lead converted to organisation: ${org.name} (${org.slug})`,
