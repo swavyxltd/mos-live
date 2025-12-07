@@ -129,7 +129,7 @@ export function AllOrgsTable({ orgs, onRefresh }: AllOrgsTableProps) {
                             {org.owner.name || 'Unknown'}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {org.owner.email}
+                            {org.owner.email || 'No email'}
                           </div>
                         </div>
                       ) : (

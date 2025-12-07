@@ -14,9 +14,34 @@ async function handleGET(
     const session = await getServerSession(authOptions)
     
     // Only allow super admins (owners)
-    if (!session?.user?.id || !session.user.isSuperAdmin) {
+    if (!session?.user?.id) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Unauthorized', message: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    // Check if user is super admin - fetch fresh from DB to be sure
+    let isSuperAdmin = Boolean(session.user.isSuperAdmin)
+    try {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { isSuperAdmin: true }
+      })
+      if (dbUser !== null) {
+        isSuperAdmin = Boolean(dbUser.isSuperAdmin)
+      }
+    } catch (dbError: any) {
+      logger.error('Error checking isSuperAdmin from DB', dbError, {
+        userId: session.user.id,
+        errorMessage: dbError?.message
+      })
+      // Fall back to session value
+    }
+
+    if (!isSuperAdmin) {
+      return NextResponse.json(
+        { error: 'Unauthorized', message: 'Owner access required' },
         { status: 401 }
       )
     }
