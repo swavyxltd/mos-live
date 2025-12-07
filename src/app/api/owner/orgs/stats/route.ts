@@ -7,17 +7,40 @@ import { withRateLimit } from '@/lib/api-middleware'
 
 async function handleGET(request: NextRequest) {
   try {
-    // Get session with request context for production compatibility
-    const session = await getServerSession(authOptions)
+    // Get session - in production, we need to ensure cookies are properly read
+    let session
+    try {
+      session = await getServerSession(authOptions)
+    } catch (sessionError: any) {
+      logger.error('Error getting session', sessionError, {
+        errorMessage: sessionError?.message,
+        url: request.url
+      })
+      return NextResponse.json(
+        { error: 'Session error', message: 'Failed to authenticate' },
+        { status: 401 }
+      )
+    }
     
     // Only allow super admins (owners)
     if (!session?.user?.id) {
       logger.warn('Unauthorized access attempt - no session', {
         hasSession: !!session,
-        url: request.url
+        hasUser: !!session?.user,
+        hasUserId: !!session?.user?.id,
+        url: request.url,
+        cookies: request.headers.get('cookie') ? 'present' : 'missing'
       })
       return NextResponse.json(
-        { error: 'Unauthorized', message: 'Authentication required' },
+        { 
+          error: 'Unauthorized', 
+          message: 'Authentication required',
+          debug: process.env.NODE_ENV === 'development' ? {
+            hasSession: !!session,
+            hasUser: !!session?.user,
+            cookiesPresent: !!request.headers.get('cookie')
+          } : undefined
+        },
         { status: 401 }
       )
     }
@@ -55,7 +78,13 @@ async function handleGET(request: NextRequest) {
     // Get all organizations - show everything including demo orgs
     let orgs
     try {
-      logger.info('Fetching all orgs from database', { userId: session.user.id })
+      logger.info('Fetching all orgs from database', { 
+        userId: session.user.id,
+        isSuperAdmin: isSuperAdmin,
+        environment: process.env.NODE_ENV
+      })
+      
+      // Direct database query - no filters
       orgs = await prisma.org.findMany({
         select: {
           id: true,
@@ -70,7 +99,11 @@ async function handleGET(request: NextRequest) {
         orderBy: { createdAt: 'desc' }
       })
       
-      logger.info('Fetched orgs from database', { count: orgs.length, userId: session.user.id })
+      logger.info('Fetched orgs from database', { 
+        count: orgs.length, 
+        userId: session.user.id,
+        orgIds: orgs.map(o => o.id).slice(0, 5) // Log first 5 IDs for debugging
+      })
     } catch (dbError: any) {
       logger.error('Error fetching orgs from database', dbError, {
         errorMessage: dbError?.message,
@@ -122,12 +155,21 @@ async function handleGET(request: NextRequest) {
         lastActivity: org.updatedAt instanceof Date ? org.updatedAt.toISOString() : String(org.updatedAt || new Date().toISOString())
       }))
       
-      logger.info('Returning orgs data', { count: basicOrgsResponse.length, userId: session.user.id })
+      logger.info('Returning orgs data', { 
+        count: basicOrgsResponse.length, 
+        userId: session.user.id,
+        firstOrgName: basicOrgsResponse[0]?.name || 'none'
+      })
+      
+      // Return with explicit CORS and cache headers for production
       return NextResponse.json(basicOrgsResponse, {
+        status: 200,
         headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate',
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
           'Pragma': 'no-cache',
-          'Expires': '0'
+          'Expires': '0',
+          'X-Content-Type-Options': 'nosniff'
         }
       })
     } catch (mapError: any) {

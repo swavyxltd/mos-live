@@ -20,15 +20,28 @@ export default function OwnerOrgsPage() {
   const fetchOrgs = async () => {
     try {
       setLoading(true)
+      
+      // Ensure we have a session before making the request
+      if (status === 'unauthenticated') {
+        console.error('[Orgs Page] User not authenticated')
+        setOrgsWithStats([])
+        setLoading(false)
+        return
+      }
+      
       // Add cache-busting parameter to ensure fresh data
-      const response = await fetch(`/api/owner/orgs/stats?t=${Date.now()}`, {
+      const apiUrl = `/api/owner/orgs/stats?t=${Date.now()}`
+      console.log('[Orgs Page] Fetching orgs from:', apiUrl)
+      
+      const response = await fetch(apiUrl, {
         method: 'GET',
-        credentials: 'include', // Ensure cookies are sent
+        credentials: 'include', // CRITICAL: Ensure cookies are sent in production
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         }
       })
       
@@ -46,7 +59,10 @@ export default function OwnerOrgsPage() {
       
       if (response.ok) {
         if (Array.isArray(data)) {
-          console.log('[Orgs Page] Successfully fetched orgs:', data.length)
+          console.log('[Orgs Page] Successfully fetched orgs:', data.length, 'orgs')
+          if (data.length > 0) {
+            console.log('[Orgs Page] First org:', data[0]?.name || 'unknown')
+          }
           setOrgsWithStats(data)
         } else {
           console.error('[Orgs Page] Invalid data format - expected array, got:', typeof data, data)
@@ -56,6 +72,10 @@ export default function OwnerOrgsPage() {
         console.error('[Orgs Page] API error:', response.status, data)
         if (response.status === 401) {
           console.error('[Orgs Page] Authentication failed - session may be invalid')
+          console.error('[Orgs Page] Session status:', status)
+          console.error('[Orgs Page] Session user:', session?.user?.email || 'none')
+        } else if (response.status === 500) {
+          console.error('[Orgs Page] Server error - check Vercel logs')
         }
         setOrgsWithStats([])
       }
