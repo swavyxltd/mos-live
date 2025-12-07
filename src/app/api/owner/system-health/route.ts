@@ -451,9 +451,15 @@ async function handleGET(request: NextRequest) {
         lastBackup = new Date(now.getTime() - 12 * 60 * 60 * 1000) // 12 hours ago as estimate
       } else {
         // Check for backup files in backups directory
+        // Note: This won't work in serverless environments like Vercel
         const backupsPath = join(process.cwd(), 'backups')
         try {
-          const backupFiles = await fs.readdir(backupsPath)
+          // Skip filesystem operations in serverless environments
+          if (process.env.VERCEL) {
+            backupStatus = 'managed' // Vercel manages backups
+            lastBackup = new Date(now.getTime() - 12 * 60 * 60 * 1000) // Estimate
+          } else {
+            const backupFiles = await fs.readdir(backupsPath)
           const sqlBackups = backupFiles.filter(f => f.endsWith('.sql') || f.endsWith('.dump'))
           
           if (sqlBackups.length > 0) {

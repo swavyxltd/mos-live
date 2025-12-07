@@ -33,7 +33,7 @@ export function MadrasahLogo({ className = '', showText = true, textSize = 'md',
           alt="Madrasah OS Logo" 
           width={size === 'sm' ? 128 : size === 'md' ? 192 : size === 'lg' ? 256 : size === 'lg-sm' ? 224 : 288}
           height={size === 'sm' ? 24 : size === 'md' ? 40 : size === 'lg' ? 48 : size === 'lg-sm' ? 48 : 60}
-          className={cn('w-full object-contain max-w-full h-auto', logoSizeClasses[size])}
+          className={cn('object-contain max-w-full', logoSizeClasses[size])}
           style={{ width: 'auto', height: 'auto' }}
           priority
         />
