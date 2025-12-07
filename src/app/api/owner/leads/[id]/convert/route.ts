@@ -10,7 +10,7 @@ import { randomUUID } from 'crypto'
 
 async function handlePOST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -19,8 +19,12 @@ async function handlePOST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Handle Next.js 15+ async params
+    const resolvedParams = await Promise.resolve(params)
+    const { id } = resolvedParams
+
     const lead = await prisma.lead.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!lead) {
@@ -110,7 +114,7 @@ async function handlePOST(
         to: adminEmail,
         orgName: org.name,
         orgId: org.id,
-        leadId: params.id,
+        leadId: id,
         hasResendKey: !!process.env.RESEND_API_KEY
       })
       
@@ -134,7 +138,7 @@ async function handlePOST(
 
     // Update lead with converted org
     await prisma.lead.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         convertedOrgId: org.id,
         status: 'WON',
@@ -145,7 +149,7 @@ async function handlePOST(
     await prisma.leadActivity.create({
       data: {
         id: randomUUID(),
-        leadId: params.id,
+        leadId: id,
         type: 'STATUS_CHANGE',
         description: `Lead converted to organisation: ${org.name} (${org.slug})`,
         createdByUserId: session.user.id,

@@ -7,7 +7,7 @@ import { randomUUID } from 'crypto'
 
 async function handleGET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -16,11 +16,15 @@ async function handleGET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Handle Next.js 15+ async params
+    const resolvedParams = await Promise.resolve(params)
+    const { id } = resolvedParams
+
     // Log the ID being searched for debugging
-    console.log('Fetching lead with ID:', params.id)
+    console.log('Fetching lead with ID:', id)
     
     const lead = await prisma.lead.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: {
         id: true,
         orgName: true,
@@ -113,7 +117,7 @@ async function handleGET(
 
 async function handlePUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -121,6 +125,10 @@ async function handlePUT(
     if (!session?.user?.id || !session.user.isSuperAdmin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    // Handle Next.js 15+ async params
+    const resolvedParams = await Promise.resolve(params)
+    const { id } = resolvedParams
 
     const body = await request.json()
     const {
@@ -141,7 +149,7 @@ async function handlePUT(
     } = body
 
     const existingLead = await prisma.lead.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: { status: true },
     })
 
@@ -185,7 +193,7 @@ async function handlePUT(
         await prisma.leadActivity.create({
           data: {
             id: randomUUID(),
-            leadId: params.id,
+            leadId: id,
             type: 'STATUS_CHANGE',
             description: `Status changed from ${existingLead.status} to ${status}`,
             createdByUserId: session.user.id,
@@ -195,7 +203,7 @@ async function handlePUT(
     }
 
     const lead = await prisma.lead.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData,
       select: {
         id: true,
@@ -254,7 +262,7 @@ async function handlePUT(
 
 async function handleDELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -263,8 +271,12 @@ async function handleDELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Handle Next.js 15+ async params
+    const resolvedParams = await Promise.resolve(params)
+    const { id } = resolvedParams
+
     const lead = await prisma.lead.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: {
         id: true,
         orgName: true,
@@ -277,7 +289,7 @@ async function handleDELETE(
 
     // Check if lead has been converted to an organization
     const convertedLead = await prisma.lead.findUnique({
-      where: { id: params.id },
+      where: { id },
       select: {
         convertedOrgId: true,
       },
@@ -292,7 +304,7 @@ async function handleDELETE(
 
     // Delete the lead (LeadActivity will be cascade deleted)
     await prisma.lead.delete({
-      where: { id: params.id },
+      where: { id },
     })
 
     return NextResponse.json({ 

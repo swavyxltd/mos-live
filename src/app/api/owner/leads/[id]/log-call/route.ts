@@ -7,7 +7,7 @@ import { randomUUID } from 'crypto'
 
 async function handlePOST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -15,6 +15,10 @@ async function handlePOST(
     if (!session?.user?.id || !session.user.isSuperAdmin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    // Handle Next.js 15+ async params
+    const resolvedParams = await Promise.resolve(params)
+    const { id } = resolvedParams
 
     const body = await request.json()
     const { outcome, callDateTime, notes, followUpDate } = body
@@ -44,7 +48,7 @@ async function handlePOST(
 
     // Check if lead exists
     const lead = await prisma.lead.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!lead) {
@@ -58,7 +62,7 @@ async function handlePOST(
     const activity = await prisma.leadActivity.create({
       data: {
         id: randomUUID(),
-        leadId: params.id,
+        leadId: id,
         type: 'CALL',
         description: notes || `Call attempt: ${outcome}`,
         outcome,
@@ -97,7 +101,7 @@ async function handlePOST(
 
     // Update lead
     await prisma.lead.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData,
     })
 
