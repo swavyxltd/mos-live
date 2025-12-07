@@ -99,7 +99,10 @@ export function AddLeadModal({ isOpen, onClose, onSave }: AddLeadModalProps) {
 
       if (!response.ok) {
         const errorData = await response.json()
-        setError(errorData.error || 'Failed to create lead')
+        const errorMessage = errorData.error || 'Failed to create lead'
+        const errorDetails = errorData.details ? ` (${errorData.details.message || JSON.stringify(errorData.details)})` : ''
+        setError(errorMessage + errorDetails)
+        console.error('Lead creation error:', errorData)
         setIsSubmitting(false)
         return
       }

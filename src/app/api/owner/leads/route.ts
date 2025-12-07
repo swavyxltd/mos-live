@@ -184,6 +184,7 @@ async function handlePOST(request: NextRequest) {
         nextContactAt: nextContactAt ? new Date(nextContactAt) : null,
         notes,
         assignedToUserId,
+        updatedAt: new Date(),
       },
       select: {
         id: true,
@@ -237,9 +238,39 @@ async function handlePOST(request: NextRequest) {
     return NextResponse.json({ lead: mappedLead }, { status: 201 })
   } catch (error: any) {
     console.error('Error creating lead:', error)
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      meta: error.meta,
+      stack: error.stack,
+    })
+    
+    // Return more specific error messages
+    let errorMessage = 'Failed to create lead'
+    let statusCode = 500
+    
+    if (error.code === 'P2002') {
+      // Unique constraint violation
+      errorMessage = 'A lead with this information already exists'
+      statusCode = 409
+    } else if (error.code === 'P2003') {
+      // Foreign key constraint violation
+      errorMessage = 'Invalid reference data provided'
+      statusCode = 400
+    } else if (error.message) {
+      errorMessage = error.message
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to create lead' },
-      { status: 500 }
+      { 
+        error: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? {
+          message: error.message,
+          code: error.code,
+          meta: error.meta,
+        } : undefined
+      },
+      { status: statusCode }
     )
   }
 }
