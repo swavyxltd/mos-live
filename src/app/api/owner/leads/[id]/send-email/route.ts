@@ -83,6 +83,10 @@ async function handlePOST(
     // Get owner name for email signature
     const ownerName = session.user.name || 'Madrasah OS'
 
+    // Get Calendly URL from platform settings
+    const platformSettings = await prisma.platform_settings.findFirst()
+    const calendlyUrl = platformSettings?.ownerCalendlyUrl || null
+
     // Extract features from email body if present
     const featuresMatch = emailBody.match(/Our best features:([\s\S]*?)(?=\n\n|$)/)
     let features: Array<{ icon: string; title: string; description: string }> | undefined
@@ -119,6 +123,7 @@ async function handlePOST(
       title: subject,
       description: bodyWithoutFeatures.replace(/\n/g, '<br>'),
       features: features,
+      calendlyUrl: calendlyUrl,
       footerText: `JazakAllah Khair,<br>${ownerName}<br>Madrasah OS`
     })
 

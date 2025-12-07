@@ -16,6 +16,7 @@ interface EmailTemplateOptions {
   footerText?: string
   showLogo?: boolean
   features?: FeatureCard[]
+  calendlyUrl?: string | null
 }
 
 /**
@@ -30,7 +31,8 @@ export async function generateEmailTemplate({
   buttonUrl,
   footerText,
   showLogo = true,
-  features
+  features,
+  calendlyUrl
 }: EmailTemplateOptions): Promise<string> {
   const logoUrl = await getLogoUrlForEmail()
   
@@ -49,6 +51,20 @@ export async function generateEmailTemplate({
         <td align="center" style="padding: 0 0 40px 0;">
           <a href="${escapedButtonUrl}" style="display: inline-block; background-color: #111827; color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 16px;">
             ${buttonText}
+          </a>
+        </td>
+      </tr>
+    </table>
+  ` : ''
+
+  // Book Demo CTA Button (if Calendly URL is provided)
+  const escapedCalendlyUrl = calendlyUrl ? calendlyUrl.replace(/&/g, '&amp;') : ''
+  const bookDemoButtonHtml = calendlyUrl ? `
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 40px 0;">
+      <tr>
+        <td align="center" style="padding: 0;">
+          <a href="${escapedCalendlyUrl}" style="display: inline-block; background-color: #0069ff; color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+            Book Demo
           </a>
         </td>
       </tr>
@@ -181,6 +197,7 @@ export async function generateEmailTemplate({
                     ${descriptionHtml}
                     ${featuresHtml}
                     ${contentHtml}
+                    ${bookDemoButtonHtml}
                     ${buttonHtml}
                     ${footerTextHtml}
                     

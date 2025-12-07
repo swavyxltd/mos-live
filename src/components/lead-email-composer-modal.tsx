@@ -150,8 +150,9 @@ export function LeadEmailComposerModal({
   onSent, 
   lead,
   ownerName = 'Madrasah OS',
-  calendlyUrl = null
+  calendlyUrl: propCalendlyUrl = null
 }: LeadEmailComposerModalProps) {
+  const [calendlyUrl, setCalendlyUrl] = useState<string | null>(propCalendlyUrl)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [template, setTemplate] = useState<string>('INITIAL')
   const [subject, setSubject] = useState('')
@@ -159,6 +160,22 @@ export function LeadEmailComposerModal({
   const [showPreview, setShowPreview] = useState(false)
   const [previewHtml, setPreviewHtml] = useState<string>('')
   const [isGeneratingPreview, setIsGeneratingPreview] = useState(false)
+
+  // Fetch Calendly URL from platform settings if not provided
+  useEffect(() => {
+    if (isOpen && !propCalendlyUrl) {
+      fetch('/api/owner/settings')
+        .then(res => res.json())
+        .then(data => {
+          if (data.ownerCalendlyUrl) {
+            setCalendlyUrl(data.ownerCalendlyUrl)
+          }
+        })
+        .catch(() => {
+          // Silently fail
+        })
+    }
+  }, [isOpen, propCalendlyUrl])
 
   useEffect(() => {
     if (isOpen && lead) {
@@ -268,6 +285,7 @@ export function LeadEmailComposerModal({
         title: previewSubject,
         description: bodyWithoutFeatures.replace(/\n/g, '<br>'),
         features: features,
+        calendlyUrl: calendlyUrl,
         footerText: `Best regards,<br>${ownerName}<br>Madrasah OS`
       })
       

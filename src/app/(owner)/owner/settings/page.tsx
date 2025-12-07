@@ -40,6 +40,7 @@ interface PlatformSettings {
   passwordRequireLowercase: boolean
   passwordRequireNumbers: boolean
   passwordRequireSpecial: boolean
+  ownerCalendlyUrl: string | null
 }
 
 interface BillingStats {
@@ -294,6 +295,20 @@ export default function OwnerSettingsPage() {
                   onChange={(e) => handleInputChange('trialPeriodDays', parseInt(e.target.value))}
                   placeholder="Enter trial period"
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="calendly-url">Calendly URL</Label>
+                <Input
+                  id="calendly-url"
+                  type="url"
+                  value={formData.ownerCalendlyUrl || ''}
+                  onChange={(e) => handleInputChange('ownerCalendlyUrl', e.target.value)}
+                  placeholder="https://calendly.com/your-username"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Your Calendly booking link. This will be used in lead emails for the "Book Demo" button.
+                </p>
               </div>
             </CardContent>
           </Card>
