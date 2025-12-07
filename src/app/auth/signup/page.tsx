@@ -25,7 +25,7 @@ function SignUpForm() {
       return
     }
     
-    fetch(`/api/auth/invitation?token=${token}`, {
+    fetch(`/api/auth/invitation?token=${encodeURIComponent(token)}`, {
       method: 'GET',
       credentials: 'include',
       headers: {
@@ -36,7 +36,14 @@ function SignUpForm() {
       .then(async res => {
         if (!res.ok) {
           const errorData = await res.json().catch(() => ({ error: 'Failed to fetch invitation' }))
-          throw new Error(errorData.error || `HTTP ${res.status}`)
+          const errorMessage = errorData.error || errorData.message || `HTTP ${res.status}`
+          console.error('[Signup] API error:', {
+            status: res.status,
+            statusText: res.statusText,
+            error: errorData,
+            tokenPrefix: token.substring(0, 8)
+          })
+          throw new Error(errorMessage)
         }
         return res.json()
       })
@@ -50,9 +57,7 @@ function SignUpForm() {
         }
       })
       .catch(err => {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('[Signup] Error fetching invitation:', err)
-        }
+        console.error('[Signup] Error fetching invitation:', err)
         setError(err.message || 'Failed to fetch invitation')
       })
       .finally(() => {
