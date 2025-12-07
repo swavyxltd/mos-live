@@ -16,25 +16,38 @@ async function handleGET(request: NextRequest) {
       )
     }
 
-    // Get demo org ID to exclude from counts
-    const demoOrg = await prisma.org.findUnique({
-      where: { slug: 'leicester-islamic-centre' },
+    // Get demo org IDs to exclude from counts
+    const demoOrgs = await prisma.org.findMany({
+      where: {
+        OR: [
+          { slug: 'leicester-islamic-centre' },
+          { slug: 'test-islamic-school' }
+        ]
+      },
       select: { id: true }
     })
+    const demoOrgIds = demoOrgs.map(org => org.id)
 
-    // Get total active organizations (excluding demo org)
+    // Get total active organizations (excluding demo orgs)
     const totalOrgs = await prisma.org.count({
       where: { 
         status: 'ACTIVE',
-        slug: { not: 'leicester-islamic-centre' }
+        slug: { 
+          notIn: ['leicester-islamic-centre', 'test-islamic-school']
+        }
       }
     })
 
-    // Get total active students across all orgs (excluding demo org)
+    // Get total active students across all orgs (excluding demo orgs and demo students)
     const totalStudents = await prisma.student.count({
       where: { 
         isArchived: false,
-        ...(demoOrg ? { orgId: { not: demoOrg.id } } : {})
+        // Exclude demo orgs
+        ...(demoOrgIds.length > 0 ? { orgId: { notIn: demoOrgIds } } : {}),
+        // Exclude demo students (IDs starting with "demo-student-")
+        NOT: {
+          id: { startsWith: 'demo-student-' }
+        }
       }
     })
 
