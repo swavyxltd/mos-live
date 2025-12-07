@@ -150,10 +150,28 @@ async function handlePOST(
         orgName: org.name,
         orgId: org.id,
         invitationId,
-        hasResendKey: true
+        hasResendKey: true,
+        baseUrl: cleanBaseUrl,
+        signupUrlLength: signupUrl.length,
+        tokenLength: token.length
       })
       
-      await sendOrgSetupInvitation({
+      // Validate inputs before sending
+      if (!org.email || !org.email.includes('@')) {
+        throw new Error(`Invalid email address: ${org.email}`)
+      }
+      
+      if (!org.name || org.name.trim().length === 0) {
+        throw new Error(`Invalid organization name: ${org.name}`)
+      }
+      
+      logger.info('Calling sendOrgSetupInvitation', {
+        to: org.email,
+        orgName: org.name,
+        signupUrlPrefix: signupUrl.substring(0, 50) + '...'
+      })
+      
+      const emailResult = await sendOrgSetupInvitation({
         to: org.email,
         orgName: org.name,
         signupUrl
@@ -162,7 +180,8 @@ async function handlePOST(
       logger.info('Invitation email resent successfully', {
         to: org.email,
         orgId: org.id,
-        invitationId
+        invitationId,
+        emailResult: emailResult ? { id: (emailResult as any)?.id } : null
       })
 
       return NextResponse.json({
@@ -171,16 +190,29 @@ async function handlePOST(
         invitationId
       })
     } catch (emailError: any) {
+      // Log comprehensive error details
       logger.error('Failed to resend invitation email', emailError, {
         to: org.email,
         orgId: org.id,
         invitationId,
         errorMessage: emailError?.message,
-        errorStack: emailError?.stack
+        errorStack: emailError?.stack,
+        errorName: emailError?.name,
+        errorCode: emailError?.code,
+        errorResponse: emailError?.response ? JSON.stringify(emailError.response) : undefined,
+        fullError: process.env.NODE_ENV === 'development' ? JSON.stringify(emailError, Object.getOwnPropertyNames(emailError)) : undefined
       })
       
       // Provide more detailed error message
-      const errorMessage = emailError?.message || 'Unknown error occurred'
+      let errorMessage = emailError?.message || 'Unknown error occurred'
+      
+      // Extract more specific error information if available
+      if (emailError?.response) {
+        errorMessage = `Email service error: ${emailError.response.message || errorMessage}`
+      } else if (emailError?.name === 'Error') {
+        errorMessage = emailError.message
+      }
+      
       const isDevelopment = process.env.NODE_ENV === 'development'
       
       return NextResponse.json(
@@ -189,7 +221,9 @@ async function handlePOST(
           message: errorMessage,
           ...(isDevelopment && { 
             details: emailError?.message,
-            stack: emailError?.stack
+            stack: emailError?.stack,
+            name: emailError?.name,
+            code: emailError?.code
           })
         },
         { status: 500 }
