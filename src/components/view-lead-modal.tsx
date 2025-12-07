@@ -309,37 +309,59 @@ export function ViewLeadModal({ isOpen, onClose, onUpdate, leadId, onEdit, autoO
   }
 
   const handleResendInvite = async () => {
-    if (!lead?.convertedOrgId) return
+    if (!lead?.convertedOrgId) {
+      toast.error('Organization ID is missing')
+      return
+    }
 
     setIsResendingInvite(true)
     try {
+      console.log('[Resend Invite] Starting request for org:', lead.convertedOrgId)
+      
       const res = await fetch(`/api/owner/orgs/${lead.convertedOrgId}/resend-invitation`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       })
       
+      console.log('[Resend Invite] Response status:', res.status, res.statusText)
+      console.log('[Resend Invite] Response headers:', Object.fromEntries(res.headers.entries()))
+      
       // Get response text first to handle both JSON and non-JSON responses
       const responseText = await res.text()
+      console.log('[Resend Invite] Response text length:', responseText.length)
+      console.log('[Resend Invite] Response text (first 500 chars):', responseText.substring(0, 500))
+      
       let errorData: any = {}
       let data: any = null
       
       try {
-        if (responseText) {
+        if (responseText && responseText.trim().length > 0) {
           data = JSON.parse(responseText)
+          console.log('[Resend Invite] Parsed JSON:', data)
+        } else {
+          console.warn('[Resend Invite] Empty response body')
         }
-      } catch (parseError) {
-        console.error('Failed to parse response as JSON:', parseError, 'Response:', responseText.substring(0, 200))
+      } catch (parseError: any) {
+        console.error('[Resend Invite] Failed to parse response as JSON:', {
+          error: parseError,
+          message: parseError?.message,
+          responseText: responseText.substring(0, 500)
+        })
+        // If it's not JSON, treat the text as the error message
+        if (responseText && responseText.trim().length > 0) {
+          errorData = { error: responseText.substring(0, 200) }
+        }
       }
       
       if (!res.ok) {
-        errorData = data || {}
+        errorData = data || errorData || {}
         // Use the more detailed message if available
         const errorMessage = errorData.message || errorData.error || `Failed to resend invitation (${res.status} ${res.statusText})`
-        console.error('Error resending invitation:', {
+        console.error('[Resend Invite] Error response:', {
           status: res.status,
           statusText: res.statusText,
-          error: errorData,
-          responseText: responseText.substring(0, 200),
+          errorData,
+          responseText: responseText.substring(0, 500),
           message: errorMessage
         })
         throw new Error(errorMessage)
@@ -347,14 +369,21 @@ export function ViewLeadModal({ isOpen, onClose, onUpdate, leadId, onEdit, autoO
 
       // Success case
       if (data) {
+        console.log('[Resend Invite] Success:', data)
         toast.success(data.message || 'Invitation resent successfully')
       } else {
+        console.log('[Resend Invite] Success (no data)')
         toast.success('Invitation resent successfully')
       }
     } catch (error: any) {
-      console.error('Error resending invitation:', error)
+      console.error('[Resend Invite] Exception caught:', {
+        error,
+        message: error?.message,
+        stack: error?.stack,
+        name: error?.name
+      })
       // Show the error message from the API, or a fallback
-      const errorMessage = error.message || 'Failed to resend invitation. Please check the console for details.'
+      const errorMessage = error?.message || 'Failed to resend invitation. Please check the console for details.'
       toast.error(errorMessage)
     } finally {
       setIsResendingInvite(false)
