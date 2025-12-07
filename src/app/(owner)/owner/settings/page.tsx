@@ -27,9 +27,7 @@ interface PlatformSettings {
   scheduledMaintenanceAt: string | null
   basePricePerStudent: number
   billingDayOfMonth: number
-  gracePeriodDays: number
   autoBillingEnabled: boolean
-  billingNotificationsEnabled: boolean
   stripePublishableKey: string | null
   stripeSecretKey: string | null
   stripeWebhookSecret: string | null
@@ -507,35 +505,13 @@ export default function OwnerSettingsPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label>Send Billing Notifications</Label>
-                  <p className="text-sm text-gray-500">Notify organizations before billing</p>
-                </div>
-                <Switch
-                  checked={formData.billingNotificationsEnabled ?? true}
-                  onCheckedChange={(checked) => handleInputChange('billingNotificationsEnabled', checked)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="grace-period">Grace Period (days)</Label>
-                <Input
-                  id="grace-period"
-                  type="number"
-                  value={formData.gracePeriodDays || 14}
-                  onChange={(e) => handleInputChange('gracePeriodDays', parseInt(e.target.value))}
-                  placeholder="14"
-                />
-                <p className="text-sm text-gray-500 mt-1">
-                  Number of days after billing anniversary to wait before automatically suspending accounts with overdue payments.
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-800">
+                  <strong>Billing Email Notifications:</strong> Organizations will automatically receive email notifications after each billing attempt - both when payment succeeds and when it fails.
                 </p>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
-                  <p className="text-sm text-blue-800">
-                    <strong>Automatic Suspension:</strong> If an organization's payment is overdue by this many days 
-                    (billing anniversary + grace period), their account will be automatically deactivated.
-                  </p>
-                </div>
+                <p className="text-sm text-blue-700 mt-2">
+                  <strong>Grace Period:</strong> Organizations have a 14-day grace period after payment failure before their account is automatically suspended.
+                </p>
               </div>
 
               {billingStats && (

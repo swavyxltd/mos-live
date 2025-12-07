@@ -22,9 +22,8 @@ async function handlePOST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get platform settings for grace period
-    const platformSettings = await getPlatformSettings()
-    const gracePeriodDays = platformSettings?.gracePeriodDays || 14
+    // Grace period is hardcoded to 14 days
+    const gracePeriodDays = 14
 
     const today = new Date()
     today.setHours(0, 0, 0, 0)

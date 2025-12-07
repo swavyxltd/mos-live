@@ -80,9 +80,7 @@ async function handlePUT(request: NextRequest) {
     }
     if (body.basePricePerStudent !== undefined) updateData.basePricePerStudent = body.basePricePerStudent
     if (body.billingDayOfMonth !== undefined) updateData.billingDayOfMonth = body.billingDayOfMonth
-    if (body.gracePeriodDays !== undefined) updateData.gracePeriodDays = body.gracePeriodDays
     if (body.autoBillingEnabled !== undefined) updateData.autoBillingEnabled = body.autoBillingEnabled
-    if (body.billingNotificationsEnabled !== undefined) updateData.billingNotificationsEnabled = body.billingNotificationsEnabled
     if (body.stripePublishableKey !== undefined) updateData.stripePublishableKey = body.stripePublishableKey
     if (body.stripeTestMode !== undefined) updateData.stripeTestMode = body.stripeTestMode
     

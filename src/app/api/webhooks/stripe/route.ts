@@ -326,6 +326,21 @@ async function handleSetupIntentSucceeded(setupIntent: any) {
 async function handleInvoicePaymentSucceeded(invoice: any) {
   // Handle platform billing invoice payment
   if (invoice.metadata?.orgId) {
+    const org = await prisma.org.findUnique({
+      where: { id: invoice.metadata.orgId },
+      include: {
+        memberships: {
+          where: { role: 'ADMIN' },
+          include: {
+            user: {
+              select: { email: true, name: true }
+            }
+          },
+          take: 1
+        }
+      }
+    })
+    
     // Reset retry tracking when payment succeeds
     await prisma.platformOrgBilling.updateMany({
       where: {
@@ -352,6 +367,29 @@ async function handleInvoicePaymentSucceeded(invoice: any) {
         }
       }
     })
+    
+    // Send billing success email
+    if (org?.memberships[0]?.user?.email) {
+      try {
+        const { sendBillingSuccessEmail } = await import('@/lib/mail')
+        const billing = await prisma.platformOrgBilling.findUnique({
+          where: { orgId: invoice.metadata.orgId }
+        })
+        const studentCount = billing?.lastBilledStudentCount || 0
+        const invoiceUrl = invoice.hosted_invoice_url || undefined
+        
+        await sendBillingSuccessEmail({
+          to: org.memberships[0].user.email,
+          orgName: org.name,
+          amount: invoice.amount_paid,
+          studentCount,
+          invoiceUrl
+        })
+      } catch (emailError: any) {
+        logger.error('Failed to send billing success email', emailError)
+        // Don't fail the webhook if email fails
+      }
+    }
   }
 }
 
@@ -453,15 +491,21 @@ async function handleInvoicePaymentFailed(invoice: any) {
       data: updateData
     })
     
-    // Only send initial email if this is the first failure
-    if (!billing?.firstPaymentFailureDate && org?.memberships[0]?.user?.email) {
-      await sendPaymentFailedPlatform({
-        to: org.memberships[0].user.email,
-        orgName: org.name,
-        updateUrl: `${process.env.APP_BASE_URL}/settings?tab=subscription`,
-        amount: invoice.amount_due,
-        failureReason: invoice.last_payment_error?.message || 'Payment could not be processed'
-      })
+    // Always send email on payment failure (not just first time)
+    if (org?.memberships[0]?.user?.email) {
+      try {
+        const { sendPaymentFailedPlatform } = await import('@/lib/mail')
+        await sendPaymentFailedPlatform({
+          to: org.memberships[0].user.email,
+          orgName: org.name,
+          updateUrl: `${process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'https://app.madrasah.io'}/settings?tab=subscription`,
+          amount: invoice.amount_due,
+          failureReason: invoice.last_payment_error?.message || 'Payment could not be processed'
+        })
+      } catch (emailError: any) {
+        logger.error('Failed to send payment failed email', emailError)
+        // Don't fail the webhook if email fails
+      }
     }
     
     await prisma.auditLog.create({

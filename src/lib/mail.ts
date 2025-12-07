@@ -297,6 +297,73 @@ export async function sendPaymentFailedPlatform({
   })
 }
 
+export async function sendBillingSuccessEmail({
+  to,
+  orgName,
+  amount,
+  studentCount,
+  invoiceUrl
+}: {
+  to: string
+  orgName: string
+  amount: number
+  studentCount: number
+  invoiceUrl?: string
+}) {
+  const amountFormatted = `£${(amount / 100).toFixed(2)}`
+  
+  const content = `
+    <div style="margin-bottom: 24px;">
+      <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #22c55e; border-radius: 8px; padding: 20px; margin-bottom: 24px; text-align: center;">
+        <p style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: #166534;">
+          Payment Successful ✓
+        </p>
+        <p style="margin: 0; font-size: 16px; color: #15803d; line-height: 1.6;">
+          Your monthly subscription payment has been processed successfully.
+        </p>
+      </div>
+      
+      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+        <tr>
+          <td style="padding: 0 0 12px 0; font-size: 14px; color: #6b7280; text-align: left;">Organization:</td>
+          <td align="right" style="padding: 0 0 12px 0; font-size: 14px; font-weight: 600; color: #111827; text-align: right;">${orgName}</td>
+        </tr>
+        <tr>
+          <td style="padding: 0 0 12px 0; font-size: 14px; color: #6b7280; text-align: left;">Active Students:</td>
+          <td align="right" style="padding: 0 0 12px 0; font-size: 14px; font-weight: 600; color: #111827; text-align: right;">${studentCount}</td>
+        </tr>
+        <tr>
+          <td style="padding: 16px 0 0 0; border-top: 2px solid #e5e7eb; font-size: 16px; font-weight: 600; color: #111827; text-align: left;">Amount Charged:</td>
+          <td align="right" style="padding: 16px 0 0 0; border-top: 2px solid #e5e7eb; font-size: 20px; font-weight: 700; color: #059669; text-align: right;">${amountFormatted}</td>
+        </tr>
+      </table>
+      
+      <p style="margin: 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">
+        Thank you for your continued support. Your account remains active and you can continue using all features.
+      </p>
+    </div>
+  `
+  
+  const html = await generateEmailTemplate({
+    title: 'Billing Successful',
+    description: [
+      "Assalamu'alaikum!",
+      'Your monthly subscription payment has been processed successfully.'
+    ],
+    content,
+    buttonText: invoiceUrl ? 'View Invoice' : undefined,
+    buttonUrl: invoiceUrl,
+    footerText: 'If you have any questions about this charge, please contact our support team.'
+  })
+  
+  return sendEmail({
+    to,
+    subject: `Billing Successful - ${orgName}`,
+    html,
+    text: `Billing Successful - ${orgName}\n\nAssalamu'alaikum!\n\nYour monthly subscription payment has been processed successfully.\n\nOrganization: ${orgName}\nActive Students: ${studentCount}\nAmount Charged: ${amountFormatted}\n\nThank you for your continued support. Your account remains active and you can continue using all features.\n\n${invoiceUrl ? `View Invoice: ${invoiceUrl}\n\n` : ''}If you have any questions about this charge, please contact our support team.`
+  })
+}
+
 export async function sendPaymentFailedWarningPlatform({
   to,
   orgName,
