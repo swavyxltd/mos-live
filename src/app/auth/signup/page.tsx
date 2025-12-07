@@ -39,24 +39,32 @@ function SignUpForm() {
         let data: any = null
         
         try {
-          if (responseText) {
+          if (responseText && responseText.trim().length > 0) {
             data = JSON.parse(responseText)
           }
-        } catch (parseError) {
-          console.error('[Signup] Failed to parse response as JSON:', parseError, 'Response:', responseText.substring(0, 200))
+        } catch (parseError: any) {
+          console.error('[Signup] Failed to parse response as JSON:', {
+            parseError: parseError?.message,
+            responseText: responseText.substring(0, 500),
+            responseLength: responseText.length
+          })
         }
         
         if (!res.ok) {
           errorData = data || {}
           const errorMessage = errorData.error || errorData.message || `HTTP ${res.status} ${res.statusText}`
+          
+          // Log detailed error information
           console.error('[Signup] API error:', {
             status: res.status,
             statusText: res.statusText,
-            error: errorData,
-            responseText: responseText.substring(0, 500),
+            errorData: JSON.stringify(errorData, null, 2),
+            responseText: responseText.substring(0, 1000),
             tokenPrefix: token.substring(0, 8),
-            message: errorMessage
+            tokenLength: token.length,
+            errorMessage: errorMessage
           })
+          
           throw new Error(errorMessage)
         }
         
@@ -75,9 +83,12 @@ function SignUpForm() {
       })
       .catch(err => {
         console.error('[Signup] Error fetching invitation:', {
-          error: err,
-          message: err?.message,
-          stack: err?.stack
+          errorType: typeof err,
+          errorMessage: err?.message,
+          errorName: err?.name,
+          errorStack: err?.stack,
+          errorString: String(err),
+          errorJSON: JSON.stringify(err, Object.getOwnPropertyNames(err))
         })
         setError(err.message || 'Failed to fetch invitation')
       })
