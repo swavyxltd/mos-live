@@ -10,6 +10,7 @@ import { logger } from '@/lib/logger'
 import { sanitizeText, isValidEmail, isValidPhone, MAX_STRING_LENGTHS } from '@/lib/input-validation'
 import { withRateLimit } from '@/lib/api-middleware'
 import { requireRole } from '@/lib/roles'
+import { validatePassword } from '@/lib/password-validation'
 
 async function handlePOST(request: NextRequest) {
   try {
@@ -113,6 +114,17 @@ async function handlePOST(request: NextRequest) {
         { error: 'Passwords cannot be set for organization accounts. Users must set their own passwords via invitation.' },
         { status: 400 }
       )
+    }
+
+    // Validate password if provided (for owner accounts)
+    if (password) {
+      const passwordValidation = await validatePassword(password)
+      if (!passwordValidation.isValid) {
+        return NextResponse.json(
+          { error: passwordValidation.errors.join('. ') },
+          { status: 400 }
+        )
+      }
     }
 
     // Hash password if provided
