@@ -105,6 +105,11 @@ export default function OwnerOrgsPage() {
 
   useEffect(() => {
     if (status === 'loading') return
+    if (status === 'unauthenticated') {
+      console.error('[Orgs Page] User not authenticated, status:', status)
+      setLoading(false)
+      return
+    }
     fetchOrgs()
   }, [status])
 
