@@ -15,6 +15,13 @@ async function handleGET(request: NextRequest) {
       )
     }
 
+    // Log token details for debugging
+    logger.info('Fetching invitation by token', {
+      tokenLength: token.length,
+      tokenPrefix: token.substring(0, 8),
+      environment: process.env.NODE_ENV
+    })
+
     const invitation = await prisma.invitation.findUnique({
       where: { token },
       include: {
@@ -28,8 +35,20 @@ async function handleGET(request: NextRequest) {
       }
     })
 
+    logger.info('Invitation lookup result', {
+      found: !!invitation,
+      invitationId: invitation?.id,
+      orgId: invitation?.orgId,
+      environment: process.env.NODE_ENV
+    })
+
     if (!invitation) {
-      logger.warn('Invitation not found', { tokenPrefix: token.substring(0, 8) })
+      logger.warn('Invitation not found', { 
+        tokenPrefix: token.substring(0, 8), 
+        tokenLength: token.length,
+        environment: process.env.NODE_ENV,
+        fullToken: process.env.NODE_ENV === 'development' ? token : undefined
+      })
       return NextResponse.json(
         { error: 'Invalid invitation token' },
         { status: 404 }
@@ -64,10 +83,15 @@ async function handleGET(request: NextRequest) {
       acceptedAt: invitation.acceptedAt
     })
   } catch (error: any) {
+    const token = request.nextUrl.searchParams.get('token')
     logger.error('Error fetching invitation', error, {
       errorMessage: error?.message,
       errorStack: error?.stack,
-      tokenPrefix: request.nextUrl.searchParams.get('token')?.substring(0, 8)
+      tokenPrefix: token?.substring(0, 8),
+      tokenLength: token?.length,
+      environment: process.env.NODE_ENV,
+      errorCode: error?.code,
+      errorName: error?.name
     })
     
     const isDevelopment = process.env.NODE_ENV === 'development'
@@ -76,7 +100,10 @@ async function handleGET(request: NextRequest) {
       { 
         error: 'Failed to fetch invitation',
         message: error?.message || 'An unexpected error occurred',
-        ...(isDevelopment && { details: error?.message })
+        ...(isDevelopment && { 
+          details: error?.message,
+          tokenPrefix: token?.substring(0, 8)
+        })
       },
       { status: 500 }
     )
