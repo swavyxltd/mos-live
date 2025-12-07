@@ -9,7 +9,7 @@ import { randomUUID } from 'crypto'
 
 async function handleGET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -18,7 +18,22 @@ async function handleGET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id } = params
+    // Handle params - in Next.js 16, params can be a Promise
+    const params = context.params
+    const resolvedParams = params instanceof Promise ? await params : params
+    const { id } = resolvedParams
+    
+    console.log('[LEAD API] Fetching lead:', { 
+      id, 
+      paramsType: typeof params, 
+      isPromise: params instanceof Promise,
+      resolvedParams 
+    })
+    
+    if (!id) {
+      console.error('[LEAD API] No ID provided:', { params, resolvedParams, context })
+      return NextResponse.json({ error: 'Lead ID is required' }, { status: 400 })
+    }
     
     const lead = await prisma.lead.findUnique({
       where: { id },
@@ -80,8 +95,11 @@ async function handleGET(
     })
 
     if (!lead) {
+      console.error('[LEAD API] Lead not found in database:', { id })
       return NextResponse.json({ error: 'Lead not found' }, { status: 404 })
     }
+
+    console.log('[LEAD API] Lead found:', { id, orgName: lead.orgName })
 
     // Map relations to expected frontend format
     const mappedLead = {
@@ -94,6 +112,7 @@ async function handleGET(
       })),
     }
 
+    console.log('[LEAD API] Returning lead data')
     return NextResponse.json({ lead: mappedLead })
   } catch (error: any) {
     console.error('Error fetching lead:', error)
@@ -114,7 +133,7 @@ async function handleGET(
 
 async function handlePUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -123,7 +142,14 @@ async function handlePUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id } = params
+    // Handle params - in Next.js 16, params can be a Promise
+    const params = context.params
+    const resolvedParams = params instanceof Promise ? await params : params
+    const { id } = resolvedParams
+    
+    if (!id) {
+      return NextResponse.json({ error: 'Lead ID is required' }, { status: 400 })
+    }
 
     const body = await request.json()
     const {
@@ -257,7 +283,7 @@ async function handlePUT(
 
 async function handleDELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -266,7 +292,14 @@ async function handleDELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id } = params
+    // Handle params - in Next.js 16, params can be a Promise
+    const params = context.params
+    const resolvedParams = params instanceof Promise ? await params : params
+    const { id } = resolvedParams
+    
+    if (!id) {
+      return NextResponse.json({ error: 'Lead ID is required' }, { status: 400 })
+    }
 
     const lead = await prisma.lead.findUnique({
       where: { id },
