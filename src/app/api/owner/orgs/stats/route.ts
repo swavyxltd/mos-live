@@ -6,31 +6,16 @@ import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
 
 async function handleGET(request: NextRequest) {
-  console.log('[Owner Orgs Stats] ========== HANDLER CALLED ==========')
   try {
-    let session
-    try {
-      console.log('[Owner Orgs Stats] Getting session...')
-      session = await getServerSession(authOptions)
-      console.log('[Owner Orgs Stats] Session result:', {
-        hasUser: !!session?.user,
-        userId: session?.user?.id,
-        isSuperAdmin: session?.user?.isSuperAdmin
-      })
-    } catch (sessionError: any) {
-      console.error('[Owner Orgs Stats] Session error:', sessionError?.message, sessionError?.stack)
-      logger.error('Error getting session', sessionError)
-      return NextResponse.json(
-        { error: 'Authentication error', message: sessionError?.message || 'Failed to get session' },
-        { status: 500 }
-      )
-    }
+    const session = await getServerSession(authOptions)
     
     // Only allow super admins (owners)
     if (!session?.user?.id || !session.user.isSuperAdmin) {
       logger.warn('Unauthorized access attempt to owner orgs stats', {
         userId: session?.user?.id,
-        isSuperAdmin: session?.user?.isSuperAdmin
+        isSuperAdmin: session?.user?.isSuperAdmin,
+        hasSession: !!session,
+        hasUser: !!session?.user
       })
       return NextResponse.json(
         { error: 'Unauthorized', message: 'Owner access required' },
@@ -38,19 +23,35 @@ async function handleGET(request: NextRequest) {
       )
     }
 
-    // Get all organizations with detailed stats (including city field and status)
-    // IMPORTANT: No where clause - this returns ALL orgs from database, no filtering
+    // Get all organizations, excluding demo ones
     let orgs
     try {
-      console.log('[Owner Orgs Stats] Fetching orgs from database...')
-      logger.info('Starting to fetch orgs from database')
-      // Simplified query - just get basic org data first
-      // Exclude demo organizations
+      logger.info('Fetching orgs from database')
       orgs = await prisma.org.findMany({
         where: {
-          slug: { 
-            notIn: ['test-islamic-school', 'leicester-islamic-centre']
-          }
+          AND: [
+            {
+              slug: { 
+                notIn: ['test-islamic-school', 'leicester-islamic-centre']
+              }
+            },
+            {
+              name: {
+                not: {
+                  contains: 'Test Islamic School',
+                  mode: 'insensitive'
+                }
+              }
+            },
+            {
+              name: {
+                not: {
+                  contains: 'Leicester Islamic Centre',
+                  mode: 'insensitive'
+                }
+              }
+            }
+          ]
         },
         select: {
           id: true,
@@ -65,38 +66,33 @@ async function handleGET(request: NextRequest) {
         orderBy: { createdAt: 'desc' }
       })
       
-      // Filter out demo orgs by name as well (client-side filter for safety)
-      orgs = orgs.filter(org => 
-        !org.name.toLowerCase().includes('test islamic school') &&
-        org.slug !== 'test-islamic-school' &&
-        org.slug !== 'leicester-islamic-centre'
-      )
+      // Additional client-side filter for safety
+      orgs = orgs.filter(org => {
+        const nameLower = org.name.toLowerCase()
+        return (
+          org.slug !== 'test-islamic-school' &&
+          org.slug !== 'leicester-islamic-centre' &&
+          !nameLower.includes('test islamic school') &&
+          !nameLower.includes('leicester islamic centre')
+        )
+      })
       
-      console.log('[Owner Orgs Stats] Fetched', orgs.length, 'orgs from database')
       logger.info('Fetched orgs from database', { count: orgs.length })
     } catch (dbError: any) {
-      console.error('[Owner Orgs Stats] Database error:', dbError?.message, dbError?.code)
       logger.error('Error fetching orgs from database', dbError, {
         errorMessage: dbError?.message,
-        errorCode: dbError?.code,
-        errorName: dbError?.name,
-        errorStack: dbError?.stack
+        errorCode: dbError?.code
       })
       throw dbError
     }
 
     // Handle empty orgs array
     if (!orgs || orgs.length === 0) {
-      console.log('[Owner Orgs Stats] No orgs found in database')
       logger.info('No orgs found in database')
       return NextResponse.json([])
     }
-    
-    console.log('[Owner Orgs Stats] Processing', orgs.length, 'orgs')
-    console.log('[Owner Orgs Stats] Org names:', orgs.map(o => o.name))
 
-    // TEMPORARY: Return basic org data first to get it working
-    // Then we'll add stats processing
+    // Return basic org data with minimal stats
     const basicOrgsResponse = orgs.map(org => ({
       id: String(org.id),
       name: String(org.name || ''),
@@ -123,7 +119,7 @@ async function handleGET(request: NextRequest) {
       lastActivity: org.updatedAt instanceof Date ? org.updatedAt.toISOString() : String(org.updatedAt || new Date().toISOString())
     }))
     
-    console.log('[Owner Orgs Stats] ✅ Returning basic org data:', basicOrgsResponse.length, 'orgs')
+    logger.info('Returning orgs data', { count: basicOrgsResponse.length })
     return NextResponse.json(basicOrgsResponse)
 
     // Get admin user for each org and calculate stats
@@ -290,17 +286,12 @@ async function handleGET(request: NextRequest) {
         }
       })
       )
-      console.log('[Owner Orgs Stats] Promise.all completed, got', orgsWithStats?.length, 'orgs')
     } catch (promiseError: any) {
-      console.error('[Owner Orgs Stats] Promise.all error:', promiseError?.message)
-      console.error('[Owner Orgs Stats] Promise.all error stack:', promiseError?.stack)
       logger.error('Error in Promise.all processing orgs', promiseError, {
         errorMessage: promiseError?.message,
-        errorStack: promiseError?.stack,
         orgCount: orgs.length
       })
       // Instead of returning error, try to return basic org info
-      console.log('[Owner Orgs Stats] Attempting to return basic org info as fallback')
       const basicOrgs = orgs.map(org => ({
         id: String(org.id),
         name: String(org.name || ''),
@@ -348,12 +339,6 @@ async function handleGET(request: NextRequest) {
     }
     
     try {
-      console.log('[Owner Orgs Stats] Serializing response with', orgsWithStats.length, 'orgs')
-      if (orgsWithStats && orgsWithStats.length > 0) {
-        console.log('[Owner Orgs Stats] First org sample:', JSON.stringify(orgsWithStats[0], null, 2))
-      } else {
-        console.log('[Owner Orgs Stats] WARNING: orgsWithStats is empty or undefined!')
-      }
       // Ensure all values are serializable
       const serializableOrgs = orgsWithStats.map((org, index) => {
         try {
@@ -386,7 +371,7 @@ async function handleGET(request: NextRequest) {
           lastActivity: org.lastActivity instanceof Date ? org.lastActivity.toISOString() : String(org.lastActivity || new Date().toISOString())
         }
         } catch (orgError: any) {
-          console.error(`[Owner Orgs Stats] Error serializing org ${index}:`, orgError?.message)
+          logger.error(`Error serializing org ${index}`, orgError, { orgId: org?.id })
           // Return minimal org info if serialization fails
           return {
             id: String(org?.id || ''),
@@ -405,14 +390,12 @@ async function handleGET(request: NextRequest) {
           }
         }
       })
-      console.log('[Owner Orgs Stats] ✅ Successfully serialized', serializableOrgs.length, 'orgs')
-      console.log('[Owner Orgs Stats] ✅ Returning response with', serializableOrgs.length, 'orgs')
-      const response = NextResponse.json(serializableOrgs)
-      console.log('[Owner Orgs Stats] ✅ Response created, status:', response.status)
-      console.log('[Owner Orgs Stats] ========== SUCCESS ==========')
-      return response
+      logger.info('Returning orgs with stats', { count: serializableOrgs.length })
+      return NextResponse.json(serializableOrgs)
     } catch (jsonError: any) {
-      console.error('[Owner Orgs Stats] JSON serialization error:', jsonError?.message, jsonError?.stack)
+      logger.error('JSON serialization error', jsonError, {
+        errorMessage: jsonError?.message
+      })
       logger.error('Error serializing response to JSON', jsonError, {
         orgCount: orgsWithStats.length,
         errorMessage: jsonError?.message
@@ -430,50 +413,22 @@ async function handleGET(request: NextRequest) {
       return NextResponse.json(basicOrgs)
     }
   } catch (error: any) {
-    // Log the full error for debugging
-    console.error('[Owner Orgs Stats] ========== ERROR CAUGHT ==========')
-    console.error('[Owner Orgs Stats] Error message:', error?.message)
-    console.error('[Owner Orgs Stats] Error name:', error?.name)
-    console.error('[Owner Orgs Stats] Error code:', error?.code)
-    console.error('[Owner Orgs Stats] Error stack:', error?.stack)
-    console.error('[Owner Orgs Stats] Full error object:', error)
     logger.error('Error fetching org stats', error, {
       errorMessage: error?.message,
-      errorStack: error?.stack,
-      errorName: error?.name,
-      errorCode: error?.code
+      errorStack: error?.stack
     })
     
     const isDevelopment = process.env.NODE_ENV === 'development'
     
     // Ensure we always return a valid JSON response
-    try {
-      return NextResponse.json(
-        { 
-          error: 'Failed to fetch organization stats',
-          message: error?.message || 'Unknown error',
-          ...(isDevelopment && { 
-            details: error?.message,
-            stack: error?.stack?.split('\n').slice(0, 5).join('\n'),
-            code: error?.code
-          })
-        },
-        { status: 500 }
-      )
-    } catch (jsonError) {
-      // If even JSON serialization fails, return a plain text response
-      console.error('[Owner Orgs Stats] Failed to serialize error response:', jsonError)
-      return new NextResponse(
-        JSON.stringify({ 
-          error: 'Failed to fetch organization stats',
-          message: 'Internal server error'
-        }),
-        { 
-          status: 500,
-          headers: { 'Content-Type': 'application/json' }
-        }
-      )
-    }
+    return NextResponse.json(
+      { 
+        error: 'Failed to fetch organization stats',
+        message: error?.message || 'Unknown error',
+        ...(isDevelopment && { details: error?.message })
+      },
+      { status: 500 }
+    )
   }
 }
 

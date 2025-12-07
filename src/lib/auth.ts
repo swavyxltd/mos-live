@@ -243,6 +243,27 @@ export const authOptions: NextAuthOptions = {
 
       const userId = user?.id ?? token.sub
       if (userId) {
+        // Always ensure isSuperAdmin is fresh from database on every request
+        // This is critical for production where tokens might be cached
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+              isSuperAdmin: true
+            }
+          })
+          
+          if (dbUser !== null) {
+            token.isSuperAdmin = dbUser.isSuperAdmin
+          }
+        } catch (error) {
+          // If database query fails, keep existing token value
+          // Log error server-side only (not to console in production)
+          if (process.env.NODE_ENV === 'development') {
+            console.error('[Auth] Error fetching isSuperAdmin:', error)
+          }
+        }
+
         // When trigger is 'update' (when update() is called), ALWAYS fetch fresh data from database
         // This ensures profile changes (name, email, image) are immediately reflected
         if (trigger === 'update') {
@@ -325,7 +346,8 @@ export const authOptions: NextAuthOptions = {
         session.user.name = token.name as string | null | undefined
         session.user.email = token.email as string | null | undefined
         session.user.image = token.image as string | null | undefined
-        session.user.isSuperAdmin = (token.isSuperAdmin as boolean) ?? false
+        // Ensure isSuperAdmin is always a boolean, defaulting to false if undefined
+        session.user.isSuperAdmin = Boolean(token.isSuperAdmin ?? false)
         session.user.staffSubrole = token.staffSubrole as string
         // Ensure roleHints is always set, even if there was an error fetching it
         session.user.roleHints = (token.roleHints as {
