@@ -140,13 +140,24 @@ export function ViewLeadModal({ isOpen, onClose, onUpdate, leadId, onEdit, autoO
       const res = await fetch(`/api/owner/leads/${leadId}`)
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}))
-        throw new Error(errorData.error || `Failed to load lead (${res.status})`)
+        const errorMessage = errorData.error || errorData.message || `Failed to load lead (${res.status})`
+        console.error('Failed to fetch lead:', {
+          leadId,
+          status: res.status,
+          statusText: res.statusText,
+          error: errorData
+        })
+        throw new Error(errorMessage)
       }
       const data = await res.json()
+      if (!data.lead) {
+        throw new Error('Lead data not found in response')
+      }
       setLead(data.lead)
     } catch (error: any) {
       console.error('Error loading lead:', error)
       toast.error(error.message || 'Failed to load lead')
+      setLead(null) // Clear lead state on error
     } finally {
       setIsLoading(false)
     }
