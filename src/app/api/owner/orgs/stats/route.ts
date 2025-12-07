@@ -44,6 +44,8 @@ async function handleGET(request: NextRequest) {
       orderBy: { createdAt: 'desc' }
     })
 
+    logger.info('Fetched orgs from database', { count: orgs.length, orgIds: orgs.map(o => o.id) })
+
 
     // Get admin user for each org and calculate stats
     // Wrap each org processing in try-catch so one failing org doesn't break the entire list
@@ -107,6 +109,7 @@ async function handleGET(request: NextRequest) {
           // - Get current period end from Stripe subscription
           // - Track billing status changes
           const platformBilling = {
+            stripeCustomerId: '', // Would come from Stripe
             status: 'ACTIVE', // Would come from Stripe subscription status
             currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // Would come from Stripe
           }
@@ -154,7 +157,11 @@ async function handleGET(request: NextRequest) {
               invoices: org._count.invoices,
               teachers: 0
             },
-            platformBilling: null,
+            platformBilling: {
+              stripeCustomerId: '',
+              status: 'ACTIVE',
+              currentPeriodEnd: org.updatedAt
+            },
             owner: null,
             totalRevenue: 0,
             lastActivity: org.updatedAt
@@ -163,6 +170,7 @@ async function handleGET(request: NextRequest) {
       })
     )
 
+    logger.info('Returning orgs with stats', { count: orgsWithStats.length })
     return NextResponse.json(orgsWithStats)
   } catch (error: any) {
     logger.error('Error fetching org stats', error)
