@@ -74,8 +74,20 @@ export default function OwnerOrgsPage() {
           console.error('[Orgs Page] Authentication failed - session may be invalid')
           console.error('[Orgs Page] Session status:', status)
           console.error('[Orgs Page] Session user:', session?.user?.email || 'none')
+          
+          // Try to fetch debug info
+          try {
+            const debugResponse = await fetch('/api/owner/orgs/stats/debug', {
+              credentials: 'include'
+            })
+            const debugData = await debugResponse.json()
+            console.error('[Orgs Page] Debug info:', debugData)
+          } catch (debugErr) {
+            console.error('[Orgs Page] Could not fetch debug info:', debugErr)
+          }
         } else if (response.status === 500) {
           console.error('[Orgs Page] Server error - check Vercel logs')
+          console.error('[Orgs Page] Error details:', data)
         }
         setOrgsWithStats([])
       }
