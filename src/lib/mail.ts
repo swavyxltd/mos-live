@@ -3,25 +3,17 @@ import { generateEmailTemplate } from './email-template'
 
 // Check if we're in demo mode
 const isDemoMode = () => {
-  // Allow forcing email sending even in development if FORCE_EMAIL_SEND is set
-  if (process.env.FORCE_EMAIL_SEND === 'true') {
-    return false
+  // If RESEND_API_KEY is set and valid, always allow sending (regardless of NODE_ENV)
+  const apiKey = process.env.RESEND_API_KEY
+  
+  // Only block if API key is missing or is explicitly the demo key
+  if (!apiKey || apiKey === 're_demo_key') {
+    return true
   }
   
-  const result = {
-    isDevelopment: process.env.NODE_ENV === 'development',
-    noDatabase: !process.env.DATABASE_URL,
-    databaseHasDemo: process.env.DATABASE_URL?.includes('demo') || false,
-    noApiKey: !process.env.RESEND_API_KEY,
-    isDemoKey: process.env.RESEND_API_KEY === 're_demo_key',
-  }
-  
-  const inDemoMode = result.isDevelopment || result.noDatabase || result.databaseHasDemo || result.noApiKey || result.isDemoKey
-  
-  if (inDemoMode) {
-  }
-  
-  return inDemoMode
+  // If API key exists and is valid, never block (even in development)
+  // This allows testing email sending locally with a real API key
+  return false
 }
 
 export const resend = isDemoMode() ? null : new Resend(process.env.RESEND_API_KEY)
@@ -39,7 +31,21 @@ export async function sendEmail({
 }) {
   // In demo mode, just log the email instead of sending
   if (isDemoMode()) {
-    return { id: 'demo-email-' + Date.now() }
+    const apiKey = process.env.RESEND_API_KEY
+    const demoModeReason = {
+      noApiKey: !apiKey,
+      isDemoKey: apiKey === 're_demo_key',
+    }
+    
+    console.warn('⚠️ Email not sent (demo mode):', {
+      to: Array.isArray(to) ? to : [to],
+      subject,
+      reason: demoModeReason,
+      nodeEnv: process.env.NODE_ENV
+    })
+    
+    // Always throw an error - don't silently fail
+    throw new Error(`Email sending is disabled. RESEND_API_KEY is ${!apiKey ? 'missing' : 'set to demo key'}. Please configure a valid Resend API key.`)
   }
 
   try {
@@ -49,6 +55,10 @@ export async function sendEmail({
     
     // Use platform settings for from address, fallback to env var, then default
     const fromAddress = (platformSettings?.emailFromAddress || process.env.RESEND_FROM || 'Madrasah OS <noreply@madrasah.io>').trim()
+    
+    // Extract domain from from address for verification check
+    const fromDomainMatch = fromAddress.match(/@([^\s>]+)/)
+    const fromDomain = fromDomainMatch ? fromDomainMatch[1] : null
     
     // Resend API key is managed in Vercel environment variables
     const apiKey = process.env.RESEND_API_KEY
@@ -60,11 +70,17 @@ export async function sendEmail({
       throw new Error('Resend API key not configured')
     }
     
+    // Warn if using default domain that might not be verified
+    if (fromDomain === 'madrasah.io' && !process.env.RESEND_FROM && !platformSettings?.emailFromAddress) {
+      console.warn('⚠️ Using default domain (madrasah.io). Make sure this domain is verified in Resend.')
+    }
+    
     console.log('📧 Sending email via Resend:', {
       from: fromAddress,
       to: Array.isArray(to) ? to : [to],
       subject,
       hasApiKey: !!apiKey,
+      apiKeyPrefix: apiKey ? apiKey.substring(0, 10) + '...' : 'none',
       isDemoMode: isDemoMode()
     })
     
@@ -80,10 +96,20 @@ export async function sendEmail({
       console.error('❌ Resend API error:', {
         error,
         message: error.message,
-        name: error.name
+        name: error.name,
+        statusCode: (error as any)?.statusCode,
+        fullError: JSON.stringify(error, null, 2)
       })
-      throw new Error(`Failed to send email: ${error.message}`)
+      throw new Error(`Failed to send email: ${error.message || 'Unknown error'}`)
     }
+    
+    console.log('✅ Email sent successfully via Resend:', {
+      emailId: data?.id,
+      from: fromAddress,
+      to: Array.isArray(to) ? to : [to],
+      subject,
+      response: data
+    })
     
     return data
   } catch (error: any) {

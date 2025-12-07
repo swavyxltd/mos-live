@@ -130,7 +130,25 @@ async function handlePOST(request: NextRequest) {
       // Generate and send 2FA code
       const code = generateTwoFactorCode()
       await storeTwoFactorCode(user.id, code)
-      await sendTwoFactorCode(user.email, code, user.name || undefined)
+      
+      try {
+        await sendTwoFactorCode(user.email, code, user.name || undefined)
+      } catch (emailError: any) {
+        logger.error('Failed to send 2FA email', emailError)
+        // Check if it's a demo mode issue
+        if (emailError?.message?.includes('demo mode') || emailError?.message?.includes('disabled')) {
+          return NextResponse.json(
+            { 
+              error: 'Email sending is not configured. Please check RESEND_API_KEY environment variable.',
+              requiresTwoFactor: true,
+              pendingUserId: user.id,
+              details: emailError.message
+            },
+            { status: 500 }
+          )
+        }
+        throw emailError
+      }
 
       return NextResponse.json({
         requiresTwoFactor: true,
