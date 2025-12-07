@@ -21,7 +21,10 @@ async function handleGET(request: NextRequest) {
     }
 
     // Get all organizations with detailed stats (including city field and status)
-    // Get all organizations (status filter removed to include all, including those with null status)
+    // IMPORTANT: No where clause - this returns ALL orgs from database, no filtering
+    // Get total count first for verification
+    const totalOrgCount = await prisma.org.count()
+    
     const orgs = await prisma.org.findMany({
       select: {
         id: true,
@@ -43,9 +46,21 @@ async function handleGET(request: NextRequest) {
       },
       orderBy: { createdAt: 'desc' }
     })
+    
+    // Verify we got all orgs
+    if (orgs.length !== totalOrgCount) {
+      logger.warn('Org count mismatch in findMany', {
+        totalInDb: totalOrgCount,
+        returnedByFindMany: orgs.length
+      })
+    }
 
-    logger.info('Fetched orgs from database', { count: orgs.length, orgIds: orgs.map(o => o.id) })
-
+    logger.info('Fetched orgs from database', { 
+      count: orgs.length, 
+      orgIds: orgs.map(o => o.id),
+      orgNames: orgs.map(o => o.name),
+      orgSlugs: orgs.map(o => o.slug)
+    })
 
     // Get admin user for each org and calculate stats
     // Wrap each org processing in try-catch so one failing org doesn't break the entire list
@@ -170,7 +185,20 @@ async function handleGET(request: NextRequest) {
       })
     )
 
-    logger.info('Returning orgs with stats', { count: orgsWithStats.length })
+    logger.info('Returning orgs with stats', { 
+      count: orgsWithStats.length,
+      orgIds: orgsWithStats.map(o => o.id),
+      orgNames: orgsWithStats.map(o => o.name)
+    })
+    
+    // Verify we're returning all orgs
+    if (orgs.length !== orgsWithStats.length) {
+      logger.warn('Org count mismatch', {
+        fetchedFromDb: orgs.length,
+        returnedWithStats: orgsWithStats.length
+      })
+    }
+    
     return NextResponse.json(orgsWithStats)
   } catch (error: any) {
     logger.error('Error fetching org stats', error)
