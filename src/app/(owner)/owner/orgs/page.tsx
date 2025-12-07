@@ -30,13 +30,20 @@ export default function OwnerOrgsPage() {
       if (response.ok) {
         const data = await response.json()
         if (Array.isArray(data)) {
+          console.log('[Orgs Page] Fetched orgs:', data.length, data)
           setOrgsWithStats(data)
         } else {
+          console.error('[Orgs Page] Invalid data format:', data)
+          setOrgsWithStats([])
         }
       } else {
         const errorData = await response.json().catch(() => null)
+        console.error('[Orgs Page] API error:', response.status, errorData)
+        setOrgsWithStats([])
       }
     } catch (err) {
+      console.error('[Orgs Page] Fetch error:', err)
+      setOrgsWithStats([])
     } finally {
       setLoading(false)
     }

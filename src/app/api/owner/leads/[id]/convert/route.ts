@@ -172,8 +172,21 @@ async function handlePOST(
       },
     })
 
+    logger.info('Lead converted successfully', {
+      leadId: id,
+      orgId: org.id,
+      orgName: org.name,
+      orgSlug: org.slug,
+      status: org.status
+    })
+
     return NextResponse.json({ 
-      org,
+      org: {
+        id: org.id,
+        name: org.name,
+        slug: org.slug,
+        status: org.status
+      },
       message: 'Lead converted successfully' 
     }, { status: 201 })
   } catch (error: any) {
