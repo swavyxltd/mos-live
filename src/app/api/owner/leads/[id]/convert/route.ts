@@ -12,6 +12,7 @@ async function handlePOST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
+  let leadId: string | undefined
   try {
     const session = await getServerSession(authOptions)
     
@@ -19,9 +20,14 @@ async function handlePOST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Handle Next.js 15+ async params
-    const resolvedParams = await Promise.resolve(params)
+    // Handle params - in Next.js 15+, params can be a Promise
+    const resolvedParams = params instanceof Promise ? await params : params
     const { id } = resolvedParams
+    leadId = id
+    
+    if (!id) {
+      return NextResponse.json({ error: 'Lead ID is required' }, { status: 400 })
+    }
 
     const lead = await prisma.lead.findUnique({
       where: { id },
@@ -59,10 +65,15 @@ async function handlePOST(
     }
 
     // Generate slug from org name
-    const baseSlug = lead.orgName
+    let baseSlug = lead.orgName
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '')
+    
+    // Fallback if slug is empty
+    if (!baseSlug) {
+      baseSlug = `org-${Date.now()}`
+    }
     
     // Ensure slug is unique
     let slug = baseSlug
@@ -73,14 +84,19 @@ async function handlePOST(
     }
 
     // Create the organisation
+    const now = new Date()
     const org = await prisma.org.create({
       data: {
+        id: randomUUID(),
         name: lead.orgName,
         slug,
-        city: lead.city,
+        timezone: 'Europe/London',
+        settings: JSON.stringify({ lateThreshold: 15 }),
+        city: lead.city || undefined,
         email: adminEmail,
         phone: lead.contactPhone || undefined,
         status: 'ACTIVE',
+        updatedAt: now,
       },
     })
 
@@ -161,9 +177,17 @@ async function handlePOST(
       message: 'Lead converted successfully' 
     }, { status: 201 })
   } catch (error: any) {
-    console.error('Error converting lead:', error)
+    logger.error('Error converting lead', error, {
+      leadId: leadId || 'unknown',
+      errorCode: error?.code,
+      errorMessage: error?.message
+    })
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to convert lead' },
+      { 
+        error: 'Failed to convert lead',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
