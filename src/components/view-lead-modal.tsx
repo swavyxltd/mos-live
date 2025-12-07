@@ -320,13 +320,23 @@ export function ViewLeadModal({ isOpen, onClose, onUpdate, leadId, onEdit, autoO
       
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}))
-        throw new Error(errorData.error || 'Failed to resend invitation')
+        // Use the more detailed message if available
+        const errorMessage = errorData.message || errorData.error || 'Failed to resend invitation'
+        console.error('Error resending invitation:', {
+          status: res.status,
+          error: errorData,
+          message: errorMessage
+        })
+        throw new Error(errorMessage)
       }
 
-      toast.success('Invitation resent successfully')
+      const data = await res.json()
+      toast.success(data.message || 'Invitation resent successfully')
     } catch (error: any) {
       console.error('Error resending invitation:', error)
-      toast.error(error.message || 'Failed to resend invitation')
+      // Show the error message from the API, or a fallback
+      const errorMessage = error.message || 'Failed to resend invitation'
+      toast.error(errorMessage)
     } finally {
       setIsResendingInvite(false)
     }

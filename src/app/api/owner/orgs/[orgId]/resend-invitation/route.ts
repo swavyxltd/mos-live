@@ -103,6 +103,25 @@ async function handlePOST(
       })
     }
 
+    // Check if email sending is configured
+    const hasResendKey = !!process.env.RESEND_API_KEY && process.env.RESEND_API_KEY !== 're_demo_key'
+    if (!hasResendKey) {
+      logger.warn('Cannot resend invitation - RESEND_API_KEY not configured', {
+        orgId: org.id,
+        email: org.email,
+        hasApiKey: !!process.env.RESEND_API_KEY,
+        isDemoKey: process.env.RESEND_API_KEY === 're_demo_key'
+      })
+      return NextResponse.json(
+        { 
+          error: 'Email sending is not configured',
+          message: 'RESEND_API_KEY is missing or invalid. Please configure a valid Resend API key to send emails.',
+          details: 'Email service not available'
+        },
+        { status: 503 }
+      )
+    }
+
     // Send the invitation email
     try {
       const baseUrl = process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'https://app.madrasah.io'
@@ -114,7 +133,7 @@ async function handlePOST(
         orgName: org.name,
         orgId: org.id,
         invitationId,
-        hasResendKey: !!process.env.RESEND_API_KEY
+        hasResendKey: true
       })
       
       await sendOrgSetupInvitation({
@@ -138,10 +157,24 @@ async function handlePOST(
       logger.error('Failed to resend invitation email', emailError, {
         to: org.email,
         orgId: org.id,
-        invitationId
+        invitationId,
+        errorMessage: emailError?.message,
+        errorStack: emailError?.stack
       })
+      
+      // Provide more detailed error message
+      const errorMessage = emailError?.message || 'Unknown error occurred'
+      const isDevelopment = process.env.NODE_ENV === 'development'
+      
       return NextResponse.json(
-        { error: 'Failed to send invitation email', details: emailError?.message },
+        { 
+          error: 'Failed to send invitation email',
+          message: errorMessage,
+          ...(isDevelopment && { 
+            details: emailError?.message,
+            stack: emailError?.stack
+          })
+        },
         { status: 500 }
       )
     }
