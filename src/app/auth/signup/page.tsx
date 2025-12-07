@@ -112,8 +112,13 @@ function SignUpForm() {
         throw new Error(data.error || 'Failed to create account')
       }
 
-      // Success - redirect to sign in
-      router.push('/auth/signin?signup=success')
+      // Success - for new org setup, redirect to onboarding; otherwise sign in
+      if (isNewOrgSetup) {
+        // Sign in automatically and redirect to onboarding
+        router.push('/auth/signin?signup=success&onboarding=true')
+      } else {
+        router.push('/auth/signin?signup=success')
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {

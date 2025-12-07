@@ -49,14 +49,14 @@ export default async function StaffLayout({
             org = await getActiveOrg(session.user.id)
           }
         }
-      } catch (error: any) {
-        // Silently fail - will redirect if org not set
+      } catch (error) {
+        // If we can't get orgs, redirect to signin
+        redirect('/auth/signin')
       }
     }
     
-    // If still no org, redirect
     if (!org) {
-      redirect('/auth/signin?error=NoOrganization')
+      redirect('/auth/signin')
     }
   }
 
@@ -76,7 +76,8 @@ export default async function StaffLayout({
     const pausedUrl = `/auth/account-paused?org=${encodeURIComponent(org.name)}&reason=${encodeURIComponent(org.pausedReason || 'Account paused')}&orgId=${encodeURIComponent(org.id)}`
     redirect(pausedUrl)
   }
-  
+
+  // Check if admin needs to complete onboarding
   let userRole: Role | null = null
   try {
     userRole = await getUserRoleInOrg(session.user.id, org.id)
@@ -87,6 +88,53 @@ export default async function StaffLayout({
   if (!userRole) {
     redirect('/auth/signin?error=NotMember')
   }
+
+  // Only show onboarding to the first admin (isInitialAdmin) on their first login
+  if (userRole === 'ADMIN' && !session.user.isSuperAdmin) {
+    const { prisma } = await import('@/lib/prisma')
+    const membership = await prisma.userOrgMembership.findUnique({
+      where: {
+        userId_orgId: {
+          userId: session.user.id,
+          orgId: org.id
+        }
+      },
+      select: {
+        isInitialAdmin: true
+      }
+    })
+
+    // Only redirect to onboarding if this is the initial admin
+    if (membership?.isInitialAdmin) {
+      // Check if onboarding is complete
+      const onboardingComplete = !!(
+        org.addressLine1 &&
+        org.city &&
+        org.postcode &&
+        org.phone &&
+        org.email &&
+        org.publicPhone &&
+        org.publicEmail &&
+        org.billingDay &&
+        (org.acceptsCard || org.acceptsCash || org.acceptsBankTransfer)
+      )
+
+      // Get current path
+      const headersList = await headers()
+      const pathname = headersList.get('x-pathname') || ''
+      
+      // Redirect to onboarding if not complete and not already on onboarding page
+      if (!onboardingComplete && !pathname.includes('/onboarding')) {
+        redirect('/onboarding')
+      }
+    }
+  }
+
+  // Ensure org is not null and has required fields before proceeding
+  if (!org || !org.id || !org.name) {
+    redirect('/auth/signin?error=NoOrganization')
+  }
+
   
   // Get staffSubrole and permissions from database
   let staffSubrole = null

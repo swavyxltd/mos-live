@@ -36,8 +36,12 @@ async function handlePUT(request: NextRequest) {
       email, 
       publicEmail,
       officeHours,
-      slug // Allow manual slug update
+      slug, // Allow manual slug update
+      billingDay // Explicitly ignore - can only be set via payment-methods route
     } = body
+
+    // billingDay can only be updated through /api/settings/payment-methods
+    // Ignore it here to prevent accidental updates
 
     // Sanitize inputs
     const sanitizedName = name ? sanitizeText(name, MAX_STRING_LENGTHS.name) : undefined

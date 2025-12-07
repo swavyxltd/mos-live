@@ -296,104 +296,133 @@ export function PaymentMethodsTab() {
         <CardContent className="space-y-6">
           {/* Stripe Connect Setup */}
           {!settings.hasStripeConnect && (
-            <div className="flex items-center justify-between p-4 border border-[var(--border)] rounded-lg">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-gray-100 rounded-full">
-                  <CreditCard className="h-5 w-5 text-gray-500" strokeWidth={1.5} />
+            <div className="p-4 sm:p-6 border border-[var(--border)] rounded-lg bg-gradient-to-r from-gray-50 to-white">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                <div className="flex items-start space-x-3 flex-1">
+                  <div className="p-2 bg-gray-100 rounded-full mt-1 shrink-0">
+                    <CreditCard className="h-5 w-5 text-gray-500" strokeWidth={1.5} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium text-base mb-2 sm:mb-1">Card Payments (Automatic)</h3>
+                    <p className="text-sm text-[var(--muted-foreground)] mb-3 sm:mb-2 leading-relaxed">
+                      Let parents pay fees automatically with their credit or debit card. No more chasing payments or manual reminders—fees are charged automatically each month.
+                    </p>
+                    <div className="flex flex-wrap gap-2 mt-3 mb-3 sm:mb-0">
+                      <span className="inline-flex items-center text-xs bg-green-50 text-green-700 px-2.5 py-1.5 rounded border border-green-200 whitespace-nowrap">
+                        <CheckCircle className="h-3.5 w-3.5 mr-1.5 shrink-0" />
+                        <span>Automatic monthly billing</span>
+                      </span>
+                      <span className="inline-flex items-center text-xs bg-green-50 text-green-700 px-2.5 py-1.5 rounded border border-green-200 whitespace-nowrap">
+                        <CheckCircle className="h-3.5 w-3.5 mr-1.5 shrink-0" />
+                        <span>Secure & PCI compliant</span>
+                      </span>
+                      <span className="inline-flex items-center text-xs bg-green-50 text-green-700 px-2.5 py-1.5 rounded border border-green-200 whitespace-nowrap">
+                        <CheckCircle className="h-3.5 w-3.5 mr-1.5 shrink-0" />
+                        <span>Get paid faster</span>
+                      </span>
+                    </div>
+                    <p className="text-xs text-[var(--muted-foreground)] mt-3 leading-relaxed">
+                      Powered by Stripe—the same secure payment system used by millions of businesses worldwide. Setup takes just 2 minutes.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-medium">Card Payments (Automatic)</h3>
-                  <p className="text-sm text-[var(--muted-foreground)]">
-                    Connect your Stripe account to enable automatic card payments
-                  </p>
-                </div>
+                <Button
+                  onClick={handleConnectStripe}
+                  disabled={connectingStripe || !hasPermission('access_settings')}
+                  variant="default"
+                  className="shrink-0 w-full sm:w-auto"
+                >
+                  {connectingStripe ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Setting up...
+                    </>
+                  ) : (
+                    <>
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      Setup Card Payments
+                    </>
+                  )}
+                </Button>
               </div>
-              <Button
-                onClick={handleConnectStripe}
-                disabled={connectingStripe || !hasPermission('access_settings')}
-                variant="default"
-              >
-                {connectingStripe ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Connecting...
-                  </>
-                ) : (
-                  'Connect Stripe Account'
-                )}
-              </Button>
             </div>
           )}
 
           {/* Automatic Card Payments */}
           {settings.hasStripeConnect && (
-            <div className="flex items-center justify-between p-4 border border-[var(--border)] rounded-lg">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-gray-100 rounded-full">
-                  <CreditCard className="h-5 w-5 text-gray-500" strokeWidth={1.5} />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-medium">Card Payments (Automatic)</h3>
-                    <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded">Connected</span>
+            <div className="p-4 sm:p-5 border border-[var(--border)] rounded-lg">
+              <div className="flex items-center justify-between gap-3 mb-2">
+                <div className="flex items-center space-x-3 flex-1 min-w-0">
+                  <div className="p-2 bg-gray-100 rounded-full shrink-0">
+                    <CreditCard className="h-5 w-5 text-gray-500" strokeWidth={1.5} />
                   </div>
-                  <p className="text-sm text-[var(--muted-foreground)]">
-                    Parents can set up automatic payments via credit/debit cards
-                  </p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-medium">Card Payments (Automatic)</h3>
+                    <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded whitespace-nowrap">Connected</span>
+                  </div>
+                </div>
+                <div className="shrink-0">
+                  <Switch
+                    checked={settings.acceptsCard}
+                    onCheckedChange={(checked) => handleSettingChange('acceptsCard', checked)}
+                    disabled={!hasPermission('access_settings')}
+                  />
                 </div>
               </div>
-              <Switch
-                checked={settings.acceptsCard}
-                onCheckedChange={(checked) => handleSettingChange('acceptsCard', checked)}
-                disabled={!hasPermission('access_settings')}
-              />
+              <p className="text-sm text-[var(--muted-foreground)] ml-[52px]">
+                Parents can set up automatic payments via credit/debit cards
+              </p>
             </div>
           )}
 
           {/* Bank Transfer */}
-          <div className="flex items-center justify-between p-4 border border-[var(--border)] rounded-lg">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-gray-100 rounded-full">
-                <Building2 className="h-5 w-5 text-gray-700" strokeWidth={1.5} />
-              </div>
-              <div>
+          <div className="p-4 sm:p-5 border border-[var(--border)] rounded-lg">
+            <div className="flex items-center justify-between gap-3 mb-2">
+              <div className="flex items-center space-x-3 flex-1 min-w-0">
+                <div className="p-2 bg-gray-100 rounded-full shrink-0">
+                  <Building2 className="h-5 w-5 text-gray-700" strokeWidth={1.5} />
+                </div>
                 <h3 className="font-medium">Bank Transfer</h3>
-                <p className="text-sm text-[var(--muted-foreground)]">
-                  Parents can transfer money directly to your bank account
-                </p>
+              </div>
+              <div className="shrink-0">
+                <Switch
+                  checked={settings.acceptsBankTransfer ?? settings.bankTransferEnabled}
+                  onCheckedChange={(checked) => {
+                    handleSettingChange('acceptsBankTransfer', checked)
+                    handleSettingChange('bankTransferEnabled', checked)
+                  }}
+                  disabled={!hasPermission('access_settings')}
+                />
               </div>
             </div>
-            <Switch
-              checked={settings.acceptsBankTransfer ?? settings.bankTransferEnabled}
-              onCheckedChange={(checked) => {
-                handleSettingChange('acceptsBankTransfer', checked)
-                handleSettingChange('bankTransferEnabled', checked)
-              }}
-              disabled={!hasPermission('access_settings')}
-            />
+            <p className="text-sm text-[var(--muted-foreground)] ml-[52px]">
+              Parents can transfer money directly to your bank account
+            </p>
           </div>
 
           {/* Cash Payments */}
-          <div className="flex items-center justify-between p-4 border border-[var(--border)] rounded-lg">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-gray-100 rounded-full">
-                <Coins className="h-5 w-5 text-gray-500" strokeWidth={1.5} />
-              </div>
-              <div>
+          <div className="p-4 sm:p-5 border border-[var(--border)] rounded-lg">
+            <div className="flex items-center justify-between gap-3 mb-2">
+              <div className="flex items-center space-x-3 flex-1 min-w-0">
+                <div className="p-2 bg-gray-100 rounded-full shrink-0">
+                  <Coins className="h-5 w-5 text-gray-500" strokeWidth={1.5} />
+                </div>
                 <h3 className="font-medium">Cash Payments</h3>
-                <p className="text-sm text-[var(--muted-foreground)]">
-                  Parents can pay in cash at the school office
-                </p>
+              </div>
+              <div className="shrink-0">
+                <Switch
+                  checked={settings.acceptsCash ?? settings.cashPaymentEnabled}
+                  onCheckedChange={(checked) => {
+                    handleSettingChange('acceptsCash', checked)
+                    handleSettingChange('cashPaymentEnabled', checked)
+                  }}
+                  disabled={!hasPermission('access_settings')}
+                />
               </div>
             </div>
-            <Switch
-              checked={settings.acceptsCash ?? settings.cashPaymentEnabled}
-              onCheckedChange={(checked) => {
-                handleSettingChange('acceptsCash', checked)
-                handleSettingChange('cashPaymentEnabled', checked)
-              }}
-              disabled={!hasPermission('access_settings')}
-            />
+            <p className="text-sm text-[var(--muted-foreground)] ml-[52px]">
+              Parents can pay in cash at the school office
+            </p>
           </div>
         </CardContent>
       </Card>

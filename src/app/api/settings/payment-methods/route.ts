@@ -65,6 +65,10 @@ async function handlePUT(request: NextRequest) {
       return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
     }
 
+    // IMPORTANT: billingDay can ONLY be updated through this endpoint
+    // This is the single source of truth for billing day settings
+    // Other endpoints (e.g., /api/settings/organization) explicitly ignore billingDay
+
     const body = await request.json()
     const {
       stripeEnabled,
@@ -83,6 +87,9 @@ async function handlePUT(request: NextRequest) {
       bankSortCode,
       bankAccountNumber
     } = body
+
+    // Ensure billingDay can only be set through this endpoint (payment methods settings)
+    // This prevents it from being updated elsewhere
 
     // Validate billing day (1-28)
     if (billingDay !== undefined && (billingDay < 1 || billingDay > 28)) {
