@@ -398,8 +398,8 @@ async function handlePOST(request: NextRequest) {
 // GET endpoint for manual testing
 async function handleGET(request: NextRequest) {
   try {
-    const platformSettings = await getPlatformSettings()
-    const gracePeriodDays = platformSettings?.gracePeriodDays || 14
+    // Grace period is hardcoded to 14 days
+    const gracePeriodDays = 14
 
     const today = new Date()
     today.setHours(0, 0, 0, 0)
