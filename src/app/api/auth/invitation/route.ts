@@ -6,7 +6,7 @@ import { withRateLimit } from '@/lib/api-middleware'
 async function handleGET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
-    const token = searchParams.get('token')
+    let token = searchParams.get('token')
 
     if (!token) {
       return NextResponse.json(
@@ -15,11 +15,16 @@ async function handleGET(request: NextRequest) {
       )
     }
 
+    // Trim and clean token (in case of whitespace or encoding issues)
+    token = token.trim()
+
     // Log token details for debugging
     logger.info('Fetching invitation by token', {
       tokenLength: token.length,
       tokenPrefix: token.substring(0, 8),
-      environment: process.env.NODE_ENV
+      tokenSuffix: token.substring(token.length - 8),
+      environment: process.env.NODE_ENV,
+      rawToken: process.env.NODE_ENV === 'development' ? token : undefined
     })
 
     const invitation = await prisma.invitation.findUnique({
