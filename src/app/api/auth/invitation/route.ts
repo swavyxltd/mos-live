@@ -30,7 +30,7 @@ async function handleGET(request: NextRequest) {
     const invitation = await prisma.invitation.findUnique({
       where: { token },
       include: {
-        org: {
+        Org: {
           select: {
             id: true,
             name: true,
@@ -81,8 +81,8 @@ async function handleGET(request: NextRequest) {
     return NextResponse.json({
       invitationId: invitation.id,
       orgId: invitation.orgId,
-      orgName: invitation.org.name,
-      orgSlug: invitation.org.slug,
+      orgName: invitation.Org.name,
+      orgSlug: invitation.Org.slug,
       email: invitation.email,
       role: invitation.role,
       acceptedAt: invitation.acceptedAt
