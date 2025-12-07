@@ -62,7 +62,7 @@ export default async function OwnerSupportPage() {
   }
 
   try {
-    const baseUrl = process.env.NEXTAUTH_URL || process.env.APP_BASE_URL || 'http://localhost:3000'
+    const baseUrl = process.env.NEXTAUTH_URL || process.env.APP_BASE_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://app.madrasah.io')
     const ticketsRes = await fetch(`${baseUrl}/api/owner/support/tickets`, {
       cache: 'no-store'
     })

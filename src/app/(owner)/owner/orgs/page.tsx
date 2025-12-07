@@ -23,7 +23,9 @@ export default function OwnerOrgsPage() {
       
       // Ensure we have a session before making the request
       if (status === 'unauthenticated') {
-        console.error('[Orgs Page] User not authenticated')
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[Orgs Page] User not authenticated')
+        }
         setOrgsWithStats([])
         setLoading(false)
         return
@@ -31,7 +33,9 @@ export default function OwnerOrgsPage() {
       
       // Add cache-busting parameter to ensure fresh data
       const apiUrl = `/api/owner/orgs/stats?t=${Date.now()}`
-      console.log('[Orgs Page] Fetching orgs from:', apiUrl)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[Orgs Page] Fetching orgs from:', apiUrl)
+      }
       
       const response = await fetch(apiUrl, {
         method: 'GET',
@@ -51,7 +55,9 @@ export default function OwnerOrgsPage() {
       try {
         data = responseText ? JSON.parse(responseText) : null
       } catch (parseError) {
-        console.error('[Orgs Page] Failed to parse response:', parseError, 'Response:', responseText.substring(0, 200))
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[Orgs Page] Failed to parse response:', parseError, 'Response:', responseText.substring(0, 200))
+        }
         setOrgsWithStats([])
         setLoading(false)
         return
@@ -59,44 +65,41 @@ export default function OwnerOrgsPage() {
       
       if (response.ok) {
         if (Array.isArray(data)) {
-          console.log('[Orgs Page] Successfully fetched orgs:', data.length, 'orgs')
-          if (data.length > 0) {
-            console.log('[Orgs Page] First org:', data[0]?.name || 'unknown')
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[Orgs Page] Successfully fetched orgs:', data.length, 'orgs')
+            if (data.length > 0) {
+              console.log('[Orgs Page] First org:', data[0]?.name || 'unknown')
+            }
           }
           setOrgsWithStats(data)
         } else {
-          console.error('[Orgs Page] Invalid data format - expected array, got:', typeof data, data)
+          if (process.env.NODE_ENV === 'development') {
+            console.error('[Orgs Page] Invalid data format - expected array, got:', typeof data, data)
+          }
           setOrgsWithStats([])
         }
       } else {
-        console.error('[Orgs Page] API error:', response.status, data)
-        if (response.status === 401) {
-          console.error('[Orgs Page] Authentication failed - session may be invalid')
-          console.error('[Orgs Page] Session status:', status)
-          console.error('[Orgs Page] Session user:', session?.user?.email || 'none')
-          
-          // Try to fetch debug info
-          try {
-            const debugResponse = await fetch('/api/owner/orgs/stats/debug', {
-              credentials: 'include'
-            })
-            const debugData = await debugResponse.json()
-            console.error('[Orgs Page] Debug info:', debugData)
-          } catch (debugErr) {
-            console.error('[Orgs Page] Could not fetch debug info:', debugErr)
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[Orgs Page] API error:', response.status, data)
+          if (response.status === 401) {
+            console.error('[Orgs Page] Authentication failed - session may be invalid')
+            console.error('[Orgs Page] Session status:', status)
+            console.error('[Orgs Page] Session user:', session?.user?.email || 'none')
+          } else if (response.status === 500) {
+            console.error('[Orgs Page] Server error - check Vercel logs')
+            console.error('[Orgs Page] Error details:', data)
           }
-        } else if (response.status === 500) {
-          console.error('[Orgs Page] Server error - check Vercel logs')
-          console.error('[Orgs Page] Error details:', data)
         }
         setOrgsWithStats([])
       }
     } catch (err: any) {
-      console.error('[Orgs Page] Fetch error:', err)
-      console.error('[Orgs Page] Error details:', {
-        message: err?.message,
-        stack: err?.stack
-      })
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[Orgs Page] Fetch error:', err)
+        console.error('[Orgs Page] Error details:', {
+          message: err?.message,
+          stack: err?.stack
+        })
+      }
       setOrgsWithStats([])
     } finally {
       setLoading(false)

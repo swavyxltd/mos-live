@@ -50,7 +50,9 @@ function SignUpForm() {
         }
       })
       .catch(err => {
-        console.error('[Signup] Error fetching invitation:', err)
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[Signup] Error fetching invitation:', err)
+        }
         setError(err.message || 'Failed to fetch invitation')
       })
       .finally(() => {

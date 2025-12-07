@@ -46,7 +46,7 @@ async function handlePOST(request: NextRequest) {
         })
 
         // Create account link for onboarding if needed
-        const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+        const baseUrl = process.env.NEXTAUTH_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://app.madrasah.io')
         const accountLink = await createConnectAccountLink(
           accountId,
           `${baseUrl}/settings?stripe_connected=true`,

@@ -4,8 +4,18 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { withRateLimit } from '@/lib/api-middleware'
 
-// Debug endpoint to check what's happening in production
+// Debug endpoint - only accessible in development or by super admins
 async function handleGET(request: NextRequest) {
+  // Only allow in development or for authenticated super admins
+  if (process.env.NODE_ENV === 'production') {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.isSuperAdmin) {
+      return NextResponse.json(
+        { error: 'Not found' },
+        { status: 404 }
+      )
+    }
+  }
   try {
     const session = await getServerSession(authOptions)
     
