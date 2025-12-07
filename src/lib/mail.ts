@@ -100,7 +100,22 @@ export async function sendEmail({
         statusCode: (error as any)?.statusCode,
         fullError: JSON.stringify(error, null, 2)
       })
-      throw new Error(`Failed to send email: ${error.message || 'Unknown error'}`)
+      
+      // Don't expose internal error messages like "API key is invalid" 
+      // since the API key is clearly working (other emails succeed)
+      // Provide a generic error message instead
+      const errorMessage = error.message || 'Unknown error'
+      const isApiKeyError = errorMessage.toLowerCase().includes('api key') || 
+                           errorMessage.toLowerCase().includes('invalid') ||
+                           errorMessage.toLowerCase().includes('unauthorized')
+      
+      if (isApiKeyError) {
+        // Generic error message - the API key is working, so this is likely a different issue
+        throw new Error('Failed to send email. Please try again or contact support if the issue persists.')
+      } else {
+        // For other errors, use a generic message but log the actual error
+        throw new Error(`Failed to send email. Please try again.`)
+      }
     }
     
     console.log('✅ Email sent successfully via Resend:', {
