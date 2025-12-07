@@ -265,7 +265,7 @@ export default function LeadDetailPage() {
       }
       const data = await res.json()
       toast.success('Lead converted to organisation successfully')
-      router.push(`/owner/orgs/${data.org.id}`)
+      window.location.href = `/owner/orgs`
     } catch (error: any) {
       console.error('Error converting lead:', error)
       toast.error(error.message || 'Failed to convert lead')
@@ -670,7 +670,7 @@ export default function LeadDetailPage() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => router.push(`/owner/orgs/${lead.ConvertedOrg?.id}`)}
+                    onClick={() => window.location.href = `/owner/orgs`}
                   >
                     <ExternalLink className="h-4 w-4 mr-2" />
                     View {lead.ConvertedOrg.name}

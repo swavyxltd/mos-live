@@ -275,8 +275,8 @@ export function ViewLeadModal({ isOpen, onClose, onUpdate, leadId, onEdit, autoO
   const handleConvertSuccess = (orgId: string) => {
     onUpdate({})
     onClose()
-    // Navigate to the new organisation
-    window.location.href = `/owner/orgs/${orgId}`
+    // Navigate to the organizations list page
+    window.location.href = `/owner/orgs`
   }
 
   const handleDeleteLead = async () => {
@@ -614,7 +614,7 @@ export function ViewLeadModal({ isOpen, onClose, onUpdate, leadId, onEdit, autoO
                 size="sm"
                 variant="outline"
                 onClick={() => {
-                  window.location.href = `/owner/orgs/${lead.ConvertedOrg?.id}`
+                  window.location.href = `/owner/orgs`
                 }}
                 className="justify-start"
               >
