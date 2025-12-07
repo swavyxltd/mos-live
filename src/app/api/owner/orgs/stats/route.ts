@@ -56,10 +56,8 @@ async function handleGET(request: NextRequest) {
     }
 
     logger.info('Fetched orgs from database', { 
-      count: orgs.length, 
-      orgIds: orgs.map(o => o.id),
-      orgNames: orgs.map(o => o.name),
-      orgSlugs: orgs.map(o => o.slug)
+      count: orgs.length,
+      totalInDb: totalOrgCount
     })
 
     // Get admin user for each org and calculate stats
@@ -126,7 +124,7 @@ async function handleGET(request: NextRequest) {
           const platformBilling = {
             stripeCustomerId: '', // Would come from Stripe
             status: 'ACTIVE', // Would come from Stripe subscription status
-            currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // Would come from Stripe
+            currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // Would come from Stripe
           }
 
           return {
@@ -136,8 +134,8 @@ async function handleGET(request: NextRequest) {
             city: org.city,
             timezone: org.timezone,
             status: org.status, // Include status in response
-            createdAt: org.createdAt,
-            updatedAt: org.updatedAt,
+            createdAt: org.createdAt instanceof Date ? org.createdAt.toISOString() : org.createdAt,
+            updatedAt: org.updatedAt instanceof Date ? org.updatedAt.toISOString() : org.updatedAt,
             _count: {
               students: org._count.students,
               classes: org._count.classes,
@@ -151,7 +149,7 @@ async function handleGET(request: NextRequest) {
               email: adminMembership.user.email
             } : null,
             totalRevenue,
-            lastActivity
+            lastActivity: lastActivity instanceof Date ? lastActivity.toISOString() : lastActivity
           }
         } catch (error: any) {
           logger.error('Error processing org stats', error, { orgId: org.id, orgName: org.name })
@@ -175,20 +173,18 @@ async function handleGET(request: NextRequest) {
             platformBilling: {
               stripeCustomerId: '',
               status: 'ACTIVE',
-              currentPeriodEnd: org.updatedAt
+              currentPeriodEnd: org.updatedAt instanceof Date ? org.updatedAt.toISOString() : (org.updatedAt || new Date().toISOString())
             },
             owner: null,
             totalRevenue: 0,
-            lastActivity: org.updatedAt
+            lastActivity: org.updatedAt instanceof Date ? org.updatedAt.toISOString() : (org.updatedAt || new Date().toISOString())
           }
         }
       })
     )
 
     logger.info('Returning orgs with stats', { 
-      count: orgsWithStats.length,
-      orgIds: orgsWithStats.map(o => o.id),
-      orgNames: orgsWithStats.map(o => o.name)
+      count: orgsWithStats.length
     })
     
     // Verify we're returning all orgs
@@ -201,12 +197,19 @@ async function handleGET(request: NextRequest) {
     
     return NextResponse.json(orgsWithStats)
   } catch (error: any) {
-    logger.error('Error fetching org stats', error)
+    logger.error('Error fetching org stats', error, {
+      errorMessage: error?.message,
+      errorStack: error?.stack,
+      errorName: error?.name
+    })
     const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
       { 
         error: 'Failed to fetch organization stats',
-        ...(isDevelopment && { details: error?.message })
+        ...(isDevelopment && { 
+          details: error?.message,
+          stack: error?.stack?.split('\n').slice(0, 5).join('\n')
+        })
       },
       { status: 500 }
     )
