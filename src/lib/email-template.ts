@@ -1,5 +1,11 @@
 import { getLogoUrlForEmail } from './mail-helpers'
 
+interface FeatureCard {
+  icon: string
+  title: string
+  description: string
+}
+
 interface EmailTemplateOptions {
   title: string
   description: string | string[]
@@ -9,6 +15,7 @@ interface EmailTemplateOptions {
   buttonUrl?: string
   footerText?: string
   showLogo?: boolean
+  features?: FeatureCard[]
 }
 
 /**
@@ -22,7 +29,8 @@ export async function generateEmailTemplate({
   buttonText,
   buttonUrl,
   footerText,
-  showLogo = true
+  showLogo = true,
+  features
 }: EmailTemplateOptions): Promise<string> {
   const logoUrl = await getLogoUrlForEmail()
   
@@ -52,6 +60,77 @@ export async function generateEmailTemplate({
     <div style="margin: 0 0 40px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center; max-width: 480px; margin-left: auto; margin-right: auto;">
       ${content}
     </div>
+  ` : ''
+
+  // Features grid HTML (3x2 layout)
+  const featuresHtml = features && features.length > 0 ? `
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 40px 0;">
+      <tr>
+        <td align="center" style="padding: 0;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 520px;">
+            <!-- First Row -->
+            <tr>
+              ${features.slice(0, 3).map((feature) => `
+                <td align="left" valign="top" style="padding: 0 8px 16px 8px; width: 33.33%;">
+                  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);">
+                    <tr>
+                      <td align="left" style="padding: 0 0 12px 0;">
+                        <div style="font-size: 24px; line-height: 1;">${feature.icon}</div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td align="left" style="padding: 0 0 8px 0;">
+                        <h3 style="margin: 0; font-size: 14px; font-weight: 600; color: #111827; line-height: 1.4;">
+                          ${feature.title}
+                        </h3>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td align="left" style="padding: 0;">
+                        <p style="margin: 0; font-size: 12px; color: #6b7280; line-height: 1.5;">
+                          ${feature.description}
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              `).join('')}
+            </tr>
+            <!-- Second Row -->
+            ${features.length > 3 ? `
+            <tr>
+              ${features.slice(3, 6).map((feature) => `
+                <td align="left" valign="top" style="padding: 0 8px 0 8px; width: 33.33%;">
+                  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);">
+                    <tr>
+                      <td align="left" style="padding: 0 0 12px 0;">
+                        <div style="font-size: 24px; line-height: 1;">${feature.icon}</div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td align="left" style="padding: 0 0 8px 0;">
+                        <h3 style="margin: 0; font-size: 14px; font-weight: 600; color: #111827; line-height: 1.4;">
+                          ${feature.title}
+                        </h3>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td align="left" style="padding: 0;">
+                        <p style="margin: 0; font-size: 12px; color: #6b7280; line-height: 1.5;">
+                          ${feature.description}
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              `).join('')}
+              ${features.length < 6 ? Array(6 - features.length).fill('<td style="width: 33.33%;"></td>').join('') : ''}
+            </tr>
+            ` : ''}
+          </table>
+        </td>
+      </tr>
+    </table>
   ` : ''
   
   // Footer text HTML
@@ -100,6 +179,7 @@ export async function generateEmailTemplate({
                       ${title}
                     </h1>
                     ${descriptionHtml}
+                    ${featuresHtml}
                     ${contentHtml}
                     ${buttonHtml}
                     ${footerTextHtml}

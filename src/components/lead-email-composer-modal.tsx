@@ -233,9 +233,41 @@ export function LeadEmailComposerModal({
 
     setIsGeneratingPreview(true)
     try {
+      // Extract features from email body if present
+      const featuresMatch = previewBody.match(/Our best features:([\s\S]*?)(?=\n\n|$)/)
+      let features: Array<{ icon: string; title: string; description: string }> | undefined
+      let bodyWithoutFeatures = previewBody
+
+      if (featuresMatch) {
+        const featuresText = featuresMatch[1]
+        const featureLines = featuresText.split('\n').filter(line => line.trim())
+        
+        features = []
+        for (let i = 0; i < featureLines.length; i += 2) {
+          const titleLine = featureLines[i]?.trim()
+          const descLine = featureLines[i + 1]?.trim()
+          
+          if (titleLine && descLine) {
+            // Extract icon (emoji) and title
+            const iconMatch = titleLine.match(/^([^\s]+)\s+(.+)$/)
+            if (iconMatch) {
+              features.push({
+                icon: iconMatch[1],
+                title: iconMatch[2],
+                description: descLine
+              })
+            }
+          }
+        }
+        
+        // Remove features section from body
+        bodyWithoutFeatures = previewBody.replace(/Our best features:[\s\S]*?(?=\n\n|$)/, '').trim()
+      }
+
       const html = await generateEmailTemplate({
         title: previewSubject,
-        description: previewBody.replace(/\n/g, '<br>'),
+        description: bodyWithoutFeatures.replace(/\n/g, '<br>'),
+        features: features,
         footerText: `Best regards,<br>${ownerName}<br>Madrasah OS`
       })
       

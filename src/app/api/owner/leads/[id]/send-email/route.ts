@@ -83,10 +83,42 @@ async function handlePOST(
     // Get owner name for email signature
     const ownerName = session.user.name || 'Madrasah OS'
 
+    // Extract features from email body if present
+    const featuresMatch = emailBody.match(/Our best features:([\s\S]*?)(?=\n\n|$)/)
+    let features: Array<{ icon: string; title: string; description: string }> | undefined
+    let bodyWithoutFeatures = emailBody
+
+    if (featuresMatch) {
+      const featuresText = featuresMatch[1]
+      const featureLines = featuresText.split('\n').filter(line => line.trim())
+      
+      features = []
+      for (let i = 0; i < featureLines.length; i += 2) {
+        const titleLine = featureLines[i]?.trim()
+        const descLine = featureLines[i + 1]?.trim()
+        
+        if (titleLine && descLine) {
+          // Extract icon (emoji) and title
+          const iconMatch = titleLine.match(/^([^\s]+)\s+(.+)$/)
+          if (iconMatch) {
+            features.push({
+              icon: iconMatch[1],
+              title: iconMatch[2],
+              description: descLine
+            })
+          }
+        }
+      }
+      
+      // Remove features section from body
+      bodyWithoutFeatures = emailBody.replace(/Our best features:[\s\S]*?(?=\n\n|$)/, '').trim()
+    }
+
     // Generate HTML email
     const html = await generateEmailTemplate({
       title: subject,
-      description: emailBody.replace(/\n/g, '<br>'),
+      description: bodyWithoutFeatures.replace(/\n/g, '<br>'),
+      features: features,
       footerText: `JazakAllah Khair,<br>${ownerName}<br>Madrasah OS`
     })
 
