@@ -84,7 +84,8 @@ async function handleGET(request: NextRequest) {
         environment: process.env.NODE_ENV
       })
       
-      // Direct database query - no filters
+      // Direct database query - no filters, no conditions
+      // This should return ALL orgs in the database
       orgs = await prisma.org.findMany({
         select: {
           id: true,
@@ -99,11 +100,19 @@ async function handleGET(request: NextRequest) {
         orderBy: { createdAt: 'desc' }
       })
       
+      // Log detailed info for debugging
       logger.info('Fetched orgs from database', { 
         count: orgs.length, 
         userId: session.user.id,
-        orgIds: orgs.map(o => o.id).slice(0, 5) // Log first 5 IDs for debugging
+        orgIds: orgs.map(o => o.id).slice(0, 5), // Log first 5 IDs for debugging
+        orgNames: orgs.map(o => o.name).slice(0, 5) // Log first 5 names
       })
+      
+      // If orgs is null or undefined, set to empty array
+      if (!orgs) {
+        logger.warn('orgs is null/undefined, setting to empty array')
+        orgs = []
+      }
     } catch (dbError: any) {
       logger.error('Error fetching orgs from database', dbError, {
         errorMessage: dbError?.message,
