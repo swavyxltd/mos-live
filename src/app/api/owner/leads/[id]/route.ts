@@ -9,7 +9,7 @@ import { randomUUID } from 'crypto'
 
 async function handleGET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -18,8 +18,7 @@ async function handleGET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const resolvedParams = params instanceof Promise ? await params : params
-    const { id } = resolvedParams
+    const { id } = params
     
     const lead = await prisma.lead.findUnique({
       where: { id },
@@ -115,7 +114,7 @@ async function handleGET(
 
 async function handlePUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -124,8 +123,7 @@ async function handlePUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const resolvedParams = params instanceof Promise ? await params : params
-    const { id } = resolvedParams
+    const { id } = params
 
     const body = await request.json()
     const {
@@ -259,7 +257,7 @@ async function handlePUT(
 
 async function handleDELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -268,8 +266,7 @@ async function handleDELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const resolvedParams = params instanceof Promise ? await params : params
-    const { id } = resolvedParams
+    const { id } = params
 
     const lead = await prisma.lead.findUnique({
       where: { id },
