@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getPlatformSettings } from '@/lib/platform-settings'
 import { stripe } from '@/lib/stripe'
 import { sendPaymentFailedWarningPlatform } from '@/lib/mail'
 import { logger } from '@/lib/logger'
