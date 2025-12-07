@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { Save, Globe, CreditCard, Calendar, Building2, Shield, Settings, Image, CheckCircle2, AlertCircle } from 'lucide-react'
+import { Save, Globe, CreditCard, Calendar, Building2, Shield, Settings, CheckCircle2, AlertCircle } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { useToast } from '@/hooks/use-toast'
 import { toast } from 'sonner'
@@ -222,14 +222,10 @@ export default function OwnerSettingsPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="platform" className="flex items-center gap-2">
               <Globe className="h-4 w-4" />
               Platform
-            </TabsTrigger>
-            <TabsTrigger value="branding" className="flex items-center gap-2">
-              <Image className="h-4 w-4" />
-              Branding
             </TabsTrigger>
             <TabsTrigger value="security" className="flex items-center gap-2">
               <Shield className="h-4 w-4" />
@@ -353,54 +349,6 @@ export default function OwnerSettingsPage() {
                       <CheckCircle2 className="h-4 w-4 text-green-600" />
                       <span className="text-sm font-medium text-green-900">Platform Status: Online</span>
                     </>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="branding" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Image className="h-5 w-5" />
-                Branding & Assets
-              </CardTitle>
-              <CardDescription>
-                Upload logo and favicon that will appear across the entire platform and in emails.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="logo-url">Logo URL</Label>
-                  <Input
-                    id="logo-url"
-                    value={formData.logoUrl || ''}
-                    onChange={(e) => handleInputChange('logoUrl', e.target.value)}
-                    placeholder="https://example.com/logo.png"
-                  />
-                  <p className="text-sm text-gray-500 mt-1">URL of your logo image (recommended: 200x50px)</p>
-                  {formData.logoUrl && (
-                    <div className="mt-2">
-                      <img src={formData.logoUrl} alt="Logo preview" className="h-12 object-contain" />
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <Label htmlFor="favicon-url">Favicon URL</Label>
-                  <Input
-                    id="favicon-url"
-                    value={formData.faviconUrl || ''}
-                    onChange={(e) => handleInputChange('faviconUrl', e.target.value)}
-                    placeholder="https://example.com/favicon.ico"
-                  />
-                  <p className="text-sm text-gray-500 mt-1">URL of your favicon (recommended: 32x32px or 16x16px)</p>
-                  {formData.faviconUrl && (
-                    <div className="mt-2">
-                      <img src={formData.faviconUrl} alt="Favicon preview" className="h-8 w-8 object-contain" />
-                    </div>
                   )}
                 </div>
               </div>

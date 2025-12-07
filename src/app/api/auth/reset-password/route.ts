@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
+import { validatePassword } from '@/lib/password-validation'
 
 async function handlePOST(request: NextRequest) {
   try {
@@ -22,9 +23,11 @@ async function handlePOST(request: NextRequest) {
       )
     }
 
-    if (password.length < 8) {
+    // Validate password against platform settings
+    const passwordValidation = await validatePassword(password)
+    if (!passwordValidation.isValid) {
       return NextResponse.json(
-        { error: 'Password must be at least 8 characters long' },
+        { error: passwordValidation.errors.join('. ') },
         { status: 400 }
       )
     }

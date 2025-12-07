@@ -6,6 +6,7 @@ import { sendOrgSetupConfirmation, sendStaffInvitation } from '@/lib/mail'
 import { logger } from '@/lib/logger'
 import { sanitizeText, isValidEmail, isValidPhone, MAX_STRING_LENGTHS } from '@/lib/input-validation'
 import { withRateLimit } from '@/lib/api-middleware'
+import { validatePassword } from '@/lib/password-validation'
 
 async function handlePOST(request: NextRequest) {
   try {
@@ -43,10 +44,11 @@ async function handlePOST(request: NextRequest) {
       )
     }
 
-    // Validate password length
-    if (password.length < 8) {
+    // Validate password against platform settings
+    const passwordValidation = await validatePassword(password)
+    if (!passwordValidation.isValid) {
       return NextResponse.json(
-        { error: 'Password must be at least 8 characters long' },
+        { error: passwordValidation.errors.join('. ') },
         { status: 400 }
       )
     }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -28,13 +28,56 @@ export function SetPasswordModal({
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
+  const [passwordRequirements, setPasswordRequirements] = useState<Array<{ text: string; required: boolean; met: (password: string) => boolean }>>([])
+
+  // Fetch password requirements on mount
+  useEffect(() => {
+    fetch('/api/settings/password-requirements')
+      .then(res => res.json())
+      .then(data => {
+        if (data.requirements) {
+          // Convert requirements to format with met function
+          const reqs = data.requirements.map((req: { text: string; required: boolean }) => {
+            let met: (password: string) => boolean
+            
+            if (req.text.includes('characters')) {
+              const minLength = parseInt(req.text.match(/\d+/)?.[0] || '8')
+              met = (p: string) => p.length >= minLength
+            } else if (req.text.includes('uppercase')) {
+              met = (p: string) => /[A-Z]/.test(p)
+            } else if (req.text.includes('lowercase')) {
+              met = (p: string) => /[a-z]/.test(p)
+            } else if (req.text.includes('number')) {
+              met = (p: string) => /\d/.test(p)
+            } else if (req.text.includes('special')) {
+              met = (p: string) => /[^A-Za-z0-9]/.test(p)
+            } else {
+              met = () => false
+            }
+            
+            return { ...req, met }
+          })
+          setPasswordRequirements(reqs)
+        }
+      })
+      .catch(() => {
+        // Fallback to default requirements if fetch fails
+        setPasswordRequirements([
+          { text: 'At least 8 characters', required: true, met: (p: string) => p.length >= 8 },
+          { text: 'One uppercase letter', required: true, met: (p: string) => /[A-Z]/.test(p) },
+          { text: 'One lowercase letter', required: true, met: (p: string) => /[a-z]/.test(p) },
+          { text: 'One number', required: true, met: (p: string) => /\d/.test(p) }
+        ])
+      })
+  }, [])
 
   const validatePassword = (password: string) => {
     const errors: string[] = []
-    if (password.length < 8) errors.push('At least 8 characters')
-    if (!/[A-Z]/.test(password)) errors.push('One uppercase letter')
-    if (!/[a-z]/.test(password)) errors.push('One lowercase letter')
-    if (!/\d/.test(password)) errors.push('One number')
+    passwordRequirements.forEach(req => {
+      if (req.required && !req.met(password)) {
+        errors.push(req.text)
+      }
+    })
     return errors
   }
 
@@ -74,12 +117,11 @@ export function SetPasswordModal({
     onClose()
   }
 
-  const passwordRequirements = [
-    { text: 'At least 8 characters', met: newPassword.length >= 8 },
-    { text: 'One uppercase letter', met: /[A-Z]/.test(newPassword) },
-    { text: 'One lowercase letter', met: /[a-z]/.test(newPassword) },
-    { text: 'One number', met: /\d/.test(newPassword) }
-  ]
+  // Use dynamic requirements with current password state
+  const currentRequirements = passwordRequirements.map(req => ({
+    text: req.text,
+    met: req.met(newPassword)
+  }))
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="Set New Password">
@@ -148,10 +190,11 @@ export function SetPasswordModal({
               </div>
 
               {/* Password Requirements */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Password Requirements:</Label>
-                <div className="space-y-1">
-                  {passwordRequirements.map((req, index) => (
+              {passwordRequirements.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Password Requirements:</Label>
+                  <div className="space-y-1">
+                    {currentRequirements.map((req, index) => (
                     <div key={index} className="flex items-center gap-2 text-sm">
                       {req.met ? (
                         <Check className="h-4 w-4 text-green-500" />
@@ -163,8 +206,9 @@ export function SetPasswordModal({
                       </span>
                     </div>
                   ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Action Buttons */}
               <div className="flex justify-end gap-3 pt-4 border-t">

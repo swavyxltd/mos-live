@@ -77,15 +77,13 @@ export function TeacherForm({ initialData, isEditing = false, onSubmit, onCancel
     }
   }
 
+  // Password validation will be handled by the API based on platform settings
+  // We'll just do basic client-side validation for UX
   const validatePassword = (password: string): string => {
+    if (!password) return ''
+    // Basic check - full validation happens on backend
     if (password.length < 8) {
       return 'Password must be at least 8 characters long'
-    }
-    if (!/[A-Z]/.test(password)) {
-      return 'Password must contain at least one uppercase letter'
-    }
-    if (!/[0-9]/.test(password)) {
-      return 'Password must contain at least one number'
     }
     return ''
   }

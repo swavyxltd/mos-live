@@ -39,11 +39,7 @@ function ResetPasswordPageContent() {
       return
     }
 
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters long')
-      setIsLoading(false)
-      return
-    }
+    // Password validation is handled by the API based on platform settings
 
     try {
       const response = await fetch('/api/auth/reset-password', {

@@ -94,11 +94,7 @@ function SignUpForm() {
       return
     }
 
-    if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters')
-      setIsLoading(false)
-      return
-    }
+    // Password validation is handled by the API based on platform settings
 
     // Validate required org fields for new org setup
     if (isNewOrgSetup) {
