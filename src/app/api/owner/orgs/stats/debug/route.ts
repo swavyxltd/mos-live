@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { withRateLimit } from '@/lib/api-middleware'
 
 // Debug endpoint to check what's happening in production
-export async function GET(request: NextRequest) {
+async function handleGET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
@@ -62,4 +63,6 @@ export async function GET(request: NextRequest) {
     }, { status: 500 })
   }
 }
+
+export const GET = withRateLimit(handleGET)
 
