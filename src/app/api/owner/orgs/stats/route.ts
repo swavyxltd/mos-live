@@ -22,47 +22,50 @@ async function handleGET(request: NextRequest) {
 
     // Get all organizations with detailed stats (including city field and status)
     // IMPORTANT: No where clause - this returns ALL orgs from database, no filtering
-    // Get total count first for verification
-    const totalOrgCount = await prisma.org.count()
-    
-    const orgs = await prisma.org.findMany({
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        city: true,
-        timezone: true,
-        status: true, // Include status field
-        createdAt: true,
-        updatedAt: true,
-        _count: {
-          select: {
-            students: { where: { isArchived: false } },
-            classes: { where: { isArchived: false } },
-            memberships: true,
-            invoices: true
+    let orgs
+    try {
+      orgs = await prisma.org.findMany({
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          city: true,
+          timezone: true,
+          status: true, // Include status field
+          createdAt: true,
+          updatedAt: true,
+          _count: {
+            select: {
+              students: { where: { isArchived: false } },
+              classes: { where: { isArchived: false } },
+              memberships: true,
+              invoices: true
+            }
           }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    })
-    
-    // Verify we got all orgs
-    if (orgs.length !== totalOrgCount) {
-      logger.warn('Org count mismatch in findMany', {
-        totalInDb: totalOrgCount,
-        returnedByFindMany: orgs.length
+        },
+        orderBy: { createdAt: 'desc' }
       })
+      
+      logger.info('Fetched orgs from database', { count: orgs.length })
+    } catch (dbError: any) {
+      logger.error('Error fetching orgs from database', dbError, {
+        errorMessage: dbError?.message,
+        errorCode: dbError?.code
+      })
+      throw dbError
     }
 
-    logger.info('Fetched orgs from database', { 
-      count: orgs.length,
-      totalInDb: totalOrgCount
-    })
+    // Handle empty orgs array
+    if (!orgs || orgs.length === 0) {
+      logger.info('No orgs found in database')
+      return NextResponse.json([])
+    }
 
     // Get admin user for each org and calculate stats
     // Wrap each org processing in try-catch so one failing org doesn't break the entire list
-    const orgsWithStats = await Promise.all(
+    let orgsWithStats
+    try {
+      orgsWithStats = await Promise.all(
       orgs.map(async (org) => {
         try {
           // Get admin user
@@ -152,7 +155,17 @@ async function handleGET(request: NextRequest) {
             lastActivity: lastActivity instanceof Date ? lastActivity.toISOString() : lastActivity
           }
         } catch (error: any) {
-          logger.error('Error processing org stats', error, { orgId: org.id, orgName: org.name })
+          // Log error safely without potentially problematic serialization
+          try {
+            logger.error('Error processing org stats', error, { 
+              orgId: org.id, 
+              orgName: org.name,
+              errorMessage: error?.message 
+            })
+          } catch (logError) {
+            // If logging fails, just continue - don't break the response
+            console.error('Error processing org stats for', org.id, error?.message)
+          }
           // Return basic org info even if stats fail
           return {
             id: org.id,
@@ -181,7 +194,15 @@ async function handleGET(request: NextRequest) {
           }
         }
       })
-    )
+      )
+    } catch (promiseError: any) {
+      logger.error('Error in Promise.all processing orgs', promiseError, {
+        errorMessage: promiseError?.message,
+        orgCount: orgs.length
+      })
+      // Return empty array if Promise.all fails completely
+      return NextResponse.json([])
+    }
 
     logger.info('Returning orgs with stats', { 
       count: orgsWithStats.length
