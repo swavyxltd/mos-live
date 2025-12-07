@@ -24,6 +24,7 @@ async function handleGET(request: NextRequest) {
     // IMPORTANT: No where clause - this returns ALL orgs from database, no filtering
     let orgs
     try {
+      logger.info('Starting to fetch orgs from database')
       orgs = await prisma.org.findMany({
         select: {
           id: true,
@@ -50,7 +51,9 @@ async function handleGET(request: NextRequest) {
     } catch (dbError: any) {
       logger.error('Error fetching orgs from database', dbError, {
         errorMessage: dbError?.message,
-        errorCode: dbError?.code
+        errorCode: dbError?.code,
+        errorName: dbError?.name,
+        errorStack: dbError?.stack
       })
       throw dbError
     }
@@ -152,7 +155,7 @@ async function handleGET(request: NextRequest) {
               email: adminMembership.user.email
             } : null,
             totalRevenue,
-            lastActivity: lastActivity instanceof Date ? lastActivity.toISOString() : lastActivity
+            lastActivity: lastActivity instanceof Date ? lastActivity.toISOString() : (lastActivity ? String(lastActivity) : new Date().toISOString())
           }
         } catch (error: any) {
           // Log error safely without potentially problematic serialization
@@ -174,8 +177,8 @@ async function handleGET(request: NextRequest) {
             city: org.city,
             timezone: org.timezone,
             status: org.status,
-            createdAt: org.createdAt,
-            updatedAt: org.updatedAt,
+            createdAt: org.createdAt instanceof Date ? org.createdAt.toISOString() : (org.createdAt || new Date().toISOString()),
+            updatedAt: org.updatedAt instanceof Date ? org.updatedAt.toISOString() : (org.updatedAt || new Date().toISOString()),
             _count: {
               students: org._count.students,
               classes: org._count.classes,
@@ -204,6 +207,12 @@ async function handleGET(request: NextRequest) {
       return NextResponse.json([])
     }
 
+    // Ensure we have a valid array
+    if (!Array.isArray(orgsWithStats)) {
+      logger.error('orgsWithStats is not an array', { type: typeof orgsWithStats })
+      return NextResponse.json([])
+    }
+
     logger.info('Returning orgs with stats', { 
       count: orgsWithStats.length
     })
@@ -216,7 +225,24 @@ async function handleGET(request: NextRequest) {
       })
     }
     
-    return NextResponse.json(orgsWithStats)
+    try {
+      return NextResponse.json(orgsWithStats)
+    } catch (jsonError: any) {
+      logger.error('Error serializing response to JSON', jsonError, {
+        orgCount: orgsWithStats.length
+      })
+      // Try to return at least basic org info
+      const basicOrgs = orgs.map(org => ({
+        id: org.id,
+        name: org.name,
+        slug: org.slug,
+        city: org.city,
+        status: org.status,
+        createdAt: org.createdAt instanceof Date ? org.createdAt.toISOString() : String(org.createdAt),
+        updatedAt: org.updatedAt instanceof Date ? org.updatedAt.toISOString() : String(org.updatedAt)
+      }))
+      return NextResponse.json(basicOrgs)
+    }
   } catch (error: any) {
     logger.error('Error fetching org stats', error, {
       errorMessage: error?.message,
