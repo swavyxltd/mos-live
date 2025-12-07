@@ -109,7 +109,16 @@ async function handlePOST(
     // Generate invitation ID using cuid pattern
     const invitationId = `inv_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
     
-    await prisma.invitation.create({
+    logger.info('Creating invitation', {
+      invitationId,
+      orgId: org.id,
+      email: adminEmail,
+      tokenLength: token.length,
+      tokenPrefix: token.substring(0, 8),
+      expiresAt
+    })
+    
+    const invitation = await prisma.invitation.create({
       data: {
         id: invitationId,
         orgId: org.id,
@@ -118,6 +127,13 @@ async function handlePOST(
         token,
         expiresAt,
       },
+    })
+    
+    logger.info('Invitation created successfully', {
+      invitationId: invitation.id,
+      orgId: invitation.orgId,
+      tokenLength: invitation.token.length,
+      tokenPrefix: invitation.token.substring(0, 8)
     })
 
     // Send onboarding email
