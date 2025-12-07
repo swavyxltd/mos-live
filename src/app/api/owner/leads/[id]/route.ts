@@ -18,25 +18,7 @@ async function handleGET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Handle Next.js 15+ async params - in production, params is always a Promise
-    let id: string
-    if (params instanceof Promise) {
-      const resolvedParams = await params
-      id = resolvedParams.id
-    } else if (params && typeof params === 'object' && 'id' in params) {
-      id = params.id
-    } else {
-      console.error('Invalid params:', params)
-      return NextResponse.json({ error: 'Invalid request parameters' }, { status: 400 })
-    }
-
-    // Log the ID being searched for debugging
-    console.log('Fetching lead with ID:', id)
-    
-    if (!id || id === 'undefined' || id === 'null' || typeof id !== 'string') {
-      console.error('Invalid lead ID:', id, 'Type:', typeof id)
-      return NextResponse.json({ error: 'Invalid lead ID' }, { status: 400 })
-    }
+    const { id } = await params
     
     const lead = await prisma.lead.findUnique({
       where: { id },
@@ -141,17 +123,7 @@ async function handlePUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Handle Next.js 15+ async params - in production, params is always a Promise
-    let id: string
-    if (params instanceof Promise) {
-      const resolvedParams = await params
-      id = resolvedParams.id
-    } else if (params && typeof params === 'object' && 'id' in params) {
-      id = params.id
-    } else {
-      console.error('Invalid params:', params)
-      return NextResponse.json({ error: 'Invalid request parameters' }, { status: 400 })
-    }
+    const { id } = await params
 
     const body = await request.json()
     const {
@@ -294,17 +266,7 @@ async function handleDELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Handle Next.js 15+ async params - in production, params is always a Promise
-    let id: string
-    if (params instanceof Promise) {
-      const resolvedParams = await params
-      id = resolvedParams.id
-    } else if (params && typeof params === 'object' && 'id' in params) {
-      id = params.id
-    } else {
-      console.error('Invalid params:', params)
-      return NextResponse.json({ error: 'Invalid request parameters' }, { status: 400 })
-    }
+    const { id } = await params
 
     const lead = await prisma.lead.findUnique({
       where: { id },
