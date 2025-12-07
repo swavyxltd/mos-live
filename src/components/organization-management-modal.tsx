@@ -45,8 +45,8 @@ interface OrgWithStats {
   name: string
   slug: string
   timezone?: string
-  createdAt: Date
-  updatedAt?: Date
+  createdAt: Date | string
+  updatedAt?: Date | string
   owner: {
     name: string | null
     email: string | null

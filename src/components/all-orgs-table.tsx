@@ -12,8 +12,8 @@ interface OrgWithStats {
   slug: string
   timezone?: string
   status?: string // Organization status: ACTIVE, PAUSED, DEACTIVATED, etc.
-  createdAt: Date
-  updatedAt?: Date
+  createdAt: Date | string
+  updatedAt?: Date | string
   owner: {
     name: string | null
     email: string | null
@@ -28,10 +28,10 @@ interface OrgWithStats {
   platformBilling: {
     stripeCustomerId: string
     status: string
-    currentPeriodEnd?: Date
+    currentPeriodEnd?: Date | string
   } | null
   totalRevenue: number
-  lastActivity: Date
+  lastActivity: Date | string
 }
 
 interface AllOrgsTableProps {

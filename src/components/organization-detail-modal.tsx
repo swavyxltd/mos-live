@@ -37,8 +37,8 @@ interface OrgWithStats {
   slug: string
   timezone?: string
   status?: string // Organization status: ACTIVE, PAUSED, DEACTIVATED, etc.
-  createdAt: Date
-  updatedAt?: Date
+  createdAt: Date | string
+  updatedAt?: Date | string
   owner: {
     name: string | null
     email: string | null
