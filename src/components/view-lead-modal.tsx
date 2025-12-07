@@ -133,24 +133,36 @@ export function ViewLeadModal({ isOpen, onClose, onUpdate, leadId, onEdit, autoO
   }, [isOpen, leadId])
 
   const loadLead = async () => {
-    if (!leadId) return
+    if (!leadId) {
+      console.error('No leadId provided to loadLead')
+      return
+    }
     
+    console.log('Loading lead with ID:', leadId)
     setIsLoading(true)
     try {
-      const res = await fetch(`/api/owner/leads/${leadId}`)
+      const url = `/api/owner/leads/${leadId}`
+      console.log('Fetching from URL:', url)
+      const res = await fetch(url)
+      console.log('Response status:', res.status, res.statusText)
+      
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}))
         const errorMessage = errorData.error || errorData.message || `Failed to load lead (${res.status})`
         console.error('Failed to fetch lead:', {
           leadId,
+          url,
           status: res.status,
           statusText: res.statusText,
-          error: errorData
+          error: errorData,
+          headers: Object.fromEntries(res.headers.entries())
         })
         throw new Error(errorMessage)
       }
       const data = await res.json()
+      console.log('Received lead data:', data)
       if (!data.lead) {
+        console.error('No lead in response data:', data)
         throw new Error('Lead data not found in response')
       }
       setLead(data.lead)

@@ -1,3 +1,5 @@
+export const runtime = 'nodejs'
+
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -7,7 +9,7 @@ import { randomUUID } from 'crypto'
 
 async function handleGET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } | undefined }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -16,12 +18,25 @@ async function handleGET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Handle Next.js 15+ async params
-    const resolvedParams = await Promise.resolve(params)
-    const { id } = resolvedParams
+    // Handle Next.js 15+ async params - in production, params is always a Promise
+    let id: string
+    if (params instanceof Promise) {
+      const resolvedParams = await params
+      id = resolvedParams.id
+    } else if (params && typeof params === 'object' && 'id' in params) {
+      id = params.id
+    } else {
+      console.error('Invalid params:', params)
+      return NextResponse.json({ error: 'Invalid request parameters' }, { status: 400 })
+    }
 
     // Log the ID being searched for debugging
     console.log('Fetching lead with ID:', id)
+    
+    if (!id || id === 'undefined' || id === 'null' || typeof id !== 'string') {
+      console.error('Invalid lead ID:', id, 'Type:', typeof id)
+      return NextResponse.json({ error: 'Invalid lead ID' }, { status: 400 })
+    }
     
     const lead = await prisma.lead.findUnique({
       where: { id },
