@@ -48,14 +48,14 @@ async function handlePOST(
       )
     }
 
-    // Find the most recent unaccepted invitation for this org
-    const existingInvitation = await prisma.invitation.findFirst({
+    // Find the most recent invitation for this org (regardless of status)
+    // We'll check if we can reuse it, or create a new one
+    const mostRecentInvitation = await prisma.invitation.findFirst({
       where: {
         orgId: org.id,
-        email: org.email,
-        acceptedAt: null,
-        expiresAt: {
-          gt: new Date() // Not expired
+        email: {
+          equals: org.email,
+          mode: 'insensitive' // Case-insensitive match
         }
       },
       orderBy: {
@@ -63,20 +63,34 @@ async function handlePOST(
       }
     })
 
+    logger.info('Checking for existing invitation', {
+      orgId: org.id,
+      orgEmail: org.email,
+      foundInvitation: !!mostRecentInvitation,
+      invitationId: mostRecentInvitation?.id,
+      invitationEmail: mostRecentInvitation?.email,
+      invitationAccepted: !!mostRecentInvitation?.acceptedAt,
+      invitationExpired: mostRecentInvitation ? new Date() > mostRecentInvitation.expiresAt : null
+    })
+
     let token: string
     let invitationId: string
 
-    if (existingInvitation) {
+    // Check if we can reuse the existing invitation
+    if (mostRecentInvitation && 
+        !mostRecentInvitation.acceptedAt && 
+        new Date() < mostRecentInvitation.expiresAt) {
       // Use existing invitation token
-      token = existingInvitation.token
-      invitationId = existingInvitation.id
+      token = mostRecentInvitation.token
+      invitationId = mostRecentInvitation.id
       logger.info('Using existing invitation', {
         invitationId,
         orgId: org.id,
-        email: org.email
+        email: org.email,
+        expiresAt: mostRecentInvitation.expiresAt
       })
     } else {
-      // Create a new invitation
+      // Create a new invitation (either none exists, or existing is expired/accepted)
       token = crypto.randomBytes(32).toString('hex')
       const expiresAt = new Date()
       expiresAt.setDate(expiresAt.getDate() + 7) // 7 days
@@ -99,7 +113,10 @@ async function handlePOST(
         orgId: org.id,
         email: org.email,
         tokenLength: token.length,
-        tokenPrefix: token.substring(0, 8)
+        tokenPrefix: token.substring(0, 8),
+        reason: mostRecentInvitation 
+          ? (mostRecentInvitation.acceptedAt ? 'existing was accepted' : 'existing was expired')
+          : 'no existing invitation found'
       })
     }
 
