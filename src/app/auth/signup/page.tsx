@@ -34,30 +34,51 @@ function SignUpForm() {
       }
     })
       .then(async res => {
+        const responseText = await res.text()
+        let errorData: any = {}
+        let data: any = null
+        
+        try {
+          if (responseText) {
+            data = JSON.parse(responseText)
+          }
+        } catch (parseError) {
+          console.error('[Signup] Failed to parse response as JSON:', parseError, 'Response:', responseText.substring(0, 200))
+        }
+        
         if (!res.ok) {
-          const errorData = await res.json().catch(() => ({ error: 'Failed to fetch invitation' }))
-          const errorMessage = errorData.error || errorData.message || `HTTP ${res.status}`
+          errorData = data || {}
+          const errorMessage = errorData.error || errorData.message || `HTTP ${res.status} ${res.statusText}`
           console.error('[Signup] API error:', {
             status: res.status,
             statusText: res.statusText,
             error: errorData,
-            tokenPrefix: token.substring(0, 8)
+            responseText: responseText.substring(0, 500),
+            tokenPrefix: token.substring(0, 8),
+            message: errorMessage
           })
           throw new Error(errorMessage)
         }
-        return res.json()
+        
+        return data
       })
       .then(data => {
-        if (data.error) {
+        if (data?.error) {
           setError(data.error)
-        } else {
+        } else if (data) {
           setOrgName(data.orgName || '')
           // Check if this is a new org setup (ADMIN role invitation)
           setIsNewOrgSetup(data.role === 'ADMIN' && !data.acceptedAt)
+        } else {
+          setError('Invalid response from server')
         }
       })
       .catch(err => {
-        console.error('[Signup] Error fetching invitation:', err)
+        console.error('[Signup] Error fetching invitation:', {
+          error: err,
+          message: err?.message,
+          stack: err?.stack
+        })
         setError(err.message || 'Failed to fetch invitation')
       })
       .finally(() => {
