@@ -318,24 +318,43 @@ export function ViewLeadModal({ isOpen, onClose, onUpdate, leadId, onEdit, autoO
         headers: { 'Content-Type': 'application/json' },
       })
       
+      // Get response text first to handle both JSON and non-JSON responses
+      const responseText = await res.text()
+      let errorData: any = {}
+      let data: any = null
+      
+      try {
+        if (responseText) {
+          data = JSON.parse(responseText)
+        }
+      } catch (parseError) {
+        console.error('Failed to parse response as JSON:', parseError, 'Response:', responseText.substring(0, 200))
+      }
+      
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}))
+        errorData = data || {}
         // Use the more detailed message if available
-        const errorMessage = errorData.message || errorData.error || 'Failed to resend invitation'
+        const errorMessage = errorData.message || errorData.error || `Failed to resend invitation (${res.status} ${res.statusText})`
         console.error('Error resending invitation:', {
           status: res.status,
+          statusText: res.statusText,
           error: errorData,
+          responseText: responseText.substring(0, 200),
           message: errorMessage
         })
         throw new Error(errorMessage)
       }
 
-      const data = await res.json()
-      toast.success(data.message || 'Invitation resent successfully')
+      // Success case
+      if (data) {
+        toast.success(data.message || 'Invitation resent successfully')
+      } else {
+        toast.success('Invitation resent successfully')
+      }
     } catch (error: any) {
       console.error('Error resending invitation:', error)
       // Show the error message from the API, or a fallback
-      const errorMessage = error.message || 'Failed to resend invitation'
+      const errorMessage = error.message || 'Failed to resend invitation. Please check the console for details.'
       toast.error(errorMessage)
     } finally {
       setIsResendingInvite(false)
