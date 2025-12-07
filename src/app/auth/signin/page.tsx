@@ -85,7 +85,13 @@ function SignInPageContent() {
         })
 
         if (result?.error) {
-          setError('An error occurred during sign in')
+          console.error('[SignIn] NextAuth error:', result.error)
+          // In development, show more details
+          if (process.env.NODE_ENV === 'development') {
+            setError(`Sign in error: ${result.error}. Check console for details.`)
+          } else {
+            setError('An error occurred during sign in')
+          }
         } else if (result?.ok) {
           // Get session to check user role and redirect appropriately
           const session = await getSession()
@@ -95,6 +101,10 @@ function SignInPageContent() {
           } else {
             window.location.href = '/auth/signin'
           }
+        } else {
+          // No error but also not ok - might be a redirect issue
+          console.warn('[SignIn] Unexpected result:', result)
+          setError('An error occurred during sign in')
         }
       }
     } catch (error) {

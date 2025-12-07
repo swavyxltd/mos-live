@@ -206,6 +206,7 @@ export const authOptions: NextAuthOptions = {
         } catch (error: any) {
           // Log error server-side only (not to console in production)
           if (process.env.NODE_ENV === 'development') {
+            console.error('[Auth] Authorize error:', error)
           }
           // If database connection fails, don't fall back - return null to show error
           return null
