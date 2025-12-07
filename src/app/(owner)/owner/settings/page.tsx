@@ -255,17 +255,6 @@ export default function OwnerSettingsPage() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="platform-name">Platform Name</Label>
-                  <Input
-                    id="platform-name"
-                    value="Madrasah OS"
-                    disabled
-                    readOnly
-                    className="bg-gray-50 cursor-not-allowed"
-                  />
-                  <p className="text-sm text-gray-500 mt-1">Platform name cannot be changed</p>
-                </div>
-                <div>
                   <Label htmlFor="default-timezone">Default Timezone</Label>
                   <Select 
                     value={formData.defaultTimezone || 'Europe/London'}
