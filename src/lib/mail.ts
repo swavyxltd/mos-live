@@ -486,13 +486,22 @@ export async function sendOrgSetupInvitation({
   orgName: string
   signupUrl: string
 }) {
-  // Ensure signupUrl is clean
+  // Ensure signupUrl is clean and preserve query parameters
   let safeSignupUrl = signupUrl.trim()
-  const urlMatch = safeSignupUrl.match(/^(https?:\/\/[^\/\?]+)(.*)$/)
-  if (urlMatch) {
-    const [, protocolDomain, path] = urlMatch
-    const cleanPath = path.replace(/\/https?:\/\/[^\/\?]+/g, '').replace(/^\/+/g, '/')
-    safeSignupUrl = protocolDomain + cleanPath
+  
+  // Parse URL to separate base URL from query string
+  try {
+    const url = new URL(safeSignupUrl)
+    // Reconstruct URL to ensure it's clean but preserve all query parameters
+    safeSignupUrl = `${url.protocol}//${url.host}${url.pathname}${url.search}`
+  } catch (e) {
+    // Fallback to regex-based cleaning if URL parsing fails
+    const urlMatch = safeSignupUrl.match(/^(https?:\/\/[^\/\?]+)([^\?]*)(\?.*)?$/)
+    if (urlMatch) {
+      const [, protocolDomain, path, query] = urlMatch
+      const cleanPath = path.replace(/\/https?:\/\/[^\/\?]+/g, '').replace(/^\/+/g, '/')
+      safeSignupUrl = protocolDomain + cleanPath + (query || '')
+    }
   }
   
   const html = await generateEmailTemplate({
