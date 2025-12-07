@@ -64,11 +64,18 @@ async function handleGET(request: NextRequest) {
       acceptedAt: invitation.acceptedAt
     })
   } catch (error: any) {
-    logger.error('Error fetching invitation', error)
+    logger.error('Error fetching invitation', error, {
+      errorMessage: error?.message,
+      errorStack: error?.stack,
+      tokenPrefix: request.nextUrl.searchParams.get('token')?.substring(0, 8)
+    })
+    
     const isDevelopment = process.env.NODE_ENV === 'development'
+    
     return NextResponse.json(
       { 
         error: 'Failed to fetch invitation',
+        message: error?.message || 'An unexpected error occurred',
         ...(isDevelopment && { details: error?.message })
       },
       { status: 500 }
