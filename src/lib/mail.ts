@@ -356,7 +356,7 @@ export async function sendBillingSuccessEmail({
       
       <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
         <tr>
-          <td style="padding: 0 0 12px 0; font-size: 14px; color: #6b7280; text-align: left;">Organization:</td>
+          <td style="padding: 0 0 12px 0; font-size: 14px; color: #6b7280; text-align: left;">Organisation:</td>
           <td align="right" style="padding: 0 0 12px 0; font-size: 14px; font-weight: 600; color: #111827; text-align: right;">${orgName}</td>
         </tr>
         <tr>
@@ -391,7 +391,7 @@ export async function sendBillingSuccessEmail({
     to,
     subject: `Billing Successful - ${orgName}`,
     html,
-    text: `Billing Successful - ${orgName}\n\nAssalamu'alaikum!\n\nYour monthly subscription payment has been processed successfully.\n\nOrganization: ${orgName}\nActive Students: ${studentCount}\nAmount Charged: ${amountFormatted}\n\nThank you for your continued support. Your account remains active and you can continue using all features.\n\n${invoiceUrl ? `View Invoice: ${invoiceUrl}\n\n` : ''}If you have any questions about this charge, please contact our support team.`
+    text: `Billing Successful - ${orgName}\n\nAssalamu'alaikum!\n\nYour monthly subscription payment has been processed successfully.\n\nOrganisation: ${orgName}\nActive Students: ${studentCount}\nAmount Charged: ${amountFormatted}\n\nThank you for your continued support. Your account remains active and you can continue using all features.\n\n${invoiceUrl ? `View Invoice: ${invoiceUrl}\n\n` : ''}If you have any questions about this charge, please contact our support team.`
   })
 }
 
@@ -541,7 +541,7 @@ export async function sendOrgSetupInvitation({
       "Assalamu'alaikum!",
       `You've been invited to set up <strong>${orgName}</strong> on Madrasah OS. Click below to create your account and complete the setup.`
     ],
-    buttonText: 'Set Up Organization',
+    buttonText: 'Set Up Organisation',
     buttonUrl: safeSignupUrl
   })
   
@@ -571,7 +571,7 @@ export async function sendOrgSetupConfirmation({
   }
   
   const html = await generateEmailTemplate({
-    title: 'Organization Setup Complete',
+    title: 'Organisation Setup Complete',
     description: `<strong>${orgName}</strong> has been successfully set up on Madrasah OS. You can now start using all features.`,
     buttonText: 'Go to Dashboard',
     buttonUrl: safeDashboardUrl,
@@ -582,7 +582,7 @@ export async function sendOrgSetupConfirmation({
     to,
     subject: `${orgName} is ready on Madrasah OS`,
     html,
-    text: `Organization Setup Complete\n\n${orgName} has been successfully set up on Madrasah OS. You can now start using all features.\n\nAccess your dashboard: ${safeDashboardUrl}\n\nBest regards,\nThe Madrasah OS Team`
+    text: `Organisation Setup Complete\n\n${orgName} has been successfully set up on Madrasah OS. You can now start using all features.\n\nAccess your dashboard: ${safeDashboardUrl}\n\nBest regards,\nThe Madrasah OS Team`
   })
 }
 

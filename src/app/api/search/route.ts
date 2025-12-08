@@ -28,7 +28,7 @@ const navigationPages = [
 // Settings sub-pages
 const settingsPages = [
   { name: 'Profile Settings', href: '/settings?tab=profile', icon: 'User', type: 'settings' },
-  { name: 'Organization Settings', href: '/settings?tab=organization', icon: 'Building2', type: 'settings' },
+  { name: 'Organisation Settings', href: '/settings?tab=organisation', icon: 'Building2', type: 'settings' },
   { name: 'Payment Methods', href: '/settings?tab=payment-methods', icon: 'CreditCard', type: 'settings' },
   { name: 'Your Subscription', href: '/settings?tab=subscription', icon: 'Package', type: 'settings' },
   { name: 'Billing History', href: '/settings?tab=billing', icon: 'FileText', type: 'settings' },
@@ -87,13 +87,13 @@ async function handleGET(request: NextRequest) {
     const searchQuery = query.toLowerCase().trim()
     const results: any[] = []
 
-    // Get active organization
+    // Get active organisation
     const org = await getActiveOrg(session.user.id)
     if (!org) {
       return NextResponse.json({ results: [] })
     }
 
-    // Security: Verify user has access to this organization
+    // Security: Verify user has access to this organisation
     const userMembership = await prisma.userOrgMembership.findUnique({
       where: {
         userId_orgId: {
@@ -104,7 +104,7 @@ async function handleGET(request: NextRequest) {
     })
 
     if (!userMembership) {
-      // User doesn't have access to this organization - return empty results
+      // User doesn't have access to this organisation - return empty results
       return NextResponse.json({ results: [] })
     }
 

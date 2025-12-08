@@ -28,7 +28,7 @@ async function handleGET(request: NextRequest) {
     })
     const demoOrgIds = demoOrgs.map(org => org.id)
 
-    // Get total active organizations (excluding demo orgs)
+    // Get total active organisations (excluding demo orgs)
     const totalOrgs = await prisma.org.count({
       where: { 
         status: 'ACTIVE',

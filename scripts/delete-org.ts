@@ -6,9 +6,9 @@ async function deleteOrg() {
   try {
     const orgName = process.argv[2] || 'Test Madrasah Live'
     
-    console.log(`Searching for organization: "${orgName}"...`)
+    console.log(`Searching for organisation: "${orgName}"...`)
     
-    // Find the organization
+    // Find the organisation
     const org = await prisma.org.findFirst({
       where: {
         name: {
@@ -24,11 +24,11 @@ async function deleteOrg() {
     })
 
     if (!org) {
-      console.error(`❌ Organization "${orgName}" not found`)
+      console.error(`❌ Organisation "${orgName}" not found`)
       process.exit(1)
     }
 
-    console.log(`\nFound organization:`)
+    console.log(`\nFound organisation:`)
     console.log(`  ID: ${org.id}`)
     console.log(`  Name: ${org.name}`)
     console.log(`  Slug: ${org.slug}`)
@@ -50,22 +50,22 @@ async function deleteOrg() {
     console.log(`  Applications: ${applications}`)
 
     // Confirm deletion
-    console.log(`\n⚠️  WARNING: This will delete the organization and ALL related data!`)
+    console.log(`\n⚠️  WARNING: This will delete the organisation and ALL related data!`)
     console.log(`   This action cannot be undone.`)
     
     // For script usage, we'll proceed (in production, you'd want confirmation)
-    console.log(`\nDeleting organization...`)
+    console.log(`\nDeleting organisation...`)
     
-    // Delete the organization (Prisma will cascade delete all related records)
+    // Delete the organisation (Prisma will cascade delete all related records)
     await prisma.org.delete({
       where: { id: org.id }
     })
 
-    console.log(`\n✅ Organization "${org.name}" deleted successfully!`)
+    console.log(`\n✅ Organisation "${org.name}" deleted successfully!`)
     console.log(`   All related records have been cascade deleted.`)
 
   } catch (error: any) {
-    console.error('\n❌ Error deleting organization:', error.message)
+    console.error('\n❌ Error deleting organisation:', error.message)
     
     if (error.code === 'P2003') {
       console.error('   This error usually means there are foreign key constraints.')

@@ -18,10 +18,10 @@ async function handleGET(request: NextRequest) {
 
     const org = await getActiveOrg(session.user.id)
     if (!org) {
-      return NextResponse.json({ error: 'No organization found' }, { status: 404 })
+      return NextResponse.json({ error: 'No organisation found' }, { status: 404 })
     }
 
-    // Verify user is a PARENT in this organization
+    // Verify user is a PARENT in this organisation
     const { getUserRoleInOrg } = await import('@/lib/org')
     const userRole = await getUserRoleInOrg(session.user.id, org.id)
     

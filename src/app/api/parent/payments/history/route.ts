@@ -17,7 +17,7 @@ async function handleGET(request: NextRequest) {
 
     const org = await getActiveOrg(session.user.id)
     if (!org) {
-      return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Organisation not found' }, { status: 404 })
     }
 
     // Verify user is a PARENT

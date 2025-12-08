@@ -23,13 +23,13 @@ export function AddTeacherModal({ isOpen, onClose, onSave }: AddTeacherModalProp
       // Get the active org ID
       const orgResponse = await fetch('/api/orgs')
       if (!orgResponse.ok) {
-        throw new Error('Failed to get organization')
+        throw new Error('Failed to get organisation')
       }
       const orgs = await orgResponse.json()
       const activeOrg = orgs.find((org: any) => org.isActive) || orgs[0]
       
       if (!activeOrg) {
-        throw new Error('No organization found')
+        throw new Error('No organisation found')
       }
 
       const response = await fetch('/api/users/create', {

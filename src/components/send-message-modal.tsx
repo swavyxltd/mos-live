@@ -93,7 +93,7 @@ export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent }: Sen
     // Get org name from API
     let orgName = 'Madrasah'
     try {
-      const response = await fetch('/api/settings/organization')
+      const response = await fetch('/api/settings/organisation')
       if (response.ok) {
         const data = await response.json()
         orgName = data.name || orgName

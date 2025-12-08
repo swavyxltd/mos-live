@@ -147,7 +147,7 @@ export default async function OwnerAnalyticsPage() {
           <CardContent>
             <div className="text-2xl font-bold">+{analyticsData.growth.newOrgsThisMonth}</div>
             <p className="text-sm text-muted-foreground">
-              New organizations this month
+              New organisations this month
             </p>
           </CardContent>
         </Card>
@@ -184,11 +184,11 @@ export default async function OwnerAnalyticsPage() {
         {/* Revenue Trend */}
         <AnalyticsRevenueChart data={analyticsData.revenueTrend} />
 
-        {/* Organization Size Distribution */}
+        {/* Organisation Size Distribution */}
         <Card>
           <CardHeader>
-            <CardTitle>Organization Size Distribution</CardTitle>
-            <CardDescription>Distribution of organizations by student count</CardDescription>
+            <CardTitle>Organisation Size Distribution</CardTitle>
+            <CardDescription>Distribution of organisations by student count</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -215,7 +215,7 @@ export default async function OwnerAnalyticsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Geographic Distribution</CardTitle>
-            <CardDescription>Organizations and revenue by region</CardDescription>
+            <CardDescription>Organisations and revenue by region</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -223,7 +223,7 @@ export default async function OwnerAnalyticsPage() {
                 <div key={index} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50 transition-colors">
                   <div>
                     <p className="font-medium">{region.region}</p>
-                    <p className="text-sm text-gray-500">{region.orgs} organizations</p>
+                    <p className="text-sm text-gray-500">{region.orgs} organisations</p>
                   </div>
                   <div className="text-right">
                     <p className="font-medium">{region.students} students</p>

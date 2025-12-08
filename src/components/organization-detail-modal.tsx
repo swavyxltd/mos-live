@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Modal } from '@/components/ui/modal'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { OrganizationManagementModal } from '@/components/organization-management-modal'
+import { OrganisationManagementModal } from '@/components/organisation-management-modal'
 import { SplitTitle } from '@/components/ui/split-title'
 import { 
   Users, 
@@ -36,7 +36,7 @@ interface OrgWithStats {
   name: string
   slug: string
   timezone?: string
-  status?: string // Organization status: ACTIVE, PAUSED, DEACTIVATED, etc.
+  status?: string // Organisation status: ACTIVE, PAUSED, DEACTIVATED, etc.
   createdAt: Date | string
   updatedAt?: Date | string
   owner: {
@@ -59,14 +59,14 @@ interface OrgWithStats {
   lastActivity: Date | string
 }
 
-interface OrganizationDetailModalProps {
+interface OrganisationDetailModalProps {
   isOpen: boolean
   onClose: () => void
-  organization: OrgWithStats | null
+  organisation: OrgWithStats | null
   onRefresh?: () => void
 }
 
-export function OrganizationDetailModal({ isOpen, onClose, organization, onRefresh }: OrganizationDetailModalProps) {
+export function OrganisationDetailModal({ isOpen, onClose, organisation, onRefresh }: OrganisationDetailModalProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'students' | 'teachers' | 'billing' | 'activity'>('overview')
   const [isManagementModalOpen, setIsManagementModalOpen] = useState(false)
   const [managementModalInitialTab, setManagementModalInitialTab] = useState<'overview' | 'students' | 'teachers' | 'settings'>('overview')
@@ -78,20 +78,20 @@ export function OrganizationDetailModal({ isOpen, onClose, organization, onRefre
 
   // Fetch real students and teachers data from API
   useEffect(() => {
-    if (isOpen && organization) {
+    if (isOpen && organisation) {
       if (activeTab === 'students') {
         fetchStudents()
       } else if (activeTab === 'teachers') {
         fetchTeachers()
       }
     }
-  }, [isOpen, organization?.id, activeTab])
+  }, [isOpen, organisation?.id, activeTab])
 
   const fetchStudents = async () => {
-    if (!organization?.id) return
+    if (!organisation?.id) return
     setLoadingStudents(true)
     try {
-      const res = await fetch(`/api/owner/orgs/${organization.id}/students`)
+      const res = await fetch(`/api/owner/orgs/${organisation.id}/students`)
       if (res.ok) {
         const data = await res.json()
         // Transform API data to match component expectations
@@ -120,10 +120,10 @@ export function OrganizationDetailModal({ isOpen, onClose, organization, onRefre
   }
 
   const fetchTeachers = async () => {
-    if (!organization?.id) return
+    if (!organisation?.id) return
     setLoadingTeachers(true)
     try {
-      const res = await fetch(`/api/owner/orgs/${organization.id}/staff`)
+      const res = await fetch(`/api/owner/orgs/${organisation.id}/staff`)
       if (res.ok) {
         const data = await res.json()
         // Transform API data to match component expectations
@@ -159,7 +159,7 @@ export function OrganizationDetailModal({ isOpen, onClose, organization, onRefre
     teacher.email.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const handleManageOrganization = () => {
+  const handleManageOrganisation = () => {
     setManagementModalInitialTab('overview')
     setIsManagementModalOpen(true)
   }
@@ -173,7 +173,7 @@ export function OrganizationDetailModal({ isOpen, onClose, organization, onRefre
     setIsManagementModalOpen(false)
   }
 
-  if (!organization) return null
+  if (!organisation) return null
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -226,18 +226,18 @@ export function OrganizationDetailModal({ isOpen, onClose, organization, onRefre
 
   return (
     <>
-    <Modal isOpen={isOpen} onClose={onClose} title={organization.name} size="lg">
+    <Modal isOpen={isOpen} onClose={onClose} title={organisation.name} size="lg">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold">{organization.name}</h2>
-            <p className="text-sm text-gray-500">{organization.slug}</p>
+            <h2 className="text-xl font-semibold">{organisation.name}</h2>
+            <p className="text-sm text-gray-500">{organisation.slug}</p>
           </div>
           <div className="flex items-center space-x-2">
-            <Badge className={getStatusColor(organization.status || (organization.platformBilling ? 'ACTIVE' : 'SETUP_REQUIRED'))}>
-              {getStatusIcon(organization.status || (organization.platformBilling ? 'ACTIVE' : 'SETUP_REQUIRED'))}
-              {getStatusLabel(organization.status || (organization.platformBilling ? 'ACTIVE' : 'SETUP_REQUIRED'))}
+            <Badge className={getStatusColor(organisation.status || (organisation.platformBilling ? 'ACTIVE' : 'SETUP_REQUIRED'))}>
+              {getStatusIcon(organisation.status || (organisation.platformBilling ? 'ACTIVE' : 'SETUP_REQUIRED'))}
+              {getStatusLabel(organisation.status || (organisation.platformBilling ? 'ACTIVE' : 'SETUP_REQUIRED'))}
             </Badge>
             <Button variant="outline" size="sm" onClick={handleSettingsClick}>
               <Settings className="h-4 w-4 mr-2" />
@@ -289,7 +289,7 @@ export function OrganizationDetailModal({ isOpen, onClose, organization, onRefre
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-gray-900">
-                    {organization._count.students}
+                    {organisation._count.students}
                   </div>
                 </CardContent>
               </Card>
@@ -302,7 +302,7 @@ export function OrganizationDetailModal({ isOpen, onClose, organization, onRefre
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-gray-900">
-                    {organization._count.teachers || 0}
+                    {organisation._count.teachers || 0}
                   </div>
                 </CardContent>
               </Card>
@@ -315,7 +315,7 @@ export function OrganizationDetailModal({ isOpen, onClose, organization, onRefre
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-gray-900">
-                    {organization._count.classes}
+                    {organisation._count.classes}
                   </div>
                 </CardContent>
               </Card>
@@ -328,17 +328,17 @@ export function OrganizationDetailModal({ isOpen, onClose, organization, onRefre
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-gray-900">
-                    {formatCurrency(organization.totalRevenue)}
+                    {formatCurrency(organisation.totalRevenue)}
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Organization Details */}
+            {/* Organisation Details */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Organization Information</CardTitle>
+                  <CardTitle className="text-lg">Organisation Information</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center space-x-3">
@@ -346,19 +346,19 @@ export function OrganizationDetailModal({ isOpen, onClose, organization, onRefre
                     <div>
                       <p className="text-sm font-medium">Created</p>
                       <p className="text-sm text-gray-500">
-                        {organization.createdAt 
-                          ? formatDate(new Date(organization.createdAt)) 
+                        {organisation.createdAt 
+                          ? formatDate(new Date(organisation.createdAt)) 
                           : 'N/A'}
                       </p>
                     </div>
                   </div>
-                  {organization.updatedAt && (
+                  {organisation.updatedAt && (
                     <div className="flex items-center space-x-3">
                       <Activity className="h-5 w-5 text-gray-400" />
                       <div>
                         <p className="text-sm font-medium">Last Updated</p>
                         <p className="text-sm text-gray-500">
-                          {formatDate(new Date(organization.updatedAt))}
+                          {formatDate(new Date(organisation.updatedAt))}
                         </p>
                       </div>
                     </div>
@@ -371,20 +371,20 @@ export function OrganizationDetailModal({ isOpen, onClose, organization, onRefre
                   <CardTitle className="text-lg">Owner Information</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {organization.owner ? (
+                  {organisation.owner ? (
                     <>
                       <div className="flex items-center space-x-3">
                         <UserCheck className="h-5 w-5 text-gray-400" />
                         <div>
                           <p className="text-sm font-medium">Name</p>
-                          <p className="text-sm text-gray-500">{organization.owner.name || 'Unknown'}</p>
+                          <p className="text-sm text-gray-500">{organisation.owner.name || 'Unknown'}</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-3">
                         <Mail className="h-5 w-5 text-gray-400" />
                         <div>
                           <p className="text-sm font-medium">Email</p>
-                          <p className="text-sm text-gray-500">{organization.owner.email}</p>
+                          <p className="text-sm text-gray-500">{organisation.owner.email}</p>
                         </div>
                       </div>
                     </>
@@ -518,12 +518,12 @@ export function OrganizationDetailModal({ isOpen, onClose, organization, onRefre
                 <CardTitle className="text-lg">Billing Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {organization.platformBilling ? (
+                {organisation.platformBilling ? (
                   <>
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">Stripe Customer ID</span>
                       <div className="flex items-center space-x-2">
-                        <code className="text-sm bg-gray-100 px-2 py-1 rounded">{organization.platformBilling.stripeCustomerId}</code>
+                        <code className="text-sm bg-gray-100 px-2 py-1 rounded">{organisation.platformBilling.stripeCustomerId}</code>
                         <Button variant="ghost" size="sm">
                           <ExternalLink className="h-4 w-4" />
                         </Button>
@@ -531,26 +531,26 @@ export function OrganizationDetailModal({ isOpen, onClose, organization, onRefre
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">Status</span>
-                      <Badge className={getStatusColor(organization.status || (organization.platformBilling ? 'ACTIVE' : 'SETUP_REQUIRED'))}>
-                        {getStatusLabel(organization.status || (organization.platformBilling ? 'ACTIVE' : 'SETUP_REQUIRED'))}
+                      <Badge className={getStatusColor(organisation.status || (organisation.platformBilling ? 'ACTIVE' : 'SETUP_REQUIRED'))}>
+                        {getStatusLabel(organisation.status || (organisation.platformBilling ? 'ACTIVE' : 'SETUP_REQUIRED'))}
                       </Badge>
                     </div>
-                    {organization.platformBilling.currentPeriodEnd && (
+                    {organisation.platformBilling.currentPeriodEnd && (
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium">Current Period End</span>
-                        <span className="text-sm text-gray-500">{formatDate(organization.platformBilling.currentPeriodEnd)}</span>
+                        <span className="text-sm text-gray-500">{formatDate(organisation.platformBilling.currentPeriodEnd)}</span>
                       </div>
                     )}
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">Total Revenue</span>
-                      <span className="text-sm font-bold">{formatCurrency(organization.totalRevenue)}</span>
+                      <span className="text-sm font-bold">{formatCurrency(organisation.totalRevenue)}</span>
                     </div>
                   </>
                 ) : (
                   <div className="text-center py-8">
                     <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">Billing Not Set Up</h3>
-                    <p className="text-sm text-gray-500 mb-4">This organization hasn't set up billing yet.</p>
+                    <p className="text-sm text-gray-500 mb-4">This organisation hasn't set up billing yet.</p>
                     <Button variant="outline">
                       <Settings className="h-4 w-4 mr-2" />
                       Configure Billing
@@ -573,22 +573,22 @@ export function OrganizationDetailModal({ isOpen, onClose, organization, onRefre
                   <div className="flex items-center space-x-3">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium">Organization created</p>
-                      <p className="text-sm text-gray-500">{formatDate(organization.createdAt)}</p>
+                      <p className="text-sm font-medium">Organisation created</p>
+                      <p className="text-sm text-gray-500">{formatDate(organisation.createdAt)}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
                     <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                     <div className="flex-1">
                       <p className="text-sm font-medium">Last activity</p>
-                      <p className="text-sm text-gray-500">{formatDate(organization.lastActivity)}</p>
+                      <p className="text-sm text-gray-500">{formatDate(organisation.lastActivity)}</p>
                     </div>
                   </div>
-                  {organization._count.invoices > 0 && (
+                  {organisation._count.invoices > 0 && (
                     <div className="flex items-center space-x-3">
                       <div className="w-2 h-2 bg-red-500 rounded-full"></div>
                       <div className="flex-1">
-                        <p className="text-sm font-medium">{organization._count.invoices} overdue invoices</p>
+                        <p className="text-sm font-medium">{organisation._count.invoices} overdue invoices</p>
                         <p className="text-sm text-gray-500">Requires attention</p>
                       </div>
                     </div>
@@ -604,18 +604,18 @@ export function OrganizationDetailModal({ isOpen, onClose, organization, onRefre
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
-          <Button onClick={handleManageOrganization}>
+          <Button onClick={handleManageOrganisation}>
             <Settings className="h-4 w-4 mr-2" />
-            Manage Organization
+            Manage Organisation
           </Button>
         </div>
       </div>
     </Modal>
     
-    <OrganizationManagementModal
+    <OrganisationManagementModal
       isOpen={isManagementModalOpen}
       onClose={handleCloseManagementModal}
-      organization={organization}
+      organisation={organisation}
       initialTab={managementModalInitialTab}
       onRefresh={onRefresh}
     />

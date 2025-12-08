@@ -30,13 +30,13 @@ export default function FAQPage() {
       questions: [
         {
           question: 'How do I set up my madrasah on Madrasah OS?',
-          answer: 'To set up your madrasah, start by configuring your organization settings, adding your first class, and inviting teachers. Then you can begin adding students and setting up your fee structure. Check our Getting Started guide for detailed steps.',
-          tags: ['setup', 'organization']
+          answer: 'To set up your madrasah, start by configuring your organisation settings, adding your first class, and inviting teachers. Then you can begin adding students and setting up your fee structure. Check our Getting Started guide for detailed steps.',
+          tags: ['setup', 'organisation']
         },
         {
           question: 'What information do I need to provide during setup?',
-          answer: 'You\'ll need your madrasah name, address, contact information, timezone, and basic settings like academic year structure. You can always update these details later in your organization settings.',
-          tags: ['setup', 'organization']
+          answer: 'You\'ll need your madrasah name, address, contact information, timezone, and basic settings like academic year structure. You can always update these details later in your organisation settings.',
+          tags: ['setup', 'organisation']
         },
         {
           question: 'How do I invite teachers to join my madrasah?',
@@ -116,7 +116,7 @@ export default function FAQPage() {
         },
         {
           question: 'Can parents reply to messages?',
-          answer: 'Yes, parents can reply to WhatsApp messages directly. Email replies will be sent to your organization\'s email address.',
+          answer: 'Yes, parents can reply to WhatsApp messages directly. Email replies will be sent to your organisation\'s email address.',
           tags: ['communication', 'replies']
         }
       ]

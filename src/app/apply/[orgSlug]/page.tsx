@@ -17,7 +17,7 @@ export default async function ApplyPage({ params }: ApplyPageProps) {
     notFound()
   }
 
-  // Fetch classes for this organization
+  // Fetch classes for this organisation
   const allClasses = await prisma.class.findMany({
     where: { orgId: org.id },
     select: {

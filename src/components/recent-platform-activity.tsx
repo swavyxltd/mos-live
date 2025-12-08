@@ -32,8 +32,8 @@ const actionIcons: Record<string, React.ComponentType<{ className?: string }>> =
 }
 
 const actionLabels: Record<string, string> = {
-  'CREATE_ORG': 'Created organization',
-  'UPDATE_ORG': 'Updated organization',
+  'CREATE_ORG': 'Created organisation',
+  'UPDATE_ORG': 'Updated organisation',
   'CREATE_USER': 'Created user',
   'UPDATE_USER': 'Updated user',
   'CREATE_PAYMENT': 'Processed payment',

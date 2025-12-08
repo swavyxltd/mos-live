@@ -56,7 +56,7 @@ export default function CreateUserPage() {
   })
 
   useEffect(() => {
-    // Fetch organizations
+    // Fetch organisations
     fetch('/api/orgs')
       .then(res => res.json())
       .then(data => {
@@ -173,7 +173,7 @@ export default function CreateUserPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ADMIN">Admin (Organization Admin)</SelectItem>
+                  <SelectItem value="ADMIN">Admin (Organisation Admin)</SelectItem>
                   <SelectItem value="STAFF">Staff (Teacher/Staff)</SelectItem>
                   <SelectItem value="PARENT">Parent</SelectItem>
                 </SelectContent>
@@ -182,15 +182,15 @@ export default function CreateUserPage() {
 
             {!formData.isSuperAdmin && (
               <div className="space-y-2">
-                <Label htmlFor="orgId">Organization *</Label>
+                <Label htmlFor="orgId">Organisation *</Label>
                 {orgs.length === 0 ? (
                   <div className="space-y-2">
-                    <p className="text-sm text-amber-600">No organizations available. Create one first.</p>
+                    <p className="text-sm text-amber-600">No organisations available. Create one first.</p>
                     <a
                       href="/owner/orgs"
                       className="text-sm text-blue-600 hover:underline"
                     >
-                      Go to Organizations →
+                      Go to Organisations →
                     </a>
                   </div>
                 ) : (
@@ -202,7 +202,7 @@ export default function CreateUserPage() {
                     required={!formData.isSuperAdmin}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select an organization" />
+                      <SelectValue placeholder="Select an organisation" />
                     </SelectTrigger>
                     <SelectContent>
                       {orgs.map((org) => (

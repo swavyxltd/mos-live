@@ -46,7 +46,7 @@ async function handleGET(request: NextRequest) {
       })
     ])
 
-    // Get all organizations with stats (excluding demo org) - can run in parallel with revenue queries
+    // Get all organisations with stats (excluding demo org) - can run in parallel with revenue queries
     const orgs = await prisma.org.findMany({
         where: { 
           status: 'ACTIVE',
@@ -187,7 +187,7 @@ async function handleGET(request: NextRequest) {
     
     const monthlyRevenue = await Promise.all(monthlyRevenuePromises)
 
-    // Get top performing organizations (by student count) - optimized with parallel aggregations
+    // Get top performing organisations (by student count) - optimized with parallel aggregations
     const top5Orgs = orgs
       .sort((a, b) => b._count.students - a._count.students)
       .slice(0, 5)
@@ -272,7 +272,7 @@ async function handleGET(request: NextRequest) {
         })),
       ...recentOrgs.map(org => ({
         type: 'org',
-        message: `New organization registered: ${org.name}`,
+        message: `New organisation registered: ${org.name}`,
         time: `${Math.floor((now.getTime() - org.createdAt.getTime()) / (60 * 60 * 1000))} hours ago`,
         status: 'info'
       }))

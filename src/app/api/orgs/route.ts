@@ -20,7 +20,7 @@ async function handleGET(request: NextRequest) {
       )
     }
 
-    // Get all active organizations
+    // Get all active organisations
     const orgs = await prisma.org.findMany({
       where: {
         status: 'ACTIVE'
@@ -40,11 +40,11 @@ async function handleGET(request: NextRequest) {
     return NextResponse.json(orgs)
 
   } catch (error: any) {
-    logger.error('Error fetching organizations', error)
+    logger.error('Error fetching organisations', error)
     const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
       { 
-        error: 'Failed to fetch organizations',
+        error: 'Failed to fetch organisations',
         ...(isDevelopment && { details: error?.message })
       },
       { status: 500 }
@@ -56,10 +56,10 @@ async function handlePOST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
-    // Only allow super admins to create organizations
+    // Only allow super admins to create organisations
     if (!session?.user?.id || !session.user.isSuperAdmin) {
       return NextResponse.json(
-        { error: 'Unauthorized. Only platform owners can create organizations.' },
+        { error: 'Unauthorized. Only platform owners can create organisations.' },
         { status: 401 }
       )
     }
@@ -228,16 +228,16 @@ async function handlePOST(request: NextRequest) {
         name: org.name,
         slug: org.slug
       },
-      message: 'Organization created and invitation sent'
+      message: 'Organisation created and invitation sent'
     })
 
   } catch (error: any) {
-    logger.error('Error creating organization', error)
+    logger.error('Error creating organisation', error)
     
     // Handle unique constraint violation
     if (error.code === 'P2002') {
       return NextResponse.json(
-        { error: 'Organization with this slug already exists' },
+        { error: 'Organisation with this slug already exists' },
         { status: 400 }
       )
     }
@@ -245,7 +245,7 @@ async function handlePOST(request: NextRequest) {
     const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
       { 
-        error: 'Failed to create organization',
+        error: 'Failed to create organisation',
         ...(isDevelopment && { details: error?.message })
       },
       { status: 500 }

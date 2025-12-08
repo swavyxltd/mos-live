@@ -25,7 +25,7 @@ async function handlePUT(request: NextRequest) {
 
     const org = await getActiveOrg()
     if (!org) {
-      return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Organisation not found' }, { status: 404 })
     }
 
     const body = await request.json()
@@ -92,7 +92,7 @@ async function handleGET() {
 
     const org = await getActiveOrg()
     if (!org) {
-      return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Organisation not found' }, { status: 404 })
     }
 
     const billingProfile = await prisma.parentBillingProfile.findUnique({
@@ -162,7 +162,7 @@ async function handleDELETE() {
 
     const org = await getActiveOrg()
     if (!org) {
-      return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Organisation not found' }, { status: 404 })
     }
 
     // Clear payment method for testing

@@ -17,10 +17,10 @@ async function handleGET(request: NextRequest) {
 
     const org = await getActiveOrg(session.user.id)
     if (!org) {
-      return NextResponse.json({ error: 'No organization found' }, { status: 404 })
+      return NextResponse.json({ error: 'No organisation found' }, { status: 404 })
     }
 
-    // Verify user is a PARENT in this organization
+    // Verify user is a PARENT in this organisation
     const { getUserRoleInOrg } = await import('@/lib/org')
     const userRole = await getUserRoleInOrg(session.user.id, org.id)
     
@@ -28,11 +28,11 @@ async function handleGET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized - Parent access required' }, { status: 403 })
     }
 
-    // Check if user is a parent in this organization (using primaryParentId relationship)
+    // Check if user is a parent in this organisation (using primaryParentId relationship)
     const parent = await prisma.parent.findFirst({
       where: {
         userId: session.user.id,
-        organizationId: org.id
+        organisationId: org.id
       }
     })
 
@@ -44,7 +44,7 @@ async function handleGET(request: NextRequest) {
     const children = await prisma.student.findMany({
       where: {
         parentId: parent.id,
-        organizationId: org.id
+        organisationId: org.id
       },
       include: {
         classes: {

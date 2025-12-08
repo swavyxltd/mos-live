@@ -56,13 +56,13 @@ export function EditTeacherModal({ isOpen, onClose, onSave, teacher }: EditTeach
       // Get active org
       const orgResponse = await fetch('/api/orgs')
       if (!orgResponse.ok) {
-        throw new Error('Failed to get organization')
+        throw new Error('Failed to get organisation')
       }
       const orgs = await orgResponse.json()
       const activeOrg = orgs.find((org: any) => org.isActive) || orgs[0]
       
       if (!activeOrg) {
-        throw new Error('No organization found')
+        throw new Error('No organisation found')
       }
 
       // Fetch current permissions
@@ -112,13 +112,13 @@ export function EditTeacherModal({ isOpen, onClose, onSave, teacher }: EditTeach
       // Get active org
       const orgResponse = await fetch('/api/orgs')
       if (!orgResponse.ok) {
-        throw new Error('Failed to get organization')
+        throw new Error('Failed to get organisation')
       }
       const orgs = await orgResponse.json()
       const activeOrg = orgs.find((org: any) => org.isActive) || orgs[0]
       
       if (!activeOrg) {
-        throw new Error('No organization found')
+        throw new Error('No organisation found')
       }
 
       // Get membership ID

@@ -101,7 +101,7 @@ async function handlePOST(request: NextRequest) {
 
     if (!membership || membership.role !== 'PARENT') {
       return NextResponse.json(
-        { error: 'User is not a parent in this organization' },
+        { error: 'User is not a parent in this organisation' },
         { status: 403 }
       )
     }

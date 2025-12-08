@@ -39,7 +39,7 @@ async function handleGET(request: NextRequest) {
       isSuperAdmin: user.isSuperAdmin,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
-      organizations: user.memberships.map(m => ({
+      organisations: user.memberships.map(m => ({
         orgId: m.org.id,
         orgName: m.org.name,
         role: m.role

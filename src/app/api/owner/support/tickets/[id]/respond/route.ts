@@ -55,7 +55,7 @@ async function handlePOST(
       return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
     }
 
-    // Check if user has access to this ticket's organization
+    // Check if user has access to this ticket's organisation
     if (!user.isSuperAdmin && !user.ownedOrgs.some(org => org.id === ticket.orgId)) {
       return NextResponse.json({ error: 'Access denied to this ticket' }, { status: 403 })
     }

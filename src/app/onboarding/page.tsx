@@ -26,7 +26,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 
-type Step = 'admin' | 'organization' | 'payments' | 'review'
+type Step = 'admin' | 'organisation' | 'payments' | 'review'
 
 export default function OnboardingPage() {
   const router = useRouter()
@@ -92,36 +92,36 @@ export default function OnboardingPage() {
           })
         }
         
-        if (data.organization) {
+        if (data.organisation) {
           setOrgData({
-            addressLine1: data.organization.addressLine1 || '',
-            address: data.organization.address || '',
-            city: data.organization.city || '',
-            postcode: data.organization.postcode || '',
-            phone: data.organization.phone || '',
-            publicPhone: data.organization.publicPhone || '',
-            email: data.organization.email || '',
-            publicEmail: data.organization.publicEmail || '',
-            officeHours: data.organization.officeHours || ''
+            addressLine1: data.organisation.addressLine1 || '',
+            address: data.organisation.address || '',
+            city: data.organisation.city || '',
+            postcode: data.organisation.postcode || '',
+            phone: data.organisation.phone || '',
+            publicPhone: data.organisation.publicPhone || '',
+            email: data.organisation.email || '',
+            publicEmail: data.organisation.publicEmail || '',
+            officeHours: data.organisation.officeHours || ''
           })
           
           setPaymentData({
-            acceptsCard: data.organization.acceptsCard ?? false,
-            acceptsCash: data.organization.acceptsCash ?? true,
-            acceptsBankTransfer: data.organization.acceptsBankTransfer ?? true,
-            billingDay: data.organization.billingDay ?? 1,
-            bankAccountName: data.organization.bankAccountName || '',
-            bankSortCode: data.organization.bankSortCode || '',
-            bankAccountNumber: data.organization.bankAccountNumber || '',
-            paymentInstructions: data.organization.paymentInstructions || ''
+            acceptsCard: data.organisation.acceptsCard ?? false,
+            acceptsCash: data.organisation.acceptsCash ?? true,
+            acceptsBankTransfer: data.organisation.acceptsBankTransfer ?? true,
+            billingDay: data.organisation.billingDay ?? 1,
+            bankAccountName: data.organisation.bankAccountName || '',
+            bankSortCode: data.organisation.bankSortCode || '',
+            bankAccountNumber: data.organisation.bankAccountNumber || '',
+            paymentInstructions: data.organisation.paymentInstructions || ''
           })
         }
 
         // Determine current step
         if (!data.steps.admin) {
           setCurrentStep('admin')
-        } else if (!data.steps.organization) {
-          setCurrentStep('organization')
+        } else if (!data.steps.organisation) {
+          setCurrentStep('organisation')
         } else if (!data.steps.payments) {
           setCurrentStep('payments')
         } else {
@@ -172,10 +172,10 @@ export default function OnboardingPage() {
         dataToSave = adminData
         break
 
-      case 'organization':
+      case 'organisation':
         if (!orgData.addressLine1 || !orgData.city || !orgData.postcode || 
             !orgData.phone || !orgData.publicPhone || !orgData.email || !orgData.publicEmail) {
-          toast.error('Please fill in all required organization fields')
+          toast.error('Please fill in all required organisation fields')
           return
         }
         dataToSave = orgData
@@ -198,7 +198,7 @@ export default function OnboardingPage() {
     if (!saved) return
 
     // Move to next step
-    const steps: Step[] = ['admin', 'organization', 'payments', 'review']
+    const steps: Step[] = ['admin', 'organisation', 'payments', 'review']
     const currentIndex = steps.indexOf(currentStep)
     if (currentIndex < steps.length - 1) {
       setCurrentStep(steps[currentIndex + 1])
@@ -206,7 +206,7 @@ export default function OnboardingPage() {
   }
 
   const handleBack = () => {
-    const steps: Step[] = ['admin', 'organization', 'payments', 'review']
+    const steps: Step[] = ['admin', 'organisation', 'payments', 'review']
     const currentIndex = steps.indexOf(currentStep)
     if (currentIndex > 0) {
       setCurrentStep(steps[currentIndex - 1])
@@ -244,7 +244,7 @@ export default function OnboardingPage() {
     )
   }
 
-  const steps: Step[] = ['admin', 'organization', 'payments', 'review']
+  const steps: Step[] = ['admin', 'organisation', 'payments', 'review']
   const currentStepIndex = steps.indexOf(currentStep)
 
   return (
@@ -270,7 +270,7 @@ export default function OnboardingPage() {
                     )}
                   </div>
                   <span className="mt-2 text-xs font-medium text-gray-600 capitalize">
-                    {step === 'admin' ? 'Admin' : step === 'organization' ? 'Organization' : step === 'payments' ? 'Payments' : 'Review'}
+                    {step === 'admin' ? 'Admin' : step === 'organisation' ? 'Organisation' : step === 'payments' ? 'Payments' : 'Review'}
                   </span>
                 </div>
                 {index < steps.length - 1 && (
@@ -290,13 +290,13 @@ export default function OnboardingPage() {
           <CardHeader>
             <CardTitle>
               {currentStep === 'admin' && 'Admin Account Details'}
-              {currentStep === 'organization' && 'Organization Information'}
+              {currentStep === 'organisation' && 'Organisation Information'}
               {currentStep === 'payments' && 'Payment Methods Setup'}
               {currentStep === 'review' && 'Review & Complete'}
             </CardTitle>
             <CardDescription>
               {currentStep === 'admin' && 'Tell us about yourself'}
-              {currentStep === 'organization' && 'Enter your organization details'}
+              {currentStep === 'organisation' && 'Enter your organisation details'}
               {currentStep === 'payments' && 'Configure payment methods for parents'}
               {currentStep === 'review' && 'Review your information before completing'}
             </CardDescription>
@@ -341,8 +341,8 @@ export default function OnboardingPage() {
               </div>
             )}
 
-            {/* Step 2: Organization Details */}
-            {currentStep === 'organization' && (
+            {/* Step 2: Organisation Details */}
+            {currentStep === 'organisation' && (
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="addressLine1">Address Line 1 *</Label>
@@ -490,7 +490,7 @@ export default function OnboardingPage() {
                         id="bankAccountName"
                         value={paymentData.bankAccountName}
                         onChange={(e) => setPaymentData({ ...paymentData, bankAccountName: e.target.value })}
-                        placeholder="Organization Name"
+                        placeholder="Organisation Name"
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
@@ -555,7 +555,7 @@ export default function OnboardingPage() {
                   </div>
                 </div>
                 <div>
-                  <h3 className="font-medium mb-4">Organization Details</h3>
+                  <h3 className="font-medium mb-4">Organisation Details</h3>
                   <div className="space-y-2 text-sm">
                     <p><strong>Address:</strong> {orgData.addressLine1}, {orgData.city}, {orgData.postcode}</p>
                     <p><strong>Contact Phone:</strong> {orgData.phone}</p>

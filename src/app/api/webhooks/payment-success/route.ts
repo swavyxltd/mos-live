@@ -1,7 +1,7 @@
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
-import { OrganizationStatusManager } from '@/lib/org-status-manager'
+import { OrganisationStatusManager } from '@/lib/org-status-manager'
 import { logger } from '@/lib/logger'
 
 async function handlePOST(request: NextRequest) {
@@ -10,17 +10,17 @@ async function handlePOST(request: NextRequest) {
     
     // Extract payment success data from webhook
     const { 
-      organizationId, 
+      organisationId, 
       amount 
     } = body
 
-    if (!organizationId) {
-      return NextResponse.json({ error: 'Missing organizationId' }, { status: 400 })
+    if (!organisationId) {
+      return NextResponse.json({ error: 'Missing organisationId' }, { status: 400 })
     }
 
     // Handle the payment success
-    const result = await OrganizationStatusManager.handlePaymentSuccess(
-      organizationId,
+    const result = await OrganisationStatusManager.handlePaymentSuccess(
+      organisationId,
       amount || 0
     )
 

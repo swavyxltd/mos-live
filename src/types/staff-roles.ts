@@ -120,7 +120,7 @@ export const PERMISSION_DEFINITIONS: Record<StaffPermissionKey, { name: string; 
   },
   access_settings: {
     name: 'Settings',
-    description: 'Access organization settings'
+    description: 'Access organisation settings'
   },
 }
 

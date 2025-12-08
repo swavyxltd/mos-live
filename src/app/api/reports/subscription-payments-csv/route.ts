@@ -20,23 +20,23 @@ async function handlePOST(request: NextRequest) {
       return NextResponse.json({ error: 'Start date and end date are required' }, { status: 400 })
     }
 
-    // Get the organization for the current user
+    // Get the organisation for the current user
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       include: {
-        organizationMemberships: {
+        organisationMemberships: {
           include: {
-            organization: true
+            organisation: true
           }
         }
       }
     })
 
-    if (!user || user.organizationMemberships.length === 0) {
-      return NextResponse.json({ error: 'No organization found' }, { status: 404 })
+    if (!user || user.organisationMemberships.length === 0) {
+      return NextResponse.json({ error: 'No organisation found' }, { status: 404 })
     }
 
-    const org = user.organizationMemberships[0].organization
+    const org = user.organisationMemberships[0].organisation
 
     // For demo purposes, we'll generate subscription payment data
     // In a real implementation, this would query actual subscription payment records

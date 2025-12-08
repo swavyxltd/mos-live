@@ -21,7 +21,7 @@ async function handlePOST(
     const resolvedParams = await Promise.resolve(params)
     const { orgId } = resolvedParams
 
-    // Update organization status to ACTIVE
+    // Update organisation status to ACTIVE
     const updatedOrg = await prisma.org.update({
       where: { id: orgId },
       data: {
@@ -72,16 +72,16 @@ async function handlePOST(
 
     return NextResponse.json({ 
       success: true, 
-      message: `Organization ${updatedOrg.name} has been reactivated`,
+      message: `Organisation ${updatedOrg.name} has been reactivated`,
       affectedUsers: updatedOrg.memberships.length
     })
 
   } catch (error: any) {
-    logger.error('Error reactivating organization', error)
+    logger.error('Error reactivating organisation', error)
     const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
       { 
-        error: 'Failed to reactivate organization',
+        error: 'Failed to reactivate organisation',
         ...(isDevelopment && { details: error?.message })
       },
       { status: 500 }

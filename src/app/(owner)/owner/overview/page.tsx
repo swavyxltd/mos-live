@@ -236,7 +236,7 @@ export default function OwnerOverviewPage() {
     window.URL.revokeObjectURL(url)
   }
 
-  const handleViewOrganizations = () => {
+  const handleViewOrganisations = () => {
     router.push('/owner/orgs')
   }
 
@@ -374,8 +374,8 @@ export default function OwnerOverviewPage() {
           </CardContent>
         </Card>
 
-        {/* Total Organizations */}
-        <Card className="hover:shadow-md transition-shadow cursor-pointer w-full min-w-0" onClick={handleViewOrganizations}>
+        {/* Total Organisations */}
+        <Card className="hover:shadow-md transition-shadow cursor-pointer w-full min-w-0" onClick={handleViewOrganisations}>
           <CardHeader className="flex flex-row items-start sm:items-center justify-between space-y-0 pb-2 gap-2">
             <div className="flex-1 min-w-0">
               {/* Mobile: 2 lines, Desktop: 1 line */}

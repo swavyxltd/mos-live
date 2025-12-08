@@ -10,18 +10,18 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 async function handlePOST(request: NextRequest) {
   try {
-    const { paymentIntentId, organizationId } = await request.json()
+    const { paymentIntentId, organisationId } = await request.json()
 
-    if (!paymentIntentId || !organizationId) {
+    if (!paymentIntentId || !organisationId) {
       return NextResponse.json(
-        { error: 'Payment Intent ID and Organization ID are required' },
+        { error: 'Payment Intent ID and Organisation ID are required' },
         { status: 400 }
       )
     }
 
     // For demo purposes, we'll simulate different outcomes
     // In production, you would:
-    // 1. Get the organization's saved payment method
+    // 1. Get the organisation's saved payment method
     // 2. Retry the payment intent with that method
     // 3. Handle the result appropriately
 
@@ -66,21 +66,21 @@ async function handlePOST(request: NextRequest) {
 
     // Real Stripe implementation would look like this:
     /*
-    // Get the organization's customer and default payment method
-    const customer = await stripe.customers.retrieve(organizationId)
+    // Get the organisation's customer and default payment method
+    const customer = await stripe.customers.retrieve(organisationId)
     const paymentMethods = await stripe.paymentMethods.list({
-      customer: organizationId,
+      customer: organisationId,
       type: 'card',
     })
     
     if (paymentMethods.data.length === 0) {
       return NextResponse.json({
         success: false,
-        error: 'No payment method found for this organization'
+        error: 'No payment method found for this organisation'
       })
     }
 
-    // Retry the payment intent with the organization's default payment method
+    // Retry the payment intent with the organisation's default payment method
     const paymentIntent = await stripe.paymentIntents.confirm(paymentIntentId, {
       payment_method: paymentMethods.data[0].id,
     })

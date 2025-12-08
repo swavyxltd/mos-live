@@ -36,7 +36,7 @@ export function PaymentModal({ isOpen, onClose, overdueAmount, onPaymentSuccess 
 
   const fetchBankDetails = async () => {
     try {
-      const response = await fetch('/api/settings/organization')
+      const response = await fetch('/api/settings/organisation')
       if (response.ok) {
         const data = await response.json()
         setBankDetails({

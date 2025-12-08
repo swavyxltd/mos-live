@@ -278,7 +278,7 @@ export function ViewLeadModal({ isOpen, onClose, onUpdate, leadId, onEdit, autoO
   const handleConvertSuccess = (orgId: string) => {
     onUpdate({})
     onClose()
-    // Navigate to the organizations list page
+    // Navigate to the organisations list page
     window.location.href = `/owner/orgs`
   }
 
@@ -310,7 +310,7 @@ export function ViewLeadModal({ isOpen, onClose, onUpdate, leadId, onEdit, autoO
 
   const handleResendInvite = async () => {
     if (!lead?.convertedOrgId) {
-      toast.error('Organization ID is missing')
+      toast.error('Organisation ID is missing')
       return
     }
 

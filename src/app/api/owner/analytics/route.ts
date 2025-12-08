@@ -155,7 +155,7 @@ async function handleGET(request: NextRequest) {
       .sort((a, b) => b.students - a.students)
       .slice(0, 5)
 
-    // Organization size distribution
+    // Organisation size distribution
     const orgSizes = [
       { size: '1-10 students', count: 0, percentage: 0 },
       { size: '11-25 students', count: 0, percentage: 0 },

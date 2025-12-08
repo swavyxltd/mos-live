@@ -50,7 +50,7 @@ export default async function AdminPage() {
                   <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Email</th>
                   <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Name</th>
                   <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Owner</th>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Organizations</th>
+                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Organisations</th>
                   <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Has Password</th>
                   <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase">Created</th>
                 </tr>

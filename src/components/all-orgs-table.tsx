@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { OrganizationDetailModal } from '@/components/organization-detail-modal'
+import { OrganisationDetailModal } from '@/components/organisation-detail-modal'
 import { Users, GraduationCap, AlertTriangle, Eye, Settings, UserCheck } from 'lucide-react'
 
 interface OrgWithStats {
@@ -11,7 +11,7 @@ interface OrgWithStats {
   name: string
   slug: string
   timezone?: string
-  status?: string // Organization status: ACTIVE, PAUSED, DEACTIVATED, etc.
+  status?: string // Organisation status: ACTIVE, PAUSED, DEACTIVATED, etc.
   createdAt: Date | string
   updatedAt?: Date | string
   owner: {
@@ -54,7 +54,7 @@ export function AllOrgsTable({ orgs, onRefresh }: AllOrgsTableProps) {
   }
 
   const handleSettings = (org: OrgWithStats) => {
-    // Open the organization detail modal in settings tab
+    // Open the organisation detail modal in settings tab
     setSelectedOrg(org)
     setIsModalOpen(true)
     // Note: The modal will open in overview tab by default
@@ -68,8 +68,8 @@ export function AllOrgsTable({ orgs, onRefresh }: AllOrgsTableProps) {
           <div className="mx-auto w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">
             <Users className="h-6 w-6 text-gray-400" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No organizations yet</h3>
-          <p className="text-gray-500 mb-4">Organizations will appear here once they sign up.</p>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No organisations yet</h3>
+          <p className="text-gray-500 mb-4">Organisations will appear here once they sign up.</p>
         </CardContent>
       </Card>
     )
@@ -79,7 +79,7 @@ export function AllOrgsTable({ orgs, onRefresh }: AllOrgsTableProps) {
     <>
       <Card>
         <CardHeader>
-          <CardTitle>All Organizations ({orgs.length})</CardTitle>
+          <CardTitle>All Organisations ({orgs.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -87,7 +87,7 @@ export function AllOrgsTable({ orgs, onRefresh }: AllOrgsTableProps) {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
-                    Organization
+                    Organisation
                   </th>
                   <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                     Owner
@@ -163,7 +163,7 @@ export function AllOrgsTable({ orgs, onRefresh }: AllOrgsTableProps) {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {(() => {
-                        // Show organization status if available, otherwise check platform billing
+                        // Show organisation status if available, otherwise check platform billing
                         if (org.status === 'PAUSED') {
                           return (
                             <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
@@ -230,10 +230,10 @@ export function AllOrgsTable({ orgs, onRefresh }: AllOrgsTableProps) {
         </CardContent>
       </Card>
       
-      <OrganizationDetailModal
+      <OrganisationDetailModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        organization={selectedOrg}
+        organisation={selectedOrg}
         onRefresh={onRefresh}
       />
     </>

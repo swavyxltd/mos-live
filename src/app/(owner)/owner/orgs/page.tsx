@@ -162,7 +162,7 @@ export default function OwnerOrgsPage() {
     }
   }
 
-  // Filter organizations based on search term
+  // Filter organisations based on search term
   const filteredOrgs = orgsWithStats.filter(org => {
     if (!searchTerm) return true
     const searchLower = searchTerm.toLowerCase()
@@ -194,7 +194,7 @@ export default function OwnerOrgsPage() {
           <div className="relative flex-1 max-w-md">
             <Search className="h-4 w-4 absolute left-3 top-3 text-gray-400" />
             <Input
-              placeholder="Search organizations by name or city..."
+              placeholder="Search organisations by name or city..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -202,7 +202,7 @@ export default function OwnerOrgsPage() {
           </div>
           {searchTerm && (
             <div className="text-sm text-gray-500">
-              {filteredOrgs.length} of {orgsWithStats.length} organizations
+              {filteredOrgs.length} of {orgsWithStats.length} organisations
             </div>
           )}
         </div>

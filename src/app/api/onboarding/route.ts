@@ -19,7 +19,7 @@ async function handlePUT(request: NextRequest) {
 
     const org = await getActiveOrg()
     if (!org) {
-      return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Organisation not found' }, { status: 404 })
     }
 
     // Check if user is the initial admin of this org
@@ -66,8 +66,8 @@ async function handlePUT(request: NextRequest) {
         }
         break
 
-      case 'organization':
-        // Update organization details
+      case 'organisation':
+        // Update organisation details
         if (data.addressLine1) {
           updateData.addressLine1 = sanitizeText(data.addressLine1, MAX_STRING_LENGTHS.text)
         }
@@ -225,7 +225,7 @@ async function handleGET(request: NextRequest) {
 
     const org = await getActiveOrg()
     if (!org) {
-      return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Organisation not found' }, { status: 404 })
     }
 
     // Check if user is the initial admin
@@ -283,7 +283,7 @@ async function handleGET(request: NextRequest) {
     // Determine which steps are complete
     const steps = {
       admin: !!(user?.name && user?.email),
-      organization: !!(orgData?.addressLine1 && orgData?.city && orgData?.postcode && 
+      organisation: !!(orgData?.addressLine1 && orgData?.city && orgData?.postcode && 
                       orgData?.phone && orgData?.email && orgData?.publicPhone && orgData?.publicEmail),
       payments: !!(orgData?.billingDay && (
         orgData?.acceptsCard || orgData?.acceptsCash || orgData?.acceptsBankTransfer
@@ -292,9 +292,9 @@ async function handleGET(request: NextRequest) {
 
     return NextResponse.json({
       user,
-      organization: orgData,
+      organisation: orgData,
       steps,
-      isComplete: steps.admin && steps.organization && steps.payments
+      isComplete: steps.admin && steps.organisation && steps.payments
     })
   } catch (error: any) {
     logger.error('Error fetching onboarding progress', error)

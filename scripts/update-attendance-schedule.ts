@@ -9,7 +9,7 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('🔄 Updating attendance data to match Monday-Friday schedule...\n')
 
-  // Find the organization for admin@test.com
+  // Find the organisation for admin@test.com
   const adminUser = await prisma.user.findUnique({
     where: { email: 'admin@test.com' },
     include: {
@@ -28,13 +28,13 @@ async function main() {
 
   const org = adminUser.UserOrgMembership[0]?.Org
   if (!org) {
-    console.error('❌ No organization found for admin@test.com')
+    console.error('❌ No organisation found for admin@test.com')
     process.exit(1)
   }
 
-  console.log(`📋 Found organization: ${org.name} (${org.id})\n`)
+  console.log(`📋 Found organisation: ${org.name} (${org.id})\n`)
 
-  // Get all classes for this organization
+  // Get all classes for this organisation
   const classes = await prisma.class.findMany({
     where: {
       orgId: org.id

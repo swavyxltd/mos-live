@@ -31,7 +31,7 @@ async function handlePOST(request: NextRequest) {
     const tomorrowDay = tomorrow.getDate()
 
     // Find all orgs with billing anniversary tomorrow
-    // Only bill ACTIVE organizations (skip SUSPENDED/PAUSED)
+    // Only bill ACTIVE organisations (skip SUSPENDED/PAUSED)
     const orgsToBill = await prisma.platformOrgBilling.findMany({
       where: {
         billingAnniversaryDate: tomorrowDay,
@@ -42,7 +42,7 @@ async function handlePOST(request: NextRequest) {
           not: null
         },
         org: {
-          status: 'ACTIVE' // Only bill active organizations
+          status: 'ACTIVE' // Only bill active organisations
         }
       },
       include: {
@@ -131,7 +131,7 @@ async function handleGET(request: NextRequest) {
         not: null
       },
       org: {
-        status: 'ACTIVE' // Only bill active organizations
+        status: 'ACTIVE' // Only bill active organisations
       }
     },
     include: {

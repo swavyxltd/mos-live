@@ -4,7 +4,7 @@ import { getActiveOrg } from '@/lib/org'
 import { prisma } from '@/lib/prisma'
 
 /**
- * Server-side check to verify if the organization has a payment method set up.
+ * Server-side check to verify if the organisation has a payment method set up.
  * Returns true if payment is set up, false otherwise.
  * Owner accounts always return true.
  */

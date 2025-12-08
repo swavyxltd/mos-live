@@ -5,7 +5,7 @@ import { sendPaymentFailedWarningPlatform } from '@/lib/mail'
 import { logger } from '@/lib/logger'
 
 // This endpoint should be called daily via cron job
-// It retries failed payments every 3 days, then checks for organizations with overdue payments beyond grace period and suspends them
+// It retries failed payments every 3 days, then checks for organisations with overdue payments beyond grace period and suspends them
 async function handlePOST(request: NextRequest) {
   try {
     // Verify cron secret (optional but recommended)
@@ -209,8 +209,8 @@ async function handlePOST(request: NextRequest) {
       }
     }
 
-    // STEP 2: Check for overdue organizations and suspend them
-    // Find organizations with:
+    // STEP 2: Check for overdue organisations and suspend them
+    // Find organisations with:
     // 1. Subscription status is 'past_due' OR has billing anniversary that passed grace period
     // 2. Status is ACTIVE (not already deactivated)
     // 3. Has a billing anniversary date
@@ -312,7 +312,7 @@ async function handlePOST(request: NextRequest) {
 
         // Check if grace period has been exceeded
         if (shouldSuspend) {
-          // Deactivate the organization
+          // Deactivate the organisation
           await prisma.org.update({
             where: { id: billing.orgId },
             data: {
@@ -443,7 +443,7 @@ async function handleGET(request: NextRequest) {
     })
 
     return NextResponse.json({
-      message: `Found ${overdueOrgs.length} organizations with overdue payments (grace period: ${gracePeriodDays} days)`,
+      message: `Found ${overdueOrgs.length} organisations with overdue payments (grace period: ${gracePeriodDays} days)`,
       gracePeriodDays,
       cutoffDate: cutoffDate.toISOString(),
       orgs: overdueOrgs.map(b => ({

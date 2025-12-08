@@ -24,14 +24,14 @@ async function main() {
   })
 
   users.forEach((user, index) => {
-    const orgs = user.memberships.map(m => `${m.org.name} (${m.role})`).join(', ') || 'No organization'
+    const orgs = user.memberships.map(m => `${m.org.name} (${m.role})`).join(', ') || 'No organisation'
     const hasPassword = user.password ? 'Yes' : 'No'
     
     console.log(`\n${index + 1}. ${user.name || 'N/A'} (${user.email})`)
     console.log(`   Owner: ${user.isSuperAdmin ? '✅ Yes' : '❌ No'}`)
     console.log(`   Password: ${hasPassword}`)
     console.log(`   Phone: ${user.phone || 'N/A'}`)
-    console.log(`   Organizations: ${orgs}`)
+    console.log(`   Organisations: ${orgs}`)
     console.log(`   Created: ${user.createdAt.toISOString().split('T')[0]}`)
   })
 

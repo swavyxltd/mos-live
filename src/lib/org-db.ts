@@ -11,7 +11,7 @@
 import { PrismaClient } from '@prisma/client'
 
 /**
- * Get students for a specific organization
+ * Get students for a specific organisation
  */
 export function orgStudents(prisma: PrismaClient, orgId: string, args: any = {}) {
   return prisma.student.findMany({
@@ -51,7 +51,7 @@ export function orgStudentFirst(prisma: PrismaClient, orgId: string, args: any =
 }
 
 /**
- * Count students for a specific organization
+ * Count students for a specific organisation
  */
 export function orgStudentsCount(prisma: PrismaClient, orgId: string, args: any = {}) {
   return prisma.student.count({
@@ -64,7 +64,7 @@ export function orgStudentsCount(prisma: PrismaClient, orgId: string, args: any 
 }
 
 /**
- * Get classes for a specific organization
+ * Get classes for a specific organisation
  */
 export function orgClasses(prisma: PrismaClient, orgId: string, args: any = {}) {
   return prisma.class.findMany({
@@ -104,7 +104,7 @@ export function orgClassFirst(prisma: PrismaClient, orgId: string, args: any = {
 }
 
 /**
- * Count classes for a specific organization
+ * Count classes for a specific organisation
  */
 export function orgClassesCount(prisma: PrismaClient, orgId: string, args: any = {}) {
   return prisma.class.count({
@@ -117,7 +117,7 @@ export function orgClassesCount(prisma: PrismaClient, orgId: string, args: any =
 }
 
 /**
- * Get invoices for a specific organization
+ * Get invoices for a specific organisation
  */
 export function orgInvoices(prisma: PrismaClient, orgId: string, args: any = {}) {
   return prisma.invoice.findMany({
@@ -157,7 +157,7 @@ export function orgInvoiceFirst(prisma: PrismaClient, orgId: string, args: any =
 }
 
 /**
- * Count invoices for a specific organization
+ * Count invoices for a specific organisation
  */
 export function orgInvoicesCount(prisma: PrismaClient, orgId: string, args: any = {}) {
   return prisma.invoice.count({
@@ -170,7 +170,7 @@ export function orgInvoicesCount(prisma: PrismaClient, orgId: string, args: any 
 }
 
 /**
- * Get payments for a specific organization
+ * Get payments for a specific organisation
  */
 export function orgPayments(prisma: PrismaClient, orgId: string, args: any = {}) {
   return prisma.payment.findMany({
@@ -210,7 +210,7 @@ export function orgPaymentFirst(prisma: PrismaClient, orgId: string, args: any =
 }
 
 /**
- * Count payments for a specific organization
+ * Count payments for a specific organisation
  */
 export function orgPaymentsCount(prisma: PrismaClient, orgId: string, args: any = {}) {
   return prisma.payment.count({
@@ -223,7 +223,7 @@ export function orgPaymentsCount(prisma: PrismaClient, orgId: string, args: any 
 }
 
 /**
- * Get attendance records for a specific organization
+ * Get attendance records for a specific organisation
  */
 export function orgAttendance(prisma: PrismaClient, orgId: string, args: any = {}) {
   return prisma.attendance.findMany({
@@ -249,7 +249,7 @@ export function orgAttendanceFirst(prisma: PrismaClient, orgId: string, args: an
 }
 
 /**
- * Count attendance records for a specific organization
+ * Count attendance records for a specific organisation
  */
 export function orgAttendanceCount(prisma: PrismaClient, orgId: string, args: any = {}) {
   return prisma.attendance.count({
@@ -262,7 +262,7 @@ export function orgAttendanceCount(prisma: PrismaClient, orgId: string, args: an
 }
 
 /**
- * Get messages for a specific organization
+ * Get messages for a specific organisation
  */
 export function orgMessages(prisma: PrismaClient, orgId: string, args: any = {}) {
   return prisma.message.findMany({
@@ -302,7 +302,7 @@ export function orgMessageFirst(prisma: PrismaClient, orgId: string, args: any =
 }
 
 /**
- * Count messages for a specific organization
+ * Count messages for a specific organisation
  */
 export function orgMessagesCount(prisma: PrismaClient, orgId: string, args: any = {}) {
   return prisma.message.count({
@@ -315,7 +315,7 @@ export function orgMessagesCount(prisma: PrismaClient, orgId: string, args: any 
 }
 
 /**
- * Get applications for a specific organization
+ * Get applications for a specific organisation
  */
 export function orgApplications(prisma: PrismaClient, orgId: string, args: any = {}) {
   return prisma.application.findMany({
@@ -355,7 +355,7 @@ export function orgApplicationFirst(prisma: PrismaClient, orgId: string, args: a
 }
 
 /**
- * Count applications for a specific organization
+ * Count applications for a specific organisation
  */
 export function orgApplicationsCount(prisma: PrismaClient, orgId: string, args: any = {}) {
   return prisma.application.count({
@@ -368,7 +368,7 @@ export function orgApplicationsCount(prisma: PrismaClient, orgId: string, args: 
 }
 
 /**
- * Get monthly payment records for a specific organization
+ * Get monthly payment records for a specific organisation
  */
 export function orgMonthlyPaymentRecords(prisma: PrismaClient, orgId: string, args: any = {}) {
   return prisma.monthlyPaymentRecord.findMany({
@@ -408,7 +408,7 @@ export function orgMonthlyPaymentRecordFirst(prisma: PrismaClient, orgId: string
 }
 
 /**
- * Count monthly payment records for a specific organization
+ * Count monthly payment records for a specific organisation
  */
 export function orgMonthlyPaymentRecordsCount(prisma: PrismaClient, orgId: string, args: any = {}) {
   return prisma.monthlyPaymentRecord.count({
@@ -421,7 +421,7 @@ export function orgMonthlyPaymentRecordsCount(prisma: PrismaClient, orgId: strin
 }
 
 /**
- * Get student-class enrollments for a specific organization
+ * Get student-class enrollments for a specific organisation
  */
 export function orgStudentClasses(prisma: PrismaClient, orgId: string, args: any = {}) {
   return prisma.studentClass.findMany({
@@ -447,7 +447,7 @@ export function orgStudentClassFirst(prisma: PrismaClient, orgId: string, args: 
 }
 
 /**
- * Count student-class enrollments for a specific organization
+ * Count student-class enrollments for a specific organisation
  */
 export function orgStudentClassesCount(prisma: PrismaClient, orgId: string, args: any = {}) {
   return prisma.studentClass.count({

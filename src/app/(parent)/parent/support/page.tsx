@@ -22,7 +22,7 @@ export default function ParentSupportPage() {
   useEffect(() => {
     if (status === 'loading') return
 
-    // Always fetch real contact information from organization settings
+    // Always fetch real contact information from organisation settings
     fetch('/api/org/contact-info')
       .then(res => res.json())
       .then(data => {

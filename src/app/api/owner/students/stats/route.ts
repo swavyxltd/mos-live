@@ -160,7 +160,7 @@ async function handleGET(request: NextRequest) {
       }
     })
 
-    // Get organization distribution
+    // Get organisation distribution
     let topOrgsByStudents: any[] = []
     try {
       const orgDistribution = await prisma.org.findMany({

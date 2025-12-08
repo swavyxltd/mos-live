@@ -18,7 +18,7 @@ async function handleGET() {
 
     const org = await getActiveOrg()
     if (!org) {
-      return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Organisation not found' }, { status: 404 })
     }
 
     // Return payment method settings (without sensitive keys)
@@ -62,12 +62,12 @@ async function handlePUT(request: NextRequest) {
 
     const org = await getActiveOrg()
     if (!org) {
-      return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Organisation not found' }, { status: 404 })
     }
 
     // IMPORTANT: billingDay can ONLY be updated through this endpoint
     // This is the single source of truth for billing day settings
-    // Other endpoints (e.g., /api/settings/organization) explicitly ignore billingDay
+    // Other endpoints (e.g., /api/settings/organisation) explicitly ignore billingDay
 
     const body = await request.json()
     const {
@@ -127,7 +127,7 @@ async function handlePUT(request: NextRequest) {
       )
     }
 
-    // Update organization payment settings
+    // Update organisation payment settings
     const updatedOrg = await prisma.org.update({
       where: { id: org.id },
       data: {

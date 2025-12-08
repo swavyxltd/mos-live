@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
 
-// GET /api/owner/support/tickets - Get all support tickets from all organizations owned by the user
+// GET /api/owner/support/tickets - Get all support tickets from all organisations owned by the user
 async function handleGET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -35,11 +35,11 @@ async function handleGET(request: NextRequest) {
     let whereClause: any = {}
 
     // If user is super admin, get all tickets
-    // If user is owner, get tickets from their organizations only
+    // If user is owner, get tickets from their organisations only
     if (user.isSuperAdmin) {
       // Super admin can see all tickets
     } else {
-      // Owner can only see tickets from their organizations
+      // Owner can only see tickets from their organisations
       whereClause.orgId = {
         in: user.ownedOrgs.map(org => org.id)
       }
@@ -50,7 +50,7 @@ async function handleGET(request: NextRequest) {
       whereClause.status = status
     }
 
-    // Filter by organization if provided
+    // Filter by organisation if provided
     if (orgId) {
       whereClause.orgId = orgId
     }

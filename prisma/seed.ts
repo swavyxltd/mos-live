@@ -6,7 +6,7 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('🌱 Starting seed...')
 
-  // Create demo organization
+  // Create demo organisation
   const org = await prisma.org.upsert({
     where: { slug: 'leicester-islamic-centre' },
     update: {},
@@ -22,7 +22,7 @@ async function main() {
     }
   })
 
-  console.log('✅ Created organization:', org.name)
+  console.log('✅ Created organisation:', org.name)
 
   // Create users
   const users = await Promise.all([
@@ -396,7 +396,7 @@ async function main() {
 
   console.log('✅ Created platform billing')
 
-  // Create additional demo organizations for owner portal
+  // Create additional demo organisations for owner portal
   const org2 = await prisma.org.create({
     data: {
       name: 'Manchester Islamic School',
@@ -559,7 +559,7 @@ async function main() {
         orgId: null, // Platform-level
         actorUserId: users[0].id, // Ahmed Hassan
         action: 'CREATE_ORG',
-        targetType: 'Organization',
+        targetType: 'Organisation',
         targetId: org2.id,
         data: JSON.stringify({ orgName: org2.name })
       }
@@ -569,7 +569,7 @@ async function main() {
         orgId: null, // Platform-level
         actorUserId: users[0].id, // Ahmed Hassan
         action: 'CREATE_ORG',
-        targetType: 'Organization',
+        targetType: 'Organisation',
         targetId: org3.id,
         data: JSON.stringify({ orgName: org3.name })
       }
@@ -586,7 +586,7 @@ async function main() {
   console.log('👨‍💼 Admin 2: admin2@demo.com (password: demo123)')
   console.log('👨‍🏫 Teacher 2: teacher2@demo.com (password: demo123)')
   console.log('👨‍👩‍👧‍👦 Parent 2: parent2@demo.com (password: demo123)')
-  console.log('\nOrganizations created:')
+  console.log('\nOrganisations created:')
   console.log('🏢 Leicester Islamic Centre (3 students, 1 class)')
   console.log('🏢 Manchester Islamic School (1 student, 1 class)')
   console.log('🏢 Birmingham Quran Academy (1 student, 1 class)')

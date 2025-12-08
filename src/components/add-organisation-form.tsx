@@ -264,7 +264,7 @@ export function AddOrganisationForm({ onSuccess, onCancel }: AddOrganisationForm
           required
         />
         <p className="text-sm text-[var(--muted-foreground)]">
-          An invitation email will be sent to this address to set up the organization
+          An invitation email will be sent to this address to set up the organisation
         </p>
       </div>
 
@@ -280,7 +280,7 @@ export function AddOrganisationForm({ onSuccess, onCancel }: AddOrganisationForm
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="email">Organization Email</Label>
+          <Label htmlFor="email">Organisation Email</Label>
           <Input
             id="email"
             type="email"

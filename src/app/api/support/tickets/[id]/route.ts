@@ -21,7 +21,7 @@ async function handleGET(
 
     const org = await getActiveOrg()
     if (!org) {
-      return NextResponse.json({ error: 'No organization found' }, { status: 404 })
+      return NextResponse.json({ error: 'No organisation found' }, { status: 404 })
     }
 
     const ticket = await prisma.supportTicket.findFirst({
@@ -71,7 +71,7 @@ async function handlePATCH(
 
     const org = await getActiveOrg()
     if (!org) {
-      return NextResponse.json({ error: 'No organization found' }, { status: 404 })
+      return NextResponse.json({ error: 'No organisation found' }, { status: 404 })
     }
 
     const body = await request.json()
@@ -135,7 +135,7 @@ async function handleDELETE(
 
     const org = await getActiveOrg()
     if (!org) {
-      return NextResponse.json({ error: 'No organization found' }, { status: 404 })
+      return NextResponse.json({ error: 'No organisation found' }, { status: 404 })
     }
 
     // Check if ticket exists and belongs to the org

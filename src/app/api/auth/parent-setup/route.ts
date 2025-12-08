@@ -128,7 +128,7 @@ async function handlePOST(request: NextRequest) {
 
     if (!allowedMethods.includes(paymentMethod)) {
       return NextResponse.json(
-        { error: `Payment method ${paymentMethod} is not enabled for this organization` },
+        { error: `Payment method ${paymentMethod} is not enabled for this organisation` },
         { status: 400 }
       )
     }

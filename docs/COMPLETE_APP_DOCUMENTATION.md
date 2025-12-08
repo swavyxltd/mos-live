@@ -20,24 +20,24 @@
 ## Account Types & Roles
 
 ### 1. **OWNER (SuperAdmin)**
-- **Access**: Full platform access across all organizations
+- **Access**: Full platform access across all organisations
 - **Identifier**: `isSuperAdmin: true` in User model
 - **Portal**: `/owner/*` routes
 - **Capabilities**: 
-  - Manage all organizations
+  - Manage all organisations
   - View platform-wide analytics and revenue
-  - Manage leads and convert to organizations
+  - Manage leads and convert to organisations
   - System health monitoring
   - Global support ticket management
   - User management across platform
   - Bypass payment gates
 
-### 2. **ADMIN (Organization Admin)**
-- **Access**: Full access to their organization
+### 2. **ADMIN (Organisation Admin)**
+- **Access**: Full access to their organisation
 - **Identifier**: `UserOrgMembership.role = 'ADMIN'` and `isInitialAdmin: true`
 - **Portal**: `/dashboard` (Staff portal)
 - **Capabilities**:
-  - All staff features + organization settings
+  - All staff features + organisation settings
   - Staff management
   - Payment method setup (required before data entry)
   - Full CRUD on all org data
@@ -67,11 +67,11 @@
 
 ## Multi-Tenancy Architecture
 
-### Organization Scoping
+### Organisation Scoping
 - All business data has `orgId` field
-- Data is isolated per organization
-- Users can belong to multiple organizations via `UserOrgMembership`
-- Active organization determined by session/cookie
+- Data is isolated per organisation
+- Users can belong to multiple organisations via `UserOrgMembership`
+- Active organisation determined by session/cookie
 
 ### Portal Routing
 - **Production**: Host-based routing (app.madrasah.io, parent.madrasah.io)
@@ -97,13 +97,13 @@
 - Account lockout fields (`failedLoginAttempts`, `lockedUntil`)
 
 **Org**
-- Organization details (name, slug, address, contact info)
+- Organisation details (name, slug, address, contact info)
 - Status: `ACTIVE`, `PAUSED`, `DEACTIVATED`, `SUSPENDED`
 - Payment settings (Stripe, payment methods)
 - Timezone, settings JSON
 
 **UserOrgMembership**
-- Links users to organizations
+- Links users to organisations
 - Role: `ADMIN`, `STAFF`, `PARENT`
 - `staffSubrole`: `ADMIN`, `TEACHER`, `FINANCE_OFFICER`
 - `isInitialAdmin`: First admin of org
@@ -160,7 +160,7 @@
 - `preferredPaymentMethod`
 
 **Lead**
-- Sales leads for potential organizations
+- Sales leads for potential organisations
 - Status: `NEW`, `CONTACTED`, `WON`, `LOST`, `COLD`
 - Email outreach fields: `lastEmailSentAt`, `lastEmailStage`, `emailOutreachCompleted`
 - `nextContactAt` for follow-ups
@@ -243,14 +243,14 @@
 ### OWNER Portal (`/owner/*`)
 
 #### 1. **Dashboard** (`/owner/overview`)
-- **KPIs**: Total Organizations, Total Students, MRR, This Week's New Orgs, Overdue Orgs, Active Users/Staff, Total Leads
-- **Charts**: Revenue trend (12 months), New organizations by month, Top organizations by revenue
+- **KPIs**: Total Organisations, Total Students, MRR, This Week's New Orgs, Overdue Orgs, Active Users/Staff, Total Leads
+- **Charts**: Revenue trend (12 months), New organisations by month, Top organisations by revenue
 - **Recent Activity**: Platform-wide activity feed
 - **Real Data**: All metrics from database, excludes demo org
 
 #### 2. **Analytics** (`/owner/analytics`)
 - **Metrics**: Current MRR, Last Month MRR, Growth %, ARR, Lifetime Value, ARPU
-- **Charts**: Organizations by month, Students by month, MRR trend, Active orgs this month, Average students per org
+- **Charts**: Organisations by month, Students by month, MRR trend, Active orgs this month, Average students per org
 - **Real Data**: All from Prisma aggregations
 
 #### 3. **Leads Dashboard** (`/owner/leads/dashboard`)
@@ -281,13 +281,13 @@
 - **Activity Timeline**: All `LeadActivity` entries
 - **Convert to Org**: Prompts for admin email, creates org, sends onboarding email
 
-#### 6. **Organizations** (`/owner/orgs`)
+#### 6. **Organisations** (`/owner/orgs`)
 - **Table**: Name, Students, Staff, MRR, Status, Next Billing, Actions
 - **Filters**: Status, Search
 - **Actions**: View, Pause, Reactivate, Suspend
 - **Real Data**: All from database with Stripe integration
 
-#### 7. **Organization Detail** (`/owner/orgs/[orgId]`)
+#### 7. **Organisation Detail** (`/owner/orgs/[orgId]`)
 - **Overview**: Stats, billing info, Stripe subscription status
 - **Students**: List of students in org
 - **Staff**: List of staff members
@@ -299,16 +299,16 @@
 - **Real Data**: From Stripe + internal billing tables
 
 #### 9. **Users** (`/owner/users`)
-- **Table**: Name, Email, Role, Organization, Status, Created, Actions
-- **Filters**: Role, Organization, Search
+- **Table**: Name, Email, Role, Organisation, Status, Created, Actions
+- **Filters**: Role, Organisation, Search
 - **Pagination**: 20 users per page
 - **Exclusions**: Demo org users, owner accounts (`isSuperAdmin: true`)
 - **Actions**: View, Edit (opens modals)
 - **Real Data**: From `users` table, excludes demo org
 
 #### 10. **Students** (`/owner/students`)
-- **Table**: Name, Organization, Classes, Status, Created
-- **Filters**: Organization, Status, Search
+- **Table**: Name, Organisation, Classes, Status, Created
+- **Filters**: Organisation, Status, Search
 - **Real Data**: All students across platform
 
 #### 11. **System Health** (`/owner/system-health`)
@@ -316,11 +316,11 @@
 - **Service Status**: Next.js/Vercel, PostgreSQL, Stripe, Resend, Storage, NextAuth.js
 - **Performance Metrics**: Response Time, API Latency, Database Query Time, Memory Usage, CPU Usage
 - **Security Metrics**: Failed Login Attempts, 2FA Adoption, SSL Certificate Status, Firewall Status
-- **Infrastructure**: Total Organizations, Total Users, Total Students, Database Size, Storage Usage
+- **Infrastructure**: Total Organisations, Total Users, Total Students, Database Size, Storage Usage
 - **Real Data**: From system monitoring, `os` module, Stripe API, Resend API
 
 #### 12. **Dunning** (`/owner/dunning`)
-- **Table**: Organization, Amount Overdue, Days Overdue, Last Charge, Next Action
+- **Table**: Organisation, Amount Overdue, Days Overdue, Last Charge, Next Action
 - **Actions**: Retry Payment, Send Dunning Email
 - **Real Data**: From Stripe invoices with `past_due` status
 
@@ -420,7 +420,7 @@
 
 #### 15. **Settings** (`/settings`)
 - **Profile**: User profile settings
-- **Organization**: Org details, contact info, payment methods
+- **Organisation**: Org details, contact info, payment methods
 - **Platform Payment**: Add Stripe card (required before data entry)
 - **Payment Methods**: Manage parent payment methods
 - **Subscription**: View platform billing status, trial info
@@ -479,7 +479,7 @@
 
 ## Key Workflows
 
-### 1. **Lead to Organization Conversion**
+### 1. **Lead to Organisation Conversion**
 
 1. **Demo Booking**: Lead books demo via Calendly (creates `LeadActivity`)
 2. **Lead Conversion**: Owner clicks "Convert to Organisation"
@@ -723,8 +723,8 @@
 - `POST /api/owner/leads/[id]/log-call` - Log call attempt
 - `POST /api/owner/leads/[id]/convert` - Convert lead to org
 - `GET /api/owner/leads/dashboard/stats` - Lead dashboard stats
-- `GET /api/owner/orgs` - List organizations
-- `GET /api/owner/orgs/[orgId]` - Get organization
+- `GET /api/owner/orgs` - List organisations
+- `GET /api/owner/orgs/[orgId]` - Get organisation
 - `GET /api/owner/users` - List users
 - `GET /api/owner/users/[id]` - Get user
 - `PUT /api/owner/users/[id]` - Update user
@@ -767,7 +767,7 @@
 ### Vercel Blob
 - **File Storage**: Invoice PDFs, CSV exports
 - **Signed URLs**: Secure file access
-- **Organization**: Bucket structure by org
+- **Organisation**: Bucket structure by org
 
 ---
 

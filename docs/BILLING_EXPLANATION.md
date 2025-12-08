@@ -1,8 +1,8 @@
 # Automatic Billing System Explanation
 
-## How Organizations Get Billed Automatically via Stripe
+## How Organisations Get Billed Automatically via Stripe
 
-This document explains how the automatic billing system works for organizations in Madrasah OS.
+This document explains how the automatic billing system works for organisations in Madrasah OS.
 
 ---
 
@@ -10,16 +10,16 @@ This document explains how the automatic billing system works for organizations 
 
 **Pricing Model**: £1 per student per month  
 **Billing Method**: Variable Quantity Subscription (Stripe)  
-**Billing Frequency**: Monthly (on organization's anniversary date)  
+**Billing Frequency**: Monthly (on organisation's anniversary date)  
 **Trial Period**: 1 month free trial from signup
 
 ---
 
 ## How It Works (Step by Step)
 
-### 1. **Organization Signup**
+### 1. **Organisation Signup**
 
-When an organization signs up:
+When an organisation signs up:
 - A `PlatformOrgBilling` record is created
 - **Billing Anniversary Date** = Day of month they signed up (e.g., if signup on 15th, billed on 15th each month)
 - **Trial End Date** = 1 month from signup
@@ -27,7 +27,7 @@ When an organization signs up:
 
 ### 2. **Card Setup (Required Before Adding Data)**
 
-Before an organization can add students/staff/attendance:
+Before an organisation can add students/staff/attendance:
 - Admin must add a payment card via Stripe Elements
 - Card is saved as `defaultPaymentMethodId` in billing record
 - Stripe Customer is created/updated
@@ -53,8 +53,8 @@ Every day at midnight UTC, a cron job runs:
 **Cron Job**: `/api/cron/billing` (configured in `vercel.json`)
 
 **What it does**:
-1. Finds all organizations whose **billing anniversary is TOMORROW**
-2. For each organization:
+1. Finds all organisations whose **billing anniversary is TOMORROW**
+2. For each organisation:
    - Counts **active students** (non-archived)
    - Updates Stripe subscription **quantity** to match student count
    - Stripe automatically charges the card on the anniversary date
@@ -143,14 +143,14 @@ Only **non-archived** students are counted:
 ### 2. **Only Active Orgs Are Billed**
 
 The billing cron only processes:
-- Organizations with status = `ACTIVE`
+- Organisations with status = `ACTIVE`
 - Subscriptions with status = `active` or `trialing`
-- Organizations with payment method on file
+- Organisations with payment method on file
 
 **Code Check**:
 ```typescript
 org: {
-  status: 'ACTIVE' // Only bill active organizations
+  status: 'ACTIVE' // Only bill active organisations
 }
 ```
 
@@ -216,7 +216,7 @@ To ensure billing works properly:
 
 1. **Create test org**:
    ```bash
-   # Sign up as new organization
+   # Sign up as new organisation
    ```
 
 2. **Add card**:

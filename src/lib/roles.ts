@@ -29,12 +29,12 @@ export function requireRole(requiredRoles: Role[], orgId?: string) {
     // If no orgId provided, get active org
     const activeOrgId = orgId || await getActiveOrgId(session.user.id)
     if (!activeOrgId) {
-      return NextResponse.json({ error: 'No organization selected' }, { status: 400 })
+      return NextResponse.json({ error: 'No organisation selected' }, { status: 400 })
     }
 
     const userRole = await getUserRoleInOrg(user.id, activeOrgId)
     if (!userRole) {
-      return NextResponse.json({ error: 'Not a member of this organization' }, { status: 403 })
+      return NextResponse.json({ error: 'Not a member of this organisation' }, { status: 403 })
     }
     
     if (!requiredRoles.includes(userRole)) {
@@ -48,7 +48,7 @@ export function requireRole(requiredRoles: Role[], orgId?: string) {
 export async function requireOrg(request: NextRequest) {
   const orgId = await getActiveOrgId()
   if (!orgId) {
-    return NextResponse.json({ error: 'No organization selected' }, { status: 400 })
+    return NextResponse.json({ error: 'No organisation selected' }, { status: 400 })
   }
   return orgId
 }
@@ -77,7 +77,7 @@ export async function requireOwner(request: NextRequest) {
 }
 
 /**
- * Require that the user has a specific role in the organization
+ * Require that the user has a specific role in the organisation
  * This is a convenience wrapper around requireRole that also returns the role
  */
 export async function requireRoleInOrg(request: NextRequest, requiredRoles: Role[]) {
@@ -86,12 +86,12 @@ export async function requireRoleInOrg(request: NextRequest, requiredRoles: Role
   
   const orgId = await getActiveOrgId(session.user.id)
   if (!orgId) {
-    return NextResponse.json({ error: 'No organization selected' }, { status: 400 })
+    return NextResponse.json({ error: 'No organisation selected' }, { status: 400 })
   }
   
   const userRole = await getUserRoleInOrg(session.user.id, orgId)
   if (!userRole) {
-    return NextResponse.json({ error: 'Not a member of this organization' }, { status: 403 })
+    return NextResponse.json({ error: 'Not a member of this organisation' }, { status: 403 })
   }
   
   return { session, userRole, orgId }

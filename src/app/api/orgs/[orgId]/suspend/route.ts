@@ -27,7 +27,7 @@ async function handlePOST(
     // Sanitize reason
     const sanitizedReason = reason ? sanitizeText(reason, MAX_STRING_LENGTHS.text) : 'Account deactivated by platform administrator'
 
-    // Get organization with billing info
+    // Get organisation with billing info
     const org = await prisma.org.findUnique({
       where: { id: orgId },
       include: {
@@ -50,7 +50,7 @@ async function handlePOST(
     })
 
     if (!org) {
-      return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Organisation not found' }, { status: 404 })
     }
 
     // Cancel Stripe subscription if it exists
@@ -81,7 +81,7 @@ async function handlePOST(
             data: JSON.stringify({
               orgName: org.name,
               subscriptionId: org.platformBilling.stripeSubscriptionId,
-              reason: 'Organization deactivated - subscription canceled'
+              reason: 'Organisation deactivated - subscription canceled'
             })
           }
         })
@@ -92,7 +92,7 @@ async function handlePOST(
       }
     }
 
-    // Update organization status to DEACTIVATED
+    // Update organisation status to DEACTIVATED
     const updatedOrg = await prisma.org.update({
       where: { id: orgId },
       data: {
@@ -141,8 +141,8 @@ async function handlePOST(
     })
 
     const message = subscriptionCanceled
-      ? `Organization ${updatedOrg.name} has been deactivated and billing has been stopped`
-      : `Organization ${updatedOrg.name} has been deactivated`
+      ? `Organisation ${updatedOrg.name} has been deactivated and billing has been stopped`
+      : `Organisation ${updatedOrg.name} has been deactivated`
 
     return NextResponse.json({ 
       success: true, 
@@ -152,11 +152,11 @@ async function handlePOST(
     })
 
   } catch (error: any) {
-    logger.error('Error deactivating organization', error)
+    logger.error('Error deactivating organisation', error)
     const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
       { 
-        error: 'Failed to deactivate organization',
+        error: 'Failed to deactivate organisation',
         ...(isDevelopment && { details: error?.message })
       },
       { status: 500 }

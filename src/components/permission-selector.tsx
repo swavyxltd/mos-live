@@ -141,12 +141,12 @@ export function PermissionSelector({
           <p className="text-sm text-[var(--foreground)] font-medium mb-1">Dashboard Type:</p>
           <p className="text-sm text-[var(--muted-foreground)]">
             {staffSubrole === 'ADMIN'
-              ? 'Full dashboard with all organization stats'
+              ? 'Full dashboard with all organisation stats'
               : staffSubrole === 'TEACHER'
               ? 'Teacher dashboard showing only their assigned classes'
               : staffSubrole === 'FINANCE_OFFICER'
               ? 'Finance dashboard with financial overview'
-              : 'Full dashboard with all organization stats'}
+              : 'Full dashboard with all organisation stats'}
           </p>
         </div>
       </div>

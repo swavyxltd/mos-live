@@ -321,7 +321,7 @@ export async function GET(request: NextRequest) {
             "Assalamu'alaikum!",
             `You've been invited to set up <strong>${demoData.orgName}</strong> on Madrasah OS. Click below to create your account and complete the setup.`
           ],
-          buttonText: 'Set Up Organization',
+          buttonText: 'Set Up Organisation',
           buttonUrl: demoData.inviteUrl
         })
         break
@@ -329,7 +329,7 @@ export async function GET(request: NextRequest) {
 
       case 'org-setup-confirmation': {
         html = await generateEmailTemplate({
-          title: 'Organization Setup Complete',
+          title: 'Organisation Setup Complete',
           description: `<strong>${demoData.orgName}</strong> has been successfully set up on Madrasah OS. You can now start using all features.`,
           buttonText: 'Go to Dashboard',
           buttonUrl: 'https://app.madrasah.io/dashboard',

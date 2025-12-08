@@ -12,10 +12,10 @@ async function handleDELETE(
   try {
     const session = await getServerSession(authOptions)
     
-    // Only allow super admins to delete organizations
+    // Only allow super admins to delete organisations
     if (!session?.user?.id || !session.user.isSuperAdmin) {
       return NextResponse.json(
-        { error: 'Unauthorized. Only platform owners can delete organizations.' },
+        { error: 'Unauthorized. Only platform owners can delete organisations.' },
         { status: 401 }
       )
     }
@@ -24,7 +24,7 @@ async function handleDELETE(
 
     if (!orgId) {
       return NextResponse.json(
-        { error: 'Organization ID is required' },
+        { error: 'Organisation ID is required' },
         { status: 400 }
       )
     }
@@ -41,33 +41,33 @@ async function handleDELETE(
 
     if (!org) {
       return NextResponse.json(
-        { error: 'Organization not found' },
+        { error: 'Organisation not found' },
         { status: 404 }
       )
     }
 
-    logger.info(`Deleting organization: ${org.name} (${org.slug})`)
+    logger.info(`Deleting organisation: ${org.name} (${org.slug})`)
 
-    // Delete the organization
+    // Delete the organisation
     // Prisma will cascade delete all related records (students, classes, invoices, etc.)
     await prisma.org.delete({
       where: { id: orgId }
     })
 
-    logger.info(`Organization ${org.name} deleted successfully`)
+    logger.info(`Organisation ${org.name} deleted successfully`)
 
     return NextResponse.json({
       success: true,
-      message: `Organization "${org.name}" has been deleted`
+      message: `Organisation "${org.name}" has been deleted`
     })
 
   } catch (error: any) {
-    logger.error('Error deleting organization', error)
+    logger.error('Error deleting organisation', error)
     
     // Handle foreign key constraint errors
     if (error.code === 'P2003') {
       return NextResponse.json(
-        { error: 'Cannot delete organization due to existing relationships' },
+        { error: 'Cannot delete organisation due to existing relationships' },
         { status: 400 }
       )
     }
@@ -75,7 +75,7 @@ async function handleDELETE(
     const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
       { 
-        error: 'Failed to delete organization',
+        error: 'Failed to delete organisation',
         ...(isDevelopment && { details: error?.message })
       },
       { status: 500 }

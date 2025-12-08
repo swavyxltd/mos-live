@@ -122,7 +122,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
               }
             })
 
-            // Add parent to organization
+            // Add parent to organisation
             await tx.userOrgMembership.upsert({
               where: {
                 userId_orgId: {

@@ -1,7 +1,7 @@
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
-import { OrganizationStatusManager } from '@/lib/org-status-manager'
+import { OrganisationStatusManager } from '@/lib/org-status-manager'
 import { logger } from '@/lib/logger'
 
 async function handlePOST(request: NextRequest) {
@@ -10,21 +10,21 @@ async function handlePOST(request: NextRequest) {
     
     // Extract payment failure data from webhook
     const { 
-      organizationId, 
-      organizationName, 
+      organisationId, 
+      organisationName, 
       failureReason, 
       amount, 
       failureDate 
     } = body
 
-    if (!organizationId || !organizationName) {
+    if (!organisationId || !organisationName) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
     // Handle the payment failure
-    const result = await OrganizationStatusManager.handlePaymentFailure({
-      orgId: organizationId,
-      orgName: organizationName,
+    const result = await OrganisationStatusManager.handlePaymentFailure({
+      orgId: organisationId,
+      orgName: organisationName,
       failureReason: failureReason || 'Payment failed',
       amount: amount || 0,
       failureDate: failureDate ? new Date(failureDate) : new Date()

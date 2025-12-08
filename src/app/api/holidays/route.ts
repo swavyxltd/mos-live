@@ -18,7 +18,7 @@ async function handleGET(request: NextRequest) {
 
     const org = await getActiveOrg(session.user.id)
     if (!org) {
-      return NextResponse.json({ error: 'No organization found' }, { status: 404 })
+      return NextResponse.json({ error: 'No organisation found' }, { status: 404 })
     }
 
     const { searchParams } = new URL(request.url)
@@ -65,7 +65,7 @@ async function handlePOST(request: NextRequest) {
 
     const org = await getActiveOrg(session.user.id)
     if (!org) {
-      return NextResponse.json({ error: 'No organization found' }, { status: 404 })
+      return NextResponse.json({ error: 'No organisation found' }, { status: 404 })
     }
 
     const body = await request.json()

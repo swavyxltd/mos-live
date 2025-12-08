@@ -26,12 +26,12 @@ export default async function ParentLayout({
   
   let org = await getActiveOrg(session.user.id)
   if (!org) {
-    // Try to automatically set the active org from user's organizations
+    // Try to automatically set the active org from user's organisations
     try {
       const userOrgs = await getUserOrgs(session.user.id)
       
       if (userOrgs && Array.isArray(userOrgs) && userOrgs.length > 0) {
-        // Use the first organization
+        // Use the first organisation
         const selectedOrg = userOrgs[0]
         
         if (selectedOrg && selectedOrg.org && selectedOrg.org.id) {
@@ -46,7 +46,7 @@ export default async function ParentLayout({
   
   // Ensure org is not null and has required fields before proceeding
   if (!org || !org.id || !org.name) {
-    redirect('/auth/signin?portal=parent&error=NoOrganization')
+    redirect('/auth/signin?portal=parent&error=NoOrganisation')
   }
   
   let userRole = null

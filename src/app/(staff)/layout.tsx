@@ -30,13 +30,13 @@ export default async function StaffLayout({
 
   let org = await getActiveOrg(session.user.id)
   if (!org) {
-    // Try to automatically set the active org from user's organizations
+    // Try to automatically set the active org from user's organisations
     if (session?.user?.id) {
       try {
         const userOrgs = await getUserOrgs(session.user.id)
         
         if (userOrgs && Array.isArray(userOrgs) && userOrgs.length > 0) {
-          // Use the first organization (or prioritize admin orgs)
+          // Use the first organisation (or prioritize admin orgs)
           // userOrgs is an array of UserOrgMembership objects with included org
           const adminOrg = userOrgs.find((uo: any) => uo && uo.role === 'ADMIN')
           const selectedOrg = adminOrg || userOrgs[0]
@@ -62,16 +62,16 @@ export default async function StaffLayout({
 
   // Ensure org is not null and has required fields before proceeding
   if (!org || !org.id || !org.name) {
-    redirect('/auth/signin?error=NoOrganization')
+    redirect('/auth/signin?error=NoOrganisation')
   }
 
-  // Check if organization is deactivated - redirect admin/staff to deactivated page
+  // Check if organisation is deactivated - redirect admin/staff to deactivated page
   if (org.status === 'DEACTIVATED') {
     const deactivatedUrl = `/auth/account-deactivated?org=${encodeURIComponent(org.name)}&reason=${encodeURIComponent(org.deactivatedReason || 'Account deactivated')}`
     redirect(deactivatedUrl)
   }
 
-  // Check if organization is paused - redirect admin/staff to paused page
+  // Check if organisation is paused - redirect admin/staff to paused page
   if (org.status === 'PAUSED') {
     const pausedUrl = `/auth/account-paused?org=${encodeURIComponent(org.name)}&reason=${encodeURIComponent(org.pausedReason || 'Account paused')}&orgId=${encodeURIComponent(org.id)}`
     redirect(pausedUrl)
@@ -132,7 +132,7 @@ export default async function StaffLayout({
 
   // Ensure org is not null and has required fields before proceeding
   if (!org || !org.id || !org.name) {
-    redirect('/auth/signin?error=NoOrganization')
+    redirect('/auth/signin?error=NoOrganisation')
   }
 
   

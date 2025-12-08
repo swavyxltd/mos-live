@@ -18,7 +18,7 @@ async function handlePUT(request: NextRequest) {
 
     const org = await getActiveOrg()
     if (!org) {
-      return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Organisation not found' }, { status: 404 })
     }
 
     const body = await request.json()
@@ -111,7 +111,7 @@ async function handlePUT(request: NextRequest) {
       )
     }
 
-    // Update organization settings
+    // Update organisation settings
     const updatedOrg = await prisma.org.update({
       where: { id: org.id },
       data: {
@@ -136,14 +136,14 @@ async function handlePUT(request: NextRequest) {
 
     return NextResponse.json({ 
       success: true, 
-      organization: updatedOrg 
+      organisation: updatedOrg 
     })
   } catch (error: any) {
-    logger.error('Error updating organization settings', error)
+    logger.error('Error updating organisation settings', error)
     const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
       { 
-        error: 'Failed to update organization settings',
+        error: 'Failed to update organisation settings',
         ...(isDevelopment && { details: error?.message })
       },
       { status: 500 }
@@ -161,7 +161,7 @@ async function handleGET() {
 
     const org = await getActiveOrg()
     if (!org) {
-      return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Organisation not found' }, { status: 404 })
     }
 
     const settings = org.settings ? JSON.parse(org.settings) : {}
@@ -186,11 +186,11 @@ async function handleGET() {
       bankAccountNumber: org.bankAccountNumber || ''
     })
   } catch (error: any) {
-    logger.error('Error fetching organization settings', error)
+    logger.error('Error fetching organisation settings', error)
     const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
       { 
-        error: 'Failed to fetch organization settings',
+        error: 'Failed to fetch organisation settings',
         ...(isDevelopment && { details: error?.message })
       },
       { status: 500 }

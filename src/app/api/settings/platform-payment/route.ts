@@ -29,7 +29,7 @@ async function handleGET() {
 
     const org = await getActiveOrg()
     if (!org) {
-      return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Organisation not found' }, { status: 404 })
     }
 
     const billing = await prisma.platformOrgBilling.findUnique({
@@ -137,7 +137,7 @@ async function handlePOST(request: NextRequest) {
 
     const org = await getActiveOrg()
     if (!org) {
-      return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Organisation not found' }, { status: 404 })
     }
 
     // Create setup intent

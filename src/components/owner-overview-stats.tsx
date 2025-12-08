@@ -18,7 +18,7 @@ export function OwnerOverviewStats({
 }: OwnerOverviewStatsProps) {
   const stats = [
     {
-      name: 'Total Organizations',
+      name: 'Total Organisations',
       value: totalOrgs,
       icon: Building2,
       color: 'text-blue-600',

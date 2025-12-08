@@ -145,7 +145,7 @@ export default function OwnerStudentsPage() {
   })
   const uniqueClasses = Array.from(uniqueClassesSet)
 
-  // Get unique organizations for filter
+  // Get unique organisations for filter
   const uniqueOrgs = [...new Set((studentData.allStudents || []).map((student: any) => student.orgName))]
 
   // Filter students based on search and filters
@@ -350,7 +350,7 @@ export default function OwnerStudentsPage() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
-                    placeholder="Search students by name, parent, or organization..."
+                    placeholder="Search students by name, parent, or organisation..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10 w-full"
@@ -380,13 +380,13 @@ export default function OwnerStudentsPage() {
               </div>
 
               <div>
-                <Label htmlFor="org-filter">Organization</Label>
+                <Label htmlFor="org-filter">Organisation</Label>
                 <Select value={orgFilter} onValueChange={setOrgFilter}>
                   <SelectTrigger>
-                    <SelectValue placeholder="All Organizations" />
+                    <SelectValue placeholder="All Organisations" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Organizations</SelectItem>
+                    <SelectItem value="all">All Organisations</SelectItem>
                     {uniqueOrgs.map(org => (
                       <SelectItem key={org} value={org}>{org}</SelectItem>
                     ))}
@@ -538,12 +538,12 @@ export default function OwnerStudentsPage() {
         </CardContent>
       </Card>
 
-      {/* Top Organizations by Students */}
+      {/* Top Organisations by Students */}
       {studentData?.topOrgsByStudents && studentData.topOrgsByStudents.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Top Organizations by Students</CardTitle>
-            <CardDescription>Organizations with the most students</CardDescription>
+            <CardTitle>Top Organisations by Students</CardTitle>
+            <CardDescription>Organisations with the most students</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">

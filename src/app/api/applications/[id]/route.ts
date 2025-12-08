@@ -21,7 +21,7 @@ export async function PATCH(
 
     const org = await getActiveOrg()
     if (!org) {
-      return NextResponse.json({ error: 'No organization found' }, { status: 404 })
+      return NextResponse.json({ error: 'No organisation found' }, { status: 404 })
     }
 
     const body = await request.json()
@@ -88,7 +88,7 @@ export async function PATCH(
               }
             })
 
-            // Add parent to organization
+            // Add parent to organisation
             await tx.userOrgMembership.create({
               data: {
                 userId: parentUser.id,

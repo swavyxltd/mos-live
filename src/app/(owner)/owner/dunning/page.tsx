@@ -30,7 +30,7 @@ export default async function OwnerDunningPage() {
     )
   }
 
-  // Get organizations with overdue invoices (billing failures)
+  // Get organisations with overdue invoices (billing failures)
   const overdueInvoices = await prisma.invoice.findMany({
     where: {
       status: 'OVERDUE',

@@ -75,7 +75,7 @@ async function handleGET(request: NextRequest) {
       )
     }
 
-    // Get all organizations - show everything including demo orgs
+    // Get all organisations - show everything including demo orgs
     let orgs
     try {
       logger.info('Fetching all orgs from database', { 
@@ -123,7 +123,7 @@ async function handleGET(request: NextRequest) {
       return NextResponse.json(
         { 
           error: 'Database error', 
-          message: 'Failed to fetch organizations',
+          message: 'Failed to fetch organisations',
           ...(process.env.NODE_ENV === 'development' && { details: dbError?.message })
         },
         { status: 500 }
@@ -189,7 +189,7 @@ async function handleGET(request: NextRequest) {
       return NextResponse.json(
         { 
           error: 'Serialization error', 
-          message: 'Failed to format organizations data',
+          message: 'Failed to format organisations data',
           ...(process.env.NODE_ENV === 'development' && { details: mapError?.message })
         },
         { status: 500 }
@@ -206,7 +206,7 @@ async function handleGET(request: NextRequest) {
     // Ensure we always return a valid JSON response
     return NextResponse.json(
       { 
-        error: 'Failed to fetch organization stats',
+        error: 'Failed to fetch organisation stats',
         message: error?.message || 'Unknown error',
         ...(isDevelopment && { details: error?.message })
       },

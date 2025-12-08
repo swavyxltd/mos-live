@@ -50,7 +50,7 @@ class WhatsAppClient {
 
   private getConfig(): WhatsAppConfig {
     return this.config || this.devConfig || (() => {
-      throw new Error('WhatsApp not configured for this organization')
+      throw new Error('WhatsApp not configured for this organisation')
     })()
   }
 

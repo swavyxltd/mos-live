@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
 
-// GET /api/owner/orgs/[orgId] - Get full organization details (owner only)
+// GET /api/owner/orgs/[orgId] - Get full organisation details (owner only)
 async function handleGET(
   request: NextRequest,
   { params }: { params: { orgId: string } }
@@ -48,7 +48,7 @@ async function handleGET(
 
     const { orgId } = params
 
-    // Get full organization details
+    // Get full organisation details
     const org = await prisma.org.findUnique({
       where: { id: orgId },
       select: {
@@ -73,7 +73,7 @@ async function handleGET(
 
     if (!org) {
       return NextResponse.json(
-        { error: 'Organization not found' },
+        { error: 'Organisation not found' },
         { status: 404 }
       )
     }
@@ -117,7 +117,7 @@ async function handleGET(
     const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
       { 
-        error: 'Failed to fetch organization details',
+        error: 'Failed to fetch organisation details',
         ...(isDevelopment && { details: error?.message })
       },
       { status: 500 }

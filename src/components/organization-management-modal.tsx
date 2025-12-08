@@ -97,15 +97,15 @@ interface Teacher {
   createdAt: Date
 }
 
-interface OrganizationManagementModalProps {
+interface OrganisationManagementModalProps {
   isOpen: boolean
   onClose: () => void
-  organization: OrgWithStats | null
+  organisation: OrgWithStats | null
   initialTab?: 'overview' | 'students' | 'teachers' | 'settings' | 'account'
   onRefresh?: () => void
 }
 
-export function OrganizationManagementModal({ isOpen, onClose, organization, initialTab = 'overview', onRefresh }: OrganizationManagementModalProps) {
+export function OrganisationManagementModal({ isOpen, onClose, organisation, initialTab = 'overview', onRefresh }: OrganisationManagementModalProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'students' | 'teachers' | 'settings' | 'account'>(initialTab)
   const [isEditingOrg, setIsEditingOrg] = useState(false)
   const [isEditingStudent, setIsEditingStudent] = useState<string | null>(null)
@@ -129,13 +129,13 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
   const [loadingStudents, setLoadingStudents] = useState(false)
   const [loadingTeachers, setLoadingTeachers] = useState(false)
   
-  // Organization details - fetched from API
+  // Organisation details - fetched from API
   const [orgDetails, setOrgDetails] = useState<any>(null)
   const [loadingOrgDetails, setLoadingOrgDetails] = useState(false)
 
-  // Fetch organization details, students and teachers when modal opens
+  // Fetch organisation details, students and teachers when modal opens
   useEffect(() => {
-    if (isOpen && organization) {
+    if (isOpen && organisation) {
       fetchOrgDetails()
       fetchStudents()
       fetchTeachers()
@@ -145,14 +145,14 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
       setTeachers([])
       setOrgDetails(null)
     }
-  }, [isOpen, organization?.id])
+  }, [isOpen, organisation?.id])
 
   const fetchOrgDetails = async () => {
-    if (!organization?.id) return
+    if (!organisation?.id) return
     setLoadingOrgDetails(true)
     try {
       // Fetch full org data from database
-      const response = await fetch(`/api/owner/orgs/${organization.id}`)
+      const response = await fetch(`/api/owner/orgs/${organisation.id}`)
       if (response.ok) {
         const data = await response.json()
         setOrgDetails(data)
@@ -165,10 +165,10 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
   }
 
   const fetchStudents = async () => {
-    if (!organization) return
+    if (!organisation) return
     setLoadingStudents(true)
     try {
-      const response = await fetch(`/api/owner/orgs/${organization.id}/students`)
+      const response = await fetch(`/api/owner/orgs/${organisation.id}/students`)
       if (response.ok) {
         const data = await response.json()
         // Transform API data to match Student interface
@@ -198,10 +198,10 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
   }
 
   const fetchTeachers = async () => {
-    if (!organization) return
+    if (!organisation) return
     setLoadingTeachers(true)
     try {
-      const response = await fetch(`/api/owner/orgs/${organization.id}/staff`)
+      const response = await fetch(`/api/owner/orgs/${organisation.id}/staff`)
       if (response.ok) {
         const data = await response.json()
         // Transform API data to match Teacher interface
@@ -228,7 +228,7 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
     }
   }
 
-  if (!organization) return null
+  if (!organisation) return null
 
   const filteredStudents = students.filter(student =>
     `${student.firstName} ${student.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -257,7 +257,7 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
     }
   }
 
-  const handleSaveOrganization = () => {
+  const handleSaveOrganisation = () => {
     // TODO: Implement save functionality
     setIsEditingOrg(false)
   }
@@ -296,11 +296,11 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
   }
 
   const handlePauseAccount = async () => {
-    if (!organization) return
+    if (!organisation) return
     
     setIsChangingStatus(true)
     try {
-      const response = await fetch(`/api/orgs/${organization.id}/pause`, {
+      const response = await fetch(`/api/orgs/${organisation.id}/pause`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -334,16 +334,16 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
 
 
   const handleReactivateAccount = () => {
-    if (!organization) return
+    if (!organisation) return
     setShowReactivateConfirm(true)
   }
 
   const confirmReactivate = async () => {
-    if (!organization) return
+    if (!organisation) return
     setShowReactivateConfirm(false)
     setIsChangingStatus(true)
     try {
-      const response = await fetch(`/api/orgs/${organization.id}/reactivate`, {
+      const response = await fetch(`/api/orgs/${organisation.id}/reactivate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -368,17 +368,17 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
   }
 
   const handleDeactivateAccount = () => {
-    if (!organization) return
+    if (!organisation) return
     setShowDeactivateConfirm(true)
   }
 
   const confirmDeactivate = async () => {
-    if (!organization) return
+    if (!organisation) return
     setShowDeactivateConfirm(false)
     setIsChangingStatus(true)
     try {
       // Deactivate is the same as suspend - permanently disable
-      const response = await fetch(`/api/orgs/${organization.id}/suspend`, {
+      const response = await fetch(`/api/orgs/${organisation.id}/suspend`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -407,13 +407,13 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
 
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={`Manage ${organization.name}`}>
+    <Modal isOpen={isOpen} onClose={onClose} title={`Manage ${organisation.name}`}>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold">{organization.name}</h2>
-            <p className="text-sm text-gray-500">{organization.slug}</p>
+            <h2 className="text-xl font-semibold">{organisation.name}</h2>
+            <p className="text-sm text-gray-500">{organisation.slug}</p>
           </div>
           <div className="flex items-center space-x-2">
             <Badge className="bg-green-100 text-green-800">
@@ -466,7 +466,7 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-gray-900">
-                    {organization._count.students}
+                    {organisation._count.students}
                   </div>
                 </CardContent>
               </Card>
@@ -479,7 +479,7 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-gray-900">
-                    {organization._count.teachers || 0}
+                    {organisation._count.teachers || 0}
                   </div>
                 </CardContent>
               </Card>
@@ -492,7 +492,7 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-gray-900">
-                    {organization._count.classes}
+                    {organisation._count.classes}
                   </div>
                 </CardContent>
               </Card>
@@ -505,17 +505,17 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-gray-900">
-                    {formatCurrency(organization.totalRevenue)}
+                    {formatCurrency(organisation.totalRevenue)}
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Organization Details */}
+            {/* Organisation Details */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="text-lg">Organization Information</CardTitle>
+                  <CardTitle className="text-lg">Organisation Information</CardTitle>
                   <Button variant="outline" size="sm" onClick={() => setIsEditingOrg(true)}>
                     <Edit className="h-4 w-4 mr-2" />
                     Edit
@@ -525,15 +525,15 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
                   {isEditingOrg ? (
                     <div className="space-y-4">
                       <div>
-                        <Label htmlFor="org-name">Organization Name</Label>
-                        <Input id="org-name" defaultValue={organization.name} />
+                        <Label htmlFor="org-name">Organisation Name</Label>
+                        <Input id="org-name" defaultValue={organisation.name} />
                       </div>
                       <div>
                         <Label htmlFor="org-slug">Slug</Label>
-                        <Input id="org-slug" defaultValue={organization.slug} />
+                        <Input id="org-slug" defaultValue={organisation.slug} />
                       </div>
                       <div className="flex space-x-2">
-                        <Button onClick={handleSaveOrganization}>
+                        <Button onClick={handleSaveOrganisation}>
                           <Save className="h-4 w-4 mr-2" />
                           Save
                         </Button>
@@ -550,19 +550,19 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
                         <div>
                           <p className="text-sm font-medium">Created</p>
                           <p className="text-sm text-gray-500">
-                            {organization.createdAt 
-                              ? formatDate(new Date(organization.createdAt)) 
+                            {organisation.createdAt 
+                              ? formatDate(new Date(organisation.createdAt)) 
                               : 'N/A'}
                           </p>
                         </div>
                       </div>
-                      {organization.updatedAt && (
+                      {organisation.updatedAt && (
                         <div className="flex items-center space-x-3">
                           <Activity className="h-5 w-5 text-gray-400" />
                           <div>
                             <p className="text-sm font-medium">Last Updated</p>
                             <p className="text-sm text-gray-500">
-                              {formatDate(new Date(organization.updatedAt))}
+                              {formatDate(new Date(organisation.updatedAt))}
                             </p>
                           </div>
                         </div>
@@ -577,20 +577,20 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
                   <CardTitle className="text-lg">Owner Information</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {organization.owner ? (
+                  {organisation.owner ? (
                     <>
                       <div className="flex items-center space-x-3">
                         <UserCheck className="h-5 w-5 text-gray-400" />
                         <div>
                           <p className="text-sm font-medium">Name</p>
-                          <p className="text-sm text-gray-500">{organization.owner.name || 'Unknown'}</p>
+                          <p className="text-sm text-gray-500">{organisation.owner.name || 'Unknown'}</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-3">
                         <Mail className="h-5 w-5 text-gray-400" />
                         <div>
                           <p className="text-sm font-medium">Email</p>
-                          <p className="text-sm text-gray-500">{organization.owner.email}</p>
+                          <p className="text-sm text-gray-500">{organisation.owner.email}</p>
                         </div>
                       </div>
                     </>
@@ -940,14 +940,14 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Organization Settings</CardTitle>
+                <CardTitle className="text-lg">Organisation Settings</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
                   <Label htmlFor="org-description">Description</Label>
                   <Textarea 
                     id="org-description" 
-                    placeholder="Enter organization description..." 
+                    placeholder="Enter organisation description..." 
                     defaultValue={orgDetails?.description || ""}
                   />
                 </div>
@@ -956,7 +956,7 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
                     <Label htmlFor="org-address">Address</Label>
                     <Input 
                       id="org-address" 
-                      placeholder="Enter organization address" 
+                      placeholder="Enter organisation address" 
                       defaultValue={orgDetails?.address || orgDetails?.addressLine1 || ""}
                     />
                   </div>
@@ -964,7 +964,7 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
                     <Label htmlFor="org-phone">Phone</Label>
                     <Input 
                       id="org-phone" 
-                      placeholder="Enter organization phone" 
+                      placeholder="Enter organisation phone" 
                       defaultValue={orgDetails?.phone || orgDetails?.publicPhone || ""}
                     />
                   </div>
@@ -1000,7 +1000,7 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Account Status</CardTitle>
-                <CardDescription>Manage organization account status and access controls</CardDescription>
+                <CardDescription>Manage organisation account status and access controls</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1054,7 +1054,7 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Account Actions</CardTitle>
-                <CardDescription>Control organization access and account status</CardDescription>
+                <CardDescription>Control organisation access and account status</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-4">
@@ -1089,7 +1089,7 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
                     <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                       <div>
                         <h3 className="font-medium">Deactivate Account</h3>
-                        <p className="text-sm text-gray-600">Permanently disable organization, cancel billing, and lock all accounts. Use when organization has requested account deletion.</p>
+                        <p className="text-sm text-gray-600">Permanently disable organisation, cancel billing, and lock all accounts. Use when organisation has requested account deletion.</p>
                       </div>
                       <Button 
                         variant="outline" 
@@ -1125,7 +1125,7 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
                   <h3 className="font-medium text-yellow-800 mb-2">⚠️ Important</h3>
                   <ul className="text-sm text-yellow-700 space-y-1">
                     <li>• <strong>Pause:</strong> Temporarily locks accounts due to billing issues. Billing continues.</li>
-                    <li>• <strong>Deactivate:</strong> Permanently disables organization and cancels all billing. Use when organization requests account deletion.</li>
+                    <li>• <strong>Deactivate:</strong> Permanently disables organisation and cancels all billing. Use when organisation requests account deletion.</li>
                     <li>• Pausing or deactivating will lock ALL admin, staff, and teacher accounts</li>
                     <li>• Students and parents will still have access to their accounts</li>
                     <li>• You can reactivate the account at any time</li>
@@ -1149,8 +1149,8 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
         isOpen={showReactivateConfirm}
         onClose={() => setShowReactivateConfirm(false)}
         onConfirm={confirmReactivate}
-        title="Reactivate Organization"
-        message="Are you sure you want to REACTIVATE this organization? This will restore access to ALL admin, staff, and teacher accounts."
+        title="Reactivate Organisation"
+        message="Are you sure you want to REACTIVATE this organisation? This will restore access to ALL admin, staff, and teacher accounts."
         confirmText="Reactivate"
         cancelText="Cancel"
         variant="default"
@@ -1161,8 +1161,8 @@ export function OrganizationManagementModal({ isOpen, onClose, organization, ini
         isOpen={showDeactivateConfirm}
         onClose={() => setShowDeactivateConfirm(false)}
         onConfirm={confirmDeactivate}
-        title="Deactivate Organization"
-        message="Are you sure you want to DEACTIVATE this organization? This will permanently disable the organization and lock all accounts. This action requires manual review to reverse."
+        title="Deactivate Organisation"
+        message="Are you sure you want to DEACTIVATE this organisation? This will permanently disable the organisation and lock all accounts. This action requires manual review to reverse."
         confirmText="Deactivate"
         cancelText="Cancel"
         variant="warning"

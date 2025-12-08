@@ -1,13 +1,13 @@
-# Complete User Flow: From Organization Creation to Parent Login
+# Complete User Flow: From Organisation Creation to Parent Login
 
 ## Overview
-This document traces the complete flow from when an organization is created (from a lead) all the way through to when a parent account is logged in and active.
+This document traces the complete flow from when an organisation is created (from a lead) all the way through to when a parent account is logged in and active.
 
 ---
 
-## Phase 1: Organization Creation & Admin Setup
+## Phase 1: Organisation Creation & Admin Setup
 
-### Step 1: Owner Converts Lead to Organization
+### Step 1: Owner Converts Lead to Organisation
 **Location:** `/api/owner/leads/[id]/convert`
 
 **What Happens:**
@@ -52,7 +52,7 @@ This document traces the complete flow from when an organization is created (fro
 3. Page fetches invitation details via `/api/auth/invitation?token=[token]`
 4. Form displays:
    - Admin account fields (name, email, password, phone)
-   - Organization details fields (if new org setup):
+   - Organisation details fields (if new org setup):
      - Address Line 1, Address Line 2
      - City, Postcode
      - Contact Phone, Public Phone
@@ -115,7 +115,7 @@ This document traces the complete flow from when an organization is created (fro
 4. Onboarding wizard collects:
    - **Step 1: Admin Details**
      - Name, Email, Phone
-   - **Step 2: Organization Details**
+   - **Step 2: Organisation Details**
      - Address Line 1, Address Line 2
      - City, Postcode
      - Contact Phone, Public Phone
@@ -135,7 +135,7 @@ This document traces the complete flow from when an organization is created (fro
 
 **Database Records Updated:**
 - `User` (admin details)
-- `Org` (all organization and payment settings)
+- `Org` (all organisation and payment settings)
 
 ---
 
@@ -338,7 +338,7 @@ This document traces the complete flow from when an organization is created (fro
 ## Key Database Models
 
 ### Core Models
-- **Org**: Organization details
+- **Org**: Organisation details
 - **User**: All users (admins, staff, parents)
 - **UserOrgMembership**: Links users to orgs with roles
 - **Student**: Student records

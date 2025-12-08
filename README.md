@@ -14,7 +14,7 @@ A production-ready, multi-tenant SaaS platform for Islamic schools and madrasahs
 - **Messages**: Send announcements via email/WhatsApp
 - **Calendar**: View classes, holidays, terms, and exams
 - **Support**: Internal support ticket system
-- **Settings**: Organization configuration
+- **Settings**: Organisation configuration
 
 ### Parent Portal (parent.madrasah.io)
 - **Dashboard**: Overview of children's progress
@@ -24,7 +24,7 @@ A production-ready, multi-tenant SaaS platform for Islamic schools and madrasahs
 
 ### Owner Portal (SuperAdmin)
 - **Overview**: Platform metrics and revenue
-- **Organizations**: Manage all organizations
+- **Organisations**: Manage all organisations
 - **Dunning**: Handle billing failures
 - **Support**: Global support management
 
@@ -349,7 +349,7 @@ See [Helper Scripts](docs/HELPER_SCRIPTS.md) for all available utility scripts.
 
 ### Multi-tenancy
 - All business data is scoped by `orgId`
-- Users can belong to multiple organizations
+- Users can belong to multiple organisations
 - Role-based access control (RBAC)
 
 ### Portal Routing
@@ -358,7 +358,7 @@ See [Helper Scripts](docs/HELPER_SCRIPTS.md) for all available utility scripts.
 - Middleware handles authentication and routing
 
 ### Payment Processing
-- **Platform Billing**: Metered Stripe subscriptions per organization
+- **Platform Billing**: Metered Stripe subscriptions per organisation
 - **Parent Payments**: Stripe Elements for card payments
 - **Off-session**: Automatic payments for enabled accounts
 

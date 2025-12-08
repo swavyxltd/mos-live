@@ -51,7 +51,7 @@ export function PaymentRequiredModal({ isOpen, onClose, action, userRole }: Paym
   const getBlockedFeatures = () => {
     if (userRole === 'OWNER') {
       return [
-        'Manage Organization',
+        'Manage Organisation',
         'Add Students',
         'Create Classes',
         'Add Teachers',

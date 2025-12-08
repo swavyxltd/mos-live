@@ -153,21 +153,47 @@ async function handlePOST(request: NextRequest) {
       if (isNewOrgSetup) {
         // Validate required fields for new org setup
         if (!orgAddressLine1 || !orgPostcode || !orgCity || !orgPhone || !orgPublicPhone || !orgEmail || !orgPublicEmail) {
-          throw new Error('All organization details are required: address line 1, postcode, city, contact phone, public phone, contact email, and public email')
+          throw new Error('All organisation details are required: address line 1, postcode, city, contact phone, public phone, contact email, and public email')
+        }
+        
+        // Sanitize org fields
+        const sanitizedOrgAddressLine1 = sanitizeText(orgAddressLine1, MAX_STRING_LENGTHS.text)
+        const sanitizedOrgPostcode = sanitizeText(orgPostcode, 20)
+        const sanitizedOrgCity = sanitizeText(orgCity, MAX_STRING_LENGTHS.name)
+        const sanitizedOrgPhone = sanitizeText(orgPhone, MAX_STRING_LENGTHS.phone)
+        const sanitizedOrgPublicPhone = sanitizeText(orgPublicPhone, MAX_STRING_LENGTHS.phone)
+        const sanitizedOrgEmail = orgEmail.toLowerCase().trim()
+        const sanitizedOrgPublicEmail = orgPublicEmail.toLowerCase().trim()
+        const sanitizedOrgWebsite = orgWebsite ? orgWebsite.trim() : undefined
+        
+        // Validate org emails
+        if (!isValidEmail(sanitizedOrgEmail)) {
+          throw new Error('Invalid organisation contact email format')
+        }
+        if (!isValidEmail(sanitizedOrgPublicEmail)) {
+          throw new Error('Invalid organisation public email format')
+        }
+        
+        // Validate org phones
+        if (!isValidPhone(sanitizedOrgPhone)) {
+          throw new Error('Invalid organisation contact phone format')
+        }
+        if (!isValidPhone(sanitizedOrgPublicPhone)) {
+          throw new Error('Invalid organisation public phone format')
         }
         
         await tx.org.update({
           where: { id: invitation.orgId },
           data: {
-            address: orgAddress || undefined, // Legacy field
-            addressLine1: orgAddressLine1,
-            postcode: orgPostcode,
-            city: orgCity,
-            phone: orgPhone,
-            publicPhone: orgPublicPhone,
-            email: orgEmail,
-            publicEmail: orgPublicEmail,
-            website: orgWebsite || undefined,
+            address: orgAddress ? sanitizeText(orgAddress, MAX_STRING_LENGTHS.text) : undefined, // Legacy field
+            addressLine1: sanitizedOrgAddressLine1,
+            postcode: sanitizedOrgPostcode,
+            city: sanitizedOrgCity,
+            phone: sanitizedOrgPhone,
+            publicPhone: sanitizedOrgPublicPhone,
+            email: sanitizedOrgEmail,
+            publicEmail: sanitizedOrgPublicEmail,
+            website: sanitizedOrgWebsite,
             timezone: timezone || 'Europe/London'
           }
         })

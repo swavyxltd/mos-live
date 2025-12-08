@@ -1,12 +1,12 @@
-# Payment Failure Handling - What Happens When Organizations Can't Pay
+# Payment Failure Handling - What Happens When Organisations Can't Pay
 
-This document explains the complete flow of what happens when an organization's payment fails.
+This document explains the complete flow of what happens when an organisation's payment fails.
 
 ---
 
 ## Overview
 
-When an organization's payment fails, the system has a **grace period** (default: 14 days) before taking action. The system is designed to be forgiving but will eventually suspend accounts that don't pay.
+When an organisation's payment fails, the system has a **grace period** (default: 14 days) before taking action. The system is designed to be forgiving but will eventually suspend accounts that don't pay.
 
 ---
 
@@ -14,7 +14,7 @@ When an organization's payment fails, the system has a **grace period** (default
 
 ### Step 1: **Stripe Attempts Payment** (Automatic)
 
-On the organization's billing anniversary date:
+On the organisation's billing anniversary date:
 - Stripe automatically attempts to charge the card on file
 - If payment succeeds → Nothing happens, org continues normally
 - If payment fails → Stripe sends webhook to your system
@@ -33,7 +33,7 @@ When Stripe sends `invoice.payment_failed` webhook:
    - Org can still use the system (grace period)
 
 2. **Email Notification Sent**:
-   - Email sent to organization owner/admin
+   - Email sent to organisation owner/admin
    - Subject: "Payment Failed - [Org Name]"
    - Contains: Failure reason, amount, link to update payment method
 
@@ -72,13 +72,13 @@ During the grace period:
 A cron job runs daily: `/api/cron/check-overdue`
 
 **What it checks**:
-1. Organizations with `past_due` status
-2. Organizations past their billing anniversary + grace period
+1. Organisations with `past_due` status
+2. Organisations past their billing anniversary + grace period
 3. Only processes orgs with `autoSuspendEnabled: true`
 
 **What it does**:
 - Calculates days overdue
-- If overdue > grace period → **Deactivates organization**
+- If overdue > grace period → **Deactivates organisation**
 
 **Code Location**: `src/app/api/cron/check-overdue/route.ts`
 
@@ -89,7 +89,7 @@ A cron job runs daily: `/api/cron/check-overdue`
 When grace period is exceeded:
 
 **What Happens**:
-1. **Organization Status**:
+1. **Organisation Status**:
    - `status` → `DEACTIVATED`
    - `deactivatedAt` → Current timestamp
    - `deactivatedReason` → "Account automatically deactivated due to overdue payment..."
@@ -129,7 +129,7 @@ Day 1-13: Grace period
 Day 14 (Mar 1): Grace period ends
   → Overdue check cron runs
   → Calculates: 14 days overdue
-  → Deactivates organization
+  → Deactivates organisation
   → Status: DEACTIVATED
   → Access blocked
 
@@ -141,7 +141,7 @@ Day 15+: Account deactivated
 
 ---
 
-## Recovery: How Organizations Can Fix It
+## Recovery: How Organisations Can Fix It
 
 ### Option 1: **Update Payment Method** (During grace period)
 
@@ -186,7 +186,7 @@ gracePeriodDays: 14 // Change this value
 
 ### Auto-Suspend
 
-**Setting**: `autoSuspendEnabled` per organization  
+**Setting**: `autoSuspendEnabled` per organisation  
 **Default**: `true`  
 **Location**: `Org` table
 
@@ -201,9 +201,9 @@ gracePeriodDays: 14 // Change this value
 ### 1. **Only Active Orgs Are Checked**
 
 The overdue cron only processes:
-- Organizations with `status: 'ACTIVE'`
-- Organizations with `autoSuspendEnabled: true`
-- Organizations with payment method on file
+- Organisations with `status: 'ACTIVE'`
+- Organisations with `autoSuspendEnabled: true`
+- Organisations with payment method on file
 
 **Why**: Prevents double-processing and respects manual suspensions
 
@@ -242,7 +242,7 @@ Owners are notified:
    - Check Stripe Dashboard → Invoices → Failed
    - Monitor webhook events
 
-2. **Overdue Organizations**:
+2. **Overdue Organisations**:
    - Check `/api/cron/check-overdue` (GET endpoint)
    - See which orgs are approaching grace period
 

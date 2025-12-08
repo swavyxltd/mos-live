@@ -1,12 +1,12 @@
 # Complete Sign-Up & Onboarding Flow
 
-This document details the complete process from demo booking to active organization usage.
+This document details the complete process from demo booking to active organisation usage.
 
 ---
 
 ## Overview
 
-**Flow**: Demo Booking → Lead Conversion → Organization Setup → Admin Signup → Payment Setup → Active Usage
+**Flow**: Demo Booking → Lead Conversion → Organisation Setup → Admin Signup → Payment Setup → Active Usage
 
 ---
 
@@ -37,7 +37,7 @@ This document details the complete process from demo booking to active organizat
 - Owner/partner decides to convert the lead after successful demo
 - Clicks "Convert to Organisation" button on Lead Detail page
 - Modal prompts for admin email address
-- System creates organization and sends onboarding email
+- System creates organisation and sends onboarding email
 
 **Code Location:**
 - `src/components/convert-lead-modal.tsx` (UI)
@@ -45,7 +45,7 @@ This document details the complete process from demo booking to active organizat
 
 **Detailed Process:**
 
-1. **Organization Creation:**
+1. **Organisation Creation:**
    ```typescript
    - Creates `Org` record with:
      * name: from lead.orgName
@@ -59,7 +59,7 @@ This document details the complete process from demo booking to active organizat
 2. **Invitation Creation:**
    ```typescript
    - Creates `Invitation` record:
-     * orgId: new organization ID
+     * orgId: new organisation ID
      * email: admin email provided
      * role: 'ADMIN'
      * token: 32-byte random hex string
@@ -74,7 +74,7 @@ This document details the complete process from demo booking to active organizat
 4. **Lead Updated:**
    ```typescript
    - Updates `Lead`:
-     * convertedOrgId: new organization ID
+     * convertedOrgId: new organisation ID
      * status: 'WON'
    ```
 
@@ -106,7 +106,7 @@ This document details the complete process from demo booking to active organizat
   - Email (must match invitation)
   - Password
   - Phone (optional)
-  - **Organization details** (if new org setup):
+  - **Organisation details** (if new org setup):
     - Address Line 1
     - Postcode
     - City
@@ -142,7 +142,7 @@ This document details the complete process from demo booking to active organizat
      * isSuperAdmin: false
    ```
 
-3. **Organization Details Update** (if new org setup):
+3. **Organisation Details Update** (if new org setup):
    ```typescript
    - Updates `Org` record with:
      * addressLine1: from form
@@ -160,7 +160,7 @@ This document details the complete process from demo booking to active organizat
    ```typescript
    - Creates `UserOrgMembership`:
      * userId: new user ID
-     * orgId: organization ID from invitation
+     * orgId: organisation ID from invitation
      * role: 'ADMIN' (from invitation)
    ```
 
@@ -181,11 +181,11 @@ This document details the complete process from demo booking to active organizat
 - `Invitation` record updated (acceptedAt set)
 
 **Emails Sent:**
-- Organization setup confirmation email
+- Organisation setup confirmation email
 
 **What Admin Can Do Now:**
 - Log in to dashboard
-- Access organization settings
+- Access organisation settings
 - **BUT**: Cannot add students/staff/attendance yet (payment required)
 
 ---
@@ -222,7 +222,7 @@ This document details the complete process from demo booking to active organizat
    - Webhook handler receives event
    - Creates/gets Stripe Customer (via ensurePlatformCustomer)
    - Creates PlatformOrgBilling record:
-     * orgId: organization ID
+     * orgId: organisation ID
      * stripeCustomerId: Stripe customer ID
      * billingAnniversaryDate: day of month org was created (1-31)
      * trialEndDate: 1 month from org creation
@@ -370,7 +370,7 @@ This document details the complete process from demo booking to active organizat
 ## Key Database Tables
 
 ### `Org`
-- Organization details
+- Organisation details
 - Created during lead conversion
 - Updated during admin signup
 
@@ -379,7 +379,7 @@ This document details the complete process from demo booking to active organizat
 - Created during admin signup
 
 ### `UserOrgMembership`
-- Links user to organization
+- Links user to organisation
 - Role: ADMIN (for initial admin)
 - Created during admin signup
 
@@ -411,13 +411,13 @@ This document details the complete process from demo booking to active organizat
 - Owner accounts bypass this check
 
 ### Trial Period
-- **1 month free** from organization creation date
+- **1 month free** from organisation creation date
 - No charges during trial
 - Subscription created with trial end date
 - After trial, automatic monthly billing begins
 
 ### Billing Anniversary
-- Set to **day of month** organization was created
+- Set to **day of month** organisation was created
 - Example: Created on 15th → Billed on 15th each month
 - Cron job updates quantity day before anniversary
 
@@ -438,7 +438,7 @@ This document details the complete process from demo booking to active organizat
 2. **Setup Confirmation** (After Signup):
    - Sent after successful signup
    - Contains dashboard link
-   - Confirms organization setup complete
+   - Confirms organisation setup complete
 
 ---
 
@@ -487,6 +487,7 @@ This document details the complete process from demo booking to active organizat
 ---
 
 **Last Updated**: 2025-12-05
+
 
 
 

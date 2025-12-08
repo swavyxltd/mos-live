@@ -148,7 +148,7 @@ export default function SupportPage() {
           <div>
             <h1 className="text-3xl font-bold mb-2">Support Center</h1>
             <p className="text-gray-300 text-lg">
-              Get help and support for your organization. We're here to assist you.
+              Get help and support for your organisation. We're here to assist you.
             </p>
           </div>
           <Button 

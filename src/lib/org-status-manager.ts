@@ -10,13 +10,13 @@ export interface PaymentFailureData {
   failureDate: Date
 }
 
-export class OrganizationStatusManager {
+export class OrganisationStatusManager {
   /**
-   * Handle payment failure and potentially suspend/pause organization
+   * Handle payment failure and potentially suspend/pause organisation
    */
   static async handlePaymentFailure(data: PaymentFailureData) {
     try {
-      // Get organization details
+      // Get organisation details
       const org = await prisma.org.findUnique({
         where: { id: data.orgId },
         include: {
@@ -38,7 +38,7 @@ export class OrganizationStatusManager {
       })
 
       if (!org) {
-        throw new Error(`Organization ${data.orgId} not found`)
+        throw new Error(`Organisation ${data.orgId} not found`)
       }
 
       // Increment payment failure count
@@ -60,7 +60,7 @@ export class OrganizationStatusManager {
         }
       }
 
-      // Update organization status
+      // Update organisation status
       const updateData: any = {
         paymentFailureCount: newFailureCount,
         lastPaymentDate: null // Clear last payment date on failure
@@ -163,7 +163,7 @@ export class OrganizationStatusManager {
   }
 
   /**
-   * Check if organization should be automatically deactivated based on payment history
+   * Check if organisation should be automatically deactivated based on payment history
    */
   static async checkAutoDeactivateConditions(orgId: string) {
     try {

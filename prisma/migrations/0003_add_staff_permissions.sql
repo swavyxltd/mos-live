@@ -77,7 +77,7 @@ VALUES
     ('sp-access_messages-1', 'access_messages', 'Messages', 'Send and manage messages', 'pages', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('sp-access_calendar-1', 'access_calendar', 'Calendar', 'View and create calendar events', 'pages', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     ('sp-access_support-1', 'access_support', 'Support', 'Access support tickets', 'pages', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('sp-access_settings-1', 'access_settings', 'Settings', 'Access organization settings', 'pages', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    ('sp-access_settings-1', 'access_settings', 'Settings', 'Access organisation settings', 'pages', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 ON CONFLICT ("key") DO UPDATE SET
     "name" = EXCLUDED."name",
     "description" = EXCLUDED."description",

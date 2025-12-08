@@ -55,7 +55,7 @@ async function handleGET(request: NextRequest) {
 
     if (!org) {
       return NextResponse.json(
-        { error: 'Organization not found' },
+        { error: 'Organisation not found' },
         { status: 404 }
       )
     }

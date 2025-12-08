@@ -24,28 +24,28 @@ async function main() {
 
   console.log(`✅ Found user: ${user.name || user.email}`)
   console.log(`   User ID: ${user.id}`)
-  console.log(`   Organizations: ${user.memberships.length}`)
+  console.log(`   Organisations: ${user.memberships.length}`)
 
-  // Find deactivated organizations
+  // Find deactivated organisations
   const deactivatedOrgs = user.memberships.filter(m => m.org.status === 'DEACTIVATED')
 
   if (deactivatedOrgs.length === 0) {
-    console.log('✅ No deactivated organizations found for this user')
+    console.log('✅ No deactivated organisations found for this user')
     process.exit(0)
   }
 
-  console.log(`\n⚠️  Found ${deactivatedOrgs.length} deactivated organization(s):`)
+  console.log(`\n⚠️  Found ${deactivatedOrgs.length} deactivated organisation(s):`)
   
   for (const membership of deactivatedOrgs) {
     const org = membership.org
-    console.log(`\n   Organization: ${org.name}`)
+    console.log(`\n   Organisation: ${org.name}`)
     console.log(`   ID: ${org.id}`)
     console.log(`   Status: ${org.status}`)
     console.log(`   Deactivated At: ${org.deactivatedAt?.toISOString() || 'N/A'}`)
     console.log(`   Reason: ${org.deactivatedReason || 'N/A'}`)
     
-    // Reactivate the organization
-    console.log(`\n   🔄 Reactivating organization...`)
+    // Reactivate the organisation
+    console.log(`\n   🔄 Reactivating organisation...`)
     
     await prisma.org.update({
       where: { id: org.id },
@@ -59,7 +59,7 @@ async function main() {
       }
     })
 
-    console.log(`   ✅ Organization "${org.name}" has been reactivated!`)
+    console.log(`   ✅ Organisation "${org.name}" has been reactivated!`)
     
     // Create audit log
     await prisma.auditLog.create({
@@ -78,7 +78,7 @@ async function main() {
     })
   }
 
-  console.log('\n✅ All deactivated organizations have been reactivated!')
+  console.log('\n✅ All deactivated organisations have been reactivated!')
 }
 
 main()

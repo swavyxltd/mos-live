@@ -14,7 +14,7 @@ async function handlePOST(request: NextRequest) {
 
     logger.info('Starting nightly usage report...')
 
-    // Get all organizations with platform billing
+    // Get all organisations with platform billing
     const orgsWithBilling = await prisma.org.findMany({
       where: {
         platformBilling: {

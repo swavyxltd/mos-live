@@ -23,10 +23,10 @@ async function handlePOST(
     const { orgId } = resolvedParams
     
     if (!orgId) {
-      return NextResponse.json({ error: 'Organization ID is required' }, { status: 400 })
+      return NextResponse.json({ error: 'Organisation ID is required' }, { status: 400 })
     }
 
-    // Get the organization
+    // Get the organisation
     const org = await prisma.org.findUnique({
       where: { id: orgId },
       select: {
@@ -38,12 +38,12 @@ async function handlePOST(
     })
 
     if (!org) {
-      return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Organisation not found' }, { status: 404 })
     }
 
     if (!org.email) {
       return NextResponse.json(
-        { error: 'Organization does not have an admin email address' },
+        { error: 'Organisation does not have an admin email address' },
         { status: 400 }
       )
     }
@@ -162,7 +162,7 @@ async function handlePOST(
       }
       
       if (!org.name || org.name.trim().length === 0) {
-        throw new Error(`Invalid organization name: ${org.name}`)
+        throw new Error(`Invalid organisation name: ${org.name}`)
       }
       
       logger.info('Calling sendOrgSetupInvitation', {

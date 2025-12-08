@@ -310,7 +310,7 @@ async function handleDELETE(
       return NextResponse.json({ error: 'Lead not found' }, { status: 404 })
     }
 
-    // Check if lead has been converted to an organization
+    // Check if lead has been converted to an organisation
     const convertedLead = await prisma.lead.findUnique({
       where: { id },
       select: {
@@ -320,7 +320,7 @@ async function handleDELETE(
 
     if (convertedLead?.convertedOrgId) {
       return NextResponse.json(
-        { error: 'Cannot delete a lead that has been converted to an organization' },
+        { error: 'Cannot delete a lead that has been converted to an organisation' },
         { status: 400 }
       )
     }

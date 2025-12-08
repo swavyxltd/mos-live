@@ -24,7 +24,7 @@ async function handlePOST(request: NextRequest) {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
-    // Find organizations with:
+    // Find organisations with:
     // 1. Subscription status is 'past_due'
     // 2. Has firstPaymentFailureDate set
     // 3. Org status is ACTIVE
@@ -282,7 +282,7 @@ async function handleGET(request: NextRequest) {
     })
 
     return NextResponse.json({
-      message: `Found ${orgsReadyForRetry.length} organizations ready for payment retry`,
+      message: `Found ${orgsReadyForRetry.length} organisations ready for payment retry`,
       totalPastDue: orgsToRetry.length,
       readyForRetry: orgsReadyForRetry.map(b => ({
         orgId: b.orgId,

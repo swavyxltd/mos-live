@@ -16,7 +16,7 @@ async function handlePOST(request: NextRequest) {
 
     const org = await getActiveOrg()
     if (!org) {
-      return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Organisation not found' }, { status: 404 })
     }
 
     // If already connected, return existing account
@@ -72,7 +72,7 @@ async function handlePOST(request: NextRequest) {
     const orgEmail = org.email || org.publicEmail
     if (!orgEmail) {
       return NextResponse.json(
-        { error: 'Organization email is required to connect Stripe account' },
+        { error: 'Organisation email is required to connect Stripe account' },
         { status: 400 }
       )
     }
@@ -147,7 +147,7 @@ async function handleGET() {
 
     const org = await getActiveOrg()
     if (!org) {
-      return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Organisation not found' }, { status: 404 })
     }
 
     return NextResponse.json({

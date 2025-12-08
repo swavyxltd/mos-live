@@ -471,7 +471,7 @@ export default function OwnerSettingsPage() {
                 Platform Billing Settings
               </CardTitle>
               <CardDescription>
-                Configure how organizations are billed for platform usage.
+                Configure how organisations are billed for platform usage.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -481,7 +481,7 @@ export default function OwnerSettingsPage() {
                   <span className="text-sm font-medium text-green-900">Billing Model</span>
                 </div>
                 <p className="text-sm text-green-700">
-                  Organizations are automatically charged per active student each month on their anniversary date.
+                  Organisations are automatically charged per active student each month on their anniversary date.
                 </p>
               </div>
               
@@ -507,10 +507,10 @@ export default function OwnerSettingsPage() {
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm text-blue-800">
-                  <strong>Billing Email Notifications:</strong> Organizations will automatically receive email notifications after each billing attempt - both when payment succeeds and when it fails.
+                  <strong>Billing Email Notifications:</strong> Organisations will automatically receive email notifications after each billing attempt - both when payment succeeds and when it fails.
                 </p>
                 <p className="text-sm text-blue-700 mt-2">
-                  <strong>Grace Period:</strong> Organizations have a 14-day grace period after payment failure before their account is automatically suspended.
+                  <strong>Grace Period:</strong> Organisations have a 14-day grace period after payment failure before their account is automatically suspended.
                 </p>
               </div>
 
@@ -518,11 +518,11 @@ export default function OwnerSettingsPage() {
                 <div className="pt-4 border-t">
                   <div className="text-sm text-gray-600">
                     <p className="font-medium mb-1">Current Billing Status:</p>
-                    <p>• Total Organizations: {billingStats.totalOrgs}</p>
+                    <p>• Total Organisations: {billingStats.totalOrgs}</p>
                     <p>• Total Active Students: {billingStats.totalStudents}</p>
                         <p>• Expected Monthly Revenue: {billingStats.expectedMonthlyRevenue}</p>
                     <p className="text-sm text-gray-500 mt-2">
-                      Revenue is calculated based on active student count across all organizations.
+                      Revenue is calculated based on active student count across all organisations.
                     </p>
                   </div>
                 </div>

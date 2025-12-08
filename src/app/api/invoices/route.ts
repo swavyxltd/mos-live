@@ -155,14 +155,14 @@ async function handlePOST(request: NextRequest) {
       )
     }
     
-    // Verify student belongs to organization
+    // Verify student belongs to organisation
     const student = await prisma.student.findFirst({
       where: { id: studentId, orgId }
     })
     
     if (!student) {
       return NextResponse.json(
-        { error: 'Student not found or does not belong to this organization' },
+        { error: 'Student not found or does not belong to this organisation' },
         { status: 404 }
       )
     }

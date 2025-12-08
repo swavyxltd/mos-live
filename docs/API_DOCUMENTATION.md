@@ -22,7 +22,7 @@ Rate limit headers are included in responses:
 ### Dashboard
 
 #### `GET /api/dashboard/stats`
-Get dashboard statistics for the current organization.
+Get dashboard statistics for the current organisation.
 
 **Response:**
 ```json
@@ -50,7 +50,7 @@ Get dashboard statistics for the current organization.
 ### Students
 
 #### `GET /api/students`
-Get list of students for the current organization.
+Get list of students for the current organisation.
 
 **Query Parameters:**
 - `search` (optional): Search by name, email, or parent name
@@ -419,7 +419,7 @@ Create a support ticket.
 Get platform-wide dashboard statistics (Owner only).
 
 ### `GET /api/owner/orgs`
-Get list of all organizations (Owner only).
+Get list of all organisations (Owner only).
 
 ### `GET /api/owner/system-health`
 Get system health metrics (Owner only).
@@ -451,7 +451,7 @@ Report usage to Stripe for metered billing.
 - `Authorization: Bearer ${CRON_SECRET}`
 
 ### `POST /api/cron/billing`
-Process billing for organizations.
+Process billing for organisations.
 
 **Headers Required:**
 - `Authorization: Bearer ${CRON_SECRET}`

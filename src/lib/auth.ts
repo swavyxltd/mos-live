@@ -9,7 +9,7 @@ import { checkEmailRateLimit } from './rate-limit'
 // Helper function to get user role hints
 async function getUserRoleHints(userId: string) {
   try {
-    // Get user's organization memberships
+    // Get user's organisation memberships
     const memberships = await prisma.userOrgMembership.findMany({
       where: { userId },
       include: { 
@@ -33,7 +33,7 @@ async function getUserRoleHints(userId: string) {
     const orgStaffOf: string[] = []
     let isParent = false
     
-    // Include organizations in role hints
+    // Include organisations in role hints
     for (const membership of memberships) {
       // Skip if org is null
       if (!membership.Org) {

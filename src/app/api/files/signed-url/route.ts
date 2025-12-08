@@ -22,7 +22,7 @@ async function handleGET(request: NextRequest) {
       return NextResponse.json({ error: 'File ID is required' }, { status: 400 })
     }
     
-    // Verify the file belongs to the organization
+    // Verify the file belongs to the organisation
     const filePath = `${orgId}/${fileId}`
     
     // Create signed URL

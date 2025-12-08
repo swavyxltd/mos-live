@@ -95,7 +95,7 @@ export function ClassDetailModal({ classId, isOpen, onClose, onClassUpdate }: Cl
       // Fetch class data and org settings in parallel
       const [classResponse, orgResponse] = await Promise.all([
         fetch(`/api/classes/${classId}`),
-        fetch('/api/settings/organization')
+        fetch('/api/settings/organisation')
       ])
       
       if (classResponse.ok) {

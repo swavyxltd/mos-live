@@ -22,7 +22,7 @@ export default async function OwnerLayout({
   }
   
   const org = await getActiveOrg()
-  // Owners don't need an org - they can access the portal to create/manage organizations
+  // Owners don't need an org - they can access the portal to create/manage organisations
   // org is optional for owners
   
   return (

@@ -20,7 +20,7 @@ async function handleGET(
 
     const org = await getActiveOrg(session.user.id)
     if (!org) {
-      return NextResponse.json({ error: 'No organization found' }, { status: 404 })
+      return NextResponse.json({ error: 'No organisation found' }, { status: 404 })
     }
 
     // Verify user has appropriate role

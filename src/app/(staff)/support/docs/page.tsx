@@ -50,7 +50,7 @@ Your dashboard provides real-time insights into your madrasah's performance:
 
 ## Getting Started Checklist
 
-1. ✅ Set up your organization profile
+1. ✅ Set up your organisation profile
 2. ✅ Create your first class
 3. ✅ Add teachers to your madrasah
 4. ✅ Set up fee plans
@@ -68,14 +68,14 @@ Once you're familiar with the dashboard, explore these key areas:
 - **Messages**: Communicate with parents and staff`
         },
         {
-          title: 'Setting up your organization',
+          title: 'Setting up your organisation',
           description: 'Configure your madrasah settings and preferences',
           readTime: '10 min read',
-          content: `# Setting Up Your Organization
+          content: `# Setting Up Your Organisation
 
-Properly configuring your organization settings is crucial for the smooth operation of your madrasah. This guide will walk you through all the essential settings.
+Properly configuring your organisation settings is crucial for the smooth operation of your madrasah. This guide will walk you through all the essential settings.
 
-## Organization Profile
+## Organisation Profile
 
 ### Basic Information
 - **Madrasah Name**: Your official institution name
@@ -148,7 +148,7 @@ Properly configuring your organization settings is crucial for the smooth operat
 
 ## Best Practices
 
-### Organization Setup
+### Organisation Setup
 - Use clear, descriptive names for all settings
 - Set realistic fee structures based on your community
 - Configure appropriate user roles for your staff
@@ -1328,7 +1328,7 @@ The application management system streamlines the process of reviewing, processi
 
 ### External Communication
 - **Community Outreach**: Community application promotion
-- **Partnership Communication**: Partner organization updates
+- **Partnership Communication**: Partner organisation updates
 - **Media Communication**: Public communication management
 - **Stakeholder Updates**: Stakeholder status updates
 - **Regulatory Communication**: Compliance communication
@@ -2423,7 +2423,7 @@ Effective communication with parents is crucial for maintaining a strong school 
 - **Engagement Analytics**: Message engagement analysis
 - **Performance Reports**: Message performance reports
 
-### Message Organization
+### Message Organisation
 - **Message Categories**: Message categorization
 - **Message Tags**: Message tagging system
 - **Message Search**: Message search functionality
@@ -2573,7 +2573,7 @@ WhatsApp integration provides powerful communication capabilities for your madra
 
 ### Contact Management
 - **Contact Lists**: Parent contact management
-- **Contact Groups**: Group contact organization
+- **Contact Groups**: Group contact organisation
 - **Contact Import**: Bulk contact import
 - **Contact Sync**: Contact synchronization
 - **Contact Validation**: Contact information validation
@@ -2858,7 +2858,7 @@ Professional email templates are essential for effective parent communication. T
 - **Template Categories**: Organized template categories
 - **Template Search**: Template search functionality
 - **Template Filtering**: Template filtering options
-- **Template Sorting**: Template organization
+- **Template Sorting**: Template organisation
 - **Template Favorites**: Favorite template marking
 
 ### Version Control

@@ -51,7 +51,7 @@ async function handlePATCH(
       return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
     }
 
-    // Check if user has access to this ticket's organization
+    // Check if user has access to this ticket's organisation
     if (!user.isSuperAdmin && !user.ownedOrgs.some(org => org.id === ticket.orgId)) {
       return NextResponse.json({ error: 'Access denied to this ticket' }, { status: 403 })
     }
@@ -109,7 +109,7 @@ async function handlePATCH(
             <p style="margin: 0 0 12px 0; font-size: 16px; color: #111827; font-weight: 600;">${ticket.subject}</p>
             <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280; font-weight: 500;">Status:</p>
             <p style="margin: 0 0 12px 0; font-size: 16px; color: #111827; font-weight: 600;">${status.replace('_', ' ')}</p>
-            <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280; font-weight: 500;">Organization:</p>
+            <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280; font-weight: 500;">Organisation:</p>
             <p style="margin: 0; font-size: 16px; color: #111827; font-weight: 600;">${ticket.org?.name || 'N/A'}</p>
           </div>
         `

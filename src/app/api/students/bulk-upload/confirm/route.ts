@@ -34,7 +34,7 @@ async function handlePOST(request: NextRequest) {
     const org = await getActiveOrg()
     if (!org) {
       return NextResponse.json(
-        { error: 'Organization not found' },
+        { error: 'Organisation not found' },
         { status: 404 }
       )
     }

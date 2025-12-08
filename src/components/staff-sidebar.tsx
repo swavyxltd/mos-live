@@ -62,7 +62,7 @@ const navigation = [
 
 const ownerNavigation = [
   { name: 'Overview', href: '/owner/overview', icon: BarChart3 },
-  { name: 'Organizations', href: '/owner/orgs', icon: Building2 },
+  { name: 'Organisations', href: '/owner/orgs', icon: Building2 },
   { name: 'Dunning', href: '/owner/dunning', icon: AlertTriangle },
   { name: 'Support', href: '/owner/support', icon: HelpCircle },
   { name: 'Settings', href: '/owner/settings', icon: Settings },

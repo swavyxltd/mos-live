@@ -54,7 +54,7 @@ export default function OwnerUsersPage() {
     name: true,
     email: true,
     role: true,
-    organization: true,
+    organisation: true,
     status: true,
     joinDate: true,
     lastActive: true,
@@ -193,7 +193,7 @@ export default function OwnerUsersPage() {
     return matchesSearch && matchesRole && matchesStatus && matchesOrg && matchesDate
   })
 
-  // Get unique organizations for filter
+  // Get unique organisations for filter
   const uniqueOrgs = [...new Set((userData.allUsers || []).map(user => user.orgName).filter(Boolean))]
 
   // Pagination calculations
@@ -227,7 +227,7 @@ export default function OwnerUsersPage() {
       if (exportFields.name) row.Name = user.name
       if (exportFields.email) row.Email = user.email
       if (exportFields.role) row.Role = user.role
-      if (exportFields.organization) row.Organization = user.orgName
+      if (exportFields.organisation) row.Organisation = user.orgName
       if (exportFields.status) row.Status = user.status
       if (exportFields.joinDate) row['Join Date'] = user.joinDate
       if (exportFields.lastActive) row['Last Active'] = user.lastActive
@@ -390,7 +390,7 @@ export default function OwnerUsersPage() {
           <CardContent>
             <div className="text-2xl font-bold">{userData?.stats?.staffUsers || 0}</div>
             <p className="text-sm text-muted-foreground">
-              Organization staff
+              Organisation staff
             </p>
           </CardContent>
         </Card>
@@ -410,7 +410,7 @@ export default function OwnerUsersPage() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
-                    placeholder="Search users by name, email, or organization..."
+                    placeholder="Search users by name, email, or organisation..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10 w-full"
@@ -456,13 +456,13 @@ export default function OwnerUsersPage() {
               </div>
 
               <div>
-                <Label htmlFor="org-filter">Organization</Label>
+                <Label htmlFor="org-filter">Organisation</Label>
                 <Select value={orgFilter} onValueChange={setOrgFilter}>
                   <SelectTrigger>
-                    <SelectValue placeholder="All Organizations" />
+                    <SelectValue placeholder="All Organisations" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Organizations</SelectItem>
+                    <SelectItem value="all">All Organisations</SelectItem>
                     {uniqueOrgs.map(org => (
                       <SelectItem key={org} value={org}>{org}</SelectItem>
                     ))}
@@ -658,7 +658,7 @@ export default function OwnerUsersPage() {
         </CardContent>
       </Card>
 
-      {/* User Activity and Top Organizations */}
+      {/* User Activity and Top Organisations */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* User Activity Summary */}
         <Card>
@@ -700,11 +700,11 @@ export default function OwnerUsersPage() {
           </CardContent>
         </Card>
 
-        {/* Top Organizations by Users */}
+        {/* Top Organisations by Users */}
         <Card>
           <CardHeader>
-            <CardTitle>Top Organizations by Users</CardTitle>
-            <CardDescription>Organizations with the most active users</CardDescription>
+            <CardTitle>Top Organisations by Users</CardTitle>
+            <CardDescription>Organisations with the most active users</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -792,11 +792,11 @@ export default function OwnerUsersPage() {
                     <label className="flex items-center space-x-2">
                       <input
                         type="checkbox"
-                        checked={exportFields.organization}
-                        onChange={(e) => setExportFields(prev => ({ ...prev, organization: e.target.checked }))}
+                        checked={exportFields.organisation}
+                        onChange={(e) => setExportFields(prev => ({ ...prev, organisation: e.target.checked }))}
                         className="rounded"
                       />
-                      <span className="text-sm">Organization</span>
+                      <span className="text-sm">Organisation</span>
                     </label>
                     <label className="flex items-center space-x-2">
                       <input

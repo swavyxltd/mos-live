@@ -142,7 +142,7 @@ export default function OwnerRevenuePage() {
         },
         body: JSON.stringify({
           paymentIntentId: payment.stripePaymentIntentId, // You'll need to store this
-          organizationId: payment.organizationId,
+          organisationId: payment.organisationId,
         }),
       })
 
@@ -189,7 +189,7 @@ export default function OwnerRevenuePage() {
         addToast({
           type: 'error',
           title: 'Payment Retry Failed',
-          message: `${payment.orgName} - £${payment.amount}. Error: ${result.error}. Retry count: ${payment.retryCount + 1}. Please contact the organization or try again later.`,
+          message: `${payment.orgName} - £${payment.amount}. Error: ${result.error}. Retry count: ${payment.retryCount + 1}. Please contact the organisation or try again later.`,
           duration: 8000
         })
       }
@@ -197,7 +197,7 @@ export default function OwnerRevenuePage() {
       addToast({
         type: 'error',
         title: 'System Error',
-        message: `Unable to retry payment for ${payment?.orgName || 'this organization'}. Please try again or contact support if the issue persists.`,
+        message: `Unable to retry payment for ${payment?.orgName || 'this organisation'}. Please try again or contact support if the issue persists.`,
         duration: 8000
       })
     }
@@ -466,7 +466,7 @@ export default function OwnerRevenuePage() {
       <Card>
         <CardHeader>
           <CardTitle>Top Revenue Generators</CardTitle>
-          <CardDescription>Organizations contributing the most to your revenue</CardDescription>
+          <CardDescription>Organisations contributing the most to your revenue</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -511,7 +511,7 @@ export default function OwnerRevenuePage() {
           <div className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Organization</Label>
+                <Label>Organisation</Label>
                 <p className="text-sm font-medium">{selectedPayment.orgName}</p>
               </div>
               <div>
@@ -550,7 +550,7 @@ export default function OwnerRevenuePage() {
                   Mark as Resolved
                 </Button>
                 <Button variant="outline">
-                  Contact Organization
+                  Contact Organisation
                 </Button>
               </div>
             </div>

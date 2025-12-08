@@ -165,7 +165,7 @@ async function handleGET(request: NextRequest) {
       nextRetry: null,
       status: 'overdue',
       stripePaymentIntentId: null,
-      organizationId: inv.orgId
+      organisationId: inv.orgId
     }))
 
     // Get top revenue generators (orgs by student count, excluding demo org)

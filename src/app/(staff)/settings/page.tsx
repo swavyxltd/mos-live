@@ -22,7 +22,7 @@ import { StaffSubrole } from '@/types/staff-roles'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { PaymentMethodsTab } from '@/components/payment-methods-tab'
 
-interface OrganizationSettings {
+interface OrganisationSettings {
   name: string
   timezone: string
   lateThreshold: number
@@ -65,7 +65,7 @@ export default function SettingsPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [loadingOrgSettings, setLoadingOrgSettings] = useState(true)
-  const [orgSettings, setOrgSettings] = useState<OrganizationSettings>({
+  const [orgSettings, setOrgSettings] = useState<OrganisationSettings>({
     name: '',
     timezone: 'Europe/London',
     lateThreshold: 15,
@@ -108,7 +108,7 @@ export default function SettingsPage() {
 
   const [billingRecords, setBillingRecords] = useState<BillingRecord[]>([])
   const [loadingBillingRecords, setLoadingBillingRecords] = useState(true)
-  const [activeTab, setActiveTab] = useState('organization')
+  const [activeTab, setActiveTab] = useState('organisation')
 
   useEffect(() => {
     fetchUserSettings()
@@ -159,7 +159,7 @@ export default function SettingsPage() {
   const fetchOrgSettings = async () => {
     try {
       setLoadingOrgSettings(true)
-      const response = await fetch('/api/settings/organization')
+      const response = await fetch('/api/settings/organisation')
       if (response.ok) {
         const data = await response.json()
         setOrgSettings({
@@ -248,7 +248,7 @@ export default function SettingsPage() {
     return nextPayment
   }
 
-  const handleOrgSettingsChange = (field: keyof OrganizationSettings, value: string | number) => {
+  const handleOrgSettingsChange = (field: keyof OrganisationSettings, value: string | number) => {
     setOrgSettings(prev => ({ ...prev, [field]: value }))
   }
 
@@ -270,14 +270,14 @@ export default function SettingsPage() {
   const handleSaveOrgSettings = async () => {
     setLoading(true)
     try {
-      const response = await fetch('/api/settings/organization', {
+      const response = await fetch('/api/settings/organisation', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orgSettings)
       })
       
       if (response.ok) {
-        toast.success('Organization settings saved successfully')
+        toast.success('Organisation settings saved successfully')
         // Trigger refresh of org name everywhere
         window.dispatchEvent(new CustomEvent('refresh-org-name'))
         // Also refresh owner dashboard if org name changed
@@ -289,10 +289,10 @@ export default function SettingsPage() {
           window.location.reload()
         }, 500)
       } else {
-        throw new Error('Failed to save organization settings')
+        throw new Error('Failed to save organisation settings')
       }
     } catch (error) {
-      toast.error('Failed to save organization settings')
+      toast.error('Failed to save organisation settings')
     } finally {
       setLoading(false)
     }
@@ -496,12 +496,12 @@ export default function SettingsPage() {
           <h1 className="text-2xl sm:text-3xl font-bold text-[var(--foreground)] break-words">Settings</h1>
           <p className="mt-1 text-sm text-[var(--muted-foreground)]">
             {isFinanceOfficer 
-              ? "View organization settings and manage your subscription payments."
-              : "Manage your organization settings and preferences."
+              ? "View organisation settings and manage your subscription payments."
+              : "Manage your organisation settings and preferences."
             }
           </p>
         </div>
-        {activeTab === 'organization' && (
+        {activeTab === 'organisation' && (
           <Button onClick={handleSaveOrgSettings} disabled={loading || isFinanceOfficer}>
             {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
             Save Changes
@@ -523,10 +523,10 @@ export default function SettingsPage() {
               <SelectValue placeholder="Select a tab" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="organization">
+              <SelectItem value="organisation">
                 <div className="flex items-center gap-2">
                   <Globe className="h-4 w-4" />
-                  <span>Organization</span>
+                  <span>Organisation</span>
                 </div>
               </SelectItem>
               <SelectItem value="profile">
@@ -553,9 +553,9 @@ export default function SettingsPage() {
 
         {/* Desktop: Tabs */}
         <TabsList className="hidden md:grid w-full grid-cols-4">
-          <TabsTrigger value="organization" className="flex items-center gap-2">
+          <TabsTrigger value="organisation" className="flex items-center gap-2">
             <Globe className="h-4 w-4" />
-            Organization
+            Organisation
           </TabsTrigger>
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="h-4 w-4" />
@@ -571,13 +571,13 @@ export default function SettingsPage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="organization" className="space-y-6">
-          {/* Organization Settings */}
+        <TabsContent value="organisation" className="space-y-6">
+          {/* Organisation Settings */}
         <Card className={isFinanceOfficer ? "opacity-50 pointer-events-none" : ""}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Globe className="h-5 w-5" />
-              Organization Settings
+              Organisation Settings
               {isFinanceOfficer && (
                 <Badge variant="secondary" className="ml-2 text-xs">
                   Read Only
@@ -586,7 +586,7 @@ export default function SettingsPage() {
             </CardTitle>
             <CardDescription>
               {isFinanceOfficer 
-                ? "Organization settings are read-only for Finance Officers. Contact an Admin to make changes."
+                ? "Organisation settings are read-only for Finance Officers. Contact an Admin to make changes."
                 : "Configure your madrasah's basic information and preferences."
               }
             </CardDescription>
@@ -594,12 +594,12 @@ export default function SettingsPage() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="org-name">Organization Name</Label>
+                <Label htmlFor="org-name">Organisation Name</Label>
                 <Input
                   id="org-name"
                   value={orgSettings.name}
                   onChange={(e) => handleOrgSettingsChange('name', e.target.value)}
-                  placeholder="Enter organization name"
+                  placeholder="Enter organisation name"
                 />
               </div>
               <div>

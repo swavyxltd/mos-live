@@ -17,7 +17,7 @@ async function handleGET(request: NextRequest) {
     const orgId = await getActiveOrgId(session.user.id)
     if (!orgId) {
       logger.error('No orgId found after requireRole validation', { userId: session.user.id })
-      return NextResponse.json({ error: 'No organization selected' }, { status: 400 })
+      return NextResponse.json({ error: 'No organisation selected' }, { status: 400 })
     }
     
     // Get user's role in this org (already validated in requireRole, but we need it for filtering)

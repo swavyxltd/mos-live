@@ -1,22 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  IconArchive,
   IconChevronRight,
   IconCircleCheckFilled,
   IconCircleDashed,
-  IconDots,
-  IconMail,
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 interface OnboardingStep {
   id: string;
@@ -80,14 +71,14 @@ function StepIndicator({ completed }: { completed: boolean }) {
   if (completed) {
     return (
       <IconCircleCheckFilled
-        className="mt-1 size-4.5 shrink-0 text-primary"
+        className="mt-1 size-4.5 shrink-0 text-primary hidden sm:block"
         aria-hidden="true"
       />
     );
   }
   return (
     <IconCircleDashed
-      className="mt-1 size-5 shrink-0 stroke-muted-foreground/40"
+      className="mt-1 size-5 shrink-0 stroke-muted-foreground/40 hidden sm:block"
       strokeWidth={2}
       aria-hidden="true"
     />
@@ -157,7 +148,16 @@ export function Onboarding01({
   onStepAction 
 }: Onboarding01Props = {}) {
   const steps = propSteps || defaultSteps;
+  // Sync completed state from props
   const [currentSteps, setCurrentSteps] = useState<OnboardingStep[]>(steps);
+  
+  // Update steps when propSteps change (for dynamic completion tracking)
+  useEffect(() => {
+    if (propSteps) {
+      setCurrentSteps(propSteps);
+    }
+  }, [propSteps]);
+  
   const [openStepId, setOpenStepId] = useState<string | null>(() => {
     const firstIncomplete = steps.find((s) => !s.completed);
     return firstIncomplete?.id ?? steps[0]?.id ?? null;
@@ -198,19 +198,18 @@ export function Onboarding01({
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <div className="w-full max-w-xl">
-        <div className="w-xl rounded-lg border bg-card p-4 text-card-foreground shadow-xs">
+    <div className="w-full">
+      <div className="w-full rounded-lg border border-border bg-white p-4 text-card-foreground">
           <div className="mb-4 mr-2 flex flex-col justify-between sm:flex-row sm:items-center">
             <h3 className="ml-2 font-semibold text-foreground">
               {title}
             </h3>
             <div className="mt-2 flex items-center justify-end sm:mt-0">
               <CircularProgress
-                completed={remainingCount}
+                completed={completedCount}
                 total={currentSteps.length}
               />
-              <div className="ml-1.5 mr-3 text-sm text-muted-foreground">
+              <div className="ml-1.5 text-sm text-muted-foreground">
                 <span className="font-medium text-foreground">
                   {remainingCount}
                 </span>{" "}
@@ -220,34 +219,6 @@ export function Onboarding01({
                 </span>{" "}
                 left
               </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6">
-                    <IconDots className="h-4 w-4 shrink-0" aria-hidden="true" />
-                    <span className="sr-only">Options</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-40">
-                  <DropdownMenuItem onClick={() => setDismissed(true)}>
-                    <IconArchive
-                      className="mr-2 h-4 w-4 shrink-0"
-                      aria-hidden="true"
-                    />
-                    Dismiss
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() =>
-                      window.open("mailto:hello@example.com?subject=Feedback")
-                    }
-                  >
-                    <IconMail
-                      className="mr-2 h-4 w-4 shrink-0"
-                      aria-hidden="true"
-                    />
-                    Give feedback
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
             </div>
           </div>
 
@@ -287,15 +258,15 @@ export function Onboarding01({
                     <div
                       className={cn(
                         "relative overflow-hidden rounded-lg transition-colors",
-                        isOpen && "border border-border bg-muted"
+                        isOpen && "border border-border"
                       )}
                     >
                       <div className="relative flex items-center justify-between gap-3 py-3 pl-4 pr-2">
                         <div className="flex w-full gap-3">
-                          <div className="shrink-0">
+                          <div className="shrink-0 hidden sm:block">
                             <StepIndicator completed={step.completed} />
                           </div>
-                          <div className="mt-0.5 grow">
+                          <div className="mt-0.5 grow w-full min-w-0">
                             <h4
                               className={cn(
                                 "font-semibold",
@@ -351,7 +322,6 @@ export function Onboarding01({
             })}
           </div>
         </div>
-      </div>
     </div>
   );
 }

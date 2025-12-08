@@ -26,7 +26,7 @@ async function handlePOST(
     // Sanitize reason
     const sanitizedReason = reason ? sanitizeText(reason, MAX_STRING_LENGTHS.text) : 'Account paused by platform administrator'
 
-    // Update organization status to PAUSED
+    // Update organisation status to PAUSED
     const updatedOrg = await prisma.org.update({
       where: { id: orgId },
       data: {
@@ -75,12 +75,12 @@ async function handlePOST(
 
     return NextResponse.json({ 
       success: true, 
-      message: `Organization ${updatedOrg.name} has been paused`,
+      message: `Organisation ${updatedOrg.name} has been paused`,
       affectedUsers: updatedOrg.memberships.length
     })
 
   } catch (error: any) {
-    logger.error('Error pausing organization', error)
+    logger.error('Error pausing organisation', error)
     
     // Check if it's a Prisma field error
     if (error?.code === 'P2002' || error?.message?.includes('Unknown column') || error?.message?.includes('column') || error?.message?.includes('does not exist')) {
@@ -92,7 +92,7 @@ async function handlePOST(
     
     const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json({ 
-      error: 'Failed to pause organization',
+      error: 'Failed to pause organisation',
       ...(isDevelopment && { details: error?.message })
     }, { status: 500 })
   }

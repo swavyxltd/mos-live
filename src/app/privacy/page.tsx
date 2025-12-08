@@ -38,7 +38,7 @@ export default function PrivacyPolicyPage() {
                 <li>Account information (name, email, phone number)</li>
                 <li>Student information (names, dates of birth, attendance records)</li>
                 <li>Payment information (processed securely through Stripe)</li>
-                <li>Organization information and settings</li>
+                <li>Organisation information and settings</li>
               </ul>
             </section>
 

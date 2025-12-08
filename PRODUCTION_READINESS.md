@@ -20,7 +20,7 @@
 ## ⚠️ Known Issues / TODOs
 
 ### Non-Critical TODOs (Can be addressed post-launch)
-1. **Organization Management Modal** - Some save functionality marked as TODO
+1. **Organisation Management Modal** - Some save functionality marked as TODO
 2. **Revenue Tracking** - Some advanced metrics marked as TODO
 3. **Analytics** - Some expansion/contraction tracking marked as TODO
 4. **Student Management** - Delete functionality marked as TODO
@@ -82,7 +82,7 @@
 
 ### Post-Deployment
 - [ ] Test authentication flow
-- [ ] Test organization creation
+- [ ] Test organisation creation
 - [ ] Test payment flow
 - [ ] Test email sending
 - [ ] Verify all API endpoints work
@@ -92,7 +92,7 @@
 
 ### Critical Paths
 - [ ] User signup/invitation flow
-- [ ] Organization creation
+- [ ] Organisation creation
 - [ ] Payment processing
 - [ ] Email delivery
 - [ ] File uploads

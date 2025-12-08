@@ -13,7 +13,7 @@ async function handlePOST(request: NextRequest) {
 
     const org = await getActiveOrg()
     if (!org) {
-      return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Organisation not found' }, { status: 404 })
     }
 
     const body = await request.json()
@@ -35,7 +35,7 @@ async function handlePOST(request: NextRequest) {
       )
     }
 
-    // Get invoice and verify it belongs to the organization
+    // Get invoice and verify it belongs to the organisation
     const invoice = await prisma.invoice.findFirst({
       where: { 
         id: invoiceId, 
@@ -124,7 +124,7 @@ async function handleGET(request: NextRequest) {
 
     const org = await getActiveOrg()
     if (!org) {
-      return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Organisation not found' }, { status: 404 })
     }
 
     const { searchParams } = new URL(request.url)

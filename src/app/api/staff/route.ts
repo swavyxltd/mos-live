@@ -20,7 +20,7 @@ async function handleGET(request: NextRequest) {
     // Get authenticated user's active org - NEVER trust orgId from query params
     const org = await getActiveOrg(session.user.id)
     if (!org) {
-      return NextResponse.json({ error: 'No organization found' }, { status: 404 })
+      return NextResponse.json({ error: 'No organisation found' }, { status: 404 })
     }
 
     // If specific user requested, return membership info for the authenticated user's org

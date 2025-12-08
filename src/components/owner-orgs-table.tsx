@@ -26,12 +26,12 @@ export function OwnerOrgsTable({ orgs }: OwnerOrgsTableProps) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Organizations</CardTitle>
+          <CardTitle>Organisations</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center text-gray-500 py-8">
             <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-            <p>No organizations found</p>
+            <p>No organisations found</p>
           </div>
         </CardContent>
       </Card>
@@ -41,7 +41,7 @@ export function OwnerOrgsTable({ orgs }: OwnerOrgsTableProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Recent Organizations</CardTitle>
+        <CardTitle>Recent Organisations</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
@@ -49,7 +49,7 @@ export function OwnerOrgsTable({ orgs }: OwnerOrgsTableProps) {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
-                  Organization
+                  Organisation
                 </th>
                 <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                   Students

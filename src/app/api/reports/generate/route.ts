@@ -17,7 +17,7 @@ async function handlePOST(request: NextRequest) {
 
     const org = await getActiveOrg()
     if (!org) {
-      return NextResponse.json({ error: 'No organization found' }, { status: 404 })
+      return NextResponse.json({ error: 'No organisation found' }, { status: 404 })
     }
 
     // Check payment method
@@ -72,7 +72,7 @@ async function handlePOST(request: NextRequest) {
     const orgStartMonth = orgStartDate.getMonth()
     
     if (year < orgStartYear || (year === orgStartYear && month < orgStartMonth)) {
-      return NextResponse.json({ error: 'Cannot generate report for months before organization was created' }, { status: 400 })
+      return NextResponse.json({ error: 'Cannot generate report for months before organisation was created' }, { status: 400 })
     }
 
     // Fetch all data from database

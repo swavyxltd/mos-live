@@ -7,7 +7,7 @@ import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
 
-// GET /api/org/contact-info - Get organization contact information
+// GET /api/org/contact-info - Get organisation contact information
 async function handleGET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -18,10 +18,10 @@ async function handleGET(request: NextRequest) {
 
     const org = await getActiveOrg()
     if (!org) {
-      return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Organisation not found' }, { status: 404 })
     }
 
-    // Get organization contact information
+    // Get organisation contact information
     const orgData = await prisma.org.findUnique({
       where: { id: org.id },
       select: {
@@ -57,7 +57,7 @@ async function handleGET(request: NextRequest) {
     })
 
   } catch (error: any) {
-    logger.error('Error fetching organization contact info', error)
+    logger.error('Error fetching organisation contact info', error)
     const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
       { 

@@ -9,7 +9,7 @@ import { PlatformOverduePaymentModal } from '@/components/platform-overdue-payme
 
 function AccountPausedContent() {
   const searchParams = useSearchParams()
-  const orgName = searchParams.get('org') || 'your organization'
+  const orgName = searchParams.get('org') || 'your organisation'
   const reason = searchParams.get('reason') || 'No reason provided'
   const orgId = searchParams.get('orgId')
   const [showPaymentModal, setShowPaymentModal] = useState(false)
@@ -39,7 +39,7 @@ function AccountPausedContent() {
         <div className="bg-white border border-gray-200 rounded-xl shadow-md overflow-hidden">
           {/* Content */}
           <div className="p-6 space-y-6">
-            {/* Organization Info */}
+            {/* Organisation Info */}
             <div className="text-center">
               <div className="flex justify-center mb-3">
                 <div className="w-8 h-8 bg-red-50 rounded-lg flex items-center justify-center border border-red-100">
@@ -67,7 +67,7 @@ function AccountPausedContent() {
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-red-600">•</span>
-                      <span>You cannot access the organization dashboard</span>
+                      <span>You cannot access the organisation dashboard</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-red-600">•</span>

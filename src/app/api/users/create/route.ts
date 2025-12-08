@@ -92,7 +92,7 @@ async function handlePOST(request: NextRequest) {
     // If not super admin, orgId and role are required
     if (!isSuperAdmin && (!orgId || !role)) {
       return NextResponse.json(
-        { error: 'Organization and role are required for non-owner accounts' },
+        { error: 'Organisation and role are required for non-owner accounts' },
         { status: 400 }
       )
     }
@@ -111,7 +111,7 @@ async function handlePOST(request: NextRequest) {
     // Reject password setting for non-owner accounts
     if (!isSuperAdmin && password) {
       return NextResponse.json(
-        { error: 'Passwords cannot be set for organization accounts. Users must set their own passwords via invitation.' },
+        { error: 'Passwords cannot be set for organisation accounts. Users must set their own passwords via invitation.' },
         { status: 400 }
       )
     }

@@ -1,7 +1,7 @@
 /**
- * Calculate the due date for a payment record based on the organization's feeDueDay
+ * Calculate the due date for a payment record based on the organisation's feeDueDay
  * @param month - Payment month in format "YYYY-MM"
- * @param feeDueDay - Day of month when fees are due (1-31) - from organization settings
+ * @param feeDueDay - Day of month when fees are due (1-31) - from organisation settings
  * @returns Date object representing the due date
  */
 export function getPaymentDueDate(month: string, feeDueDay: number | null): Date | null {

@@ -20,7 +20,7 @@ async function handleGET() {
     // CRITICAL: Use authenticated user's orgId, never from query params
     const org = await getActiveOrg(session.user.id)
     if (!org) {
-      return NextResponse.json({ error: 'No organization found' }, { status: 404 })
+      return NextResponse.json({ error: 'No organisation found' }, { status: 404 })
     }
 
     const applications = await prisma.application.findMany({
@@ -97,10 +97,10 @@ async function handlePOST(request: NextRequest) {
       select: { id: true, name: true, status: true }
     })
     if (!org) {
-      return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Organisation not found' }, { status: 404 })
     }
     if (org.status === 'DEACTIVATED' || org.status === 'PAUSED') {
-      return NextResponse.json({ error: 'Organization is not accepting applications' }, { status: 403 })
+      return NextResponse.json({ error: 'Organisation is not accepting applications' }, { status: 403 })
     }
 
     // Create the application

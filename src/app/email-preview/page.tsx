@@ -91,15 +91,15 @@ const emailTypes: EmailPreview[] = [
   },
   {
     id: 'org-setup-invitation',
-    name: 'Organization Setup Invitation',
-    description: 'Sent automatically when owner creates a new organization',
+    name: 'Organisation Setup Invitation',
+    description: 'Sent automatically when owner creates a new organisation',
     type: 'org-setup-invitation',
     category: 'automatic'
   },
   {
     id: 'org-setup-confirmation',
-    name: 'Organization Setup Confirmation',
-    description: 'Sent automatically when organization setup is complete',
+    name: 'Organisation Setup Confirmation',
+    description: 'Sent automatically when organisation setup is complete',
     type: 'org-setup-confirmation',
     category: 'automatic'
   },

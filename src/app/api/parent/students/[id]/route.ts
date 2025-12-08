@@ -16,10 +16,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     const org = await getActiveOrg(session.user.id)
     if (!org) {
-      return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Organisation not found' }, { status: 404 })
     }
 
-    // Verify user is a PARENT in this organization
+    // Verify user is a PARENT in this organisation
     const { getUserRoleInOrg } = await import('@/lib/org')
     const userRole = await getUserRoleInOrg(session.user.id, org.id)
     
@@ -74,10 +74,10 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
     const org = await getActiveOrg(session.user.id)
     if (!org) {
-      return NextResponse.json({ error: 'Organization not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Organisation not found' }, { status: 404 })
     }
 
-    // Verify user is a PARENT in this organization
+    // Verify user is a PARENT in this organisation
     const { getUserRoleInOrg } = await import('@/lib/org')
     const userRole = await getUserRoleInOrg(session.user.id, org.id)
     

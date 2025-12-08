@@ -39,7 +39,7 @@ export default function TermsOfServicePage() {
             <section>
               <h2 className="text-xl font-semibold mb-3">2. Use License</h2>
               <p className="text-[var(--muted-foreground)]">
-                Permission is granted to temporarily use Madrasah OS for your organization's management purposes. This is the grant of a license, not a transfer of title, and under this license you may not:
+                Permission is granted to temporarily use Madrasah OS for your organisation's management purposes. This is the grant of a license, not a transfer of title, and under this license you may not:
               </p>
               <ul className="list-disc pl-6 mt-2 space-y-1 text-[var(--muted-foreground)]">
                 <li>Modify or copy the materials</li>
@@ -66,7 +66,7 @@ export default function TermsOfServicePage() {
             <section>
               <h2 className="text-xl font-semibold mb-3">5. Data and Privacy</h2>
               <p className="text-[var(--muted-foreground)]">
-                Your data is stored securely and is only accessible by authorized users within your organization. We implement industry-standard security measures to protect your data. Please review our Privacy Policy for more information.
+                Your data is stored securely and is only accessible by authorized users within your organisation. We implement industry-standard security measures to protect your data. Please review our Privacy Policy for more information.
               </p>
             </section>
 

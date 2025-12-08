@@ -25,7 +25,7 @@ export async function ensurePlatformCustomer(orgId: string) {
   })
   
   if (!org) {
-    throw new Error('Organization not found')
+    throw new Error('Organisation not found')
   }
   
   // Create Stripe customer
@@ -239,11 +239,11 @@ export async function ensureParentCustomer(orgId: string, parentUserId: string) 
   })
   
   if (!org) {
-    throw new Error('Organization not found')
+    throw new Error('Organisation not found')
   }
   
   if (!org.stripeConnectAccountId) {
-    throw new Error('Organization has not connected Stripe account')
+    throw new Error('Organisation has not connected Stripe account')
   }
   
   // Create Stripe customer under the org's Connect account
@@ -306,7 +306,7 @@ export async function createPaymentIntent(orgId: string, parentUserId: string, a
   })
   
   if (!org?.stripeConnectAccountId) {
-    throw new Error('Organization has not connected Stripe account')
+    throw new Error('Organisation has not connected Stripe account')
   }
   
   const profile = await ensureParentCustomer(orgId, parentUserId)
@@ -346,7 +346,7 @@ export async function createSetupIntent(orgId: string, parentUserId: string) {
   })
   
   if (!org?.stripeConnectAccountId) {
-    throw new Error('Organization has not connected Stripe account')
+    throw new Error('Organisation has not connected Stripe account')
   }
   
   const profile = await ensureParentCustomer(orgId, parentUserId)
@@ -530,7 +530,7 @@ export async function reportUsage(orgId: string, studentCount: number) {
   })
 
   if (!billing?.stripeSubscriptionId || !billing.stripeSubscriptionItemId) {
-    throw new Error('Subscription not found for organization')
+    throw new Error('Subscription not found for organisation')
   }
 
   // Report usage to Stripe (for metered billing)
