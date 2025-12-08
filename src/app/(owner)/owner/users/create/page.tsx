@@ -135,7 +135,14 @@ export default function CreateUserPage() {
                 id="name"
                 required
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value
+                  if (value.length > 0) {
+                    setFormData({ ...formData, name: value.charAt(0).toUpperCase() + value.slice(1) })
+                  } else {
+                    setFormData({ ...formData, name: value })
+                  }
+                }}
                 placeholder="User Name"
               />
             </div>

@@ -182,6 +182,29 @@ async function handlePOST(request: NextRequest) {
           throw new Error('Invalid organisation public phone format')
         }
         
+        // Get existing org settings or create new ones
+        const existingOrg = await tx.org.findUnique({
+          where: { id: invitation.orgId },
+          select: { settings: true }
+        })
+        
+        let orgSettings: any = {}
+        if (existingOrg?.settings) {
+          try {
+            orgSettings = JSON.parse(existingOrg.settings)
+          } catch (e) {
+            // If parsing fails, start with default settings
+            orgSettings = { lateThreshold: 15 }
+          }
+        } else {
+          orgSettings = { lateThreshold: 15 }
+        }
+        
+        // Add website to settings if provided
+        if (sanitizedOrgWebsite) {
+          orgSettings.website = sanitizedOrgWebsite
+        }
+        
         await tx.org.update({
           where: { id: invitation.orgId },
           data: {
@@ -193,8 +216,9 @@ async function handlePOST(request: NextRequest) {
             publicPhone: sanitizedOrgPublicPhone,
             email: sanitizedOrgEmail,
             publicEmail: sanitizedOrgPublicEmail,
-            website: sanitizedOrgWebsite,
-            timezone: timezone || 'Europe/London'
+            timezone: timezone || 'Europe/London',
+            settings: JSON.stringify(orgSettings),
+            updatedAt: new Date()
           }
         })
       }

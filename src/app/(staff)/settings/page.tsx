@@ -35,6 +35,7 @@ interface OrganisationSettings {
   publicPhone: string
   email: string
   publicEmail: string
+  website: string
   officeHours: string
 }
 
@@ -78,6 +79,7 @@ export default function SettingsPage() {
     publicPhone: '',
     email: '',
     publicEmail: '',
+    website: '',
     officeHours: ''
   })
   const [userSettings, setUserSettings] = useState<UserSettings>({
@@ -175,6 +177,7 @@ export default function SettingsPage() {
           publicPhone: data.publicPhone || '',
           email: data.email || '',
           publicEmail: data.publicEmail || '',
+          website: data.website || '',
           officeHours: data.officeHours || ''
         })
       }
@@ -249,10 +252,39 @@ export default function SettingsPage() {
   }
 
   const handleOrgSettingsChange = (field: keyof OrganisationSettings, value: string | number) => {
+    // Capitalize first letter of each word for organisation name
+    if (field === 'name' && typeof value === 'string' && value.length > 0) {
+      value = value.split(' ').map(word => {
+        if (word.length === 0) return word
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+      }).join(' ')
+    }
+    // Capitalize first letter of each word for address line 1
+    if (field === 'addressLine1' && typeof value === 'string' && value.length > 0) {
+      value = value.split(' ').map(word => {
+        if (word.length === 0) return word
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+      }).join(' ')
+    }
+    // Capitalize first letter of each word for city
+    if (field === 'city' && typeof value === 'string' && value.length > 0) {
+      value = value.split(' ').map(word => {
+        if (word.length === 0) return word
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+      }).join(' ')
+    }
+    // Postcode should be full caps
+    if (field === 'postcode' && typeof value === 'string') {
+      value = value.toUpperCase()
+    }
     setOrgSettings(prev => ({ ...prev, [field]: value }))
   }
 
   const handleUserSettingsChange = (field: keyof UserSettings, value: string | boolean) => {
+    // Auto-capitalize first letter for name fields
+    if (field === 'name' && typeof value === 'string' && value.length > 0) {
+      value = value.charAt(0).toUpperCase() + value.slice(1)
+    }
     setUserSettings(prev => ({ ...prev, [field]: value }))
   }
 
@@ -664,7 +696,7 @@ export default function SettingsPage() {
                   <Input
                     id="postcode"
                     value={orgSettings.postcode}
-                    onChange={(e) => handleOrgSettingsChange('postcode', e.target.value.toUpperCase())}
+                    onChange={(e) => handleOrgSettingsChange('postcode', e.target.value)}
                     placeholder="SW1A 1AA"
                   />
                 </div>
@@ -741,6 +773,22 @@ export default function SettingsPage() {
                   <p className="text-sm text-gray-500 mt-1">Visible on application form</p>
                 </div>
               </div>
+            </div>
+
+            <div>
+              <Label htmlFor="website">Website (Optional)</Label>
+              <div className="relative">
+                <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  id="website"
+                  type="url"
+                  value={orgSettings.website}
+                  onChange={(e) => handleOrgSettingsChange('website', e.target.value)}
+                  placeholder="https://www.madrasah.org"
+                  className="pl-9"
+                />
+              </div>
+              <p className="text-sm text-gray-500 mt-1">Your organisation's website URL</p>
             </div>
 
             <div>

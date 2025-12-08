@@ -52,7 +52,7 @@ export async function getPlatformSettings() {
       passwordRequireUppercase: true,
       passwordRequireLowercase: true,
       passwordRequireNumbers: true,
-      passwordRequireSpecial: false,
+      passwordRequireSpecial: true,
     }
   }
 }

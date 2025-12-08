@@ -117,6 +117,32 @@ export function AddOrganisationForm({ onSuccess, onCancel }: AddOrganisationForm
   }
 
   const handleInputChange = (field: string, value: string) => {
+    // Capitalize first letter of each word for organisation name
+    if (field === 'name' && value.length > 0) {
+      value = value.split(' ').map(word => {
+        if (word.length === 0) return word
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+      }).join(' ')
+    }
+    // Capitalize first letter of each word for address line 1
+    if (field === 'addressLine1' && value.length > 0) {
+      value = value.split(' ').map(word => {
+        if (word.length === 0) return word
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+      }).join(' ')
+    }
+    // Capitalize first letter of each word for city
+    if (field === 'city' && value.length > 0) {
+      value = value.split(' ').map(word => {
+        if (word.length === 0) return word
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+      }).join(' ')
+    }
+    // Postcode should be full caps
+    if (field === 'postcode') {
+      value = value.toUpperCase()
+    }
+    
     setFormData(prev => {
       const updated = { ...prev, [field]: value }
       
@@ -225,7 +251,7 @@ export function AddOrganisationForm({ onSuccess, onCancel }: AddOrganisationForm
           <Input
             id="postcode"
             value={formData.postcode}
-            onChange={(e) => handleInputChange('postcode', e.target.value.toUpperCase())}
+            onChange={(e) => handleInputChange('postcode', e.target.value)}
             placeholder="SW1A 1AA"
           />
         </div>

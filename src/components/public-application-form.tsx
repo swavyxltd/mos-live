@@ -78,6 +78,10 @@ export function PublicApplicationForm({ org, classes }: PublicApplicationFormPro
   }
 
   const updateChild = (index: number, field: keyof Child, value: string) => {
+    // Auto-capitalize first letter for name fields
+    if ((field === 'firstName' || field === 'lastName') && value.length > 0) {
+      value = value.charAt(0).toUpperCase() + value.slice(1)
+    }
     const updatedChildren = [...children]
     updatedChildren[index] = { ...updatedChildren[index], [field]: value }
     setChildren(updatedChildren)
@@ -302,7 +306,14 @@ export function PublicApplicationForm({ org, classes }: PublicApplicationFormPro
                 </label>
                 <Input
                   value={guardianName}
-                  onChange={(e) => setGuardianName(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    if (value.length > 0) {
+                      setGuardianName(value.charAt(0).toUpperCase() + value.slice(1))
+                    } else {
+                      setGuardianName(value)
+                    }
+                  }}
                   required
                   placeholder="Enter your full name"
                 />
@@ -340,7 +351,15 @@ export function PublicApplicationForm({ org, classes }: PublicApplicationFormPro
                 </label>
                 <Input
                   value={guardianAddress}
-                  onChange={(e) => setGuardianAddress(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    // Capitalize first letter of each word for address
+                    const capitalized = value.split(' ').map(word => {
+                      if (word.length === 0) return word
+                      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                    }).join(' ')
+                    setGuardianAddress(capitalized)
+                  }}
                   required
                   placeholder="Enter your address"
                 />

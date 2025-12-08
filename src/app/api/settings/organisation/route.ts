@@ -35,6 +35,7 @@ async function handlePUT(request: NextRequest) {
       publicPhone,
       email, 
       publicEmail,
+      website,
       officeHours,
       slug, // Allow manual slug update
       billingDay // Explicitly ignore - can only be set via payment-methods route
@@ -128,9 +129,25 @@ async function handlePUT(request: NextRequest) {
         ...(sanitizedEmail !== undefined && { email: sanitizedEmail }),
         ...(sanitizedPublicEmail !== undefined && { publicEmail: sanitizedPublicEmail }),
         ...(sanitizedOfficeHours !== undefined && { officeHours: sanitizedOfficeHours }),
-        settings: JSON.stringify({
-          lateThreshold
-        })
+        settings: (() => {
+          // Get existing settings
+          const existingSettings = org.settings ? JSON.parse(org.settings) : {}
+          const updatedSettings = {
+            ...existingSettings,
+            lateThreshold: lateThreshold !== undefined ? lateThreshold : existingSettings.lateThreshold || 15
+          }
+          // Add or remove website
+          if (website !== undefined) {
+            const sanitizedWebsite = website ? website.trim() : undefined
+            if (sanitizedWebsite) {
+              updatedSettings.website = sanitizedWebsite
+            } else {
+              delete updatedSettings.website
+            }
+          }
+          return JSON.stringify(updatedSettings)
+        })(),
+        updatedAt: new Date()
       }
     })
 
@@ -180,6 +197,7 @@ async function handleGET() {
       publicPhone: (org as any).publicPhone || '',
       email: org.email || '',
       publicEmail: (org as any).publicEmail || '',
+      website: settings.website || '',
       officeHours: org.officeHours || '',
       bankAccountName: org.bankAccountName || '',
       bankSortCode: org.bankSortCode || '',

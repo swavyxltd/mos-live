@@ -63,6 +63,10 @@ export function TeacherForm({ initialData, isEditing = false, onSubmit, onCancel
   })
 
   const handleInputChange = (field: keyof TeacherFormData, value: any) => {
+    // Auto-capitalize first letter for name fields
+    if (field === 'name' && typeof value === 'string' && value.length > 0) {
+      value = value.charAt(0).toUpperCase() + value.slice(1)
+    }
     setFormData(prev => ({
       ...prev,
       [field]: value

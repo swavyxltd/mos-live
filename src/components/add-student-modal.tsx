@@ -40,6 +40,10 @@ export function AddStudentModal({ isOpen, onClose, onSave, classes }: AddStudent
   })
 
   const handleInputChange = (field: string, value: string) => {
+    // Auto-capitalize first letter for name fields
+    if ((field === 'firstName' || field === 'lastName') && value.length > 0) {
+      value = value.charAt(0).toUpperCase() + value.slice(1)
+    }
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 

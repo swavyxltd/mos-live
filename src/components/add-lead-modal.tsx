@@ -62,6 +62,17 @@ export function AddLeadModal({ isOpen, onClose, onSave }: AddLeadModalProps) {
     if (field === 'contactEmail') {
       value = value.toLowerCase()
     }
+    // Auto-capitalize first letter for name fields as they type
+    if (field === 'contactName' && value.length > 0) {
+      value = value.charAt(0).toUpperCase() + value.slice(1)
+    }
+    // Capitalize first letter of each word for city
+    if (field === 'city' && value.length > 0) {
+      value = value.split(' ').map(word => {
+        if (word.length === 0) return word
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+      }).join(' ')
+    }
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 

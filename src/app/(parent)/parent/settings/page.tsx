@@ -237,7 +237,14 @@ export default function ParentSettingsPage() {
                 <Input
                   id="name"
                   value={userSettings.name}
-                  onChange={(e) => setUserSettings(prev => ({ ...prev, name: e.target.value }))}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    if (value.length > 0) {
+                      setUserSettings(prev => ({ ...prev, name: value.charAt(0).toUpperCase() + value.slice(1) }))
+                    } else {
+                      setUserSettings(prev => ({ ...prev, name: value }))
+                    }
+                  }}
                   placeholder="Enter your full name"
                 />
               </div>
@@ -289,7 +296,15 @@ export default function ParentSettingsPage() {
                   <Input
                     id="address"
                     value={userSettings.address}
-                    onChange={(e) => setUserSettings(prev => ({ ...prev, address: e.target.value }))}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      // Capitalize first letter of each word for address
+                      const capitalized = value.split(' ').map(word => {
+                        if (word.length === 0) return word
+                        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                      }).join(' ')
+                      setUserSettings(prev => ({ ...prev, address: capitalized }))
+                    }}
                     placeholder="Enter your address"
                   />
                 </div>
@@ -300,7 +315,15 @@ export default function ParentSettingsPage() {
                 <Input
                   id="city"
                   value={userSettings.city}
-                  onChange={(e) => setUserSettings(prev => ({ ...prev, city: e.target.value }))}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    // Capitalize first letter of each word for city
+                    const capitalized = value.split(' ').map(word => {
+                      if (word.length === 0) return word
+                      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                    }).join(' ')
+                    setUserSettings(prev => ({ ...prev, city: capitalized }))
+                  }}
                   placeholder="Enter your city"
                 />
               </div>
@@ -310,7 +333,10 @@ export default function ParentSettingsPage() {
                 <Input
                   id="postcode"
                   value={userSettings.postcode}
-                  onChange={(e) => setUserSettings(prev => ({ ...prev, postcode: e.target.value }))}
+                  onChange={(e) => {
+                    // Postcode should be full caps
+                    setUserSettings(prev => ({ ...prev, postcode: e.target.value.toUpperCase() }))
+                  }}
                   placeholder="Enter your postcode"
                 />
               </div>

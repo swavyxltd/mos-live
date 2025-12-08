@@ -351,7 +351,14 @@ function ParentSetupForm() {
                           id="studentFirstName"
                           type="text"
                           value={studentFirstName}
-                          onChange={(e) => setStudentFirstName(e.target.value)}
+                          onChange={(e) => {
+                            const value = e.target.value
+                            if (value.length > 0) {
+                              setStudentFirstName(value.charAt(0).toUpperCase() + value.slice(1))
+                            } else {
+                              setStudentFirstName(value)
+                            }
+                          }}
                           required
                         />
                       </div>
@@ -361,7 +368,14 @@ function ParentSetupForm() {
                           id="studentLastName"
                           type="text"
                           value={studentLastName}
-                          onChange={(e) => setStudentLastName(e.target.value)}
+                          onChange={(e) => {
+                            const value = e.target.value
+                            if (value.length > 0) {
+                              setStudentLastName(value.charAt(0).toUpperCase() + value.slice(1))
+                            } else {
+                              setStudentLastName(value)
+                            }
+                          }}
                           required
                         />
                       </div>
@@ -430,7 +444,14 @@ function ParentSetupForm() {
                             id="parentName"
                             type="text"
                             value={parentName}
-                            onChange={(e) => setParentName(e.target.value)}
+                            onChange={(e) => {
+                              const value = e.target.value
+                              if (value.length > 0) {
+                                setParentName(value.charAt(0).toUpperCase() + value.slice(1))
+                              } else {
+                                setParentName(value)
+                              }
+                            }}
                             required
                             className="pl-10"
                           />
@@ -588,7 +609,15 @@ function ParentSetupForm() {
                         id="parentAddress"
                         type="text"
                         value={parentAddress}
-                        onChange={(e) => setParentAddress(e.target.value)}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          // Capitalize first letter of each word for address
+                          const capitalized = value.split(' ').map(word => {
+                            if (word.length === 0) return word
+                            return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                          }).join(' ')
+                          setParentAddress(capitalized)
+                        }}
                         required
                         placeholder="House name or number and street"
                         className="mt-1"

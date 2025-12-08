@@ -391,7 +391,15 @@ export default function LeadDetailPage() {
               {isEditing ? (
                 <Input
                   value={formData.orgName}
-                  onChange={(e) => setFormData({ ...formData, orgName: e.target.value })}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    // Capitalize first letter of each word for organisation name
+                    const capitalized = value.split(' ').map(word => {
+                      if (word.length === 0) return word
+                      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                    }).join(' ')
+                    setFormData({ ...formData, orgName: capitalized })
+                  }}
                   className="mt-1"
                 />
               ) : (
@@ -428,7 +436,15 @@ export default function LeadDetailPage() {
               {isEditing ? (
                 <Input
                   value={formData.city}
-                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    // Capitalize first letter of each word for city
+                    const capitalized = value.split(' ').map(word => {
+                      if (word.length === 0) return word
+                      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                    }).join(' ')
+                    setFormData({ ...formData, city: capitalized })
+                  }}
                   className="mt-1"
                 />
               ) : (
@@ -478,7 +494,14 @@ export default function LeadDetailPage() {
               {isEditing ? (
                 <Input
                   value={formData.contactName}
-                  onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    if (value.length > 0) {
+                      setFormData({ ...formData, contactName: value.charAt(0).toUpperCase() + value.slice(1) })
+                    } else {
+                      setFormData({ ...formData, contactName: value })
+                    }
+                  }}
                   className="mt-1"
                 />
               ) : (

@@ -310,7 +310,14 @@ export default function OnboardingPage() {
                   <Input
                     id="name"
                     value={adminData.name}
-                    onChange={(e) => setAdminData({ ...adminData, name: e.target.value })}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      if (value.length > 0) {
+                        setAdminData({ ...adminData, name: value.charAt(0).toUpperCase() + value.slice(1) })
+                      } else {
+                        setAdminData({ ...adminData, name: value })
+                      }
+                    }}
                     placeholder="Your full name"
                     required
                   />
@@ -349,7 +356,15 @@ export default function OnboardingPage() {
                   <Input
                     id="addressLine1"
                     value={orgData.addressLine1}
-                    onChange={(e) => setOrgData({ ...orgData, addressLine1: e.target.value })}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      // Capitalize first letter of each word for address line 1
+                      const capitalized = value.split(' ').map(word => {
+                        if (word.length === 0) return word
+                        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                      }).join(' ')
+                      setOrgData({ ...orgData, addressLine1: capitalized })
+                    }}
                     placeholder="123 Main Street"
                     required
                   />
@@ -359,7 +374,15 @@ export default function OnboardingPage() {
                   <Input
                     id="address"
                     value={orgData.address}
-                    onChange={(e) => setOrgData({ ...orgData, address: e.target.value })}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      // Capitalize first letter of each word for address line 2
+                      const capitalized = value.split(' ').map(word => {
+                        if (word.length === 0) return word
+                        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                      }).join(' ')
+                      setOrgData({ ...orgData, address: capitalized })
+                    }}
                     placeholder="Apartment, suite, etc. (optional)"
                   />
                 </div>
@@ -369,7 +392,15 @@ export default function OnboardingPage() {
                     <Input
                       id="city"
                       value={orgData.city}
-                      onChange={(e) => setOrgData({ ...orgData, city: e.target.value })}
+                      onChange={(e) => {
+                        const value = e.target.value
+                        // Capitalize first letter of each word for city
+                        const capitalized = value.split(' ').map(word => {
+                          if (word.length === 0) return word
+                          return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                        }).join(' ')
+                        setOrgData({ ...orgData, city: capitalized })
+                      }}
                       placeholder="London"
                       required
                     />
@@ -379,7 +410,10 @@ export default function OnboardingPage() {
                     <Input
                       id="postcode"
                       value={orgData.postcode}
-                      onChange={(e) => setOrgData({ ...orgData, postcode: e.target.value })}
+                      onChange={(e) => {
+                        // Postcode should be full caps
+                        setOrgData({ ...orgData, postcode: e.target.value.toUpperCase() })
+                      }}
                       placeholder="SW1A 1AA"
                       required
                     />
@@ -489,7 +523,14 @@ export default function OnboardingPage() {
                       <Input
                         id="bankAccountName"
                         value={paymentData.bankAccountName}
-                        onChange={(e) => setPaymentData({ ...paymentData, bankAccountName: e.target.value })}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          if (value.length > 0) {
+                            setPaymentData({ ...paymentData, bankAccountName: value.charAt(0).toUpperCase() + value.slice(1) })
+                          } else {
+                            setPaymentData({ ...paymentData, bankAccountName: value })
+                          }
+                        }}
                         placeholder="Organisation Name"
                       />
                     </div>

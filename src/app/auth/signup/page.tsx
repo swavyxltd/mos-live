@@ -93,7 +93,8 @@ function SignUpForm() {
   }, [token])
   
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -111,24 +112,125 @@ function SignUpForm() {
     timezone: 'Europe/London'
   })
   
+  // Helper function to capitalize first letter
+  const capitalizeFirstLetter = (str: string): string => {
+    if (!str) return str
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()
+  }
+  
   // isNewOrgSetup is now set from the invitation API response
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   
+  // Password validation state
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([])
+  const [passwordRequirements, setPasswordRequirements] = useState<Array<{ text: string; required: boolean; met: (password: string) => boolean }>>([])
+  
   // Track completed steps
   const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set())
   
-  // Check if a step is completed
+  // Fetch password requirements on mount
+  useEffect(() => {
+    fetch('/api/settings/password-requirements')
+      .then(res => res.json())
+      .then(data => {
+        let reqs: Array<{ text: string; required: boolean; met: (password: string) => boolean }> = []
+        
+        if (data.requirements) {
+          // Convert requirements to format with met function
+          reqs = data.requirements.map((req: { text: string; required: boolean }) => {
+            let met: (password: string) => boolean
+            
+            if (req.text.includes('characters')) {
+              const minLength = parseInt(req.text.match(/\d+/)?.[0] || '8')
+              met = (p: string) => p.length >= minLength
+            } else if (req.text.includes('uppercase')) {
+              met = (p: string) => /[A-Z]/.test(p)
+            } else if (req.text.includes('lowercase')) {
+              met = (p: string) => /[a-z]/.test(p)
+            } else if (req.text.includes('number') || req.text.includes('digit')) {
+              met = (p: string) => /\d/.test(p)
+            } else if (req.text.includes('special') || req.text.includes('symbol')) {
+              met = (p: string) => /[^A-Za-z0-9]/.test(p)
+            } else {
+              met = () => false
+            }
+            
+            return { ...req, met }
+          })
+        }
+        
+        // Always ensure uppercase, number, and special character are required (hard requirement)
+        const hasUppercase = reqs.some(r => r.text.toLowerCase().includes('uppercase'))
+        const hasNumber = reqs.some(r => r.text.toLowerCase().includes('number') || r.text.toLowerCase().includes('digit'))
+        const hasSpecial = reqs.some(r => r.text.toLowerCase().includes('special') || r.text.toLowerCase().includes('symbol'))
+        
+        if (!hasUppercase) {
+          reqs.push({ text: 'One uppercase letter', required: true, met: (p: string) => /[A-Z]/.test(p) })
+        }
+        if (!hasNumber) {
+          reqs.push({ text: 'One number', required: true, met: (p: string) => /\d/.test(p) })
+        }
+        if (!hasSpecial) {
+          reqs.push({ text: 'One special character', required: true, met: (p: string) => /[^A-Za-z0-9]/.test(p) })
+        }
+        
+        setPasswordRequirements(reqs)
+      })
+      .catch(() => {
+        // Fallback to default requirements if fetch fails - always require uppercase, number, and special character
+        setPasswordRequirements([
+          { text: 'At least 8 characters', required: true, met: (p: string) => p.length >= 8 },
+          { text: 'One uppercase letter', required: true, met: (p: string) => /[A-Z]/.test(p) },
+          { text: 'One lowercase letter', required: true, met: (p: string) => /[a-z]/.test(p) },
+          { text: 'One number', required: true, met: (p: string) => /\d/.test(p) },
+          { text: 'One special character', required: true, met: (p: string) => /[^A-Za-z0-9]/.test(p) }
+        ])
+      })
+  }, [])
+  
+  // Validate password in real-time (for form submission validation)
+  useEffect(() => {
+    if (formData.password && passwordRequirements.length > 0) {
+      const errors: string[] = []
+      passwordRequirements.forEach(req => {
+        if (req.required && !req.met(formData.password)) {
+          errors.push(req.text)
+        }
+      })
+      setPasswordErrors(errors)
+    } else {
+      setPasswordErrors([])
+    }
+  }, [formData.password, passwordRequirements])
+  
+  
+  // Check if password meets all requirements
+  const isPasswordValid = (): boolean => {
+    if (!formData.password || passwordRequirements.length === 0) return false
+    return passwordRequirements.every(req => {
+      if (req.required) {
+        // Validate all requirements including lowercase (just not shown in UI)
+        return req.met(formData.password)
+      }
+      return true
+    })
+  }
+
+  // Check if a step is completed and valid
   const checkStepCompleted = (stepId: string): boolean => {
     switch (stepId) {
       case 'account':
-        return !!(formData.name && formData.email && formData.password && formData.confirmPassword && formData.password === formData.confirmPassword)
+        const hasBasicFields = !!(formData.firstName && formData.lastName && formData.email && formData.password && formData.confirmPassword)
+        const passwordsMatch = formData.password === formData.confirmPassword
+        const passwordMeetsRequirements = isPasswordValid()
+        return hasBasicFields && passwordsMatch && passwordMeetsRequirements
       case 'org-address':
         return !!(formData.orgAddressLine1 && formData.orgPostcode && formData.orgCity)
       case 'org-contact':
         return !!(formData.orgPhone && formData.orgPublicPhone && formData.orgEmail && formData.orgPublicEmail)
       case 'org-website':
-        return false // Optional step, never mark as complete (user can skip)
+        return true // Optional step, always allow proceeding
       case 'submit':
         return false // Submit step is never complete until submitted
       default:
@@ -147,12 +249,27 @@ function SignUpForm() {
     }
     // Submit step is never marked as complete
     setCompletedSteps(newCompleted)
-  }, [formData, isNewOrgSetup])
+  }, [formData, isNewOrgSetup, passwordRequirements])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError('')
+
+    // Validate password requirements
+    if (formData.password && passwordRequirements.length > 0) {
+      const errors: string[] = []
+      passwordRequirements.forEach(req => {
+        if (req.required && !req.met(formData.password)) {
+          errors.push(req.text)
+        }
+      })
+      if (errors.length > 0) {
+        setError(`Password requirements not met: ${errors.join(', ')}`)
+        setIsLoading(false)
+        return
+      }
+    }
 
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match')
@@ -160,7 +277,7 @@ function SignUpForm() {
       return
     }
 
-    // Password validation is handled by the API based on platform settings
+    // Password validation is also handled by the API based on platform settings
 
     // Validate required org fields for new org setup
     if (isNewOrgSetup) {
@@ -173,6 +290,7 @@ function SignUpForm() {
     }
 
     try {
+      // Combine firstName and lastName into name for API
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: {
@@ -180,7 +298,21 @@ function SignUpForm() {
         },
         body: JSON.stringify({
           token,
-          ...formData
+          name: `${formData.firstName} ${formData.lastName}`.trim(),
+          email: formData.email,
+          password: formData.password,
+          phone: formData.phone,
+          // Org details (for new org setup)
+          orgAddress: formData.orgAddress,
+          orgAddressLine1: formData.orgAddressLine1,
+          orgPostcode: formData.orgPostcode,
+          orgCity: formData.orgCity,
+          orgPhone: formData.orgPhone,
+          orgPublicPhone: formData.orgPublicPhone,
+          orgEmail: formData.orgEmail,
+          orgPublicEmail: formData.orgPublicEmail,
+          orgWebsite: formData.orgWebsite,
+          timezone: formData.timezone
         })
       })
 
@@ -225,6 +357,7 @@ function SignUpForm() {
     )
   }
 
+
   // Define onboarding steps - broken into separate form sections
   const baseSteps = [
     {
@@ -238,19 +371,54 @@ function SignUpForm() {
             Set up your personal details and secure your account with a password.
           </p>
           
-          {/* Name */}
+          {/* First Name */}
           <div>
             <div className="relative">
               <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
               <input
-                id="name"
-                name="name"
+                id="firstName"
+                name="firstName"
                 type="text"
                 required
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                value={formData.firstName}
+                onChange={(e) => {
+                  const value = e.target.value
+                  // Auto-capitalize first letter only if there's text
+                  if (value.length > 0) {
+                    const capitalized = value.charAt(0).toUpperCase() + value.slice(1)
+                    setFormData({ ...formData, firstName: capitalized })
+                  } else {
+                    setFormData({ ...formData, firstName: value })
+                  }
+                }}
                 className="w-full pl-9 pr-3 h-10 text-sm rounded-md border border-neutral-200/70 bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
-                placeholder="Full Name"
+                placeholder="First Name"
+              />
+            </div>
+          </div>
+
+          {/* Last Name */}
+          <div>
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+              <input
+                id="lastName"
+                name="lastName"
+                type="text"
+                required
+                value={formData.lastName}
+                onChange={(e) => {
+                  const value = e.target.value
+                  // Auto-capitalize first letter only if there's text
+                  if (value.length > 0) {
+                    const capitalized = value.charAt(0).toUpperCase() + value.slice(1)
+                    setFormData({ ...formData, lastName: capitalized })
+                  } else {
+                    setFormData({ ...formData, lastName: value })
+                  }
+                }}
+                className="w-full pl-9 pr-3 h-10 text-sm rounded-md border border-neutral-200/70 bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
+                placeholder="Last Name"
               />
             </div>
           </div>
@@ -321,6 +489,25 @@ function SignUpForm() {
                 )}
               </button>
             </div>
+            
+            {/* Password Requirements - Show all requirements (except lowercase) */}
+            {passwordRequirements.length > 0 && (
+              <div className="mt-2 space-y-1">
+                {passwordRequirements
+                  .filter(req => !req.text.toLowerCase().includes('lowercase'))
+                  .map((req, index) => {
+                    const isMet = formData.password ? req.met(formData.password) : false
+                    return (
+                      <div key={index} className="flex items-center gap-2 text-xs">
+                        <div className={`w-1 h-1 rounded-full ${isMet ? 'bg-green-500' : 'bg-neutral-300'}`} />
+                        <span className={isMet ? 'text-green-600' : 'text-neutral-500'}>
+                          {req.text}
+                        </span>
+                      </div>
+                    )
+                  })}
+              </div>
+            )}
           </div>
 
           {/* Confirm Password */}
@@ -335,7 +522,13 @@ function SignUpForm() {
                 required
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                className="w-full pl-9 pr-9 h-10 text-sm rounded-md border border-neutral-200/70 bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
+                className={`w-full pl-9 pr-9 h-10 text-sm rounded-md border bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-0 transition-colors ${
+                  formData.confirmPassword && formData.password && formData.password !== formData.confirmPassword 
+                    ? 'border-red-300 focus:border-red-400' 
+                    : formData.confirmPassword && formData.password && formData.password === formData.confirmPassword
+                    ? 'border-green-300 focus:border-green-400'
+                    : 'border-neutral-200/70 focus:border-neutral-400'
+                }`}
                 placeholder="Confirm Password"
               />
               <button
@@ -355,6 +548,42 @@ function SignUpForm() {
                 )}
               </button>
             </div>
+            
+            {/* Password Match Indicator */}
+            {formData.confirmPassword && formData.password && (
+              <div className="mt-2 flex items-center gap-2 text-xs">
+                {formData.password === formData.confirmPassword ? (
+                  <>
+                    <div className="w-1 h-1 rounded-full bg-green-500" />
+                    <span className="text-green-600">Passwords match</span>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-1 h-1 rounded-full bg-red-500" />
+                    <span className="text-red-600">Passwords do not match</span>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Next Button */}
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                if (!checkStepCompleted('account')) return
+                const handler = (window as any).__onboardingNextStep
+                if (handler) {
+                  handler('account')
+                }
+              }}
+              disabled={!checkStepCompleted('account')}
+              className="w-full h-10 text-sm bg-neutral-900 text-white font-medium rounded-md hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
           </div>
         </div>
       ),
@@ -384,7 +613,15 @@ function SignUpForm() {
               name="orgAddressLine1"
               type="text"
               value={formData.orgAddressLine1}
-              onChange={(e) => setFormData({ ...formData, orgAddressLine1: e.target.value })}
+              onChange={(e) => {
+                const value = e.target.value
+                // Capitalize first letter of each word for address line 1
+                const capitalized = value.split(' ').map(word => {
+                  if (word.length === 0) return word
+                  return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                }).join(' ')
+                setFormData({ ...formData, orgAddressLine1: capitalized })
+              }}
               placeholder="First line of address..."
               required
               className="w-full px-3 py-2 h-10 text-sm rounded-md border border-neutral-200/70 bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
@@ -403,7 +640,10 @@ function SignUpForm() {
                 type="text"
                 required
                 value={formData.orgPostcode}
-                onChange={(e) => setFormData({ ...formData, orgPostcode: e.target.value.toUpperCase() })}
+                onChange={(e) => {
+                  // Postcode should be full caps
+                  setFormData({ ...formData, orgPostcode: e.target.value.toUpperCase() })
+                }}
                 className="w-full px-3 py-2 h-10 text-sm rounded-md border border-neutral-200/70 bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
                 placeholder="SW1A 1AA"
                 autoComplete="postal-code"
@@ -419,12 +659,39 @@ function SignUpForm() {
                 type="text"
                 required
                 value={formData.orgCity}
-                onChange={(e) => setFormData({ ...formData, orgCity: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value
+                  // Capitalize first letter of each word for city
+                  const capitalized = value.split(' ').map(word => {
+                    if (word.length === 0) return word
+                    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                  }).join(' ')
+                  setFormData({ ...formData, orgCity: capitalized })
+                }}
                 className="w-full px-3 py-2 h-10 text-sm rounded-md border border-neutral-200/70 bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
                 placeholder="London"
                 autoComplete="address-level2"
               />
             </div>
+          </div>
+
+          {/* Next Button */}
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                if (!checkStepCompleted('org-address')) return
+                const handler = (window as any).__onboardingNextStep
+                if (handler) {
+                  handler('org-address')
+                }
+              }}
+              disabled={!checkStepCompleted('org-address')}
+              className="w-full h-10 text-sm bg-neutral-900 text-white font-medium rounded-md hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
           </div>
         </div>
       ),
@@ -527,6 +794,25 @@ function SignUpForm() {
             </div>
             <p className="text-xs text-neutral-500 mt-1">This will be visible to parents on the application form</p>
           </div>
+
+          {/* Next Button */}
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                if (!checkStepCompleted('org-contact')) return
+                const handler = (window as any).__onboardingNextStep
+                if (handler) {
+                  handler('org-contact')
+                }
+              }}
+              disabled={!checkStepCompleted('org-contact')}
+              className="w-full h-10 text-sm bg-neutral-900 text-white font-medium rounded-md hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
         </div>
       ),
     },
@@ -559,6 +845,23 @@ function SignUpForm() {
                 autoComplete="url"
               />
             </div>
+          </div>
+
+          {/* Next Button */}
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                const handler = (window as any).__onboardingNextStep
+                if (handler) {
+                  handler('org-website')
+                }
+              }}
+              className="w-full h-10 text-sm bg-neutral-900 text-white font-medium rounded-md hover:opacity-90 transition-opacity"
+            >
+              Next
+            </button>
           </div>
         </div>
       ),

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   IconChevronRight,
   IconCircleCheckFilled,
@@ -23,6 +23,7 @@ interface Onboarding01Props {
   steps?: OnboardingStep[];
   title?: string;
   onStepAction?: (step: OnboardingStep) => void;
+  onNextStep?: (currentStepId: string) => void;
 }
 
 function CircularProgress({
@@ -145,7 +146,8 @@ const defaultSteps: OnboardingStep[] = [
 export function Onboarding01({ 
   steps: propSteps, 
   title = "Get started with Documenso",
-  onStepAction 
+  onStepAction,
+  onNextStep
 }: Onboarding01Props = {}) {
   const steps = propSteps || defaultSteps;
   // Sync completed state from props
@@ -170,6 +172,32 @@ export function Onboarding01({
   const handleStepClick = (stepId: string) => {
     setOpenStepId(openStepId === stepId ? null : stepId);
   };
+
+  const handleNextStep = useCallback((currentStepId: string) => {
+    const currentIndex = currentSteps.findIndex(s => s.id === currentStepId);
+    if (currentIndex >= 0 && currentIndex < currentSteps.length - 1) {
+      const nextStep = currentSteps[currentIndex + 1];
+      setOpenStepId(nextStep.id);
+      // Scroll to next step
+      setTimeout(() => {
+        const nextElement = document.querySelector(`[data-step-id="${nextStep.id}"]`);
+        if (nextElement) {
+          nextElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+    }
+    if (onNextStep) {
+      onNextStep(currentStepId);
+    }
+  }, [currentSteps, onNextStep]);
+
+  // Expose handleNextStep via window for buttons to access
+  useEffect(() => {
+    (window as any).__onboardingNextStep = handleNextStep;
+    return () => {
+      delete (window as any).__onboardingNextStep;
+    };
+  }, [handleNextStep]);
 
   const handleStepAction = (step: OnboardingStep) => {
     if (onStepAction) {
@@ -234,6 +262,7 @@ export function Onboarding01({
               return (
                 <div
                   key={step.id}
+                  data-step-id={step.id}
                   className={cn(
                     "group",
                     isOpen && "rounded-lg",
@@ -245,6 +274,11 @@ export function Onboarding01({
                     tabIndex={0}
                     onClick={() => handleStepClick(step.id)}
                     onKeyDown={(e) => {
+                      // Don't handle keyboard events if user is typing in an input field
+                      const target = e.target as HTMLElement
+                      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'BUTTON' || target.closest('input, textarea, button')) {
+                        return
+                      }
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
                         handleStepClick(step.id);

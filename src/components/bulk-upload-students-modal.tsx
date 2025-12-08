@@ -173,6 +173,10 @@ export function BulkUploadStudentsModal({
   }
 
   const handleFieldEdit = (rowNumber: number, field: string, value: string) => {
+    // Auto-capitalize first letter for name fields
+    if ((field === 'firstName' || field === 'lastName') && value.length > 0) {
+      value = value.charAt(0).toUpperCase() + value.slice(1)
+    }
     setStudents(prev =>
       prev.map(s =>
         s.rowNumber === rowNumber

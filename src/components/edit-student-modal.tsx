@@ -99,6 +99,17 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
   }, [student])
 
   const handleInputChange = (field: string, value: string) => {
+    // Auto-capitalize first letter for name fields
+    if ((field === 'firstName' || field === 'lastName' || field === 'parentName') && value.length > 0) {
+      value = value.charAt(0).toUpperCase() + value.slice(1)
+    }
+    // Capitalize first letter of each word for address
+    if (field === 'address' && value.length > 0) {
+      value = value.split(' ').map(word => {
+        if (word.length === 0) return word
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+      }).join(' ')
+    }
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 

@@ -116,6 +116,10 @@ export default function PaymentMethodsPage() {
   }
 
   const handleSettingChange = (key: keyof PaymentMethodSettings, value: boolean | string) => {
+    // Auto-capitalize first letter for name fields
+    if (key === 'bankAccountName' && typeof value === 'string' && value.length > 0) {
+      value = value.charAt(0).toUpperCase() + value.slice(1)
+    }
     setSettings(prev => ({ ...prev, [key]: value }))
   }
 

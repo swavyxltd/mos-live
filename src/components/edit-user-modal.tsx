@@ -147,7 +147,14 @@ export function EditUserModal({ isOpen, onClose, onSave, userId }: EditUserModal
               <Input
                 id="name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value
+                  if (value.length > 0) {
+                    setFormData({ ...formData, name: value.charAt(0).toUpperCase() + value.slice(1) })
+                  } else {
+                    setFormData({ ...formData, name: value })
+                  }
+                }}
                 className="pl-10"
                 placeholder="Enter user name"
               />
@@ -205,7 +212,15 @@ export function EditUserModal({ isOpen, onClose, onSave, userId }: EditUserModal
               <Input
                 id="address"
                 value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value
+                  // Capitalize first letter of each word for address
+                  const capitalized = value.split(' ').map(word => {
+                    if (word.length === 0) return word
+                    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                  }).join(' ')
+                  setFormData({ ...formData, address: capitalized })
+                }}
                 className="pl-10"
                 placeholder="Enter street address"
               />
@@ -220,7 +235,15 @@ export function EditUserModal({ isOpen, onClose, onSave, userId }: EditUserModal
                 <Input
                   id="city"
                   value={formData.city}
-                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    // Capitalize first letter of each word for city
+                    const capitalized = value.split(' ').map(word => {
+                      if (word.length === 0) return word
+                      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                    }).join(' ')
+                    setFormData({ ...formData, city: capitalized })
+                  }}
                   className="pl-10"
                   placeholder="Enter city"
                 />
