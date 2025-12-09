@@ -1,7 +1,7 @@
 'use client'
 
 import { useSearchParams } from 'next/navigation'
-import React, { useState, Suspense, useEffect } from 'react'
+import React, { useState, Suspense, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import { Mail, Lock, User, MapPin, Phone, Globe } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -225,7 +225,7 @@ function SignUpForm() {
   }
 
   // Check if a step is completed and valid
-  const checkStepCompleted = (stepId: string): boolean => {
+  const checkStepCompleted = useCallback((stepId: string): boolean => {
     switch (stepId) {
       case 'account':
         const hasBasicFields = !!(formData.firstName && formData.lastName && formData.email && formData.password && formData.confirmPassword)
@@ -243,7 +243,7 @@ function SignUpForm() {
       default:
         return false
     }
-  }
+  }, [formData, passwordRequirements])
   
   // Update completed steps when form data changes
   useEffect(() => {
@@ -256,7 +256,7 @@ function SignUpForm() {
     }
     // Submit step is never marked as complete
     setCompletedSteps(newCompleted)
-  }, [formData, isNewOrgSetup, passwordRequirements])
+  }, [formData, isNewOrgSetup, passwordRequirements, checkStepCompleted])
 
   // Validate phone in real-time
   useEffect(() => {
