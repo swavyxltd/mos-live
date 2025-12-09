@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 import crypto from 'crypto'
 import { sendOrgSetupInvitation } from '@/lib/mail'
 import { logger } from '@/lib/logger'
-import { sanitizeText, isValidEmail, isValidPhone, MAX_STRING_LENGTHS } from '@/lib/input-validation'
+import { sanitizeText, isValidEmail, isValidPhone, isValidUKPostcode, MAX_STRING_LENGTHS } from '@/lib/input-validation'
 import { withRateLimit } from '@/lib/api-middleware'
 
 async function handleGET(request: NextRequest) {
@@ -79,9 +79,17 @@ async function handlePOST(request: NextRequest) {
     const sanitizedDescription = description ? sanitizeText(description, MAX_STRING_LENGTHS.text) : null
     const sanitizedAddress = address ? sanitizeText(address, MAX_STRING_LENGTHS.text) : null
     const sanitizedAddressLine1 = addressLine1 ? sanitizeText(addressLine1, MAX_STRING_LENGTHS.text) : null
-    const sanitizedPostcode = postcode ? sanitizeText(postcode, 20) : null
+    const sanitizedPostcode = postcode ? sanitizeText(postcode.toUpperCase().trim(), 20) : null
     const sanitizedCity = city ? sanitizeText(city, MAX_STRING_LENGTHS.name) : null
     const sanitizedPhone = phone ? sanitizeText(phone, MAX_STRING_LENGTHS.phone) : null
+    
+    // Validate postcode if provided
+    if (sanitizedPostcode && !isValidUKPostcode(sanitizedPostcode)) {
+      return NextResponse.json(
+        { error: 'Invalid postcode format. Please enter a valid UK postcode (e.g., SW1A 1AA)' },
+        { status: 400 }
+      )
+    }
     const sanitizedEmail = email ? email.toLowerCase().trim() : null
     const sanitizedWebsite = website ? website.trim() : null
     const sanitizedAdminEmail = adminEmail ? adminEmail.toLowerCase().trim() : null

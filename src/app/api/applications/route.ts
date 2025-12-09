@@ -6,7 +6,7 @@ import { getActiveOrg } from '@/lib/org'
 import { prisma } from '@/lib/prisma'
 import { randomUUID } from 'crypto'
 import { logger } from '@/lib/logger'
-import { sanitizeText, isValidEmail, isValidPhone, MAX_STRING_LENGTHS } from '@/lib/input-validation'
+import { sanitizeText, isValidEmail, isValidPhone, isValidUKPostcode, MAX_STRING_LENGTHS } from '@/lib/input-validation'
 import { withRateLimit } from '@/lib/api-middleware'
 
 // GET /api/applications - Get all applications for the current org
@@ -75,7 +75,7 @@ async function handlePOST(request: NextRequest) {
     }
     
     if (!isValidPhone(sanitizedGuardianPhone)) {
-      return NextResponse.json({ error: 'Invalid guardian phone number' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid guardian phone number. Please enter a valid UK phone number (e.g., +44 7700 900123 or 07700 900123)' }, { status: 400 })
     }
 
     // Validate children have required fields and sanitize

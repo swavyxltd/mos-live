@@ -1,11 +1,12 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { isValidPhone, isValidUKPostcode } from '@/lib/input-validation'
 
 interface AddOrganisationFormProps {
   onSuccess: () => void
@@ -29,6 +30,34 @@ export function AddOrganisationForm({ onSuccess, onCancel }: AddOrganisationForm
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [phoneError, setPhoneError] = useState('')
+  const [postcodeError, setPostcodeError] = useState('')
+
+  // Validate phone in real-time
+  useEffect(() => {
+    if (formData.phone && formData.phone.trim() !== '') {
+      if (!isValidPhone(formData.phone)) {
+        setPhoneError('Please enter a valid UK phone number (e.g., +44 7700 900123 or 07700 900123)')
+      } else {
+        setPhoneError('')
+      }
+    } else {
+      setPhoneError('')
+    }
+  }, [formData.phone])
+
+  // Validate postcode in real-time
+  useEffect(() => {
+    if (formData.postcode && formData.postcode.trim() !== '') {
+      if (!isValidUKPostcode(formData.postcode)) {
+        setPostcodeError('Please enter a valid UK postcode (e.g., SW1A 1AA)')
+      } else {
+        setPostcodeError('')
+      }
+    } else {
+      setPostcodeError('')
+    }
+  }, [formData.postcode])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -252,8 +281,15 @@ export function AddOrganisationForm({ onSuccess, onCancel }: AddOrganisationForm
             id="postcode"
             value={formData.postcode}
             onChange={(e) => handleInputChange('postcode', e.target.value)}
+            className={postcodeError ? 'border-red-500' : formData.postcode && isValidUKPostcode(formData.postcode) ? 'border-green-500' : ''}
             placeholder="SW1A 1AA"
           />
+          {postcodeError && (
+            <p className="text-xs text-red-600 mt-1">{postcodeError}</p>
+          )}
+          {formData.postcode && !postcodeError && isValidUKPostcode(formData.postcode) && (
+            <p className="text-xs text-green-600 mt-1">Valid UK postcode</p>
+          )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="city">City *</Label>
@@ -301,8 +337,15 @@ export function AddOrganisationForm({ onSuccess, onCancel }: AddOrganisationForm
             id="phone"
             value={formData.phone}
             onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+            className={phoneError ? 'border-red-500' : formData.phone && isValidPhone(formData.phone) ? 'border-green-500' : ''}
             placeholder="+44 161 123 4567"
           />
+          {phoneError && (
+            <p className="text-xs text-red-600 mt-1">{phoneError}</p>
+          )}
+          {formData.phone && !phoneError && isValidPhone(formData.phone) && (
+            <p className="text-xs text-green-600 mt-1">Valid UK phone number</p>
+          )}
         </div>
 
         <div className="space-y-2">

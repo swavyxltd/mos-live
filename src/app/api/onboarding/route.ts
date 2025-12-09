@@ -5,7 +5,7 @@ import { authOptions } from '@/lib/auth'
 import { getActiveOrg } from '@/lib/org'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
-import { sanitizeText, isValidEmail, isValidPhone, MAX_STRING_LENGTHS } from '@/lib/input-validation'
+import { sanitizeText, isValidEmail, isValidPhone, isValidUKPostcode, MAX_STRING_LENGTHS } from '@/lib/input-validation'
 import { withRateLimit } from '@/lib/api-middleware'
 
 // Save onboarding step data
@@ -53,9 +53,13 @@ async function handlePUT(request: NextRequest) {
         }
         if (data.phone) {
           const sanitizedPhone = sanitizeText(data.phone, MAX_STRING_LENGTHS.phone)
-          if (isValidPhone(sanitizedPhone)) {
-            updateData.phone = sanitizedPhone
+          if (!isValidPhone(sanitizedPhone)) {
+            return NextResponse.json(
+              { error: 'Invalid phone number format. Please enter a valid UK phone number (e.g., +44 7700 900123 or 07700 900123)' },
+              { status: 400 }
+            )
           }
+          updateData.phone = sanitizedPhone
         }
         
         if (Object.keys(updateData).length > 0) {
@@ -78,19 +82,34 @@ async function handlePUT(request: NextRequest) {
           updateData.city = sanitizeText(data.city, MAX_STRING_LENGTHS.name)
         }
         if (data.postcode) {
-          updateData.postcode = sanitizeText(data.postcode, 20)
+          const sanitizedPostcode = sanitizeText(data.postcode.toUpperCase().trim(), 20)
+          if (!isValidUKPostcode(sanitizedPostcode)) {
+            return NextResponse.json(
+              { error: 'Invalid postcode format. Please enter a valid UK postcode (e.g., SW1A 1AA)' },
+              { status: 400 }
+            )
+          }
+          updateData.postcode = sanitizedPostcode
         }
         if (data.phone) {
           const sanitizedPhone = sanitizeText(data.phone, MAX_STRING_LENGTHS.phone)
-          if (isValidPhone(sanitizedPhone)) {
-            updateData.phone = sanitizedPhone
+          if (!isValidPhone(sanitizedPhone)) {
+            return NextResponse.json(
+              { error: 'Invalid phone number format. Please enter a valid UK phone number (e.g., +44 7700 900123 or 07700 900123)' },
+              { status: 400 }
+            )
           }
+          updateData.phone = sanitizedPhone
         }
         if (data.publicPhone) {
           const sanitizedPhone = sanitizeText(data.publicPhone, MAX_STRING_LENGTHS.phone)
-          if (isValidPhone(sanitizedPhone)) {
-            updateData.publicPhone = sanitizedPhone
+          if (!isValidPhone(sanitizedPhone)) {
+            return NextResponse.json(
+              { error: 'Invalid public phone number format. Please enter a valid UK phone number (e.g., +44 7700 900123 or 07700 900123)' },
+              { status: 400 }
+            )
           }
+          updateData.publicPhone = sanitizedPhone
         }
         if (data.email) {
           const sanitizedEmail = data.email.toLowerCase().trim()

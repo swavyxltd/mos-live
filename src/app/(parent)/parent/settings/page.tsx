@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Save, User, Mail, Phone, MapPin, Gift } from 'lucide-react'
 import { toast } from 'sonner'
+import { isValidPhone, isValidUKPostcode } from '@/lib/input-validation'
 
 interface UserSettings {
   name: string
@@ -126,6 +127,27 @@ export default function ParentSettingsPage() {
   }
 
   const handleSave = async () => {
+    // Validate required fields
+    if (!userSettings.phone || userSettings.phone.trim() === '') {
+      toast.error('Phone number is required')
+      setLoading(false)
+      return
+    }
+    
+    // Validate phone format
+    if (!isValidPhone(userSettings.phone)) {
+      toast.error('Please enter a valid UK phone number (e.g., +44 7700 900123 or 07700 900123)')
+      setLoading(false)
+      return
+    }
+    
+    // Validate postcode if provided
+    if (userSettings.postcode && userSettings.postcode.trim() !== '' && !isValidUKPostcode(userSettings.postcode)) {
+      toast.error('Please enter a valid UK postcode (e.g., SW1A 1AA)')
+      setLoading(false)
+      return
+    }
+
     setLoading(true)
     try {
       const response = await fetch('/api/settings/user', {
@@ -270,17 +292,38 @@ export default function ParentSettingsPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
+                <Label htmlFor="phone">Phone Number *</Label>
                 <div className="flex items-center gap-2">
                   <Phone className="h-4 w-4 text-[var(--muted-foreground)] flex-shrink-0" />
                   <Input
                     id="phone"
                     type="tel"
+                    required
                     value={userSettings.phone}
-                    onChange={(e) => setUserSettings(prev => ({ ...prev, phone: e.target.value }))}
-                    placeholder="Enter your phone number"
+                    onChange={(e) => {
+                      const value = e.target.value
+                      setUserSettings(prev => ({ ...prev, phone: value }))
+                      // Validate in real-time
+                      if (value && value.trim() !== '') {
+                        if (!isValidPhone(value)) {
+                          setPhoneError('Please enter a valid UK phone number (e.g., +44 7700 900123 or 07700 900123)')
+                        } else {
+                          setPhoneError('')
+                        }
+                      } else {
+                        setPhoneError('')
+                      }
+                    }}
+                    className={phoneError ? 'border-red-500' : userSettings.phone && isValidPhone(userSettings.phone) ? 'border-green-500' : ''}
+                    placeholder="Enter your phone number (e.g., +44 7700 900123 or 07700 900123)"
                   />
                 </div>
+                {phoneError && (
+                  <p className="text-xs text-red-600 mt-1">{phoneError}</p>
+                )}
+                {userSettings.phone && !phoneError && isValidPhone(userSettings.phone) && (
+                  <p className="text-xs text-green-600 mt-1">Valid UK phone number</p>
+                )}
               </div>
             </div>
           </div>
@@ -335,10 +378,28 @@ export default function ParentSettingsPage() {
                   value={userSettings.postcode}
                   onChange={(e) => {
                     // Postcode should be full caps
-                    setUserSettings(prev => ({ ...prev, postcode: e.target.value.toUpperCase() }))
+                    const value = e.target.value.toUpperCase()
+                    setUserSettings(prev => ({ ...prev, postcode: value }))
+                    // Validate in real-time
+                    if (value && value.trim() !== '') {
+                      if (!isValidUKPostcode(value)) {
+                        setPostcodeError('Please enter a valid UK postcode (e.g., SW1A 1AA)')
+                      } else {
+                        setPostcodeError('')
+                      }
+                    } else {
+                      setPostcodeError('')
+                    }
                   }}
-                  placeholder="Enter your postcode"
+                  className={postcodeError ? 'border-red-500' : userSettings.postcode && isValidUKPostcode(userSettings.postcode) ? 'border-green-500' : ''}
+                  placeholder="Enter your postcode (e.g., SW1A 1AA)"
                 />
+                {postcodeError && (
+                  <p className="text-xs text-red-600 mt-1">{postcodeError}</p>
+                )}
+                {userSettings.postcode && !postcodeError && isValidUKPostcode(userSettings.postcode) && (
+                  <p className="text-xs text-green-600 mt-1">Valid UK postcode</p>
+                )}
               </div>
             </div>
           </div>

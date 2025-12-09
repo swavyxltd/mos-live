@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { toast } from 'sonner'
 import { PhoneLink } from './phone-link'
 import { Button } from '@/components/ui/button'
+import { isValidPhone } from '@/lib/input-validation'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -98,6 +99,11 @@ export function PublicApplicationForm({ org, classes }: PublicApplicationFormPro
     
     if (!guardianPhone.trim()) {
       toast.error('Please enter the guardian\'s phone number.')
+      return
+    }
+    
+    if (!isValidPhone(guardianPhone)) {
+      toast.error('Please enter a valid UK phone number (e.g., +44 7700 900123 or 07700 900123)')
       return
     }
     
@@ -325,11 +331,31 @@ export function PublicApplicationForm({ org, classes }: PublicApplicationFormPro
                 </label>
                 <Input
                   value={guardianPhone}
-                  onChange={(e) => setGuardianPhone(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    setGuardianPhone(value)
+                    // Validate in real-time
+                    if (value && value.trim() !== '') {
+                      if (!isValidPhone(value)) {
+                        setPhoneError('Please enter a valid UK phone number (e.g., +44 7700 900123 or 07700 900123)')
+                      } else {
+                        setPhoneError('')
+                      }
+                    } else {
+                      setPhoneError('')
+                    }
+                  }}
                   required
-                  placeholder="Enter your phone number"
+                  placeholder="Enter your phone number (e.g., +44 7700 900123 or 07700 900123)"
                   type="tel"
+                  className={phoneError ? 'border-red-500' : guardianPhone && isValidPhone(guardianPhone) ? 'border-green-500' : ''}
                 />
+                {phoneError && (
+                  <p className="text-xs text-red-600 mt-1">{phoneError}</p>
+                )}
+                {guardianPhone && !phoneError && isValidPhone(guardianPhone) && (
+                  <p className="text-xs text-green-600 mt-1">Valid UK phone number</p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">

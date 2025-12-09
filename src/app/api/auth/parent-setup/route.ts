@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { logger } from '@/lib/logger'
-import { sanitizeText, isValidPhone, MAX_STRING_LENGTHS } from '@/lib/input-validation'
+import { sanitizeText, isValidPhone, isValidUKPostcode, MAX_STRING_LENGTHS } from '@/lib/input-validation'
 import { withRateLimit } from '@/lib/api-middleware'
 import { createSetupIntent, ensureParentCustomer } from '@/lib/stripe'
 import { validatePassword } from '@/lib/password-validation'
@@ -29,9 +29,9 @@ async function handlePOST(request: NextRequest) {
       giftAidStatus
     } = body
 
-    if (!token || !password || !parentName || !paymentMethod || !giftAidStatus) {
+    if (!token || !password || !parentName || !parentPhone || !paymentMethod || !giftAidStatus) {
       return NextResponse.json(
-        { error: 'Missing required fields: token, password, parentName, paymentMethod, giftAidStatus' },
+        { error: 'Missing required fields: token, password, parentName, parentPhone, paymentMethod, giftAidStatus' },
         { status: 400 }
       )
     }
@@ -55,16 +55,16 @@ async function handlePOST(request: NextRequest) {
     // Sanitize and validate inputs
     const sanitizedParentTitle = parentTitle ? sanitizeText(parentTitle, 10) : null // Max 10 chars for title (Mr, Mrs, etc.)
     const sanitizedParentName = sanitizeText(parentName, MAX_STRING_LENGTHS.name)
-    const sanitizedParentPhone = parentPhone ? sanitizeText(parentPhone, MAX_STRING_LENGTHS.phone) : null
+    const sanitizedParentPhone = sanitizeText(parentPhone, MAX_STRING_LENGTHS.phone)
     const sanitizedStudentFirstName = studentFirstName ? sanitizeText(studentFirstName, MAX_STRING_LENGTHS.name) : null
     const sanitizedStudentLastName = studentLastName ? sanitizeText(studentLastName, MAX_STRING_LENGTHS.name) : null
     const sanitizedAllergies = studentAllergies ? sanitizeText(studentAllergies, MAX_STRING_LENGTHS.text) : null
     const sanitizedMedicalNotes = studentMedicalNotes ? sanitizeText(studentMedicalNotes, MAX_STRING_LENGTHS.text) : null
 
-    // Validate phone if provided
-    if (sanitizedParentPhone && !isValidPhone(sanitizedParentPhone)) {
+    // Validate phone (required) - UK format only
+    if (!isValidPhone(sanitizedParentPhone)) {
       return NextResponse.json(
-        { error: 'Invalid phone number format' },
+        { error: 'Invalid phone number format. Please enter a valid UK phone number (e.g., +44 7700 900123 or 07700 900123)' },
         { status: 400 }
       )
     }
@@ -145,7 +145,17 @@ async function handlePOST(request: NextRequest) {
 
       // Sanitize Gift Aid fields
       const sanitizedAddress = parentAddress ? sanitizeText(parentAddress, MAX_STRING_LENGTHS.text) : null
-      const sanitizedPostcode = parentPostcode ? sanitizeText(parentPostcode.toUpperCase().trim(), 10) : null
+      let sanitizedPostcode: string | null = null
+      if (parentPostcode) {
+        const cleanedPostcode = parentPostcode.toUpperCase().trim()
+        if (!isValidUKPostcode(cleanedPostcode)) {
+          return NextResponse.json(
+            { error: 'Invalid postcode format. Please enter a valid UK postcode (e.g., SW1A 1AA)' },
+            { status: 400 }
+          )
+        }
+        sanitizedPostcode = sanitizeText(cleanedPostcode, 10)
+      }
 
       if (!parentUser) {
         parentUser = await tx.user.create({

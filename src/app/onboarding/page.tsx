@@ -25,6 +25,7 @@ import {
   Clock
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { isValidPhone, isValidUKPostcode } from '@/lib/input-validation'
 
 type Step = 'admin' | 'organisation' | 'payments' | 'review'
 
@@ -35,6 +36,10 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [progress, setProgress] = useState<any>(null)
+  const [adminPhoneError, setAdminPhoneError] = useState('')
+  const [orgPhoneError, setOrgPhoneError] = useState('')
+  const [orgPublicPhoneError, setOrgPublicPhoneError] = useState('')
+  const [orgPostcodeError, setOrgPostcodeError] = useState('')
 
   // Form data
   const [adminData, setAdminData] = useState({
@@ -176,6 +181,18 @@ export default function OnboardingPage() {
         if (!orgData.addressLine1 || !orgData.city || !orgData.postcode || 
             !orgData.phone || !orgData.publicPhone || !orgData.email || !orgData.publicEmail) {
           toast.error('Please fill in all required organisation fields')
+          return
+        }
+        if (!isValidPhone(orgData.phone)) {
+          toast.error('Please enter a valid UK phone number for Contact Phone')
+          return
+        }
+        if (!isValidPhone(orgData.publicPhone)) {
+          toast.error('Please enter a valid UK phone number for Public Phone')
+          return
+        }
+        if (!isValidUKPostcode(orgData.postcode)) {
+          toast.error('Please enter a valid UK postcode')
           return
         }
         dataToSave = orgData
@@ -342,8 +359,15 @@ export default function OnboardingPage() {
                     type="tel"
                     value={adminData.phone}
                     onChange={(e) => setAdminData({ ...adminData, phone: e.target.value })}
+                    className={adminPhoneError ? 'border-red-500' : adminData.phone && isValidPhone(adminData.phone) ? 'border-green-500' : ''}
                     placeholder="+44 20 1234 5678"
                   />
+                  {adminPhoneError && (
+                    <p className="text-xs text-red-600 mt-1">{adminPhoneError}</p>
+                  )}
+                  {adminData.phone && !adminPhoneError && isValidPhone(adminData.phone) && (
+                    <p className="text-xs text-green-600 mt-1">Valid UK phone number</p>
+                  )}
                 </div>
               </div>
             )}
@@ -414,9 +438,16 @@ export default function OnboardingPage() {
                         // Postcode should be full caps
                         setOrgData({ ...orgData, postcode: e.target.value.toUpperCase() })
                       }}
+                      className={orgPostcodeError ? 'border-red-500' : orgData.postcode && isValidUKPostcode(orgData.postcode) ? 'border-green-500' : ''}
                       placeholder="SW1A 1AA"
                       required
                     />
+                    {orgPostcodeError && (
+                      <p className="text-xs text-red-600 mt-1">{orgPostcodeError}</p>
+                    )}
+                    {orgData.postcode && !orgPostcodeError && isValidUKPostcode(orgData.postcode) && (
+                      <p className="text-xs text-green-600 mt-1">Valid UK postcode</p>
+                    )}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -427,9 +458,16 @@ export default function OnboardingPage() {
                       type="tel"
                       value={orgData.phone}
                       onChange={(e) => setOrgData({ ...orgData, phone: e.target.value })}
+                      className={orgPhoneError ? 'border-red-500' : orgData.phone && isValidPhone(orgData.phone) ? 'border-green-500' : ''}
                       placeholder="+44 20 1234 5678"
                       required
                     />
+                    {orgPhoneError && (
+                      <p className="text-xs text-red-600 mt-1">{orgPhoneError}</p>
+                    )}
+                    {orgData.phone && !orgPhoneError && isValidPhone(orgData.phone) && (
+                      <p className="text-xs text-green-600 mt-1">Valid UK phone number</p>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="publicPhone">Public Phone *</Label>
@@ -438,9 +476,16 @@ export default function OnboardingPage() {
                       type="tel"
                       value={orgData.publicPhone}
                       onChange={(e) => setOrgData({ ...orgData, publicPhone: e.target.value })}
+                      className={orgPublicPhoneError ? 'border-red-500' : orgData.publicPhone && isValidPhone(orgData.publicPhone) ? 'border-green-500' : ''}
                       placeholder="+44 20 1234 5678"
                       required
                     />
+                    {orgPublicPhoneError && (
+                      <p className="text-xs text-red-600 mt-1">{orgPublicPhoneError}</p>
+                    )}
+                    {orgData.publicPhone && !orgPublicPhoneError && isValidPhone(orgData.publicPhone) && (
+                      <p className="text-xs text-green-600 mt-1">Valid UK phone number</p>
+                    )}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">

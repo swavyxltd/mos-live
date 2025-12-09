@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 import { sendOrgSetupConfirmation, sendStaffInvitation } from '@/lib/mail'
 import { logger } from '@/lib/logger'
-import { sanitizeText, isValidEmail, isValidPhone, MAX_STRING_LENGTHS } from '@/lib/input-validation'
+import { sanitizeText, isValidEmail, isValidPhone, isValidUKPostcode, MAX_STRING_LENGTHS } from '@/lib/input-validation'
 import { withRateLimit } from '@/lib/api-middleware'
 import { validatePassword } from '@/lib/password-validation'
 
@@ -67,7 +67,7 @@ async function handlePOST(request: NextRequest) {
 
     if (sanitizedPhone && !isValidPhone(sanitizedPhone)) {
       return NextResponse.json(
-        { error: 'Invalid phone number format' },
+        { error: 'Invalid phone number format. Please enter a valid UK phone number (e.g., +44 7700 900123 or 07700 900123)' },
         { status: 400 }
       )
     }
@@ -158,10 +158,32 @@ async function handlePOST(request: NextRequest) {
         
         // Sanitize org fields
         const sanitizedOrgAddressLine1 = sanitizeText(orgAddressLine1, MAX_STRING_LENGTHS.text)
-        const sanitizedOrgPostcode = sanitizeText(orgPostcode, 20)
+        const sanitizedOrgPostcode = sanitizeText(orgPostcode.toUpperCase().trim(), 20)
         const sanitizedOrgCity = sanitizeText(orgCity, MAX_STRING_LENGTHS.name)
         const sanitizedOrgPhone = sanitizeText(orgPhone, MAX_STRING_LENGTHS.phone)
         const sanitizedOrgPublicPhone = sanitizeText(orgPublicPhone, MAX_STRING_LENGTHS.phone)
+        
+        // Validate postcode
+        if (!isValidUKPostcode(sanitizedOrgPostcode)) {
+          return NextResponse.json(
+            { error: 'Invalid postcode format. Please enter a valid UK postcode (e.g., SW1A 1AA)' },
+            { status: 400 }
+          )
+        }
+        
+        // Validate phone numbers
+        if (!isValidPhone(sanitizedOrgPhone)) {
+          return NextResponse.json(
+            { error: 'Invalid phone number format. Please enter a valid UK phone number (e.g., +44 7700 900123 or 07700 900123)' },
+            { status: 400 }
+          )
+        }
+        if (!isValidPhone(sanitizedOrgPublicPhone)) {
+          return NextResponse.json(
+            { error: 'Invalid public phone number format. Please enter a valid UK phone number (e.g., +44 7700 900123 or 07700 900123)' },
+            { status: 400 }
+          )
+        }
         const sanitizedOrgEmail = orgEmail.toLowerCase().trim()
         const sanitizedOrgPublicEmail = orgPublicEmail.toLowerCase().trim()
         const sanitizedOrgWebsite = orgWebsite ? orgWebsite.trim() : undefined

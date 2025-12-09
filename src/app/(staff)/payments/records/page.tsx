@@ -278,12 +278,12 @@ export default function PaymentRecordsPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <Label htmlFor="month">Month</Label>
-              <Select value={monthFilter} onValueChange={setMonthFilter}>
+              <Select value={monthFilter || 'all'} onValueChange={(value) => setMonthFilter(value === 'all' ? '' : value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="All months" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All months</SelectItem>
+                  <SelectItem value="all">All months</SelectItem>
                   {uniqueMonths.map(m => (
                     <SelectItem key={m} value={m}>{m}</SelectItem>
                   ))}
@@ -292,12 +292,12 @@ export default function PaymentRecordsPage() {
             </div>
             <div>
               <Label htmlFor="class">Class</Label>
-              <Select value={classFilter} onValueChange={setClassFilter}>
+              <Select value={classFilter || 'all'} onValueChange={(value) => setClassFilter(value === 'all' ? '' : value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="All classes" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All classes</SelectItem>
+                  <SelectItem value="all">All classes</SelectItem>
                   {classes.map(c => (
                     <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                   ))}
@@ -306,12 +306,12 @@ export default function PaymentRecordsPage() {
             </div>
             <div>
               <Label htmlFor="method">Payment Method</Label>
-              <Select value={methodFilter} onValueChange={setMethodFilter}>
+              <Select value={methodFilter || 'all'} onValueChange={(value) => setMethodFilter(value === 'all' ? '' : value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="All methods" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All methods</SelectItem>
+                  <SelectItem value="all">All methods</SelectItem>
                   <SelectItem value="CASH">Cash</SelectItem>
                   <SelectItem value="BANK_TRANSFER">Bank Transfer</SelectItem>
                 </SelectContent>

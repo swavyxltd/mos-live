@@ -19,11 +19,11 @@ async function handleGET(request: NextRequest) {
     const invitation = await prisma.parentInvitation.findUnique({
       where: { token },
       include: {
-        student: {
+        Student: {
           include: {
-            studentClasses: {
+            StudentClass: {
               include: {
-                class: {
+                Class: {
                   select: {
                     id: true,
                     name: true,
@@ -32,7 +32,7 @@ async function handleGET(request: NextRequest) {
                 }
               }
             },
-            primaryParent: {
+            User: {
               select: {
                 id: true,
                 name: true,
@@ -42,7 +42,7 @@ async function handleGET(request: NextRequest) {
             }
           }
         },
-        org: {
+        Org: {
           select: {
             id: true,
             name: true,
@@ -83,7 +83,7 @@ async function handleGET(request: NextRequest) {
     }
 
     // Get the student's class
-    const studentClass = invitation.student.studentClasses[0]
+    const studentClass = invitation.Student.StudentClass[0]
     if (!studentClass) {
       return NextResponse.json(
         { error: 'Student is not enrolled in any class' },
@@ -98,42 +98,46 @@ async function handleGET(request: NextRequest) {
         expiresAt: invitation.expiresAt
       },
       student: {
-        id: invitation.student.id,
-        firstName: invitation.student.firstName,
-        lastName: invitation.student.lastName,
-        dob: invitation.student.dob,
-        allergies: invitation.student.allergies,
-        medicalNotes: invitation.student.medicalNotes
+        id: invitation.Student.id,
+        firstName: invitation.Student.firstName,
+        lastName: invitation.Student.lastName,
+        dob: invitation.Student.dob,
+        allergies: invitation.Student.allergies,
+        medicalNotes: invitation.Student.medicalNotes
       },
-      parent: invitation.student.primaryParent ? {
-        name: invitation.student.primaryParent.name || '',
-        phone: invitation.student.primaryParent.phone || ''
+      parent: invitation.Student.User ? {
+        name: invitation.Student.User.name || '',
+        phone: invitation.Student.User.phone || ''
       } : null,
       class: {
-        id: studentClass.class.id,
-        name: studentClass.class.name,
-        monthlyFee: studentClass.class.monthlyFeeP ? studentClass.class.monthlyFeeP / 100 : 0
+        id: studentClass.Class.id,
+        name: studentClass.Class.name,
+        monthlyFee: studentClass.Class.monthlyFeeP ? studentClass.Class.monthlyFeeP / 100 : 0
       },
       org: {
-        id: invitation.org.id,
-        name: invitation.org.name
+        id: invitation.Org.id,
+        name: invitation.Org.name
       },
       paymentMethods: {
-        cash: invitation.org.acceptsCash ?? invitation.org.cashPaymentEnabled ?? true,
-        bankTransfer: invitation.org.acceptsBankTransfer ?? invitation.org.bankTransferEnabled ?? true,
-        card: (invitation.org.acceptsCard ?? false) && !!invitation.org.stripeConnectAccountId,
-        stripe: invitation.org.stripeEnabled
+        cash: invitation.Org.acceptsCash ?? invitation.Org.cashPaymentEnabled ?? true,
+        bankTransfer: invitation.Org.acceptsBankTransfer ?? invitation.Org.bankTransferEnabled ?? true,
+        card: (invitation.Org.acceptsCard ?? false) && !!invitation.Org.stripeConnectAccountId,
+        stripe: invitation.Org.stripeEnabled
       },
       bankDetails: {
-        accountName: invitation.org.bankAccountName,
-        sortCode: invitation.org.bankSortCode,
-        accountNumber: invitation.org.bankAccountNumber
+        accountName: invitation.Org.bankAccountName,
+        sortCode: invitation.Org.bankSortCode,
+        accountNumber: invitation.Org.bankAccountNumber
       }
     })
   } catch (error: any) {
     logger.error('Error fetching parent invitation', error)
+    console.error('Parent invitation API error:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch invitation details' },
+      { 
+        error: 'Failed to fetch invitation details',
+        ...(process.env.NODE_ENV === 'development' && { details: error?.message, stack: error?.stack })
+      },
       { status: 500 }
     )
   }

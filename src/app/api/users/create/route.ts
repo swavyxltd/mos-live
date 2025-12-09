@@ -7,7 +7,7 @@ import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 import { sendStaffInvitation } from '@/lib/mail'
 import { logger } from '@/lib/logger'
-import { sanitizeText, isValidEmail, isValidPhone, MAX_STRING_LENGTHS } from '@/lib/input-validation'
+import { sanitizeText, isValidEmail, isValidPhone, isValidUKPostcode, MAX_STRING_LENGTHS } from '@/lib/input-validation'
 import { withRateLimit } from '@/lib/api-middleware'
 import { requireRole } from '@/lib/roles'
 import { validatePassword } from '@/lib/password-validation'
@@ -84,7 +84,7 @@ async function handlePOST(request: NextRequest) {
 
     if (sanitizedPhone && !isValidPhone(sanitizedPhone)) {
       return NextResponse.json(
-        { error: 'Invalid phone number format' },
+        { error: 'Invalid phone number format. Please enter a valid UK phone number (e.g., +44 7700 900123 or 07700 900123)' },
         { status: 400 }
       )
     }

@@ -276,12 +276,12 @@ export default function PaymentRecordsPageClient() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <Label htmlFor="month" className="text-sm">Month</Label>
-              <Select value={monthFilter} onValueChange={setMonthFilter}>
+              <Select value={monthFilter || 'all'} onValueChange={(value) => setMonthFilter(value === 'all' ? '' : value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="All months" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All months</SelectItem>
+                  <SelectItem value="all">All months</SelectItem>
                   {uniqueMonths.map(m => (
                     <SelectItem key={m} value={m}>{m}</SelectItem>
                   ))}
@@ -290,12 +290,12 @@ export default function PaymentRecordsPageClient() {
             </div>
             <div>
               <Label htmlFor="class" className="text-sm">Class</Label>
-              <Select value={classFilter} onValueChange={setClassFilter}>
+              <Select value={classFilter || 'all'} onValueChange={(value) => setClassFilter(value === 'all' ? '' : value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="All classes" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All classes</SelectItem>
+                  <SelectItem value="all">All classes</SelectItem>
                   {classes.map(c => (
                     <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                   ))}
@@ -304,12 +304,12 @@ export default function PaymentRecordsPageClient() {
             </div>
             <div>
               <Label htmlFor="method" className="text-sm">Payment Method</Label>
-              <Select value={methodFilter} onValueChange={setMethodFilter}>
+              <Select value={methodFilter || 'all'} onValueChange={(value) => setMethodFilter(value === 'all' ? '' : value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="All methods" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All methods</SelectItem>
+                  <SelectItem value="all">All methods</SelectItem>
                   <SelectItem value="CASH">Cash</SelectItem>
                   <SelectItem value="BANK_TRANSFER">Bank Transfer</SelectItem>
                 </SelectContent>
@@ -317,12 +317,12 @@ export default function PaymentRecordsPageClient() {
             </div>
             <div>
               <Label htmlFor="status" className="text-sm">Status</Label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select value={statusFilter || 'all'} onValueChange={(value) => setStatusFilter(value === 'all' ? '' : value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All statuses</SelectItem>
+                  <SelectItem value="all">All statuses</SelectItem>
                   <SelectItem value="PENDING">Pending</SelectItem>
                   <SelectItem value="PAID">Paid</SelectItem>
                   <SelectItem value="LATE">Late</SelectItem>

@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { X, Save, User, Mail, Phone, Loader2, MapPin, CreditCard } from 'lucide-react'
 import { toast } from 'sonner'
+import { isValidPhone, isValidUKPostcode } from '@/lib/input-validation'
 
 interface User {
   id: string
@@ -42,6 +43,8 @@ export function EditUserModal({ isOpen, onClose, onSave, userId }: EditUserModal
   })
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [phoneError, setPhoneError] = useState('')
+  const [postcodeError, setPostcodeError] = useState('')
 
   useEffect(() => {
     if (isOpen && userId) {
@@ -98,6 +101,14 @@ export function EditUserModal({ isOpen, onClose, onSave, userId }: EditUserModal
     }
     if (!formData.email.trim()) {
       toast.error('Email is required')
+      return
+    }
+    if (formData.phone && !isValidPhone(formData.phone)) {
+      toast.error('Please enter a valid UK phone number')
+      return
+    }
+    if (formData.postcode && !isValidUKPostcode(formData.postcode)) {
+      toast.error('Please enter a valid UK postcode')
       return
     }
 
@@ -185,10 +196,16 @@ export function EditUserModal({ isOpen, onClose, onSave, userId }: EditUserModal
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="pl-10"
+                className={`pl-10 ${phoneError ? 'border-red-500' : formData.phone && isValidPhone(formData.phone) ? 'border-green-500' : ''}`}
                 placeholder="Enter phone number"
               />
             </div>
+            {phoneError && (
+              <p className="text-xs text-red-600 mt-1">{phoneError}</p>
+            )}
+            {formData.phone && !phoneError && isValidPhone(formData.phone) && (
+              <p className="text-xs text-green-600 mt-1">Valid UK phone number</p>
+            )}
           </div>
 
           <div>
@@ -257,10 +274,16 @@ export function EditUserModal({ isOpen, onClose, onSave, userId }: EditUserModal
                   id="postcode"
                   value={formData.postcode}
                   onChange={(e) => setFormData({ ...formData, postcode: e.target.value.toUpperCase() })}
-                  className="pl-10"
+                  className={`pl-10 ${postcodeError ? 'border-red-500' : formData.postcode && isValidUKPostcode(formData.postcode) ? 'border-green-500' : ''}`}
                   placeholder="Enter postcode"
                 />
               </div>
+              {postcodeError && (
+                <p className="text-xs text-red-600 mt-1">{postcodeError}</p>
+              )}
+              {formData.postcode && !postcodeError && isValidUKPostcode(formData.postcode) && (
+                <p className="text-xs text-green-600 mt-1">Valid UK postcode</p>
+              )}
             </div>
           </div>
 

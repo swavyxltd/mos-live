@@ -5,7 +5,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { logger } from '@/lib/logger'
-import { sanitizeText, isValidEmail, isValidPhone, MAX_STRING_LENGTHS } from '@/lib/input-validation'
+import { sanitizeText, isValidEmail, isValidPhone, isValidUKPostcode, MAX_STRING_LENGTHS } from '@/lib/input-validation'
 import { withRateLimit } from '@/lib/api-middleware'
 
 async function handlePUT(request: NextRequest) {
@@ -73,16 +73,22 @@ async function handlePUT(request: NextRequest) {
       updateData.email = sanitizedEmail
     }
     
-    // Update phone if provided
+    // Update phone if provided (required - cannot be removed, only replaced)
     if (phone !== undefined) {
       const sanitizedPhone = sanitizeText(phone, MAX_STRING_LENGTHS.phone)
-      if (sanitizedPhone && !isValidPhone(sanitizedPhone)) {
+      if (!sanitizedPhone || sanitizedPhone.trim() === '') {
         return NextResponse.json(
-          { error: 'Invalid phone number format' },
+          { error: 'Phone number is required and cannot be removed' },
           { status: 400 }
         )
       }
-      updateData.phone = sanitizedPhone || null
+      if (!isValidPhone(sanitizedPhone)) {
+        return NextResponse.json(
+          { error: 'Invalid phone number format. Please enter a valid UK phone number (e.g., +44 7700 900123 or 07700 900123)' },
+          { status: 400 }
+        )
+      }
+      updateData.phone = sanitizedPhone
     }
     
     // Update address if provided
@@ -95,9 +101,16 @@ async function handlePUT(request: NextRequest) {
       updateData.city = sanitizeText(city, MAX_STRING_LENGTHS.name) || null
     }
     
-    // Update postcode if provided
+    // Update postcode if provided (validate UK format)
     if (postcode !== undefined) {
-      updateData.postcode = sanitizeText(postcode, 20) || null
+      const cleanedPostcode = postcode ? postcode.toUpperCase().trim() : ''
+      if (cleanedPostcode && !isValidUKPostcode(cleanedPostcode)) {
+        return NextResponse.json(
+          { error: 'Invalid postcode format. Please enter a valid UK postcode (e.g., SW1A 1AA)' },
+          { status: 400 }
+        )
+      }
+      updateData.postcode = cleanedPostcode ? sanitizeText(cleanedPostcode, 20) : null
     }
     
     // Update title if provided

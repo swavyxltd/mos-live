@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { Mail, Lock, User, MapPin, Phone, Globe } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Onboarding01 } from '@/components/onboarding-01'
+import { isValidPhone, isValidUKPostcode } from '@/lib/input-validation'
 
 function SignUpForm() {
   const searchParams = useSearchParams()
@@ -226,9 +227,9 @@ function SignUpForm() {
         const passwordMeetsRequirements = isPasswordValid()
         return hasBasicFields && passwordsMatch && passwordMeetsRequirements
       case 'org-address':
-        return !!(formData.orgAddressLine1 && formData.orgPostcode && formData.orgCity)
+        return !!(formData.orgAddressLine1 && formData.orgPostcode && formData.orgCity && isValidUKPostcode(formData.orgPostcode))
       case 'org-contact':
-        return !!(formData.orgPhone && formData.orgPublicPhone && formData.orgEmail && formData.orgPublicEmail)
+        return !!(formData.orgPhone && formData.orgPublicPhone && formData.orgEmail && formData.orgPublicEmail && isValidPhone(formData.orgPhone) && isValidPhone(formData.orgPublicPhone))
       case 'org-website':
         return true // Optional step, always allow proceeding
       case 'submit':
@@ -250,6 +251,58 @@ function SignUpForm() {
     // Submit step is never marked as complete
     setCompletedSteps(newCompleted)
   }, [formData, isNewOrgSetup, passwordRequirements])
+
+  // Validate phone in real-time
+  useEffect(() => {
+    if (formData.phone && formData.phone.trim() !== '') {
+      if (!isValidPhone(formData.phone)) {
+        setPhoneError('Please enter a valid UK phone number (e.g., +44 7700 900123 or 07700 900123)')
+      } else {
+        setPhoneError('')
+      }
+    } else {
+      setPhoneError('')
+    }
+  }, [formData.phone])
+
+  // Validate org phone in real-time
+  useEffect(() => {
+    if (formData.orgPhone && formData.orgPhone.trim() !== '') {
+      if (!isValidPhone(formData.orgPhone)) {
+        setOrgPhoneError('Please enter a valid UK phone number (e.g., +44 7700 900123 or 07700 900123)')
+      } else {
+        setOrgPhoneError('')
+      }
+    } else {
+      setOrgPhoneError('')
+    }
+  }, [formData.orgPhone])
+
+  // Validate org public phone in real-time
+  useEffect(() => {
+    if (formData.orgPublicPhone && formData.orgPublicPhone.trim() !== '') {
+      if (!isValidPhone(formData.orgPublicPhone)) {
+        setOrgPublicPhoneError('Please enter a valid UK phone number (e.g., +44 7700 900123 or 07700 900123)')
+      } else {
+        setOrgPublicPhoneError('')
+      }
+    } else {
+      setOrgPublicPhoneError('')
+    }
+  }, [formData.orgPublicPhone])
+
+  // Validate org postcode in real-time
+  useEffect(() => {
+    if (formData.orgPostcode && formData.orgPostcode.trim() !== '') {
+      if (!isValidUKPostcode(formData.orgPostcode)) {
+        setOrgPostcodeError('Please enter a valid UK postcode (e.g., SW1A 1AA)')
+      } else {
+        setOrgPostcodeError('')
+      }
+    } else {
+      setOrgPostcodeError('')
+    }
+  }, [formData.orgPostcode])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -451,10 +504,18 @@ function SignUpForm() {
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full pl-9 pr-3 h-10 text-sm rounded-md border border-neutral-200/70 bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
-                placeholder="Phone (optional)"
+                className={`w-full pl-9 pr-3 h-10 text-sm rounded-md border bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-0 transition-colors ${
+                  phoneError ? 'border-red-500 focus:border-red-600' : formData.phone && isValidPhone(formData.phone) ? 'border-green-500 focus:border-green-600' : 'border-neutral-200/70 focus:border-neutral-400'
+                }`}
+                placeholder="Phone (optional, e.g., +44 7700 900123 or 07700 900123)"
               />
             </div>
+            {phoneError && (
+              <p className="mt-1 text-xs text-red-600">{phoneError}</p>
+            )}
+            {formData.phone && !phoneError && isValidPhone(formData.phone) && (
+              <p className="mt-1 text-xs text-green-600">Valid UK phone number</p>
+            )}
           </div>
 
           {/* Password */}
@@ -499,8 +560,8 @@ function SignUpForm() {
                     const isMet = formData.password ? req.met(formData.password) : false
                     return (
                       <div key={index} className="flex items-center gap-2 text-xs">
-                        <div className={`w-1 h-1 rounded-full ${isMet ? 'bg-green-500' : 'bg-neutral-300'}`} />
-                        <span className={isMet ? 'text-green-600' : 'text-neutral-500'}>
+                        <div className={`w-1 h-1 rounded-full ${isMet ? 'bg-green-500' : 'bg-red-500'}`} />
+                        <span className={isMet ? 'text-green-600' : 'text-red-600'}>
                           {req.text}
                         </span>
                       </div>
@@ -644,10 +705,18 @@ function SignUpForm() {
                   // Postcode should be full caps
                   setFormData({ ...formData, orgPostcode: e.target.value.toUpperCase() })
                 }}
-                className="w-full px-3 py-2 h-10 text-sm rounded-md border border-neutral-200/70 bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
+                className={`w-full px-3 py-2 h-10 text-sm rounded-md border bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-0 transition-colors ${
+                  orgPostcodeError ? 'border-red-500 focus:border-red-600' : formData.orgPostcode && isValidUKPostcode(formData.orgPostcode) ? 'border-green-500 focus:border-green-600' : 'border-neutral-200/70 focus:border-neutral-400'
+                }`}
                 placeholder="SW1A 1AA"
                 autoComplete="postal-code"
               />
+              {orgPostcodeError && (
+                <p className="mt-1 text-xs text-red-600">{orgPostcodeError}</p>
+              )}
+              {formData.orgPostcode && !orgPostcodeError && isValidUKPostcode(formData.orgPostcode) && (
+                <p className="mt-1 text-xs text-green-600">Valid UK postcode</p>
+              )}
             </div>
             <div>
               <label htmlFor="orgCity" className="block text-sm font-medium text-neutral-700 mb-1">
@@ -721,11 +790,19 @@ function SignUpForm() {
                 required
                 value={formData.orgPhone}
                 onChange={(e) => setFormData({ ...formData, orgPhone: e.target.value })}
-                className="w-full pl-9 pr-3 h-10 text-sm rounded-md border border-neutral-200/70 bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
-                placeholder="+44 20 1234 5678"
+                className={`w-full pl-9 pr-3 h-10 text-sm rounded-md border bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-0 transition-colors ${
+                  orgPhoneError ? 'border-red-500 focus:border-red-600' : formData.orgPhone && isValidPhone(formData.orgPhone) ? 'border-green-500 focus:border-green-600' : 'border-neutral-200/70 focus:border-neutral-400'
+                }`}
+                placeholder="+44 20 1234 5678 or 020 1234 5678"
                 autoComplete="tel"
               />
             </div>
+            {orgPhoneError && (
+              <p className="text-xs text-red-600 mt-1">{orgPhoneError}</p>
+            )}
+            {formData.orgPhone && !orgPhoneError && isValidPhone(formData.orgPhone) && (
+              <p className="text-xs text-green-600 mt-1">Valid UK phone number</p>
+            )}
             <p className="text-xs text-neutral-500 mt-1">For Madrasah OS to contact you</p>
           </div>
 
@@ -743,11 +820,19 @@ function SignUpForm() {
                 required
                 value={formData.orgPublicPhone}
                 onChange={(e) => setFormData({ ...formData, orgPublicPhone: e.target.value })}
-                className="w-full pl-9 pr-3 h-10 text-sm rounded-md border border-neutral-200/70 bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
-                placeholder="+44 20 1234 5678"
+                className={`w-full pl-9 pr-3 h-10 text-sm rounded-md border bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-0 transition-colors ${
+                  orgPublicPhoneError ? 'border-red-500 focus:border-red-600' : formData.orgPublicPhone && isValidPhone(formData.orgPublicPhone) ? 'border-green-500 focus:border-green-600' : 'border-neutral-200/70 focus:border-neutral-400'
+                }`}
+                placeholder="+44 20 1234 5678 or 020 1234 5678"
                 autoComplete="tel"
               />
             </div>
+            {orgPublicPhoneError && (
+              <p className="text-xs text-red-600 mt-1">{orgPublicPhoneError}</p>
+            )}
+            {formData.orgPublicPhone && !orgPublicPhoneError && isValidPhone(formData.orgPublicPhone) && (
+              <p className="text-xs text-green-600 mt-1">Valid UK phone number</p>
+            )}
             <p className="text-xs text-neutral-500 mt-1">This will be visible to parents on the application form</p>
           </div>
 

@@ -21,6 +21,7 @@ import { useStaffPermissions } from '@/lib/staff-permissions'
 import { StaffSubrole } from '@/types/staff-roles'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { PaymentMethodsTab } from '@/components/payment-methods-tab'
+import { isValidPhone, isValidUKPostcode } from '@/lib/input-validation'
 
 interface OrganisationSettings {
   name: string
@@ -66,6 +67,10 @@ export default function SettingsPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [loadingOrgSettings, setLoadingOrgSettings] = useState(true)
+  const [orgPhoneError, setOrgPhoneError] = useState('')
+  const [orgPublicPhoneError, setOrgPublicPhoneError] = useState('')
+  const [orgPostcodeError, setOrgPostcodeError] = useState('')
+  const [userPhoneError, setUserPhoneError] = useState('')
   const [orgSettings, setOrgSettings] = useState<OrganisationSettings>({
     name: '',
     timezone: 'Europe/London',
@@ -287,6 +292,58 @@ export default function SettingsPage() {
     }
     setUserSettings(prev => ({ ...prev, [field]: value }))
   }
+
+  // Validate org phone in real-time
+  useEffect(() => {
+    if (orgSettings.phone && orgSettings.phone.trim() !== '') {
+      if (!isValidPhone(orgSettings.phone)) {
+        setOrgPhoneError('Please enter a valid UK phone number (e.g., +44 7700 900123 or 07700 900123)')
+      } else {
+        setOrgPhoneError('')
+      }
+    } else {
+      setOrgPhoneError('')
+    }
+  }, [orgSettings.phone])
+
+  // Validate org public phone in real-time
+  useEffect(() => {
+    if (orgSettings.publicPhone && orgSettings.publicPhone.trim() !== '') {
+      if (!isValidPhone(orgSettings.publicPhone)) {
+        setOrgPublicPhoneError('Please enter a valid UK phone number (e.g., +44 7700 900123 or 07700 900123)')
+      } else {
+        setOrgPublicPhoneError('')
+      }
+    } else {
+      setOrgPublicPhoneError('')
+    }
+  }, [orgSettings.publicPhone])
+
+  // Validate org postcode in real-time
+  useEffect(() => {
+    if (orgSettings.postcode && orgSettings.postcode.trim() !== '') {
+      if (!isValidUKPostcode(orgSettings.postcode)) {
+        setOrgPostcodeError('Please enter a valid UK postcode (e.g., SW1A 1AA)')
+      } else {
+        setOrgPostcodeError('')
+      }
+    } else {
+      setOrgPostcodeError('')
+    }
+  }, [orgSettings.postcode])
+
+  // Validate user phone in real-time
+  useEffect(() => {
+    if (userSettings.phone && userSettings.phone.trim() !== '') {
+      if (!isValidPhone(userSettings.phone)) {
+        setUserPhoneError('Please enter a valid UK phone number (e.g., +44 7700 900123 or 07700 900123)')
+      } else {
+        setUserPhoneError('')
+      }
+    } else {
+      setUserPhoneError('')
+    }
+  }, [userSettings.phone])
 
   const handlePaymentSettingsChange = async (field: keyof PaymentSettings, value: boolean | string) => {
     // Auto-pay is always enabled for platform billing - users cannot disable it
@@ -697,8 +754,15 @@ export default function SettingsPage() {
                     id="postcode"
                     value={orgSettings.postcode}
                     onChange={(e) => handleOrgSettingsChange('postcode', e.target.value)}
+                    className={orgPostcodeError ? 'border-red-500' : orgSettings.postcode && isValidUKPostcode(orgSettings.postcode) ? 'border-green-500' : ''}
                     placeholder="SW1A 1AA"
                   />
+                  {orgPostcodeError && (
+                    <p className="text-xs text-red-600 mt-1">{orgPostcodeError}</p>
+                  )}
+                  {orgSettings.postcode && !orgPostcodeError && isValidUKPostcode(orgSettings.postcode) && (
+                    <p className="text-xs text-green-600 mt-1">Valid UK postcode</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="city">City</Label>
@@ -733,8 +797,15 @@ export default function SettingsPage() {
                     type="tel"
                     value={orgSettings.phone}
                     onChange={(e) => handleOrgSettingsChange('phone', e.target.value)}
+                    className={orgPhoneError ? 'border-red-500' : orgSettings.phone && isValidPhone(orgSettings.phone) ? 'border-green-500' : ''}
                     placeholder="+44 20 1234 5678"
                   />
+                  {orgPhoneError && (
+                    <p className="text-xs text-red-600 mt-1">{orgPhoneError}</p>
+                  )}
+                  {orgSettings.phone && !orgPhoneError && isValidPhone(orgSettings.phone) && (
+                    <p className="text-xs text-green-600 mt-1">Valid UK phone number</p>
+                  )}
                   <p className="text-sm text-gray-500 mt-1">For Madrasah OS to contact you</p>
                 </div>
                 <div>
@@ -744,8 +815,15 @@ export default function SettingsPage() {
                     type="tel"
                     value={orgSettings.publicPhone}
                     onChange={(e) => handleOrgSettingsChange('publicPhone', e.target.value)}
+                    className={orgPublicPhoneError ? 'border-red-500' : orgSettings.publicPhone && isValidPhone(orgSettings.publicPhone) ? 'border-green-500' : ''}
                     placeholder="+44 20 1234 5678"
                   />
+                  {orgPublicPhoneError && (
+                    <p className="text-xs text-red-600 mt-1">{orgPublicPhoneError}</p>
+                  )}
+                  {orgSettings.publicPhone && !orgPublicPhoneError && isValidPhone(orgSettings.publicPhone) && (
+                    <p className="text-xs text-green-600 mt-1">Valid UK phone number</p>
+                  )}
                   <p className="text-sm text-gray-500 mt-1">Visible on application form</p>
                 </div>
               </div>
@@ -851,8 +929,15 @@ export default function SettingsPage() {
                   type="tel"
                   value={userSettings.phone}
                   onChange={(e) => handleUserSettingsChange('phone', e.target.value)}
+                  className={userPhoneError ? 'border-red-500' : userSettings.phone && isValidPhone(userSettings.phone) ? 'border-green-500' : ''}
                   placeholder="Enter your phone number"
                 />
+                {userPhoneError && (
+                  <p className="text-xs text-red-600 mt-1">{userPhoneError}</p>
+                )}
+                {userSettings.phone && !userPhoneError && isValidPhone(userSettings.phone) && (
+                  <p className="text-xs text-green-600 mt-1">Valid UK phone number</p>
+                )}
               </div>
             </div>
 

@@ -61,12 +61,68 @@ export function isValidEmail(email: string): boolean {
 }
 
 /**
- * Validate phone number (basic validation)
+ * Validate UK phone number
+ * Accepts formats:
+ * - +44 followed by 10 digits (without leading 0)
+ * - 07 followed by 9 digits (mobile)
+ * - 01/02/03 followed by 9-10 digits (landline)
+ * - Can include spaces, dashes, parentheses
  */
 export function isValidPhone(phone: string): boolean {
-  // Allow international format: +, digits, spaces, dashes, parentheses
-  const phoneRegex = /^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,9}$/
-  return phoneRegex.test(phone.replace(/\s/g, ''))
+  if (!phone || typeof phone !== 'string') {
+    return false
+  }
+  
+  // Remove all spaces, dashes, parentheses, and dots for validation
+  const cleaned = phone.replace(/[\s\-\(\)\.]/g, '')
+  
+  // UK phone number patterns:
+  // +44 followed by 10 digits (international format)
+  // 07 followed by 9 digits (mobile)
+  // 01/02/03 followed by 9-10 digits (landline)
+  
+  // International format: +44 followed by 10 digits
+  if (cleaned.startsWith('+44')) {
+    const digits = cleaned.substring(3)
+    return /^\d{10}$/.test(digits)
+  }
+  
+  // UK mobile: 07 followed by 9 digits (total 11 digits)
+  if (cleaned.startsWith('07')) {
+    return /^07\d{9}$/.test(cleaned)
+  }
+  
+  // UK landline: 01/02/03 followed by 9-10 digits (total 10-11 digits)
+  if (cleaned.startsWith('01') || cleaned.startsWith('02') || cleaned.startsWith('03')) {
+    return /^(01|02|03)\d{8,9}$/.test(cleaned)
+  }
+  
+  return false
+}
+
+/**
+ * Validate UK postcode
+ * Formats: A9 9AA, A99 9AA, AA9 9AA, AA99 9AA, A9A 9AA, AA9A 9AA
+ * Can have space or no space
+ */
+/**
+ * Validate UK postcode
+ * Formats: A9 9AA, A99 9AA, AA9 9AA, AA99 9AA, A9A 9AA, AA9A 9AA
+ * Can have space or no space
+ */
+export function isValidUKPostcode(postcode: string): boolean {
+  if (!postcode || typeof postcode !== 'string') {
+    return false
+  }
+  
+  // Remove spaces and convert to uppercase
+  const cleaned = postcode.replace(/\s/g, '').toUpperCase()
+  
+  // UK postcode regex pattern
+  // Matches: A9 9AA, A99 9AA, AA9 9AA, AA99 9AA, A9A 9AA, AA9A 9AA
+  const postcodeRegex = /^[A-Z]{1,2}\d{1,2}[A-Z]?\d[A-Z]{2}$/
+  
+  return postcodeRegex.test(cleaned)
 }
 
 /**
