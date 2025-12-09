@@ -127,6 +127,12 @@ function SignUpForm() {
   const [passwordErrors, setPasswordErrors] = useState<string[]>([])
   const [passwordRequirements, setPasswordRequirements] = useState<Array<{ text: string; required: boolean; met: (password: string) => boolean }>>([])
   
+  // Phone and postcode validation state
+  const [phoneError, setPhoneError] = useState('')
+  const [orgPhoneError, setOrgPhoneError] = useState('')
+  const [orgPublicPhoneError, setOrgPublicPhoneError] = useState('')
+  const [orgPostcodeError, setOrgPostcodeError] = useState('')
+  
   // Track completed steps
   const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set())
   
