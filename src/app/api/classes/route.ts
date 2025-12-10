@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { checkPaymentMethod } from '@/lib/payment-check'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
+import crypto from 'crypto'
 
 async function handlePOST(request: NextRequest) {
   try {
@@ -48,12 +49,14 @@ async function handlePOST(request: NextRequest) {
 
     const classRecord = await prisma.class.create({
       data: {
+        id: crypto.randomUUID(),
         orgId,
         name: sanitizedName,
         description: sanitizedDescription,
         schedule: sanitizedSchedule,
         teacherId: teacherId || null,
-        monthlyFeeP: Math.round(monthlyFeeP * 100) // Convert to pence
+        monthlyFeeP: Math.round(monthlyFeeP * 100), // Convert to pence
+        updatedAt: new Date()
       },
       include: {
         User: {
