@@ -183,10 +183,10 @@ async function handlePOST(request: NextRequest) {
           throw new Error('Invalid public phone number format. Please enter a valid UK phone number (e.g., +44 7700 900123 or 07700 900123)')
         }
         
-        // Get existing org settings or create new ones
+        // Get existing org settings and slug
         const existingOrg = await tx.org.findUnique({
           where: { id: invitation.orgId },
-          select: { settings: true }
+          select: { settings: true, slug: true, name: true }
         })
         
         let orgSettings: any = {}
@@ -206,6 +206,46 @@ async function handlePOST(request: NextRequest) {
           orgSettings.website = sanitizedOrgWebsite
         }
         
+        // Always generate slug from org name and city to ensure it includes city (prevents clashes)
+        const orgName = existingOrg?.name || 'madrasah'
+        const nameSlug = orgName.toLowerCase()
+          .trim()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '')
+        
+        const citySlug = sanitizedOrgCity 
+          ? sanitizedOrgCity.toLowerCase()
+              .trim()
+              .replace(/[^a-z0-9]+/g, '-')
+              .replace(/^-+|-+$/g, '')
+          : ''
+        
+        // Combine name and city (always include city to prevent slug clashes)
+        const baseSlug = citySlug 
+          ? `${nameSlug}-${citySlug}`
+          : nameSlug
+        
+        // Check if slug already exists and append counter if needed
+        let orgSlug = baseSlug
+        let counter = 1
+        while (true) {
+          const existingOrgWithSlug = await tx.org.findUnique({
+            where: { slug: orgSlug },
+            select: { id: true }
+          })
+          
+          // If slug doesn't exist or belongs to current org, use it
+          if (!existingOrgWithSlug || existingOrgWithSlug.id === invitation.orgId) {
+            break
+          }
+          
+          // Otherwise, append counter
+          orgSlug = citySlug 
+            ? `${nameSlug}-${citySlug}-${counter}`
+            : `${nameSlug}-${counter}`
+          counter++
+        }
+        
         await tx.org.update({
           where: { id: invitation.orgId },
           data: {
@@ -219,6 +259,7 @@ async function handlePOST(request: NextRequest) {
             publicEmail: sanitizedOrgPublicEmail,
             timezone: timezone || 'Europe/London',
             settings: JSON.stringify(orgSettings),
+            slug: orgSlug,
             updatedAt: new Date()
           }
         })
