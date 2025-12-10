@@ -66,7 +66,8 @@ export async function ensurePlatformCustomer(orgId: string) {
       stripeCustomerId: customer.id,
       billingAnniversaryDate,
       trialEndDate,
-      subscriptionStatus: 'trialing'
+      subscriptionStatus: 'trialing',
+      updatedAt: new Date()
     }
   })
 }
