@@ -87,6 +87,7 @@ async function handlePATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  let body: any = null
   try {
     const session = await requireRole(['ADMIN', 'OWNER'])(request)
     if (session instanceof NextResponse) return session
@@ -94,7 +95,7 @@ async function handlePATCH(
     const orgId = await requireOrg(request)
     if (orgId instanceof NextResponse) return orgId
 
-    const body = await request.json()
+    body = await request.json()
     const { name, description, schedule, teacherId, monthlyFeeP } = body
 
     // Verify class belongs to org
@@ -131,9 +132,26 @@ async function handlePATCH(
     if (name !== undefined) updateData.name = sanitizeText(name, MAX_STRING_LENGTHS.name)
     if (description !== undefined) updateData.description = description ? sanitizeText(description, MAX_STRING_LENGTHS.text) : null
     if (schedule !== undefined) {
-      // Schedule is a JSON string, sanitize it but preserve JSON structure
-      const sanitizedSchedule = sanitizeText(schedule, MAX_STRING_LENGTHS.text)
-      updateData.schedule = sanitizedSchedule
+      // Schedule is a JSON string - validate it's valid JSON but don't sanitize
+      // Sanitizing JSON strings can break the JSON structure
+      try {
+        // Validate JSON structure
+        const parsed = JSON.parse(schedule)
+        // Ensure it has the expected structure
+        if (typeof parsed !== 'object' || parsed === null) {
+          return NextResponse.json(
+            { error: 'Invalid schedule format: must be an object' },
+            { status: 400 }
+          )
+        }
+        // Re-stringify to ensure it's valid and store as-is
+        updateData.schedule = JSON.stringify(parsed)
+      } catch (jsonError: any) {
+        return NextResponse.json(
+          { error: `Invalid schedule format: ${jsonError?.message || 'Invalid JSON'}` },
+          { status: 400 }
+        )
+      }
     }
     if (teacherId !== undefined) updateData.teacherId = teacherId || null
     if (monthlyFeeP !== undefined) {
@@ -182,16 +200,20 @@ async function handlePATCH(
 
     return NextResponse.json(updatedClass)
   } catch (error: any) {
-    logger.error('Update class error', { error: error?.message, stack: error?.stack, body })
-    const isDevelopment = process.env.NODE_ENV === 'development'
+    logger.error('Update class error', { 
+      error: error?.message, 
+      stack: error?.stack, 
+      body,
+      code: error?.code,
+      meta: error?.meta
+    })
+    // Always return error details to help debug
     return NextResponse.json(
       { 
         error: 'Failed to update class',
-        ...(isDevelopment && { 
-          details: error?.message,
-          code: error?.code,
-          meta: error?.meta
-        })
+        details: error?.message || 'Unknown error',
+        ...(error?.code && { code: error?.code }),
+        ...(error?.meta && { meta: error?.meta })
       },
       { status: 500 }
     )

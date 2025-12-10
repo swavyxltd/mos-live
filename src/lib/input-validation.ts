@@ -17,7 +17,8 @@ export const MAX_STRING_LENGTHS = {
   notes: 5000,
   description: 2000,
   title: 255,
-  body: 10000
+  body: 10000,
+  text: 5000 // Generic text field (same as notes)
 }
 
 /**
