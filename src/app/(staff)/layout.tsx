@@ -225,7 +225,8 @@ export default async function StaffLayout({
         
         // Only check if this route requires a specific permission
         // Dashboard is not accessible to teachers/finance officers (handled above)
-        // ADMIN users always have access to /staff page
+        // /staff page is accessible to all staff users (ADMIN and STAFF roles)
+        // The middleware already ensures only non-owners with org access can reach this layout
         if (requiredPermission && normalizedPath !== '/dashboard' && normalizedPath !== '/staff') {
           if (!permissions.includes(requiredPermission)) {
             // User doesn't have permission for this route - redirect based on subrole
@@ -238,6 +239,7 @@ export default async function StaffLayout({
             }
           }
         }
+        // /staff route is explicitly allowed for all staff users - no permission check needed
       }
     }
   }

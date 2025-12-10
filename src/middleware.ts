@@ -35,7 +35,7 @@ export async function middleware(request: NextRequest) {
   if (!roleHints || (roleHints.isOwner && !token.isSuperAdmin)) {
     // Reconstruct roleHints from token fields as fallback
     // Note: We can't check org memberships in middleware (no Prisma on Edge)
-    // So we'll use the token's isSuperAdmin and assume roleHints are correct
+    // So we'll use the token's isSuperAdmin and preserve existing org memberships
     roleHints = {
       isOwner: token.isSuperAdmin || false,
       orgAdminOf: roleHints?.orgAdminOf || [],
@@ -45,8 +45,12 @@ export async function middleware(request: NextRequest) {
   }
   
   // Ensure isOwner matches isSuperAdmin (they should always be in sync)
-  if (token.isSuperAdmin !== undefined) {
-    roleHints.isOwner = token.isSuperAdmin
+  // But don't override if roleHints already exist and are valid
+  if (token.isSuperAdmin !== undefined && roleHints) {
+    // Only update isOwner if it's inconsistent with isSuperAdmin
+    if (roleHints.isOwner !== token.isSuperAdmin) {
+      roleHints.isOwner = token.isSuperAdmin
+    }
   }
   
   // Debug logging for production issues
@@ -139,10 +143,11 @@ export async function middleware(request: NextRequest) {
   // Use token.isSuperAdmin directly - this is updated on every request in JWT callback
   if (pathname.startsWith('/staff')) {
     // Owners cannot access staff routes - redirect to owner portal
-    if (token.isSuperAdmin) {
+    // Check both token.isSuperAdmin and roleHints.isOwner for safety
+    if (token.isSuperAdmin || roleHints?.isOwner) {
       return NextResponse.redirect(new URL('/owner/overview', request.url))
     }
-    // If they don't have org admin/staff access, redirect to sign in
+    // If they don't have org admin/staff access, redirect appropriately
     // Otherwise, let them through - the layout will handle permissions
     const hasOrgAccess = (roleHints?.orgAdminOf && roleHints.orgAdminOf.length > 0) || 
                          (roleHints?.orgStaffOf && roleHints.orgStaffOf.length > 0)
@@ -150,10 +155,13 @@ export async function middleware(request: NextRequest) {
       if (roleHints?.isParent) {
         return NextResponse.redirect(new URL('/parent/dashboard', request.url))
       } else {
+        // If no org access and not a parent, redirect to sign in
+        // Don't redirect to dashboard as that would create a redirect loop
         return NextResponse.redirect(new URL('/auth/signin', request.url))
       }
     }
     // Allow through - layout will handle permissions like other staff routes
+    // The layout explicitly allows ADMIN users to access /staff without permission checks
   }
   
   if (pathname.startsWith('/parent') && !roleHints?.isParent) {
