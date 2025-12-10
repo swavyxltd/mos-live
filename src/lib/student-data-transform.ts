@@ -24,7 +24,7 @@ export interface TransformedStudent {
   parentName: string
   parentEmail: string
   parentPhone: string
-  emergencyContact: string // Not in schema - always empty string
+  backupPhone: string // From parent User.backupPhone
   allergies: string
   medicalNotes: string
   enrollmentDate: string
@@ -69,7 +69,7 @@ export function transformStudentData(student: StudentWithRelations): Transformed
     parentName: student.User?.name || '',
     parentEmail: student.User?.email || '',
     parentPhone: student.User?.phone || '',
-    emergencyContact: '', // Not in schema
+    backupPhone: student.User?.backupPhone || '',
     allergies: student.allergies || 'None',
     medicalNotes: student.medicalNotes || '',
     enrollmentDate: student.createdAt.toISOString(),

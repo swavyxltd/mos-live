@@ -35,7 +35,7 @@ interface Student {
   parentEmail: string
   parentPhone: string
   address: string
-  emergencyContact: string
+  backupPhone: string
   allergies: string
   medicalNotes: string
   enrollmentDate: Date
@@ -155,7 +155,7 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
       parentName: student.parentName,
       parentEmail: student.parentEmail,
       parentPhone: student.parentPhone,
-      emergencyContact: student.emergencyContact,
+      backupPhone: student.backupPhone || '',
       allergies: student.allergies,
       medicalNotes: student.medicalNotes,
       status: student.status,
@@ -186,7 +186,7 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
       parentName: student.parentName,
       parentEmail: student.parentEmail,
       parentPhone: student.parentPhone,
-      emergencyContact: student.emergencyContact,
+      backupPhone: student.backupPhone || '',
       allergies: student.allergies,
       medicalNotes: student.medicalNotes,
       status: student.status,
@@ -229,7 +229,7 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
       parentEmail: updatedStudent.parentEmail || updatedStudent.User?.email || '',
       parentPhone: updatedStudent.parentPhone || updatedStudent.User?.phone || '',
       address: updatedStudent.address || '',
-      emergencyContact: updatedStudent.emergencyContact || '',
+      backupPhone: updatedStudent.backupPhone || '',
       allergies: updatedStudent.allergies || 'None',
       medicalNotes: updatedStudent.medicalNotes || '',
       enrollmentDate: updatedStudent.enrollmentDate ? new Date(updatedStudent.enrollmentDate) : new Date(),

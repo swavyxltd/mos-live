@@ -73,7 +73,7 @@ function ParentSetupForm() {
     parentFirstName: '',
     parentLastName: '',
     parentPhone: '',
-    emergencyContact: '',
+    backupPhone: '',
     studentFirstName: '',
     studentLastName: '',
     studentDob: '',
@@ -400,7 +400,7 @@ function ParentSetupForm() {
           parentTitle: formData.parentTitle || null,
           parentName: `${formData.parentFirstName} ${formData.parentLastName}`.trim(),
           parentPhone: formData.parentPhone,
-          emergencyContact: formData.emergencyContact || null,
+          backupPhone: formData.backupPhone || null,
           studentFirstName: formData.studentFirstName,
           studentLastName: formData.studentLastName,
           studentDob: formData.studentDob || null,
@@ -709,17 +709,25 @@ function ParentSetupForm() {
             )}
           </div>
 
-          {/* Emergency Contact */}
+          {/* Backup Phone Number */}
           <div>
-            <input
-              id="emergencyContact"
-              name="emergencyContact"
-              type="text"
-              value={formData.emergencyContact}
-              onChange={(e) => setFormData({ ...formData, emergencyContact: e.target.value })}
-              className="w-full px-3 py-2 h-10 text-sm rounded-md border border-neutral-200/70 bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
-              placeholder="Emergency Contact (optional)"
-            />
+            <div className="relative">
+              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+              <input
+                id="backupPhone"
+                name="backupPhone"
+                type="tel"
+                value={formData.backupPhone}
+                onChange={(e) => setFormData({ ...formData, backupPhone: e.target.value })}
+                className={`w-full pl-9 pr-3 h-10 text-sm rounded-md border bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-0 transition-colors ${
+                  formData.backupPhone && isValidPhone(formData.backupPhone) ? 'border-green-500 focus:border-green-600' : 'border-neutral-200/70 focus:border-neutral-400'
+                }`}
+                placeholder="Backup Phone Number (optional)"
+              />
+            </div>
+            {formData.backupPhone && isValidPhone(formData.backupPhone) && (
+              <p className="mt-1 text-xs text-green-600">Valid UK phone number</p>
+            )}
           </div>
 
           <button

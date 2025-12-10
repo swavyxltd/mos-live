@@ -52,7 +52,7 @@ interface StudentDetail {
   parentName: string
   parentEmail: string
   parentPhone: string
-  emergencyContact: string
+  backupPhone: string
   allergies: string
   medicalNotes: string
   enrollmentDate: string
@@ -530,10 +530,10 @@ export function StudentDetailModal({
                           </p>
                         </div>
                         <div>
-                          <label className="text-sm text-[var(--muted-foreground)]">Emergency Contact</label>
+                          <label className="text-sm text-[var(--muted-foreground)]">Backup Phone Number</label>
                           <p className="text-sm text-[var(--foreground)] flex items-center gap-2">
-                            <Shield className="h-4 w-4 text-[var(--muted-foreground)] flex-shrink-0" />
-                            {student.emergencyContact}
+                            <Phone className="h-4 w-4 text-[var(--muted-foreground)] flex-shrink-0" />
+                            {student.backupPhone ? <PhoneLink phone={student.backupPhone} /> : 'Not provided'}
                           </p>
                         </div>
                       </div>

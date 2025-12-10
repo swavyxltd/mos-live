@@ -103,7 +103,7 @@ export default async function StudentsPage() {
       parentEmail: student.User?.email || '',
       parentPhone: student.User?.phone || '',
       address: '',
-      emergencyContact: '',
+      backupPhone: '',
       allergies: student.allergies || 'None',
       medicalNotes: student.medicalNotes || '',
       enrollmentDate: student.createdAt,

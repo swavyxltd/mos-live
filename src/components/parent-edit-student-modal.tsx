@@ -15,7 +15,6 @@ interface Student {
   dateOfBirth: string
   age: number
   address: string
-  emergencyContact: string
   allergies: string
   medicalNotes: string
   classes?: Array<{ id: string; name: string }>
@@ -35,7 +34,6 @@ export function ParentEditStudentModal({ isOpen, onClose, onSave, student }: Par
     dateOfBirth: '',
     allergies: 'None',
     medicalNotes: '',
-    emergencyContact: '',
     address: ''
   })
 
@@ -63,7 +61,6 @@ export function ParentEditStudentModal({ isOpen, onClose, onSave, student }: Par
         dateOfBirth: student.dateOfBirth || '',
         allergies: student.allergies || 'None',
         medicalNotes: student.medicalNotes || '',
-        emergencyContact: student.emergencyContact || '',
         address: student.address || ''
       })
     }
@@ -132,7 +129,6 @@ export function ParentEditStudentModal({ isOpen, onClose, onSave, student }: Par
           dateOfBirth: formData.dateOfBirth,
           allergies: formData.allergies,
           medicalNotes: formData.medicalNotes,
-          emergencyContact: formData.emergencyContact,
           address: formData.address
         })
       })
@@ -262,16 +258,6 @@ export function ParentEditStudentModal({ isOpen, onClose, onSave, student }: Par
                         </div>
                       </div>
 
-                      <div>
-                        <Label htmlFor="emergencyContact">Emergency Contact</Label>
-                        <Input
-                          id="emergencyContact"
-                          value={formData.emergencyContact}
-                          onChange={(e) => handleInputChange('emergencyContact', e.target.value)}
-                          placeholder="Enter emergency contact"
-                          className="mt-1"
-                        />
-                      </div>
                     </div>
                   </div>
                 </div>

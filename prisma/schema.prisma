@@ -571,6 +571,7 @@ model User {
   emailVerified          DateTime?
   image                  String?
   phone                  String?
+  backupPhone            String?
   password               String?
   isSuperAdmin           Boolean                 @default(false)
   isArchived             Boolean                 @default(false)

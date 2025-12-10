@@ -18,7 +18,7 @@ async function handlePOST(request: NextRequest) {
       parentTitle,
       parentName,
       parentPhone,
-      emergencyContact,
+      backupPhone,
       studentFirstName,
       studentLastName,
       studentDob,
@@ -116,6 +116,7 @@ async function handlePOST(request: NextRequest) {
     const sanitizedParentTitle = parentTitle ? sanitizeText(parentTitle, 10) : null // Max 10 chars for title (Mr, Mrs, etc.)
     const sanitizedParentName = sanitizeText(parentName, MAX_STRING_LENGTHS.name)
     const sanitizedParentPhone = sanitizeText(parentPhone, MAX_STRING_LENGTHS.phone)
+    const sanitizedBackupPhone = backupPhone ? sanitizeText(backupPhone, MAX_STRING_LENGTHS.phone) : null
     const sanitizedStudentFirstName = studentFirstName ? sanitizeText(studentFirstName, MAX_STRING_LENGTHS.name) : null
     const sanitizedStudentLastName = studentLastName ? sanitizeText(studentLastName, MAX_STRING_LENGTHS.name) : null
     const sanitizedAllergies = studentAllergies ? sanitizeText(studentAllergies, MAX_STRING_LENGTHS.text) : null
@@ -125,6 +126,14 @@ async function handlePOST(request: NextRequest) {
     if (!isValidPhone(sanitizedParentPhone)) {
       return NextResponse.json(
         { error: 'Invalid phone number format. Please enter a valid UK phone number (e.g., +44 7700 900123 or 07700 900123)' },
+        { status: 400 }
+      )
+    }
+
+    // Validate backup phone if provided - UK format only
+    if (sanitizedBackupPhone && !isValidPhone(sanitizedBackupPhone)) {
+      return NextResponse.json(
+        { error: 'Invalid backup phone number format. Please enter a valid UK phone number (e.g., +44 7700 900123 or 07700 900123)' },
         { status: 400 }
       )
     }
@@ -213,6 +222,7 @@ async function handlePOST(request: NextRequest) {
               email: invitation.parentEmail.toLowerCase(),
               name: sanitizedParentName,
               phone: sanitizedParentPhone,
+              backupPhone: sanitizedBackupPhone,
               password: hashedPassword,
               title: sanitizedParentTitle,
               address: sanitizedAddress,
@@ -238,6 +248,7 @@ async function handlePOST(request: NextRequest) {
               data: {
                 name: sanitizedParentName,
                 phone: sanitizedParentPhone,
+                backupPhone: sanitizedBackupPhone,
                 password: hashedPassword,
                 title: sanitizedParentTitle,
                 address: sanitizedAddress,
@@ -257,6 +268,7 @@ async function handlePOST(request: NextRequest) {
           data: {
             name: sanitizedParentName,
             phone: sanitizedParentPhone,
+            backupPhone: sanitizedBackupPhone,
             password: hashedPassword,
             title: sanitizedParentTitle,
             address: sanitizedAddress,

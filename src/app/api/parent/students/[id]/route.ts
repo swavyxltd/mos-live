@@ -98,7 +98,6 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       dateOfBirth,
       allergies,
       medicalNotes,
-      emergencyContact,
       address
     } = updateData
 
@@ -150,7 +149,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 
     // Update the student (parents can only update certain fields)
-    // Note: grade, address, and emergencyContact are not in the schema, so we skip them
+    // Note: grade and address are not in the schema, so we skip them
     const updatedStudent = await prisma.student.update({
       where: { id, orgId: org.id },
       data: {

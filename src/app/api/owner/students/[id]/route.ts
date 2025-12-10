@@ -64,7 +64,7 @@ async function handleGET(request: NextRequest, { params }: { params: { id: strin
       parentName: student.primaryParent?.name || '',
       parentEmail: student.primaryParent?.email || '',
       parentPhone: student.primaryParent?.phone || '',
-      emergencyContact: '', // Emergency contact not in schema
+      backupPhone: student.primaryParent?.backupPhone || '',
       allergies: student.allergies || 'None',
       medicalNotes: student.medicalNotes || '',
       enrollmentDate: student.createdAt.toISOString().split('T')[0],

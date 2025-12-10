@@ -139,7 +139,7 @@ async function handleGET(request: NextRequest) {
         parentEmail: student.primaryParent?.email || '',
         parentPhone: student.primaryParent?.phone || '',
         address: '', // Address not in schema
-        emergencyContact: '', // Emergency contact not in schema
+        backupPhone: student.primaryParent?.backupPhone || '',
         allergies: student.allergies || 'None',
         medicalNotes: student.medicalNotes || '',
         enrollmentDate: student.createdAt.toISOString().split('T')[0],

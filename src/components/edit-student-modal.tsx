@@ -20,7 +20,7 @@ interface Student {
   parentEmail: string
   parentPhone: string
   address: string
-  emergencyContact: string
+  backupPhone: string
   allergies: string
   medicalNotes: string
   status: 'ACTIVE' | 'INACTIVE' | 'DEACTIVATED' | 'GRADUATED'
@@ -51,7 +51,7 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
     parentEmail: '',
     parentPhone: '',
     address: '',
-    emergencyContact: '',
+    backupPhone: '',
     allergies: 'None',
     medicalNotes: '',
     status: 'ACTIVE' as 'ACTIVE' | 'INACTIVE' | 'DEACTIVATED' | 'GRADUATED',
@@ -84,7 +84,7 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
         parentEmail: student.parentEmail || '',
         parentPhone: student.parentPhone || '',
         address: student.address || '',
-        emergencyContact: student.emergencyContact || '',
+        backupPhone: student.backupPhone || '',
         allergies: student.allergies || 'None',
         medicalNotes: student.medicalNotes || '',
         status: student.status || 'ACTIVE',
@@ -400,14 +400,17 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
                       </div>
 
                       <div>
-                        <Label htmlFor="emergencyContact">Emergency Contact</Label>
-                        <Input
-                          id="emergencyContact"
-                          value={formData.emergencyContact}
-                          onChange={(e) => handleInputChange('emergencyContact', e.target.value)}
-                          placeholder="Enter emergency contact"
-                          className="mt-1"
-                        />
+                        <Label htmlFor="backupPhone">Backup Phone Number</Label>
+                        <div className="relative mt-1">
+                          <Phone className="absolute left-3 top-3 h-4 w-4 text-[var(--muted-foreground)]" />
+                          <Input
+                            id="backupPhone"
+                            value={formData.backupPhone}
+                            onChange={(e) => handleInputChange('backupPhone', e.target.value)}
+                            placeholder="Enter backup phone number"
+                            className="pl-10"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>

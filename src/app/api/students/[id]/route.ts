@@ -76,7 +76,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       parentEmail,
       parentPhone,
       address,
-      emergencyContact,
+      backupPhone,
       allergies,
       medicalNotes,
       status,
@@ -142,6 +142,14 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       )
     }
 
+    // Validate backup phone if provided
+    if (backupPhone && backupPhone.trim() && !isValidPhone(backupPhone.trim())) {
+      return NextResponse.json(
+        { error: 'Backup phone must be a valid UK phone number' },
+        { status: 400 }
+      )
+    }
+
     // Validate address if provided
     if (address && address.trim() && !isValidAddressLine(address.trim())) {
       return NextResponse.json(
@@ -165,7 +173,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       // Handle parent update/create if parent info is provided
       let parentUserId = existingStudent.primaryParentId
       
-      if (parentName || parentEmail || parentPhone) {
+      if (parentName || parentEmail || parentPhone || backupPhone !== undefined) {
         if (existingStudent.primaryParentId) {
           // Update existing parent
           await tx.user.update({

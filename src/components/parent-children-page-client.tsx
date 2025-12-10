@@ -25,6 +25,7 @@ import {
 import { formatDate } from '@/lib/utils'
 import Link from 'next/link'
 import { getAttendanceRating } from '@/lib/attendance-ratings'
+import { PhoneLink } from './phone-link'
 
 interface Student {
   id: string
@@ -39,7 +40,7 @@ interface Student {
   parentName: string
   parentEmail: string
   parentPhone: string
-  emergencyContact: string
+  backupPhone: string
   allergies: string
   medicalNotes: string
   enrollmentDate: string
@@ -430,12 +431,12 @@ export function ParentChildrenPageClient({ students: initialStudents }: ParentCh
                         </div>
                       </div>
                     )}
-                    {viewingStudent.emergencyContact && (
+                    {viewingStudent.backupPhone && (
                       <div className="p-3 border border-[var(--border)] rounded-[var(--radius-md)]">
-                        <div className="text-sm font-medium text-[var(--foreground)] mb-1">Emergency Contact</div>
+                        <div className="text-sm font-medium text-[var(--foreground)] mb-1">Backup Phone Number</div>
                         <div className="flex items-center gap-2 text-sm text-[var(--muted-foreground)]">
                           <Phone className="h-4 w-4" />
-                          <span>{viewingStudent.emergencyContact}</span>
+                          <PhoneLink phone={viewingStudent.backupPhone} />
                         </div>
                       </div>
                     )}

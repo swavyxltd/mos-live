@@ -116,7 +116,7 @@ export default async function ParentChildrenPage() {
       parentName: session.user.name || '',
       parentEmail: session.user.email || '',
       parentPhone: session.user.phone || '',
-      emergencyContact: student.emergencyContact || '',
+      backupPhone: session.user.backupPhone || '',
       allergies: student.allergies || 'None',
       medicalNotes: student.medicalNotes || '',
       enrollmentDate: student.createdAt.toISOString(),

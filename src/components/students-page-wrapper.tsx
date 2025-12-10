@@ -27,7 +27,7 @@ interface Student {
   parentEmail: string
   parentPhone: string
   address: string
-  emergencyContact: string
+  backupPhone: string
   allergies: string
   medicalNotes: string
   enrollmentDate: Date
