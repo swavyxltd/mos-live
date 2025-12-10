@@ -56,26 +56,26 @@ async function handlePUT(request: NextRequest) {
     const sanitizedPublicEmail = publicEmail ? publicEmail.toLowerCase().trim() : undefined
     const sanitizedOfficeHours = officeHours ? sanitizeText(officeHours, MAX_STRING_LENGTHS.text) : undefined
 
-    // If name or city changed, update slug automatically (unless slug is explicitly provided)
-    let newSlug = slug || org.slug
-    const currentCity = (org as any).city || ''
-    const shouldUpdateSlug = (sanitizedName && sanitizedName !== org.name) || (sanitizedCity && sanitizedCity !== currentCity)
-    
-    if (shouldUpdateSlug && !slug) {
-      // Generate slug from name and city
+    // Always regenerate slug from name and city to ensure city is always included (unless slug is explicitly provided)
+    let newSlug = slug
+    if (!newSlug) {
+      // Get the current city (use updated city if provided, otherwise use existing)
+      const currentCity = sanitizedCity || (org as any).city || ''
+      
+      // Generate slug from name and city (always include city to prevent clashes)
       const nameSlug = (sanitizedName || org.name).toLowerCase()
         .trim()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '')
       
-      const citySlug = sanitizedCity 
-        ? sanitizedCity.toLowerCase()
+      const citySlug = currentCity 
+        ? currentCity.toLowerCase()
             .trim()
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/^-+|-+$/g, '')
         : ''
       
-      // Combine name and city
+      // Combine name and city (always include city if available)
       const baseSlug = citySlug 
         ? `${nameSlug}-${citySlug}`
         : nameSlug
