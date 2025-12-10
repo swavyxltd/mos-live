@@ -70,6 +70,51 @@ export default function CreateUserPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Import validation functions
+    const { isValidName, isValidEmailStrict, isValidPhone } = await import('@/lib/input-validation')
+    
+    // Validate name - split into first and last name
+    const nameParts = formData.name.trim().split(/\s+/)
+    if (nameParts.length < 2) {
+      toast({
+        title: 'Error',
+        description: 'Please enter both first and last name',
+        variant: 'destructive'
+      })
+      return
+    }
+    const firstName = nameParts[0]
+    const lastName = nameParts.slice(1).join(' ')
+    if (!isValidName(firstName) || !isValidName(lastName)) {
+      toast({
+        title: 'Error',
+        description: 'Name must be a valid name (2-50 characters per name, letters only)',
+        variant: 'destructive'
+      })
+      return
+    }
+
+    // Validate email
+    if (!isValidEmailStrict(formData.email)) {
+      toast({
+        title: 'Error',
+        description: 'Please enter a valid email address',
+        variant: 'destructive'
+      })
+      return
+    }
+
+    // Validate phone if provided
+    if (formData.phone && formData.phone.trim() && !isValidPhone(formData.phone)) {
+      toast({
+        title: 'Error',
+        description: 'Please enter a valid UK phone number',
+        variant: 'destructive'
+      })
+      return
+    }
+    
     setLoading(true)
 
     try {

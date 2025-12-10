@@ -22,6 +22,8 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { PermissionSelector } from '@/components/permission-selector'
 import { StaffPermissionKey, StaffSubrole } from '@/types/staff-roles'
+import { isValidName, isValidEmailStrict, isValidPhone } from '@/lib/input-validation'
+import { toast } from 'sonner'
 
 interface TeacherFormData {
   name: string
@@ -131,6 +133,31 @@ export function TeacherForm({ initialData, isEditing = false, onSubmit, onCancel
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Validate name - split into first and last name
+    const nameParts = formData.name.trim().split(/\s+/)
+    if (nameParts.length < 2) {
+      toast.error('Please enter both first and last name')
+      return
+    }
+    const firstName = nameParts[0]
+    const lastName = nameParts.slice(1).join(' ')
+    if (!isValidName(firstName) || !isValidName(lastName)) {
+      toast.error('Name must be a valid name (2-50 characters per name, letters only)')
+      return
+    }
+
+    // Validate email
+    if (!isValidEmailStrict(formData.email)) {
+      toast.error('Please enter a valid email address')
+      return
+    }
+
+    // Validate phone
+    if (formData.phone && formData.phone.trim() && !isValidPhone(formData.phone)) {
+      toast.error('Please enter a valid UK phone number')
+      return
+    }
     
     // For new staff, username is automatically set to email
     if (!isEditing) {

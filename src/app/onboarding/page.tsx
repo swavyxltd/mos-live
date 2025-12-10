@@ -170,31 +170,88 @@ export default function OnboardingPage() {
 
     switch (currentStep) {
       case 'admin':
+        // Import validation functions
+        const { isValidName, isValidEmailStrict } = await import('@/lib/input-validation')
+        
         if (!adminData.name || !adminData.email) {
           toast.error('Please fill in all required fields')
           return
         }
+        
+        // Validate name - split into first and last name
+        const nameParts = adminData.name.trim().split(/\s+/)
+        if (nameParts.length < 2) {
+          toast.error('Please enter both first and last name')
+          return
+        }
+        const firstName = nameParts[0]
+        const lastName = nameParts.slice(1).join(' ')
+        if (!isValidName(firstName) || !isValidName(lastName)) {
+          toast.error('Name must be a valid name (2-50 characters per name, letters only)')
+          return
+        }
+
+        // Validate email
+        if (!isValidEmailStrict(adminData.email)) {
+          toast.error('Please enter a valid email address')
+          return
+        }
+        
         dataToSave = adminData
         break
 
       case 'organisation':
+        // Import validation functions
+        const { isValidAddressLine, isValidCity, isValidEmailStrict: isValidEmailStrictOrg, isValidPhone: isValidPhoneOrg, isValidUKPostcode: isValidUKPostcodeOrg } = await import('@/lib/input-validation')
+        
         if (!orgData.addressLine1 || !orgData.city || !orgData.postcode || 
             !orgData.phone || !orgData.publicPhone || !orgData.email || !orgData.publicEmail) {
           toast.error('Please fill in all required organisation fields')
           return
         }
-        if (!isValidPhone(orgData.phone)) {
-          toast.error('Please enter a valid UK phone number for Contact Phone')
+        
+        // Validate address line 1
+        if (!isValidAddressLine(orgData.addressLine1)) {
+          toast.error('Address must be a valid address (5-100 characters)')
           return
         }
-        if (!isValidPhone(orgData.publicPhone)) {
-          toast.error('Please enter a valid UK phone number for Public Phone')
+
+        // Validate city
+        if (!isValidCity(orgData.city)) {
+          toast.error('City must be a valid city name (2-50 characters, letters only)')
           return
         }
-        if (!isValidUKPostcode(orgData.postcode)) {
+
+        // Validate postcode
+        if (!isValidUKPostcodeOrg(orgData.postcode)) {
           toast.error('Please enter a valid UK postcode')
           return
         }
+        
+        // Validate phone
+        if (!isValidPhoneOrg(orgData.phone)) {
+          toast.error('Please enter a valid UK phone number for Contact Phone')
+          return
+        }
+        
+        // Validate public phone
+        if (!isValidPhoneOrg(orgData.publicPhone)) {
+          toast.error('Please enter a valid UK phone number for Public Phone')
+          return
+        }
+
+        // Validate email
+        if (!isValidEmailStrictOrg(orgData.email)) {
+          toast.error('Please enter a valid email address for Contact Email')
+          return
+        }
+
+        // Validate public email
+        if (!isValidEmailStrictOrg(orgData.publicEmail)) {
+          toast.error('Please enter a valid email address for Public Email')
+          return
+        }
+        
         dataToSave = orgData
         break
 

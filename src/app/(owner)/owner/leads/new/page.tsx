@@ -48,8 +48,44 @@ export default function NewLeadPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    // Import validation functions
+    const { isValidName, isValidEmailStrict, isValidPhone, isValidCity } = await import('@/lib/input-validation')
+    
     if (!formData.orgName.trim()) {
       toast.error('Madrasah name is required')
+      return
+    }
+
+    // Validate city if provided
+    if (formData.city && formData.city.trim() && !isValidCity(formData.city)) {
+      toast.error('City must be a valid city name (2-50 characters, letters only)')
+      return
+    }
+
+    // Validate contact name if provided
+    if (formData.contactName && formData.contactName.trim()) {
+      const nameParts = formData.contactName.trim().split(/\s+/)
+      if (nameParts.length < 2) {
+        toast.error('Contact name must include both first and last name')
+        return
+      }
+      const firstName = nameParts[0]
+      const lastName = nameParts.slice(1).join(' ')
+      if (!isValidName(firstName) || !isValidName(lastName)) {
+        toast.error('Contact name must be a valid name (2-50 characters per name, letters only)')
+        return
+      }
+    }
+
+    // Validate contact email if provided
+    if (formData.contactEmail && formData.contactEmail.trim() && !isValidEmailStrict(formData.contactEmail)) {
+      toast.error('Please enter a valid email address')
+      return
+    }
+
+    // Validate contact phone if provided
+    if (formData.contactPhone && formData.contactPhone.trim() && !isValidPhone(formData.contactPhone)) {
+      toast.error('Please enter a valid UK phone number')
       return
     }
 

@@ -6,7 +6,7 @@ import Image from 'next/image'
 import { Mail, Lock, User, MapPin, Phone, Globe } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Onboarding01 } from '@/components/onboarding-01'
-import { isValidPhone, isValidUKPostcode } from '@/lib/input-validation'
+import { isValidPhone, isValidUKPostcode, isValidName, isValidEmailStrict, isValidAddressLine, isValidCity } from '@/lib/input-validation'
 
 function SignUpForm() {
   const searchParams = useSearchParams()
@@ -338,11 +338,88 @@ function SignUpForm() {
 
     // Password validation is also handled by the API based on platform settings
 
+    // Validate first name
+    if (!isValidName(formData.firstName)) {
+      setError('First name must be a valid name (2-50 characters, letters only)')
+      setIsLoading(false)
+      return
+    }
+
+    // Validate last name
+    if (!isValidName(formData.lastName)) {
+      setError('Last name must be a valid name (2-50 characters, letters only)')
+      setIsLoading(false)
+      return
+    }
+
+    // Validate email
+    if (!isValidEmailStrict(formData.email)) {
+      setError('Please enter a valid email address')
+      setIsLoading(false)
+      return
+    }
+
+    // Validate phone if provided
+    if (formData.phone && formData.phone.trim() && !isValidPhone(formData.phone)) {
+      setError('Please enter a valid UK phone number')
+      setIsLoading(false)
+      return
+    }
+
     // Validate required org fields for new org setup
     if (isNewOrgSetup) {
       if (!formData.orgAddressLine1 || !formData.orgPostcode || !formData.orgCity || 
           !formData.orgPhone || !formData.orgPublicPhone || !formData.orgEmail || !formData.orgPublicEmail) {
         setError('Please fill in all required organisation details')
+        setIsLoading(false)
+        return
+      }
+
+      // Validate org address line 1
+      if (!isValidAddressLine(formData.orgAddressLine1)) {
+        setError('Organisation address must be a valid address (5-100 characters)')
+        setIsLoading(false)
+        return
+      }
+
+      // Validate org city
+      if (!isValidCity(formData.orgCity)) {
+        setError('Organisation city must be a valid city name (2-50 characters, letters only)')
+        setIsLoading(false)
+        return
+      }
+
+      // Validate org postcode
+      if (!isValidUKPostcode(formData.orgPostcode)) {
+        setError('Please enter a valid UK postcode')
+        setIsLoading(false)
+        return
+      }
+
+      // Validate org phone
+      if (!isValidPhone(formData.orgPhone)) {
+        setError('Please enter a valid UK phone number for organisation contact phone')
+        setIsLoading(false)
+        return
+      }
+
+      // Validate org public phone
+      if (!isValidPhone(formData.orgPublicPhone)) {
+        setError('Please enter a valid UK phone number for organisation public phone')
+        setIsLoading(false)
+        return
+      }
+
+      // Validate org email
+      if (!isValidEmailStrict(formData.orgEmail)) {
+        setError('Please enter a valid email address for organisation contact email')
+        setIsLoading(false)
+        return
+      }
+
+      // Validate org public email
+      if (!isValidEmailStrict(formData.orgPublicEmail)) {
+        setError('Please enter a valid email address for organisation public email')
         setIsLoading(false)
         return
       }

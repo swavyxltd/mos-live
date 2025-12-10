@@ -85,12 +85,48 @@ export function AddLeadModal({ isOpen, onClose, onSave }: AddLeadModalProps) {
   }
 
   const handleSave = async () => {
+    // Import validation functions
+    const { isValidName, isValidEmailStrict, isValidPhone, isValidCity } = await import('@/lib/input-validation')
+    
     if (!formData.orgName.trim()) {
       setError('Madrasah name is required')
       return
     }
+    
     if (!formData.city.trim()) {
       setError('City is required')
+      return
+    }
+    
+    if (!isValidCity(formData.city)) {
+      setError('City must be a valid city name (2-50 characters, letters only)')
+      return
+    }
+
+    // Validate contact name if provided
+    if (formData.contactName && formData.contactName.trim()) {
+      const nameParts = formData.contactName.trim().split(/\s+/)
+      if (nameParts.length < 2) {
+        setError('Contact name must include both first and last name')
+        return
+      }
+      const firstName = nameParts[0]
+      const lastName = nameParts.slice(1).join(' ')
+      if (!isValidName(firstName) || !isValidName(lastName)) {
+        setError('Contact name must be a valid name (2-50 characters per name, letters only)')
+        return
+      }
+    }
+
+    // Validate contact email if provided
+    if (formData.contactEmail && formData.contactEmail.trim() && !isValidEmailStrict(formData.contactEmail)) {
+      setError('Please enter a valid email address')
+      return
+    }
+
+    // Validate contact phone if provided
+    if (formData.contactPhone && formData.contactPhone.trim() && !isValidPhone(formData.contactPhone)) {
+      setError('Please enter a valid UK phone number')
       return
     }
 

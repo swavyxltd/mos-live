@@ -64,9 +64,54 @@ export function AddOrganisationForm({ onSuccess, onCancel }: AddOrganisationForm
     setIsLoading(true)
     setError('')
 
+    // Import validation functions
+    const { isValidName, isValidEmailStrict, isValidPhone, isValidAddressLine, isValidCity, isValidUKPostcode } = await import('@/lib/input-validation')
+
     // Validate required fields
     if (!formData.name || !formData.adminEmail) {
       setError('Please fill in all required fields (Name and Admin Email)')
+      setIsLoading(false)
+      return
+    }
+
+    // Validate admin email
+    if (!isValidEmailStrict(formData.adminEmail)) {
+      setError('Please enter a valid admin email address')
+      setIsLoading(false)
+      return
+    }
+
+    // Validate email if provided
+    if (formData.email && formData.email.trim() && !isValidEmailStrict(formData.email)) {
+      setError('Please enter a valid email address')
+      setIsLoading(false)
+      return
+    }
+
+    // Validate phone if provided
+    if (formData.phone && formData.phone.trim() && !isValidPhone(formData.phone)) {
+      setError('Please enter a valid UK phone number')
+      setIsLoading(false)
+      return
+    }
+
+    // Validate address line 1 if provided
+    if (formData.addressLine1 && formData.addressLine1.trim() && !isValidAddressLine(formData.addressLine1)) {
+      setError('Address must be a valid address (5-100 characters)')
+      setIsLoading(false)
+      return
+    }
+
+    // Validate city if provided
+    if (formData.city && formData.city.trim() && !isValidCity(formData.city)) {
+      setError('City must be a valid city name (2-50 characters, letters only)')
+      setIsLoading(false)
+      return
+    }
+
+    // Validate postcode if provided
+    if (formData.postcode && formData.postcode.trim() && !isValidUKPostcode(formData.postcode)) {
+      setError('Please enter a valid UK postcode')
       setIsLoading(false)
       return
     }
