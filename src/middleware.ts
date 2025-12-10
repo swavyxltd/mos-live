@@ -142,16 +142,22 @@ export async function middleware(request: NextRequest) {
   // Block owners from accessing /staff routes - owners and org admins are mutually exclusive
   // Use token.isSuperAdmin directly - this is updated on every request in JWT callback
   if (pathname.startsWith('/staff')) {
-    // Owners cannot access staff routes - redirect to owner portal
-    // Check both token.isSuperAdmin and roleHints.isOwner for safety
-    if (token.isSuperAdmin || roleHints?.isOwner) {
-      return NextResponse.redirect(new URL('/owner/overview', request.url))
-    }
-    // If they don't have org admin/staff access, redirect appropriately
-    // Otherwise, let them through - the layout will handle permissions
+    // Check if user has org access first - if they do, allow them through even if they're a super admin
+    // This allows super admins who are also org admins to access staff routes
     const hasOrgAccess = (roleHints?.orgAdminOf && roleHints.orgAdminOf.length > 0) || 
                          (roleHints?.orgStaffOf && roleHints.orgStaffOf.length > 0)
-    if (!hasOrgAccess) {
+    
+    // If they have org access, allow them through - they're accessing as an org admin/staff, not as a super admin
+    if (hasOrgAccess) {
+      // Allow through - layout will handle permissions like other staff routes
+      // The layout explicitly allows ADMIN users to access /staff without permission checks
+    } else {
+      // No org access - check if they're a super admin trying to access staff routes
+      // Super admins without org access should use the owner portal
+      if (token.isSuperAdmin || roleHints?.isOwner) {
+        return NextResponse.redirect(new URL('/owner/overview', request.url))
+      }
+      // If they don't have org access and aren't a super admin, redirect appropriately
       if (roleHints?.isParent) {
         return NextResponse.redirect(new URL('/parent/dashboard', request.url))
       } else {
@@ -160,8 +166,6 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/auth/signin', request.url))
       }
     }
-    // Allow through - layout will handle permissions like other staff routes
-    // The layout explicitly allows ADMIN users to access /staff without permission checks
   }
   
   if (pathname.startsWith('/parent') && !roleHints?.isParent) {
