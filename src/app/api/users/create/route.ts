@@ -169,6 +169,7 @@ async function handlePOST(request: NextRequest) {
             password: hashedPassword || crypto.randomBytes(32).toString('hex'), // Temporary password if sending invitation
             phone: sanitizedPhone,
             isSuperAdmin: isSuperAdmin || false,
+            updatedAt: new Date()
           }
         })
       } catch (createError: any) {

@@ -171,7 +171,8 @@ async function handlePOST(request: NextRequest) {
               address: sanitizedAddress,
               postcode: sanitizedPostcode,
               giftAidStatus: giftAidStatus,
-              giftAidDeclaredAt: new Date()
+              giftAidDeclaredAt: new Date(),
+              updatedAt: new Date()
             }
           })
         } catch (createError: any) {

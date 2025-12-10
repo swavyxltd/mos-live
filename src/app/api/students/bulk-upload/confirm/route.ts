@@ -123,7 +123,8 @@ async function handlePOST(request: NextRequest) {
                   data: {
                     id: crypto.randomUUID(),
                     email: studentData.parentEmail.toLowerCase().trim(),
-                    phone: studentData.parentPhone || undefined // Optional phone if provided
+                    phone: studentData.parentPhone || undefined, // Optional phone if provided
+                    updatedAt: new Date()
                   }
                 })
               } catch (createError: any) {
@@ -200,7 +201,8 @@ async function handlePOST(request: NextRequest) {
                   data: {
                     id: crypto.randomUUID(),
                     email: studentData.parentEmail.toLowerCase().trim(),
-                    phone: studentData.parentPhone || undefined // Optional phone if provided
+                    phone: studentData.parentPhone || undefined, // Optional phone if provided
+                    updatedAt: new Date()
                   }
                 })
               } catch (createError: any) {

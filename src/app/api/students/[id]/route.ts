@@ -121,7 +121,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
                   id: crypto.randomUUID(),
                   email: parentEmail.toLowerCase().trim(),
                   name: parentName || '',
-                  phone: parentPhone || null
+                  phone: parentPhone || null,
+                  updatedAt: new Date()
                 }
               })
             } catch (createError: any) {

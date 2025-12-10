@@ -136,7 +136,8 @@ async function handlePOST(request: NextRequest) {
           name: sanitizedName,
           password: hashedPassword,
           phone: sanitizedPhone,
-          isSuperAdmin: false
+          isSuperAdmin: false,
+          updatedAt: new Date()
         }
       })
 

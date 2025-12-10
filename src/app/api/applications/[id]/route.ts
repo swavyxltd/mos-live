@@ -86,7 +86,8 @@ export async function PATCH(
                   id: crypto.randomUUID(),
                   name: application.guardianName.trim(),
                   email: application.guardianEmail.toLowerCase().trim(),
-                  phone: application.guardianPhone?.trim() || null
+                  phone: application.guardianPhone?.trim() || null,
+                  updatedAt: new Date()
                 }
               })
             } catch (createError: any) {
