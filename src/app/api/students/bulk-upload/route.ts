@@ -96,7 +96,7 @@ async function handlePOST(request: NextRequest) {
         id: true,
         firstName: true,
         lastName: true,
-        primaryParent: {
+        User: {
           select: {
             email: true
           }
@@ -107,7 +107,7 @@ async function handlePOST(request: NextRequest) {
     // Create a Map for fast duplicate lookup: key = "firstName|lastName|parentEmail"
     const duplicateMap = new Map<string, { id: string }>()
     existingStudents.forEach(student => {
-      const key = `${student.firstName.toLowerCase().trim()}|${student.lastName.toLowerCase().trim()}|${student.primaryParent?.email?.toLowerCase().trim() || ''}`
+      const key = `${student.firstName.toLowerCase().trim()}|${student.lastName.toLowerCase().trim()}|${student.User?.email?.toLowerCase().trim() || ''}`
       duplicateMap.set(key, { id: student.id })
     })
 
