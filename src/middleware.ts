@@ -38,13 +38,12 @@ export async function middleware(request: NextRequest) {
   // Org status checks skipped in middleware (no DB on Edge). Handled in server routes/pages if needed.
   
   // Determine the correct portal for this user
-  // Priority: org admin/staff > owner > parent
-  // This allows owners who are also org admins to access org-level features
+  // Owners and org admins are mutually exclusive - owners can only access /owner routes
   let correctPortal = ''
-  if (roleHints.orgAdminOf.length > 0 || roleHints.orgStaffOf.length > 0) {
-    correctPortal = '/staff'
-  } else if (roleHints.isOwner) {
+  if (roleHints.isOwner) {
     correctPortal = '/owner'
+  } else if (roleHints.orgAdminOf.length > 0 || roleHints.orgStaffOf.length > 0) {
+    correctPortal = '/staff'
   } else if (roleHints.isParent) {
     correctPortal = '/parent'
   } else {
@@ -97,22 +96,21 @@ export async function middleware(request: NextRequest) {
     }
   }
   
-  // Block owners from accessing /staff routes unless they're also org admins/staff
-  // Owners should use the owner portal, not the staff portal
+  // Block owners from accessing /staff routes - owners and org admins are mutually exclusive
   if (pathname.startsWith('/staff')) {
-    // Only allow access if they're an org admin or staff member
+    // Owners cannot access staff routes - redirect to owner portal
+    if (roleHints.isOwner) {
+      return NextResponse.redirect(new URL('/owner/overview', request.url))
+    }
+    // Only allow access if they're an org admin or staff member (and NOT an owner)
     if (roleHints.orgAdminOf.length === 0 && roleHints.orgStaffOf.length === 0) {
-      // They don't have org admin/staff access, redirect them away
-      if (roleHints.isOwner) {
-        // Owners should use the owner portal, not staff portal
-        return NextResponse.redirect(new URL('/owner/overview', request.url))
-      } else if (roleHints.isParent) {
+      // They don't have org admin/staff access
+      if (roleHints.isParent) {
         return NextResponse.redirect(new URL('/parent/dashboard', request.url))
       } else {
         return NextResponse.redirect(new URL('/auth/signin', request.url))
       }
     }
-    // If they ARE an org admin/staff, allow them through (even if they're also an owner)
   }
   
   if (pathname.startsWith('/parent') && !roleHints.isParent) {
