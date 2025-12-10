@@ -225,14 +225,25 @@ export function EditClassModal({ classId, isOpen, onClose, onSave }: EditClassMo
         body: JSON.stringify(requestBody)
       })
 
-      const responseData = await response.json()
+      let responseData: any = {}
+      try {
+        const text = await response.text()
+        responseData = text ? JSON.parse(text) : {}
+      } catch (parseError) {
+        console.error('Failed to parse response:', parseError)
+        responseData = { error: 'Invalid response from server' }
+      }
 
       if (!response.ok) {
-        console.error('Update failed:', responseData)
+        console.error('Update failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          responseData
+        })
         // Show detailed error message if available
         const errorMessage = responseData.details 
-          ? `${responseData.error}: ${responseData.details}`
-          : responseData.error || 'Failed to update class'
+          ? `${responseData.error || 'Failed to update class'}: ${responseData.details}`
+          : responseData.error || `Failed to update class (${response.status} ${response.statusText})`
         setError(errorMessage)
         setIsSubmitting(false)
         return

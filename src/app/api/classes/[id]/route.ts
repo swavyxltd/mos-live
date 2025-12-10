@@ -7,7 +7,7 @@ import { withRateLimit } from '@/lib/api-middleware'
 
 async function handleGET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await requireRole(['ADMIN', 'OWNER', 'STAFF'])(request)
@@ -16,9 +16,20 @@ async function handleGET(
     const orgId = await requireOrg(request)
     if (orgId instanceof NextResponse) return orgId
 
+    // Resolve params if it's a Promise (Next.js 15+)
+    const resolvedParams = params instanceof Promise ? await params : params
+    const classId = resolvedParams.id
+
+    if (!classId) {
+      return NextResponse.json(
+        { error: 'Class ID is required' },
+        { status: 400 }
+      )
+    }
+
     const classData = await prisma.class.findFirst({
       where: {
-        id: params.id,
+        id: classId,
         orgId: orgId
       },
       include: {
@@ -85,7 +96,7 @@ export const GET = withRateLimit(handleGET)
 
 async function handlePATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   let body: any = null
   try {
@@ -95,13 +106,24 @@ async function handlePATCH(
     const orgId = await requireOrg(request)
     if (orgId instanceof NextResponse) return orgId
 
+    // Resolve params if it's a Promise (Next.js 15+)
+    const resolvedParams = await Promise.resolve(params)
+    const classId = resolvedParams.id
+
+    if (!classId) {
+      return NextResponse.json(
+        { error: 'Class ID is required' },
+        { status: 400 }
+      )
+    }
+
     body = await request.json()
     const { name, description, schedule, teacherId, monthlyFeeP } = body
 
     // Verify class belongs to org
     const existingClass = await prisma.class.findFirst({
       where: {
-        id: params.id,
+        id: classId,
         orgId: orgId
       }
     })
@@ -164,16 +186,29 @@ async function handlePATCH(
     }
     
     if (teacherId !== undefined) {
-      // Validate teacherId is a valid UUID format if provided
+      // Set teacherId - validate it exists in the database if provided
       if (teacherId && typeof teacherId === 'string' && teacherId.trim().length > 0) {
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-        if (!uuidRegex.test(teacherId.trim())) {
+        const trimmedTeacherId = teacherId.trim()
+        // Verify the teacher exists and belongs to the org
+        const teacher = await prisma.user.findFirst({
+          where: {
+            id: trimmedTeacherId,
+            UserOrgMembership: {
+              some: {
+                orgId: orgId,
+                role: { in: ['ADMIN', 'STAFF'] }
+              }
+            }
+          }
+        })
+        
+        if (!teacher) {
           return NextResponse.json(
-            { error: 'Invalid teacher ID format' },
+            { error: 'Teacher not found or does not belong to this organization' },
             { status: 400 }
           )
         }
-        updateData.teacherId = teacherId.trim()
+        updateData.teacherId = trimmedTeacherId
       } else {
         updateData.teacherId = null
       }
@@ -199,7 +234,7 @@ async function handlePATCH(
 
     // Update class - id is unique so we only need that, but we've already verified orgId above
     const updatedClass = await prisma.class.update({
-      where: { id: params.id },
+      where: { id: classId },
       data: updateData,
       include: {
         User: {
