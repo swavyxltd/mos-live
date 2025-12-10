@@ -95,9 +95,12 @@ export async function middleware(request: NextRequest) {
         }
   }
   
+  // Allow access to /staff routes if user is an org admin or staff member
+  // Even if they're also an owner, they should be able to access org-level staff features
   if (pathname.startsWith('/staff') && roleHints.orgAdminOf.length === 0 && roleHints.orgStaffOf.length === 0) {
-    // Redirect to their correct portal
-    if (roleHints.isOwner) {
+    // Only redirect if they're NOT an org admin/staff AND they're trying to access staff routes
+    // If they're an owner but also an org admin, they should be able to access /staff
+    if (roleHints.isOwner && roleHints.orgAdminOf.length === 0 && roleHints.orgStaffOf.length === 0) {
       return NextResponse.redirect(new URL('/owner/overview', request.url))
     } else if (roleHints.isParent) {
       return NextResponse.redirect(new URL('/parent/dashboard', request.url))
