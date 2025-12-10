@@ -155,10 +155,23 @@ export function ApplicationsPageClient({ orgSlug }: ApplicationsPageClientProps)
       })
 
       if (response.ok) {
+        // Refresh applications list to show updated status
         await fetchApplications()
+        // Also refresh students list if status was ACCEPTED
+        if (newStatus === 'ACCEPTED') {
+          window.dispatchEvent(new CustomEvent('refresh-students'))
+        }
         setShowDetailModal(false)
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        console.error('Failed to update application status:', errorData)
+        // Still refresh to show current state
+        await fetchApplications()
       }
     } catch (error) {
+      console.error('Error updating application status:', error)
+      // Still refresh to show current state
+      await fetchApplications()
     }
   }
 

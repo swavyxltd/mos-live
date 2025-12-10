@@ -11,7 +11,7 @@ import crypto from 'crypto'
 // PATCH /api/applications/[id] - Update application status
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -24,6 +24,14 @@ export async function PATCH(
       return NextResponse.json({ error: 'No organisation found' }, { status: 404 })
     }
 
+    // Resolve params if it's a Promise (Next.js 15+)
+    const resolvedParams = params instanceof Promise ? await params : params
+    const applicationId = resolvedParams.id
+
+    if (!applicationId) {
+      return NextResponse.json({ error: 'Application ID is required' }, { status: 400 })
+    }
+
     const body = await request.json()
     const { status, adminNotes } = body
 
@@ -34,7 +42,7 @@ export async function PATCH(
     // Get the application to verify it belongs to the org
     const application = await prisma.application.findFirst({
       where: {
-        id: params.id,
+        id: applicationId,
         orgId: org.id
       },
       include: {
@@ -48,7 +56,7 @@ export async function PATCH(
 
     // Update the application
     const updatedApplication = await prisma.application.update({
-      where: { id: params.id },
+      where: { id: applicationId },
       data: {
         status,
         adminNotes,
@@ -124,11 +132,13 @@ export async function PATCH(
           for (const child of application.ApplicationChild) {
             const student = await tx.student.create({
               data: {
+                id: crypto.randomUUID(),
                 orgId: org.id,
                 firstName: child.firstName.trim(),
                 lastName: child.lastName.trim(),
                 dob: child.dob ? new Date(child.dob) : undefined,
-                primaryParentId: parentUser.id
+                primaryParentId: parentUser.id,
+                updatedAt: new Date()
               }
             })
 
@@ -142,6 +152,7 @@ export async function PATCH(
 
             await tx.parentInvitation.create({
               data: {
+                id: crypto.randomUUID(),
                 orgId: org.id,
                 studentId: student.id,
                 parentEmail: application.guardianEmail.toLowerCase().trim(),
@@ -169,6 +180,7 @@ export async function PATCH(
               if (matchingClass) {
                 await tx.studentClass.create({
                   data: {
+                    id: crypto.randomUUID(),
                     orgId: org.id,
                     studentId: student.id,
                     classId: matchingClass.id

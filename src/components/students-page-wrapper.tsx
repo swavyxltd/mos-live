@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -59,6 +59,19 @@ export function StudentsPageWrapper({ initialStudents, classes }: StudentsPageWr
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false)
   const [showArchived, setShowArchived] = useState(false)
+
+  // Listen for refresh events
+  useEffect(() => {
+    const handleRefresh = () => {
+      window.location.reload()
+    }
+    
+    window.addEventListener('refresh-students', handleRefresh)
+    
+    return () => {
+      window.removeEventListener('refresh-students', handleRefresh)
+    }
+  }, [])
 
   const handleAddStudent = async (studentData: any) => {
     // Close add modal
