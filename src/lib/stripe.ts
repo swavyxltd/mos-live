@@ -1,5 +1,6 @@
 import Stripe from 'stripe'
 import { prisma } from './prisma'
+import crypto from 'crypto'
 
 export const stripe: Stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, {
@@ -60,6 +61,7 @@ export async function ensurePlatformCustomer(orgId: string) {
   
   return prisma.platformOrgBilling.create({
     data: {
+      id: crypto.randomUUID(),
       orgId,
       stripeCustomerId: customer.id,
       billingAnniversaryDate,
