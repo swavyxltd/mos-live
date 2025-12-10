@@ -130,41 +130,22 @@ export async function middleware(request: NextRequest) {
   }
   
   // Block owners from accessing /staff routes - owners and org admins are mutually exclusive
+  // But let the layout handle permissions like other staff routes (dashboard, classes, etc.)
   if (pathname.startsWith('/staff')) {
-    // Debug logging (remove after fixing)
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[Middleware] /staff route check:', {
-        pathname,
-        isOwner: roleHints.isOwner,
-        orgAdminOf: roleHints.orgAdminOf,
-        orgStaffOf: roleHints.orgStaffOf,
-        email: token.email
-      })
-    }
-    
     // Owners cannot access staff routes - redirect to owner portal
     if (roleHints.isOwner) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[Middleware] Blocking owner from /staff, redirecting to /owner')
-      }
       return NextResponse.redirect(new URL('/owner/overview', request.url))
     }
-    // Only allow access if they're an org admin or staff member (and NOT an owner)
+    // If they don't have org admin/staff access, redirect to sign in
+    // Otherwise, let them through - the layout will handle permissions
     if (roleHints.orgAdminOf.length === 0 && roleHints.orgStaffOf.length === 0) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[Middleware] No org admin/staff access, redirecting')
-      }
-      // They don't have org admin/staff access
       if (roleHints.isParent) {
         return NextResponse.redirect(new URL('/parent/dashboard', request.url))
       } else {
         return NextResponse.redirect(new URL('/auth/signin', request.url))
       }
     }
-    
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[Middleware] Allowing access to /staff')
-    }
+    // Allow through - layout will handle permissions like other staff routes
   }
   
   if (pathname.startsWith('/parent') && !roleHints.isParent) {
