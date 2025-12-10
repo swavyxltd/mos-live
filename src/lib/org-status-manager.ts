@@ -91,7 +91,7 @@ export class OrganisationStatusManager {
             targetType: 'ORG',
             targetId: data.orgId,
             orgId: data.orgId,
-            details: {
+            data: JSON.stringify({
               orgName: data.orgName,
               reason: reason,
               failureCount: newFailureCount,
