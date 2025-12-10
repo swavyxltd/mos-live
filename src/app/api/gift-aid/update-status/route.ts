@@ -145,6 +145,7 @@ async function handlePOST(request: NextRequest) {
                   orgId,
                   invoiceId: invoice.id,
                   method: 'STRIPE',
+                  updatedAt: new Date()
                   amountP: Math.round(amount * 100),
                   status: 'SUCCEEDED',
                   createdAt: paymentDate,
@@ -216,6 +217,7 @@ async function handlePOST(request: NextRequest) {
                   orgId,
                   invoiceId: invoice.id,
                   method: 'STRIPE',
+                  updatedAt: new Date()
                   amountP: Math.round(amount * 100),
                   status: 'SUCCEEDED',
                   createdAt: paymentDate,

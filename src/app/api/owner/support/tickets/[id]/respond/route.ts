@@ -7,6 +7,7 @@ import { sendEmail } from '@/lib/mail'
 import { logger } from '@/lib/logger'
 import { sanitizeText, MAX_STRING_LENGTHS } from '@/lib/input-validation'
 import { withRateLimit } from '@/lib/api-middleware'
+import crypto from 'crypto'
 
 // POST /api/owner/support/tickets/[id]/respond - Respond to a support ticket
 async function handlePOST(
@@ -63,6 +64,7 @@ async function handlePOST(
     // Create the response
     const response = await prisma.supportTicketResponse.create({
       data: {
+        id: crypto.randomUUID(),
         ticketId: ticketId,
         body: sanitizedResponseBody,
         createdById: session.user.id

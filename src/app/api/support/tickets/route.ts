@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { sanitizeText, MAX_STRING_LENGTHS } from '@/lib/input-validation'
 import { withRateLimit } from '@/lib/api-middleware'
+import crypto from 'crypto'
 
 // GET /api/support/tickets - Get all support tickets for the current org
 async function handleGET(request: NextRequest) {
@@ -91,10 +92,12 @@ async function handlePOST(request: NextRequest) {
 
     const ticket = await prisma.supportTicket.create({
       data: {
+        id: crypto.randomUUID(),
         orgId: org.id,
         createdById: session.user.id,
         role: role || 'USER',
         subject: sanitizedSubject,
+        updatedAt: new Date(),
         body: sanitizedBody,
         status: 'OPEN'
       },

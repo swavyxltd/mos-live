@@ -192,6 +192,7 @@ async function handlePOST(request: NextRequest) {
       channel,
       status: 'DRAFT',
       targets: JSON.stringify(targetsData),
+      updatedAt: new Date()
       createdAt: new Date(),
       updatedAt: new Date()
     }

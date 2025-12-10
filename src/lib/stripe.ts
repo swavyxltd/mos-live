@@ -331,12 +331,14 @@ export async function createPaymentIntent(orgId: string, parentUserId: string, a
   // Create pending payment record
   await prisma.payment.create({
     data: {
+      id: crypto.randomUUID(),
       orgId,
       invoiceId,
       method: 'CARD',
       amountP,
       status: 'PENDING',
       providerId: paymentIntent.id,
+      updatedAt: new Date()
     }
   })
   

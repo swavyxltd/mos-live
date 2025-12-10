@@ -177,6 +177,7 @@ async function handlePOST(request: NextRequest) {
         startTime: allDay ? null : (startTime || null),
         endTime: allDay ? null : (endTime || null),
         classId: classId || null, // null means it's visible to all accounts in the org, otherwise specific class
+        updatedAt: new Date()
         studentId: studentId || null, // For meetings, associate with student
         updatedAt: new Date()
       },

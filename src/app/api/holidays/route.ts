@@ -107,6 +107,7 @@ async function handlePOST(request: NextRequest) {
         orgId: org.id,
         name: sanitizedName,
         startDate: start,
+        updatedAt: new Date(),
         endDate: end,
         updatedAt: new Date()
       }

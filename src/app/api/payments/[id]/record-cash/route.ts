@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { sanitizeText, MAX_STRING_LENGTHS } from '@/lib/input-validation'
 import { withRateLimit } from '@/lib/api-middleware'
+import crypto from 'crypto'
 
 const recordCashSchema = z.object({
   amountP: z.number().positive(),
@@ -49,9 +50,11 @@ async function handlePOST(
     // Create payment record
     const payment = await prisma.payment.create({
       data: {
+        id: crypto.randomUUID(),
         orgId,
         invoiceId,
         method,
+        updatedAt: new Date()
         amountP,
         status: 'SUCCEEDED',
         providerId: `${method.toLowerCase()}_${Date.now()}`,

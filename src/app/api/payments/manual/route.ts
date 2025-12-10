@@ -5,6 +5,7 @@ import { getActiveOrg } from '@/lib/org'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
+import crypto from 'crypto'
 
 async function handlePOST(request: NextRequest) {
   try {
@@ -67,11 +68,13 @@ async function handlePOST(request: NextRequest) {
     // Create payment record (use validated amountP)
     const payment = await prisma.payment.create({
       data: {
+        id: crypto.randomUUID(),
         orgId: org.id,
         invoiceId: invoice.id,
         method: paymentMethod,
         amountP: amountP, // Use validated amount in pence
         status: 'COMPLETED',
+        updatedAt: new Date()
         meta: JSON.stringify({
           notes: notes || '',
           recordedBy: session.user.id,

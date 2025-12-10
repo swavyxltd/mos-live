@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
 import { Role } from '@prisma/client'
+import crypto from 'crypto'
 
 async function handleGET(request: NextRequest) {
   try {
@@ -200,11 +201,13 @@ async function handlePOST(request: NextRequest) {
     // Create the invoice
     const invoice = await prisma.invoice.create({
       data: {
+        id: crypto.randomUUID(),
         orgId,
         studentId,
         amountP,
         dueDate: new Date(dueDate),
-        status: 'DRAFT'
+        status: 'DRAFT',
+        updatedAt: new Date()
       },
       include: {
         Student: {

@@ -92,6 +92,7 @@ async function handlePOST(
         slug,
         timezone: 'Europe/London',
         settings: JSON.stringify({ lateThreshold: 15 }),
+        updatedAt: now,
         city: lead.city || undefined,
         email: adminEmail,
         phone: lead.contactPhone || undefined,

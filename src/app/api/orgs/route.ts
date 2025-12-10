@@ -167,11 +167,13 @@ async function handlePOST(request: NextRequest) {
     // Create org
     const org = await prisma.org.create({
       data: {
+        id: crypto.randomUUID(),
         name: sanitizedName,
         slug: finalSlug,
         timezone: timezone || 'Europe/London',
         settings: JSON.stringify({ lateThreshold: 15 }),
         status: 'ACTIVE',
+        updatedAt: new Date(),
         // Optional fields (only include if they exist in schema)
         address: sanitizedAddress || undefined,
         addressLine1: sanitizedAddressLine1 || undefined,

@@ -177,6 +177,7 @@ async function handlePOST(request: NextRequest) {
         orgName,
         city,
         country,
+        updatedAt: new Date(),
         estimatedStudents: estimatedStudents ? parseInt(estimatedStudents) : null,
         contactName,
         contactEmail,

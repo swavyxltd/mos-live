@@ -4,6 +4,7 @@ import { requireRole, requireOrg } from '@/lib/roles'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
+import crypto from 'crypto'
 
 async function handlePOST(request: NextRequest) {
   try {
@@ -69,9 +70,11 @@ async function handlePOST(request: NextRequest) {
         
         const invoice = await prisma.invoice.create({
           data: {
+            id: crypto.randomUUID(),
             orgId,
             studentId: student.id,
             amountP: feesPlan.amountP,
+            updatedAt: new Date()
             dueDate,
             status: 'DRAFT'
           }
