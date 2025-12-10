@@ -72,12 +72,15 @@ export async function middleware(request: NextRequest) {
   
   // Determine the correct portal for this user
   // Owners and org admins are mutually exclusive - owners can only access /owner routes
+  // Use token.isSuperAdmin directly (updated on every request) instead of roleHints.isOwner
   let correctPortal = ''
-  if (roleHints.isOwner) {
+  if (token.isSuperAdmin) {
     correctPortal = '/owner'
-  } else if (roleHints.orgAdminOf.length > 0 || roleHints.orgStaffOf.length > 0) {
+  } else if (roleHints?.orgAdminOf && roleHints.orgAdminOf.length > 0) {
     correctPortal = '/staff'
-  } else if (roleHints.isParent) {
+  } else if (roleHints?.orgStaffOf && roleHints.orgStaffOf.length > 0) {
+    correctPortal = '/staff'
+  } else if (roleHints?.isParent) {
     correctPortal = '/parent'
   } else {
     // No clear role, redirect to sign in
@@ -118,11 +121,14 @@ export async function middleware(request: NextRequest) {
   }
   
   // Check if user is accessing a portal they shouldn't have access to
-  if (pathname.startsWith('/owner') && !roleHints.isOwner) {
+  // Use token.isSuperAdmin directly instead of roleHints.isOwner
+  if (pathname.startsWith('/owner') && !token.isSuperAdmin) {
     // Redirect to their correct portal
-    if (roleHints.orgAdminOf.length > 0 || roleHints.orgStaffOf.length > 0) {
+    if (roleHints?.orgAdminOf && roleHints.orgAdminOf.length > 0) {
       return NextResponse.redirect(new URL('/dashboard', request.url))
-    } else if (roleHints.isParent) {
+    } else if (roleHints?.orgStaffOf && roleHints.orgStaffOf.length > 0) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    } else if (roleHints?.isParent) {
       return NextResponse.redirect(new URL('/parent/dashboard', request.url))
     } else {
       return NextResponse.redirect(new URL('/auth/signin', request.url))
@@ -130,16 +136,18 @@ export async function middleware(request: NextRequest) {
   }
   
   // Block owners from accessing /staff routes - owners and org admins are mutually exclusive
-  // But let the layout handle permissions like other staff routes (dashboard, classes, etc.)
+  // Use token.isSuperAdmin directly - this is updated on every request in JWT callback
   if (pathname.startsWith('/staff')) {
     // Owners cannot access staff routes - redirect to owner portal
-    if (roleHints.isOwner) {
+    if (token.isSuperAdmin) {
       return NextResponse.redirect(new URL('/owner/overview', request.url))
     }
     // If they don't have org admin/staff access, redirect to sign in
     // Otherwise, let them through - the layout will handle permissions
-    if (roleHints.orgAdminOf.length === 0 && roleHints.orgStaffOf.length === 0) {
-      if (roleHints.isParent) {
+    const hasOrgAccess = (roleHints?.orgAdminOf && roleHints.orgAdminOf.length > 0) || 
+                         (roleHints?.orgStaffOf && roleHints.orgStaffOf.length > 0)
+    if (!hasOrgAccess) {
+      if (roleHints?.isParent) {
         return NextResponse.redirect(new URL('/parent/dashboard', request.url))
       } else {
         return NextResponse.redirect(new URL('/auth/signin', request.url))
@@ -148,15 +156,16 @@ export async function middleware(request: NextRequest) {
     // Allow through - layout will handle permissions like other staff routes
   }
   
-  if (pathname.startsWith('/parent') && !roleHints.isParent) {
+  if (pathname.startsWith('/parent') && !roleHints?.isParent) {
     // Redirect to their correct portal
-    if (roleHints.isOwner) {
+    if (token.isSuperAdmin) {
       return NextResponse.redirect(new URL('/owner/overview', request.url))
-    } else if (roleHints.orgAdminOf.length > 0 || roleHints.orgStaffOf.length > 0) {
-      return NextResponse.redirect(new URL('/staff', request.url))
-        } else {
-          return NextResponse.redirect(new URL('/auth/signin', request.url))
-        }
+    } else if ((roleHints?.orgAdminOf && roleHints.orgAdminOf.length > 0) || 
+               (roleHints?.orgStaffOf && roleHints.orgStaffOf.length > 0)) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    } else {
+      return NextResponse.redirect(new URL('/auth/signin', request.url))
+    }
   }
   
   // Add pathname as a header for server components to use
