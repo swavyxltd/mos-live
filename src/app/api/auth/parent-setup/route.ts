@@ -159,20 +159,49 @@ async function handlePOST(request: NextRequest) {
       }
 
       if (!parentUser) {
-        parentUser = await tx.user.create({
-          data: {
-            id: crypto.randomUUID(),
-            email: invitation.parentEmail.toLowerCase(),
-            name: sanitizedParentName,
-            phone: sanitizedParentPhone,
-            password: hashedPassword,
-            title: sanitizedParentTitle,
-            address: sanitizedAddress,
-            postcode: sanitizedPostcode,
-            giftAidStatus: giftAidStatus,
-            giftAidDeclaredAt: new Date()
+        try {
+          parentUser = await tx.user.create({
+            data: {
+              id: crypto.randomUUID(),
+              email: invitation.parentEmail.toLowerCase(),
+              name: sanitizedParentName,
+              phone: sanitizedParentPhone,
+              password: hashedPassword,
+              title: sanitizedParentTitle,
+              address: sanitizedAddress,
+              postcode: sanitizedPostcode,
+              giftAidStatus: giftAidStatus,
+              giftAidDeclaredAt: new Date()
+            }
+          })
+        } catch (createError: any) {
+          // Handle unique constraint violation (race condition)
+          if (createError.code === 'P2002') {
+            // User was created between our check and create, fetch and update it
+            parentUser = await tx.user.findUnique({
+              where: { email: invitation.parentEmail.toLowerCase() }
+            })
+            if (!parentUser) {
+              throw new Error('This email is already being used. Please use a different one.')
+            }
+            // Update the existing user
+            parentUser = await tx.user.update({
+              where: { id: parentUser.id },
+              data: {
+                name: sanitizedParentName,
+                phone: sanitizedParentPhone,
+                password: hashedPassword,
+                title: sanitizedParentTitle,
+                address: sanitizedAddress,
+                postcode: sanitizedPostcode,
+                giftAidStatus: giftAidStatus,
+                giftAidDeclaredAt: new Date()
+              }
+            })
+          } else {
+            throw createError
           }
-        })
+        }
       } else {
         // Update existing user
         parentUser = await tx.user.update({
@@ -290,6 +319,15 @@ async function handlePOST(request: NextRequest) {
     })
   } catch (error: any) {
     logger.error('Error completing parent setup', error)
+    
+    // Handle unique constraint violation
+    if (error.code === 'P2002' || error.message?.includes('already being used')) {
+      return NextResponse.json(
+        { error: 'This email is already being used. Please use a different one.' },
+        { status: 400 }
+      )
+    }
+    
     const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
       { 

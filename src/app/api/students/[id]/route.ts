@@ -115,14 +115,29 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
           })
 
           if (!parentUser) {
-            parentUser = await tx.user.create({
-              data: {
-                id: crypto.randomUUID(),
-                email: parentEmail.toLowerCase().trim(),
-                name: parentName || '',
-                phone: parentPhone || null
+            try {
+              parentUser = await tx.user.create({
+                data: {
+                  id: crypto.randomUUID(),
+                  email: parentEmail.toLowerCase().trim(),
+                  name: parentName || '',
+                  phone: parentPhone || null
+                }
+              })
+            } catch (createError: any) {
+              // Handle unique constraint violation (race condition)
+              if (createError.code === 'P2002') {
+                // User was created between our check and create, fetch it
+                parentUser = await tx.user.findUnique({
+                  where: { email: parentEmail.toLowerCase().trim() }
+                })
+                if (!parentUser) {
+                  throw new Error('This email is already being used. Please use a different one.')
+                }
+              } else {
+                throw createError
               }
-            })
+            }
 
             // Add parent to organisation
             await tx.userOrgMembership.upsert({

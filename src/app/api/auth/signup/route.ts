@@ -118,7 +118,7 @@ async function handlePOST(request: NextRequest) {
 
     if (existingUser) {
       return NextResponse.json(
-        { error: 'User with this email already exists' },
+        { error: 'This email is already being used. Please use a different one.' },
         { status: 400 }
       )
     }
@@ -128,16 +128,9 @@ async function handlePOST(request: NextRequest) {
 
     // Start transaction
     const result = await prisma.$transaction(async (tx) => {
-      // Create or update user
-      const user = await tx.user.upsert({
-        where: { email: sanitizedEmail },
-        update: {
-          name: sanitizedName,
-          password: hashedPassword,
-          phone: sanitizedPhone,
-          updatedAt: new Date()
-        },
-        create: {
+      // Create user (email already validated as unique above)
+      const user = await tx.user.create({
+        data: {
           id: crypto.randomUUID(),
           email: sanitizedEmail,
           name: sanitizedName,
@@ -299,7 +292,7 @@ async function handlePOST(request: NextRequest) {
     // Handle unique constraint violation
     if (error.code === 'P2002') {
       return NextResponse.json(
-        { error: 'User with this email already exists' },
+        { error: 'This email is already being used. Please use a different one.' },
         { status: 400 }
       )
     }

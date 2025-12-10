@@ -118,13 +118,28 @@ async function handlePOST(request: NextRequest) {
             })
 
             if (!parentUser) {
-              parentUser = await tx.user.create({
-                data: {
-                  id: crypto.randomUUID(),
-                  email: studentData.parentEmail.toLowerCase().trim(),
-                  phone: studentData.parentPhone || undefined // Optional phone if provided
+              try {
+                parentUser = await tx.user.create({
+                  data: {
+                    id: crypto.randomUUID(),
+                    email: studentData.parentEmail.toLowerCase().trim(),
+                    phone: studentData.parentPhone || undefined // Optional phone if provided
+                  }
+                })
+              } catch (createError: any) {
+                // Handle unique constraint violation (race condition)
+                if (createError.code === 'P2002') {
+                  // User was created between our check and create, fetch it
+                  parentUser = await tx.user.findUnique({
+                    where: { email: studentData.parentEmail.toLowerCase().trim() }
+                  })
+                  if (!parentUser) {
+                    throw new Error('This email is already being used. Please use a different one.')
+                  }
+                } else {
+                  throw createError
                 }
-              })
+              }
 
               await tx.userOrgMembership.create({
                 data: {
@@ -180,13 +195,28 @@ async function handlePOST(request: NextRequest) {
             })
 
             if (!parentUser) {
-              parentUser = await tx.user.create({
-                data: {
-                  id: crypto.randomUUID(),
-                  email: studentData.parentEmail.toLowerCase().trim(),
-                  phone: studentData.parentPhone || undefined // Optional phone if provided
+              try {
+                parentUser = await tx.user.create({
+                  data: {
+                    id: crypto.randomUUID(),
+                    email: studentData.parentEmail.toLowerCase().trim(),
+                    phone: studentData.parentPhone || undefined // Optional phone if provided
+                  }
+                })
+              } catch (createError: any) {
+                // Handle unique constraint violation (race condition)
+                if (createError.code === 'P2002') {
+                  // User was created between our check and create, fetch it
+                  parentUser = await tx.user.findUnique({
+                    where: { email: studentData.parentEmail.toLowerCase().trim() }
+                  })
+                  if (!parentUser) {
+                    throw new Error('This email is already being used. Please use a different one.')
+                  }
+                } else {
+                  throw createError
                 }
-              })
+              }
 
               await tx.userOrgMembership.create({
                 data: {

@@ -160,16 +160,27 @@ async function handlePOST(request: NextRequest) {
         )
       }
 
-      user = await prisma.user.create({
-        data: {
-          id: crypto.randomUUID(),
-          email: sanitizedEmail,
-          name: sanitizedName,
-          password: hashedPassword || crypto.randomBytes(32).toString('hex'), // Temporary password if sending invitation
-          phone: sanitizedPhone,
-          isSuperAdmin: isSuperAdmin || false,
+      try {
+        user = await prisma.user.create({
+          data: {
+            id: crypto.randomUUID(),
+            email: sanitizedEmail,
+            name: sanitizedName,
+            password: hashedPassword || crypto.randomBytes(32).toString('hex'), // Temporary password if sending invitation
+            phone: sanitizedPhone,
+            isSuperAdmin: isSuperAdmin || false,
+          }
+        })
+      } catch (createError: any) {
+        // Handle unique constraint violation (race condition)
+        if (createError.code === 'P2002') {
+          return NextResponse.json(
+            { error: 'This email is already being used. Please use a different one.' },
+            { status: 400 }
+          )
         }
-      })
+        throw createError
+      }
     }
 
     // If orgId and role provided, create membership
@@ -293,7 +304,7 @@ async function handlePOST(request: NextRequest) {
     // Handle unique constraint violation
     if (error.code === 'P2002') {
       return NextResponse.json(
-        { error: 'User with this email already exists' },
+        { error: 'This email is already being used. Please use a different one.' },
         { status: 400 }
       )
     }
