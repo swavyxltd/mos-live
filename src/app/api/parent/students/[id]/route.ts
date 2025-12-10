@@ -88,6 +88,9 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     const { id } = params
     const updateData = await request.json()
 
+    // Import validation functions
+    const { isValidName, isValidDateOfBirth, isValidAddressLine } = await import('@/lib/input-validation')
+    
     // Extract the fields parents can update
     const {
       firstName,
@@ -98,6 +101,38 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       emergencyContact,
       address
     } = updateData
+
+    // Validate first name if provided
+    if (firstName && !isValidName(firstName.trim())) {
+      return NextResponse.json(
+        { error: 'First name must be a valid name (2-50 characters, letters only)' },
+        { status: 400 }
+      )
+    }
+
+    // Validate last name if provided
+    if (lastName && !isValidName(lastName.trim())) {
+      return NextResponse.json(
+        { error: 'Last name must be a valid name (2-50 characters, letters only)' },
+        { status: 400 }
+      )
+    }
+
+    // Validate date of birth if provided
+    if (dateOfBirth && !isValidDateOfBirth(dateOfBirth)) {
+      return NextResponse.json(
+        { error: 'Date of birth must be a valid date (not in the future, age 0-120 years)' },
+        { status: 400 }
+      )
+    }
+
+    // Validate address if provided
+    if (address && address.trim() && !isValidAddressLine(address.trim())) {
+      return NextResponse.json(
+        { error: 'Address must be a valid address (5-100 characters)' },
+        { status: 400 }
+      )
+    }
 
     // Get existing student to verify ownership
     const existingStudent = await prisma.student.findUnique({

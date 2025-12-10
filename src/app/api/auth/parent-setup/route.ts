@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 import { logger } from '@/lib/logger'
-import { sanitizeText, isValidPhone, isValidUKPostcode, MAX_STRING_LENGTHS } from '@/lib/input-validation'
+import { sanitizeText, isValidPhone, isValidUKPostcode, isValidName, isValidDateOfBirth, isValidAddressLine, isValidCity, isValidEmailStrict, MAX_STRING_LENGTHS } from '@/lib/input-validation'
 import { withRateLimit } from '@/lib/api-middleware'
 import { createSetupIntent, ensureParentCustomer } from '@/lib/stripe'
 import { validatePassword } from '@/lib/password-validation'
@@ -53,6 +53,65 @@ async function handlePOST(request: NextRequest) {
       )
     }
 
+    // Validate parent name - split into first and last name
+    const parentNameParts = parentName.trim().split(/\s+/)
+    if (parentNameParts.length < 2) {
+      return NextResponse.json(
+        { error: 'Parent name must include both first and last name' },
+        { status: 400 }
+      )
+    }
+    const parentFirstName = parentNameParts[0]
+    const parentLastName = parentNameParts.slice(1).join(' ')
+    if (!isValidName(parentFirstName) || !isValidName(parentLastName)) {
+      return NextResponse.json(
+        { error: 'Parent name must be a valid name (2-50 characters per name, letters only)' },
+        { status: 400 }
+      )
+    }
+
+    // Validate student names if provided
+    if (studentFirstName && !isValidName(studentFirstName.trim())) {
+      return NextResponse.json(
+        { error: 'Student first name must be a valid name (2-50 characters, letters only)' },
+        { status: 400 }
+      )
+    }
+    if (studentLastName && !isValidName(studentLastName.trim())) {
+      return NextResponse.json(
+        { error: 'Student last name must be a valid name (2-50 characters, letters only)' },
+        { status: 400 }
+      )
+    }
+
+    // Validate date of birth if provided
+    let validatedDob: Date | null = null
+    if (studentDob) {
+      if (!isValidDateOfBirth(studentDob)) {
+        return NextResponse.json(
+          { error: 'Date of birth must be a valid date (not in the future, age 0-120 years)' },
+          { status: 400 }
+        )
+      }
+      validatedDob = new Date(studentDob)
+    }
+
+    // Validate address if provided (for Gift Aid)
+    if (parentAddress && parentAddress.trim() && !isValidAddressLine(parentAddress.trim())) {
+      return NextResponse.json(
+        { error: 'Address must be a valid address (5-100 characters)' },
+        { status: 400 }
+      )
+    }
+
+    // Validate postcode if provided
+    if (parentPostcode && parentPostcode.trim() && !isValidUKPostcode(parentPostcode.trim())) {
+      return NextResponse.json(
+        { error: 'Please enter a valid UK postcode' },
+        { status: 400 }
+      )
+    }
+
     // Sanitize and validate inputs
     const sanitizedParentTitle = parentTitle ? sanitizeText(parentTitle, 10) : null // Max 10 chars for title (Mr, Mrs, etc.)
     const sanitizedParentName = sanitizeText(parentName, MAX_STRING_LENGTHS.name)
@@ -68,18 +127,6 @@ async function handlePOST(request: NextRequest) {
         { error: 'Invalid phone number format. Please enter a valid UK phone number (e.g., +44 7700 900123 or 07700 900123)' },
         { status: 400 }
       )
-    }
-
-    // Validate date if provided
-    let validatedDob: Date | null = null
-    if (studentDob) {
-      validatedDob = new Date(studentDob)
-      if (isNaN(validatedDob.getTime())) {
-        return NextResponse.json(
-          { error: 'Invalid date of birth format' },
-          { status: 400 }
-        )
-      }
     }
 
     // Validate invitation

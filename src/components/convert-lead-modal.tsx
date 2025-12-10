@@ -45,9 +45,9 @@ export function ConvertLeadModal({
       return
     }
 
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(adminEmail.trim())) {
+    // Validate email
+    const { isValidEmailStrict } = await import('@/lib/input-validation')
+    if (!isValidEmailStrict(adminEmail.trim())) {
       setError('Please enter a valid email address')
       return
     }

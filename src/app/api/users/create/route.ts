@@ -7,7 +7,7 @@ import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 import { sendStaffInvitation } from '@/lib/mail'
 import { logger } from '@/lib/logger'
-import { sanitizeText, isValidEmail, isValidPhone, isValidUKPostcode, MAX_STRING_LENGTHS } from '@/lib/input-validation'
+import { sanitizeText, isValidEmail, isValidEmailStrict, isValidPhone, isValidUKPostcode, isValidName, MAX_STRING_LENGTHS } from '@/lib/input-validation'
 import { withRateLimit } from '@/lib/api-middleware'
 import { requireRole } from '@/lib/roles'
 import { validatePassword } from '@/lib/password-validation'
@@ -72,9 +72,26 @@ async function handlePOST(request: NextRequest) {
 
     // Sanitize and validate inputs
     const sanitizedEmail = email.toLowerCase().trim()
-    if (!isValidEmail(sanitizedEmail)) {
+    if (!isValidEmailStrict(sanitizedEmail)) {
       return NextResponse.json(
         { error: 'Invalid email format' },
+        { status: 400 }
+      )
+    }
+
+    // Validate name - split into first and last name
+    const nameParts = name.trim().split(/\s+/)
+    if (nameParts.length < 2) {
+      return NextResponse.json(
+        { error: 'Please enter both first and last name' },
+        { status: 400 }
+      )
+    }
+    const firstName = nameParts[0]
+    const lastName = nameParts.slice(1).join(' ')
+    if (!isValidName(firstName) || !isValidName(lastName)) {
+      return NextResponse.json(
+        { error: 'Name must be a valid name (2-50 characters per name, letters only)' },
         { status: 400 }
       )
     }

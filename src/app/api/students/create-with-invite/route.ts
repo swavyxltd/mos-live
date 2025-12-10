@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { sendParentOnboardingEmail } from '@/lib/mail'
 import { checkPaymentMethod } from '@/lib/payment-check'
 import { logger } from '@/lib/logger'
-import { sanitizeText, isValidEmail, MAX_STRING_LENGTHS } from '@/lib/input-validation'
+import { sanitizeText, isValidEmail, isValidEmailStrict, isValidName, MAX_STRING_LENGTHS } from '@/lib/input-validation'
 import { withRateLimit } from '@/lib/api-middleware'
 import crypto from 'crypto'
 
@@ -37,9 +37,25 @@ async function handlePOST(request: NextRequest) {
       )
     }
 
+    // Validate first name
+    if (!isValidName(firstName.trim())) {
+      return NextResponse.json(
+        { error: 'First name must be a valid name (2-50 characters, letters only)' },
+        { status: 400 }
+      )
+    }
+
+    // Validate last name
+    if (!isValidName(lastName.trim())) {
+      return NextResponse.json(
+        { error: 'Last name must be a valid name (2-50 characters, letters only)' },
+        { status: 400 }
+      )
+    }
+
     // Validate and sanitize email format
     const sanitizedParentEmail = parentEmail.toLowerCase().trim()
-    if (!isValidEmail(sanitizedParentEmail)) {
+    if (!isValidEmailStrict(sanitizedParentEmail)) {
       return NextResponse.json(
         { error: 'Invalid email format' },
         { status: 400 }

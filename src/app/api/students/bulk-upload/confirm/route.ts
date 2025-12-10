@@ -7,6 +7,7 @@ import crypto from 'crypto'
 import { sendParentOnboardingEmail } from '@/lib/mail'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
+import { isValidName, isValidEmailStrict, isValidPhone } from '@/lib/input-validation'
 
 interface StudentData {
   firstName: string
@@ -80,6 +81,39 @@ async function handlePOST(request: NextRequest) {
     // Process each student
     for (const studentData of students) {
       try {
+        // Validate student data
+        if (!isValidName(studentData.firstName.trim())) {
+          results.errors.push({
+            rowNumber: studentData.rowNumber,
+            error: 'First name must be a valid name (2-50 characters, letters only)'
+          })
+          continue
+        }
+        
+        if (!isValidName(studentData.lastName.trim())) {
+          results.errors.push({
+            rowNumber: studentData.rowNumber,
+            error: 'Last name must be a valid name (2-50 characters, letters only)'
+          })
+          continue
+        }
+        
+        if (!isValidEmailStrict(studentData.parentEmail.trim())) {
+          results.errors.push({
+            rowNumber: studentData.rowNumber,
+            error: 'Parent email must be a valid email address'
+          })
+          continue
+        }
+        
+        if (studentData.parentPhone && studentData.parentPhone.trim() && !isValidPhone(studentData.parentPhone.trim())) {
+          results.errors.push({
+            rowNumber: studentData.rowNumber,
+            error: 'Parent phone must be a valid UK phone number'
+          })
+          continue
+        }
+
         // Get class from pre-fetched map instead of querying
         const classRecord = classMap.get(studentData.classId)
 

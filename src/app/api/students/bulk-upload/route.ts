@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma'
 import { parse } from 'csv-parse/sync'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
+import { isValidName, isValidEmailStrict, isValidPhone } from '@/lib/input-validation'
 
 interface CSVRow {
   firstName: string
@@ -131,21 +132,26 @@ async function handlePOST(request: NextRequest) {
       // Required fields validation (matching single "Add Student" modal)
       if (!row.firstName || !row.firstName.trim()) {
         errors.push('First name is required')
+      } else if (!isValidName(row.firstName.trim())) {
+        errors.push('First name must be a valid name (2-50 characters, letters only)')
       }
+      
       if (!row.lastName || !row.lastName.trim()) {
         errors.push('Last name is required')
+      } else if (!isValidName(row.lastName.trim())) {
+        errors.push('Last name must be a valid name (2-50 characters, letters only)')
       }
+      
       if (!row.parentEmail || !row.parentEmail.trim()) {
         errors.push('Parent email is required')
-      } else {
-        // Validate email format
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-        if (!emailRegex.test(row.parentEmail.trim())) {
-          errors.push('Invalid parent email format')
-        }
+      } else if (!isValidEmailStrict(row.parentEmail.trim())) {
+        errors.push('Invalid parent email format')
       }
 
-      // parentPhone is optional
+      // parentPhone is optional but validate if provided
+      if (row.parentPhone && row.parentPhone.trim() && !isValidPhone(row.parentPhone.trim())) {
+        errors.push('Invalid parent phone number format (must be a valid UK phone number)')
+      }
 
       // Check for duplicates using optimized Map lookup (O(1) instead of O(n))
       const duplicateKey = `${(row.firstName || '').toLowerCase().trim()}|${(row.lastName || '').toLowerCase().trim()}|${(row.parentEmail || '').toLowerCase().trim()}`

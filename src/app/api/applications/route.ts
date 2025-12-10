@@ -65,12 +65,26 @@ async function handlePOST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
+    // Import validation functions
+    const { isValidName, isValidEmailStrict, isValidDateOfBirth, isValidAddressLine } = await import('@/lib/input-validation')
+    
+    // Validate guardian name - split into first and last name
+    const guardianNameParts = guardianName.trim().split(/\s+/)
+    if (guardianNameParts.length < 2) {
+      return NextResponse.json({ error: 'Guardian name must include both first and last name' }, { status: 400 })
+    }
+    const guardianFirstName = guardianNameParts[0]
+    const guardianLastName = guardianNameParts.slice(1).join(' ')
+    if (!isValidName(guardianFirstName) || !isValidName(guardianLastName)) {
+      return NextResponse.json({ error: 'Guardian name must be a valid name (2-50 characters per name, letters only)' }, { status: 400 })
+    }
+    
     // Sanitize and validate input
     const sanitizedGuardianName = sanitizeText(guardianName, MAX_STRING_LENGTHS.name)
     const sanitizedGuardianEmail = guardianEmail.toLowerCase().trim()
     const sanitizedGuardianPhone = sanitizeText(guardianPhone, MAX_STRING_LENGTHS.phone)
     
-    if (!isValidEmail(sanitizedGuardianEmail)) {
+    if (!isValidEmailStrict(sanitizedGuardianEmail)) {
       return NextResponse.json({ error: 'Invalid guardian email address' }, { status: 400 })
     }
     
@@ -78,14 +92,32 @@ async function handlePOST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid guardian phone number. Please enter a valid UK phone number (e.g., +44 7700 900123 or 07700 900123)' }, { status: 400 })
     }
 
+    // Validate guardian address if provided
+    if (guardianAddress && guardianAddress.trim() && !isValidAddressLine(guardianAddress.trim())) {
+      return NextResponse.json({ error: 'Guardian address must be a valid address (5-100 characters)' }, { status: 400 })
+    }
+
     // Validate children have required fields and sanitize
     const validChildren = children
       .filter((child: any) => child.firstName && child.lastName)
-      .map((child: any) => ({
-        ...child,
-        firstName: sanitizeText(child.firstName, MAX_STRING_LENGTHS.name),
-        lastName: sanitizeText(child.lastName, MAX_STRING_LENGTHS.name)
-      }))
+      .map((child: any) => {
+        // Validate child names
+        if (!isValidName(child.firstName.trim())) {
+          throw new Error(`Child first name must be a valid name (2-50 characters, letters only)`)
+        }
+        if (!isValidName(child.lastName.trim())) {
+          throw new Error(`Child last name must be a valid name (2-50 characters, letters only)`)
+        }
+        // Validate DOB if provided
+        if (child.dob && !isValidDateOfBirth(child.dob)) {
+          throw new Error(`Child date of birth must be a valid date (not in the future, age 0-120 years)`)
+        }
+        return {
+          ...child,
+          firstName: sanitizeText(child.firstName, MAX_STRING_LENGTHS.name),
+          lastName: sanitizeText(child.lastName, MAX_STRING_LENGTHS.name)
+        }
+      })
     
     if (validChildren.length === 0) {
       return NextResponse.json({ error: 'At least one child with first and last name is required' }, { status: 400 })

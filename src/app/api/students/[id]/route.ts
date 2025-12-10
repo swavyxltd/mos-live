@@ -64,6 +64,9 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     const { id } = params
     const updateData = await request.json()
 
+    // Import validation functions
+    const { isValidName, isValidDateOfBirth, isValidEmailStrict, isValidPhone, isValidAddressLine } = await import('@/lib/input-validation')
+    
     // Extract the fields we want to update
     const {
       firstName,
@@ -80,6 +83,73 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       status,
       selectedClasses
     } = updateData
+
+    // Validate first name if provided
+    if (firstName && !isValidName(firstName.trim())) {
+      return NextResponse.json(
+        { error: 'First name must be a valid name (2-50 characters, letters only)' },
+        { status: 400 }
+      )
+    }
+
+    // Validate last name if provided
+    if (lastName && !isValidName(lastName.trim())) {
+      return NextResponse.json(
+        { error: 'Last name must be a valid name (2-50 characters, letters only)' },
+        { status: 400 }
+      )
+    }
+
+    // Validate date of birth if provided
+    if (dateOfBirth && !isValidDateOfBirth(dateOfBirth)) {
+      return NextResponse.json(
+        { error: 'Date of birth must be a valid date (not in the future, age 0-120 years)' },
+        { status: 400 }
+      )
+    }
+
+    // Validate parent name if provided
+    if (parentName) {
+      const parentNameParts = parentName.trim().split(/\s+/)
+      if (parentNameParts.length < 2) {
+        return NextResponse.json(
+          { error: 'Parent name must include both first and last name' },
+          { status: 400 }
+        )
+      }
+      const parentFirstName = parentNameParts[0]
+      const parentLastName = parentNameParts.slice(1).join(' ')
+      if (!isValidName(parentFirstName) || !isValidName(parentLastName)) {
+        return NextResponse.json(
+          { error: 'Parent name must be a valid name (2-50 characters per name, letters only)' },
+          { status: 400 }
+        )
+      }
+    }
+
+    // Validate parent email if provided
+    if (parentEmail && !isValidEmailStrict(parentEmail.trim())) {
+      return NextResponse.json(
+        { error: 'Parent email must be a valid email address' },
+        { status: 400 }
+      )
+    }
+
+    // Validate parent phone if provided
+    if (parentPhone && parentPhone.trim() && !isValidPhone(parentPhone.trim())) {
+      return NextResponse.json(
+        { error: 'Parent phone must be a valid UK phone number' },
+        { status: 400 }
+      )
+    }
+
+    // Validate address if provided
+    if (address && address.trim() && !isValidAddressLine(address.trim())) {
+      return NextResponse.json(
+        { error: 'Address must be a valid address (5-100 characters)' },
+        { status: 400 }
+      )
+    }
 
     // Get existing student to check if they have a parent
     const existingStudent = await prisma.student.findUnique({
