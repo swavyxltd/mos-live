@@ -106,7 +106,7 @@ export class OrganisationStatusManager {
                 userEmail: m.user.email,
                 role: m.role
               }))
-            }
+            })
           }
         })
       }

@@ -54,7 +54,7 @@ async function handlePOST(
         orgId,
         invoiceId,
         method,
-        updatedAt: new Date()
+        updatedAt: new Date(),
         amountP,
         status: 'SUCCEEDED',
         providerId: `${method.toLowerCase()}_${Date.now()}`,

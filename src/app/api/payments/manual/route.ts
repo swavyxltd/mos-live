@@ -74,7 +74,7 @@ async function handlePOST(request: NextRequest) {
         method: paymentMethod,
         amountP: amountP, // Use validated amount in pence
         status: 'COMPLETED',
-        updatedAt: new Date()
+        updatedAt: new Date(),
         meta: JSON.stringify({
           notes: notes || '',
           recordedBy: session.user.id,

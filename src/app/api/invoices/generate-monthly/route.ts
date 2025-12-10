@@ -74,7 +74,7 @@ async function handlePOST(request: NextRequest) {
             orgId,
             studentId: student.id,
             amountP: feesPlan.amountP,
-            updatedAt: new Date()
+            updatedAt: new Date(),
             dueDate,
             status: 'DRAFT'
           }
