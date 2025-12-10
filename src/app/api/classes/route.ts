@@ -55,7 +55,7 @@ async function handlePOST(request: NextRequest) {
         description: sanitizedDescription,
         schedule: sanitizedSchedule,
         teacherId: teacherId || null,
-        monthlyFeeP: Math.round(monthlyFeeP * 100), // Convert to pence
+        monthlyFeeP: Math.round(monthlyFeeP), // Already in pence from frontend
         updatedAt: new Date()
       },
       include: {
