@@ -120,16 +120,27 @@ async function handlePATCH(
       )
     }
 
+    // Sanitize inputs
+    const { sanitizeText, MAX_STRING_LENGTHS } = await import('@/lib/input-validation')
+
     // Build update data object
     const updateData: any = {
       updatedAt: new Date()
     }
 
-    if (name !== undefined) updateData.name = name.trim()
-    if (description !== undefined) updateData.description = description?.trim() || null
-    if (schedule !== undefined) updateData.schedule = schedule
+    if (name !== undefined) updateData.name = sanitizeText(name, MAX_STRING_LENGTHS.name)
+    if (description !== undefined) updateData.description = description ? sanitizeText(description, MAX_STRING_LENGTHS.text) : null
+    if (schedule !== undefined) updateData.schedule = sanitizeText(schedule, MAX_STRING_LENGTHS.text)
     if (teacherId !== undefined) updateData.teacherId = teacherId || null
-    if (monthlyFeeP !== undefined) updateData.monthlyFeeP = Math.round(monthlyFeeP)
+    if (monthlyFeeP !== undefined) {
+      if (monthlyFeeP < 0) {
+        return NextResponse.json(
+          { error: 'Monthly fee must be non-negative' },
+          { status: 400 }
+        )
+      }
+      updateData.monthlyFeeP = Math.round(monthlyFeeP)
+    }
 
     // Update class
     const updatedClass = await prisma.class.update({
