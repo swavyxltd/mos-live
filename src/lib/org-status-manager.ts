@@ -146,11 +146,11 @@ export class OrganisationStatusManager {
           targetType: 'ORG',
           targetId: orgId,
           orgId: orgId,
-          details: {
+          data: JSON.stringify({
             amount,
             paymentDate: new Date(),
             failureCountReset: true
-          }
+          })
         }
       })
 
