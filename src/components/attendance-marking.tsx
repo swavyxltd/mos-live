@@ -40,18 +40,26 @@ export function AttendanceMarking() {
   const fetchClasses = async () => {
     setLoading(true)
     try {
-      // Fetch all classes
-      const classesResponse = await fetch('/api/classes')
+      // Fetch all classes and class details in parallel
+      const [classesResponse, ...classDetailPromises] = await Promise.all([
+        fetch('/api/classes'),
+        // We'll fetch class details after getting the list
+      ])
+      
       if (!classesResponse.ok) {
         throw new Error('Failed to fetch classes')
       }
       const classesData = await classesResponse.json()
 
-      // For each class, fetch students and today's attendance
+      // Fetch all class details and attendance in parallel
       const classesWithStudents = await Promise.all(
         classesData.map(async (cls: any) => {
-          // Fetch class details with students
-          const classResponse = await fetch(`/api/classes/${cls.id}`)
+          // Fetch class details with students and attendance in parallel
+          const [classResponse, attendanceResponse] = await Promise.all([
+            fetch(`/api/classes/${cls.id}`),
+            fetch(`/api/attendance/class/${cls.id}?date=${todayDate}`)
+          ])
+
           if (!classResponse.ok) {
             return null
           }
@@ -72,29 +80,14 @@ export function AttendanceMarking() {
               }
             })
 
-          // Fetch today's attendance for each student in this class
-          const todayAttendance: any[] = []
-          for (const student of students) {
+          // Get today's attendance
+          let todayAttendance: any[] = []
+          if (attendanceResponse.ok) {
             try {
-              const attResponse = await fetch(
-                `/api/students/${student.id}/attendance?startDate=${todayDate}&endDate=${todayDate}`
-              )
-              if (attResponse.ok) {
-                const attData = await attResponse.json()
-                const todayRecord = attData.attendance?.find((a: any) => {
-                  const recordDate = new Date(a.date).toISOString().split('T')[0]
-                  return recordDate === todayDate
-                })
-                if (todayRecord) {
-                  todayAttendance.push({
-                    studentId: student.id,
-                    status: todayRecord.status,
-                    createdAt: todayRecord.date
-                  })
-                }
-              }
+              const attData = await attendanceResponse.json()
+              todayAttendance = attData.records || []
             } catch (e) {
-              // Skip if attendance fetch fails for this student
+              // Skip if parsing fails
             }
           }
 
@@ -127,7 +120,7 @@ export function AttendanceMarking() {
         })
       )
 
-      // Filter out null values
+      // Filter out null values and classes with no students
       const validClasses = classesWithStudents.filter(
         (cls): cls is Class => cls !== null && cls.students.length > 0
       )
