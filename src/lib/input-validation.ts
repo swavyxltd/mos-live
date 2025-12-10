@@ -126,6 +126,169 @@ export function isValidUKPostcode(postcode: string): boolean {
 }
 
 /**
+ * Validate first name or last name
+ * Must contain only letters, hyphens, apostrophes, and spaces
+ * Must be between 2 and 50 characters
+ * Must start with a letter
+ */
+export function isValidName(name: string): boolean {
+  if (!name || typeof name !== 'string') {
+    return false
+  }
+  
+  const trimmed = name.trim()
+  
+  // Must be between 2 and 50 characters
+  if (trimmed.length < 2 || trimmed.length > 50) {
+    return false
+  }
+  
+  // Must start with a letter
+  if (!/^[A-Za-z]/.test(trimmed)) {
+    return false
+  }
+  
+  // Can contain letters, hyphens, apostrophes, and spaces
+  // Must have at least one letter
+  const nameRegex = /^[A-Za-z]+([\s'-][A-Za-z]+)*$/
+  
+  return nameRegex.test(trimmed)
+}
+
+/**
+ * Validate date of birth
+ * Must be a valid date
+ * Must not be in the future
+ * Must be within reasonable age range (0-120 years old)
+ */
+export function isValidDateOfBirth(dob: string | Date): boolean {
+  if (!dob) {
+    return false
+  }
+  
+  const date = typeof dob === 'string' ? new Date(dob) : dob
+  
+  // Check if date is valid
+  if (isNaN(date.getTime())) {
+    return false
+  }
+  
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  
+  // Must not be in the future
+  if (date > today) {
+    return false
+  }
+  
+  // Calculate age
+  const age = Math.floor((today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24 * 365.25))
+  
+  // Must be between 0 and 120 years old
+  if (age < 0 || age > 120) {
+    return false
+  }
+  
+  return true
+}
+
+/**
+ * Validate email format (stricter validation)
+ * Must have valid email format with proper domain
+ */
+export function isValidEmailStrict(email: string): boolean {
+  if (!email || typeof email !== 'string') {
+    return false
+  }
+  
+  const trimmed = email.trim().toLowerCase()
+  
+  // Basic email regex
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(trimmed)) {
+    return false
+  }
+  
+  // Check for valid domain (at least 2 characters after the dot)
+  const domainRegex = /\.[a-z]{2,}$/i
+  if (!domainRegex.test(trimmed)) {
+    return false
+  }
+  
+  // Email should not be too long
+  if (trimmed.length > 255) {
+    return false
+  }
+  
+  // Email should not start or end with special characters
+  if (!/^[a-z0-9]/.test(trimmed) || !/[a-z0-9]$/.test(trimmed)) {
+    return false
+  }
+  
+  return true
+}
+
+/**
+ * Validate address first line
+ * Must contain letters and/or numbers
+ * Must be between 5 and 100 characters
+ * Can contain common address characters (letters, numbers, spaces, commas, periods, hyphens, apostrophes)
+ */
+export function isValidAddressLine(address: string): boolean {
+  if (!address || typeof address !== 'string') {
+    return false
+  }
+  
+  const trimmed = address.trim()
+  
+  // Must be between 5 and 100 characters
+  if (trimmed.length < 5 || trimmed.length > 100) {
+    return false
+  }
+  
+  // Must contain at least one letter or number
+  if (!/[A-Za-z0-9]/.test(trimmed)) {
+    return false
+  }
+  
+  // Can contain letters, numbers, spaces, commas, periods, hyphens, apostrophes, forward slashes
+  // Must start with a letter or number
+  const addressRegex = /^[A-Za-z0-9][A-Za-z0-9\s,.'-/]*[A-Za-z0-9]$|^[A-Za-z0-9]+$/
+  
+  return addressRegex.test(trimmed)
+}
+
+/**
+ * Validate city name
+ * Must contain only letters, spaces, hyphens, and apostrophes
+ * Must be between 2 and 50 characters
+ * Must start with a letter
+ */
+export function isValidCity(city: string): boolean {
+  if (!city || typeof city !== 'string') {
+    return false
+  }
+  
+  const trimmed = city.trim()
+  
+  // Must be between 2 and 50 characters
+  if (trimmed.length < 2 || trimmed.length > 50) {
+    return false
+  }
+  
+  // Must start with a letter
+  if (!/^[A-Za-z]/.test(trimmed)) {
+    return false
+  }
+  
+  // Can contain letters, spaces, hyphens, and apostrophes
+  // Must have at least one letter
+  const cityRegex = /^[A-Za-z]+([\s'-][A-Za-z]+)*$/
+  
+  return cityRegex.test(trimmed)
+}
+
+/**
  * Validate file upload
  */
 export function validateFileUpload(file: File, allowedTypes?: string[], maxSize?: number): {

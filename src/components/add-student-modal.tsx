@@ -13,6 +13,7 @@ import {
   BookOpen,
   Loader2
 } from 'lucide-react'
+import { isValidName, isValidEmailStrict } from '@/lib/input-validation'
 
 interface Class {
   id: string
@@ -54,9 +55,20 @@ export function AddStudentModal({ isOpen, onClose, onSave, classes }: AddStudent
       return
     }
 
+    // Validate first name
+    if (!isValidName(formData.firstName)) {
+      setError('First name must be a valid name (2-50 characters, letters only)')
+      return
+    }
+
+    // Validate last name
+    if (!isValidName(formData.lastName)) {
+      setError('Last name must be a valid name (2-50 characters, letters only)')
+      return
+    }
+
     // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(formData.parentEmail)) {
+    if (!isValidEmailStrict(formData.parentEmail)) {
       setError('Please enter a valid email address')
       return
     }

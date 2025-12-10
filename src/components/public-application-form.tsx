@@ -92,9 +92,24 @@ export function PublicApplicationForm({ org, classes }: PublicApplicationFormPro
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Validate required fields
+    // Import validation functions
+    const { isValidName, isValidDateOfBirth, isValidEmailStrict, isValidAddressLine } = await import('@/lib/input-validation')
+    
+    // Validate guardian name
     if (!guardianName.trim()) {
       toast.error('Please enter the guardian\'s full name.')
+      return
+    }
+    // Split guardian name into first and last name for validation
+    const nameParts = guardianName.trim().split(/\s+/)
+    if (nameParts.length < 2) {
+      toast.error('Please enter both first and last name for the guardian.')
+      return
+    }
+    const guardianFirstName = nameParts[0]
+    const guardianLastName = nameParts.slice(1).join(' ')
+    if (!isValidName(guardianFirstName) || !isValidName(guardianLastName)) {
+      toast.error('Guardian name must be a valid name (2-50 characters per name, letters only)')
       return
     }
     
@@ -113,8 +128,18 @@ export function PublicApplicationForm({ org, classes }: PublicApplicationFormPro
       return
     }
     
+    if (!isValidEmailStrict(guardianEmail)) {
+      toast.error('Please enter a valid email address.')
+      return
+    }
+    
     if (!guardianAddress.trim()) {
       toast.error('Please enter the guardian\'s address.')
+      return
+    }
+    
+    if (!isValidAddressLine(guardianAddress)) {
+      toast.error('Address must be a valid address (5-100 characters)')
       return
     }
     
@@ -133,12 +158,24 @@ export function PublicApplicationForm({ org, classes }: PublicApplicationFormPro
           toast.error(`Please enter the first name for Child ${i + 1}.`)
           return
         }
+        if (!isValidName(child.firstName)) {
+          toast.error(`First name for Child ${i + 1} must be a valid name (2-50 characters, letters only).`)
+          return
+        }
         if (!child.lastName.trim()) {
           toast.error(`Please enter the last name for Child ${i + 1}.`)
           return
         }
+        if (!isValidName(child.lastName)) {
+          toast.error(`Last name for Child ${i + 1} must be a valid name (2-50 characters, letters only).`)
+          return
+        }
         if (!child.dob.trim()) {
           toast.error(`Please enter the date of birth for Child ${i + 1}.`)
+          return
+        }
+        if (!isValidDateOfBirth(child.dob)) {
+          toast.error(`Date of birth for Child ${i + 1} must be a valid date (not in the future, age 0-120 years).`)
           return
         }
         if (!child.gender.trim()) {

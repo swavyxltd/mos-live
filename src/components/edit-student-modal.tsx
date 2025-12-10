@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { X, Save, User, Mail, Phone, MapPin, Heart, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
+import { isValidName, isValidDateOfBirth, isValidEmailStrict, isValidPhone, isValidAddressLine, isValidCity, isValidUKPostcode } from '@/lib/input-validation'
 
 interface Student {
   id: string
@@ -123,14 +124,51 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
   }
 
   const handleSave = async () => {
-    // Basic validation
-    if (!formData.firstName.trim() || !formData.lastName.trim()) {
-      toast.error('First name and last name are required')
+    // Validate first name
+    if (!formData.firstName.trim()) {
+      toast.error('First name is required')
+      return
+    }
+    if (!isValidName(formData.firstName)) {
+      toast.error('First name must be a valid name (2-50 characters, letters only)')
       return
     }
 
-    if (!formData.parentName.trim() || !formData.parentEmail.trim()) {
-      toast.error('Parent name and email are required')
+    // Validate last name
+    if (!formData.lastName.trim()) {
+      toast.error('Last name is required')
+      return
+    }
+    if (!isValidName(formData.lastName)) {
+      toast.error('Last name must be a valid name (2-50 characters, letters only)')
+      return
+    }
+
+    // Validate date of birth if provided
+    if (formData.dateOfBirth && !isValidDateOfBirth(formData.dateOfBirth)) {
+      toast.error('Date of birth must be a valid date (not in the future, age 0-120 years)')
+      return
+    }
+
+    // Validate parent email
+    if (!formData.parentEmail.trim()) {
+      toast.error('Parent email is required')
+      return
+    }
+    if (!isValidEmailStrict(formData.parentEmail)) {
+      toast.error('Please enter a valid email address')
+      return
+    }
+
+    // Validate parent phone if provided
+    if (formData.parentPhone && formData.parentPhone.trim() && !isValidPhone(formData.parentPhone)) {
+      toast.error('Please enter a valid UK phone number')
+      return
+    }
+
+    // Validate address if provided
+    if (formData.address && formData.address.trim() && !isValidAddressLine(formData.address)) {
+      toast.error('Address must be a valid address (5-100 characters)')
       return
     }
 

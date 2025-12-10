@@ -303,9 +303,86 @@ function ParentSetupForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Validate required fields
+    // Import validation functions
+    const { isValidName, isValidDateOfBirth, isValidPhone, isValidAddressLine, isValidCity, isValidUKPostcode } = await import('@/lib/input-validation')
+    
+    // Validate parent first name
+    if (!formData.parentFirstName || !formData.parentFirstName.trim()) {
+      setError('Parent first name is required')
+      setSubmitting(false)
+      return
+    }
+    if (!isValidName(formData.parentFirstName)) {
+      setError('Parent first name must be a valid name (2-50 characters, letters only)')
+      setSubmitting(false)
+      return
+    }
+
+    // Validate parent last name
+    if (!formData.parentLastName || !formData.parentLastName.trim()) {
+      setError('Parent last name is required')
+      setSubmitting(false)
+      return
+    }
+    if (!isValidName(formData.parentLastName)) {
+      setError('Parent last name must be a valid name (2-50 characters, letters only)')
+      setSubmitting(false)
+      return
+    }
+
+    // Validate student first name
+    if (!formData.studentFirstName || !formData.studentFirstName.trim()) {
+      setError('Student first name is required')
+      setSubmitting(false)
+      return
+    }
+    if (!isValidName(formData.studentFirstName)) {
+      setError('Student first name must be a valid name (2-50 characters, letters only)')
+      setSubmitting(false)
+      return
+    }
+
+    // Validate student last name
+    if (!formData.studentLastName || !formData.studentLastName.trim()) {
+      setError('Student last name is required')
+      setSubmitting(false)
+      return
+    }
+    if (!isValidName(formData.studentLastName)) {
+      setError('Student last name must be a valid name (2-50 characters, letters only)')
+      setSubmitting(false)
+      return
+    }
+
+    // Validate student date of birth if provided
+    if (formData.studentDob && !isValidDateOfBirth(formData.studentDob)) {
+      setError('Student date of birth must be a valid date (not in the future, age 0-120 years)')
+      setSubmitting(false)
+      return
+    }
+
+    // Validate phone number
     if (!formData.parentPhone || formData.parentPhone.trim() === '') {
       setError('Phone number is required')
+      setSubmitting(false)
+      return
+    }
+    if (!isValidPhone(formData.parentPhone)) {
+      setError('Please enter a valid UK phone number')
+      setSubmitting(false)
+      return
+    }
+
+    // Validate address if provided
+    if (formData.parentAddress && formData.parentAddress.trim() && !isValidAddressLine(formData.parentAddress)) {
+      setError('Address must be a valid address (5-100 characters)')
+      setSubmitting(false)
+      return
+    }
+
+    // Validate postcode if provided
+    if (formData.parentPostcode && formData.parentPostcode.trim() && !isValidUKPostcode(formData.parentPostcode)) {
+      setError('Please enter a valid UK postcode')
       setSubmitting(false)
       return
     }

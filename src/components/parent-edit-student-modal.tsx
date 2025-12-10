@@ -86,9 +86,38 @@ export function ParentEditStudentModal({ isOpen, onClose, onSave, student }: Par
   }
 
   const handleSave = async () => {
-    // Basic validation
-    if (!formData.firstName.trim() || !formData.lastName.trim()) {
-      toast.error('First name and last name are required')
+    // Import validation functions
+    const { isValidName, isValidDateOfBirth, isValidAddressLine } = await import('@/lib/input-validation')
+    
+    // Validate first name
+    if (!formData.firstName.trim()) {
+      toast.error('First name is required')
+      return
+    }
+    if (!isValidName(formData.firstName)) {
+      toast.error('First name must be a valid name (2-50 characters, letters only)')
+      return
+    }
+
+    // Validate last name
+    if (!formData.lastName.trim()) {
+      toast.error('Last name is required')
+      return
+    }
+    if (!isValidName(formData.lastName)) {
+      toast.error('Last name must be a valid name (2-50 characters, letters only)')
+      return
+    }
+
+    // Validate date of birth if provided
+    if (formData.dateOfBirth && !isValidDateOfBirth(formData.dateOfBirth)) {
+      toast.error('Date of birth must be a valid date (not in the future, age 0-120 years)')
+      return
+    }
+
+    // Validate address if provided
+    if (formData.address && formData.address.trim() && !isValidAddressLine(formData.address)) {
+      toast.error('Address must be a valid address (5-100 characters)')
       return
     }
 
