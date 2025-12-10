@@ -353,8 +353,20 @@ export const authOptions: NextAuthOptions = {
           }
         }
 
+        // ALWAYS fetch fresh roleHints on every request to ensure they're up-to-date
+        // This is critical because roleHints determine portal access
         try {
-          token.roleHints = await getUserRoleHints(userId)
+          const freshRoleHints = await getUserRoleHints(userId)
+          token.roleHints = freshRoleHints
+          
+          // Debug logging in development
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[Auth] Fresh roleHints fetched:', {
+              userId,
+              email: token.email,
+              roleHints: freshRoleHints
+            })
+          }
         } catch (error: any) {
           // Log error server-side only (not to console in production)
           if (process.env.NODE_ENV === 'development') {

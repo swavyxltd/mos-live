@@ -30,6 +30,18 @@ export async function middleware(request: NextRequest) {
     isParent: boolean
   } | undefined
   
+  // Debug logging for production issues
+  if (process.env.NODE_ENV === 'development' || pathname.startsWith('/staff') || pathname.startsWith('/owner')) {
+    console.log('[Middleware] Token roleHints:', {
+      email: token.email,
+      isOwner: roleHints?.isOwner,
+      orgAdminOf: roleHints?.orgAdminOf,
+      orgStaffOf: roleHints?.orgStaffOf,
+      isParent: roleHints?.isParent,
+      pathname
+    })
+  }
+  
       // If no role hints, redirect to sign in
       if (!roleHints) {
         return NextResponse.redirect(new URL('/auth/signin', request.url))
