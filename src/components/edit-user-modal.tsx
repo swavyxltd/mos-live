@@ -208,7 +208,7 @@ export function EditUserModal({ isOpen, onClose, onSave, userId }: EditUserModal
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className={`pl-10 ${phoneError ? 'border-red-500' : formData.phone && isValidPhone(formData.phone) ? 'border-green-500' : ''}`}
+                className={`pl-10 ${phoneError ? 'border-red-500' : formData.phone && isValidPhone(formData.phone) && (formData.phone !== originalFormData.phone || !originalFormData.phone) ? 'border-green-500' : ''}`}
                 placeholder="Enter phone number"
               />
             </div>
@@ -287,7 +287,7 @@ export function EditUserModal({ isOpen, onClose, onSave, userId }: EditUserModal
                   id="postcode"
                   value={formData.postcode}
                   onChange={(e) => setFormData({ ...formData, postcode: e.target.value.toUpperCase() })}
-                  className={`pl-10 ${postcodeError ? 'border-red-500' : formData.postcode && isValidUKPostcode(formData.postcode) ? 'border-green-500' : ''}`}
+                  className={`pl-10 ${postcodeError ? 'border-red-500' : formData.postcode && isValidUKPostcode(formData.postcode) && (formData.postcode !== originalFormData.postcode || !originalFormData.postcode) ? 'border-green-500' : ''}`}
                   placeholder="Enter postcode"
                 />
               </div>

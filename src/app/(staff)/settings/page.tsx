@@ -780,7 +780,7 @@ export default function SettingsPage() {
                     id="postcode"
                     value={orgSettings.postcode}
                     onChange={(e) => handleOrgSettingsChange('postcode', e.target.value)}
-                    className={orgPostcodeError ? 'border-red-500' : orgSettings.postcode && isValidUKPostcode(orgSettings.postcode) ? 'border-green-500' : ''}
+                    className={orgPostcodeError ? 'border-red-500' : orgSettings.postcode && isValidUKPostcode(orgSettings.postcode) && (orgSettings.postcode !== originalOrgSettings.postcode || !originalOrgSettings.postcode) ? 'border-green-500' : ''}
                     placeholder="SW1A 1AA"
                   />
                   {orgPostcodeError && (
@@ -824,7 +824,7 @@ export default function SettingsPage() {
                     type="tel"
                     value={orgSettings.phone}
                     onChange={(e) => handleOrgSettingsChange('phone', e.target.value)}
-                    className={orgPhoneError ? 'border-red-500' : orgSettings.phone && isValidPhone(orgSettings.phone) ? 'border-green-500' : ''}
+                    className={orgPhoneError ? 'border-red-500' : orgSettings.phone && isValidPhone(orgSettings.phone) && (orgSettings.phone !== originalOrgSettings.phone || !originalOrgSettings.phone) ? 'border-green-500' : ''}
                     placeholder="+44 20 1234 5678"
                   />
                   {orgPhoneError && (
@@ -843,7 +843,7 @@ export default function SettingsPage() {
                     type="tel"
                     value={orgSettings.publicPhone}
                     onChange={(e) => handleOrgSettingsChange('publicPhone', e.target.value)}
-                    className={orgPublicPhoneError ? 'border-red-500' : orgSettings.publicPhone && isValidPhone(orgSettings.publicPhone) ? 'border-green-500' : ''}
+                    className={orgPublicPhoneError ? 'border-red-500' : orgSettings.publicPhone && isValidPhone(orgSettings.publicPhone) && (orgSettings.publicPhone !== originalOrgSettings.publicPhone || !originalOrgSettings.publicPhone) ? 'border-green-500' : ''}
                     placeholder="+44 20 1234 5678"
                   />
                   {orgPublicPhoneError && (
@@ -958,7 +958,7 @@ export default function SettingsPage() {
                   type="tel"
                   value={userSettings.phone}
                   onChange={(e) => handleUserSettingsChange('phone', e.target.value)}
-                  className={userPhoneError ? 'border-red-500' : userSettings.phone && isValidPhone(userSettings.phone) ? 'border-green-500' : ''}
+                  className={userPhoneError ? 'border-red-500' : userSettings.phone && isValidPhone(userSettings.phone) && (userSettings.phone !== originalUserSettings.phone || !originalUserSettings.phone) ? 'border-green-500' : ''}
                   placeholder="Enter your phone number"
                 />
                 {userPhoneError && (

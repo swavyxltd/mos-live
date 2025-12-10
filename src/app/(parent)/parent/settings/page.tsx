@@ -326,7 +326,7 @@ export default function ParentSettingsPage() {
                         setPhoneError('')
                       }
                     }}
-                    className={phoneError ? 'border-red-500' : userSettings.phone && isValidPhone(userSettings.phone) ? 'border-green-500' : ''}
+                    className={phoneError ? 'border-red-500' : userSettings.phone && isValidPhone(userSettings.phone) && (userSettings.phone !== originalUserSettings.phone || !originalUserSettings.phone) ? 'border-green-500' : ''}
                     placeholder="Enter your phone number (e.g., +44 7700 900123 or 07700 900123)"
                   />
                 </div>
@@ -404,7 +404,7 @@ export default function ParentSettingsPage() {
                       setPostcodeError('')
                     }
                   }}
-                  className={postcodeError ? 'border-red-500' : userSettings.postcode && isValidUKPostcode(userSettings.postcode) ? 'border-green-500' : ''}
+                  className={postcodeError ? 'border-red-500' : userSettings.postcode && isValidUKPostcode(userSettings.postcode) && (userSettings.postcode !== originalUserSettings.postcode || !originalUserSettings.postcode) ? 'border-green-500' : ''}
                   placeholder="Enter your postcode (e.g., SW1A 1AA)"
                 />
                 {postcodeError && (
