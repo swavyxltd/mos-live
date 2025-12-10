@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { sanitizeText, MAX_STRING_LENGTHS } from '@/lib/input-validation'
 import { withRateLimit } from '@/lib/api-middleware'
+import crypto from 'crypto'
 
 async function handlePOST(
   request: NextRequest,
@@ -55,6 +56,7 @@ async function handlePOST(
     // Log the action
     await prisma.auditLog.create({
       data: {
+        id: crypto.randomUUID(),
         orgId: orgId,
         actorUserId: session.user.id,
         action: 'ORG_PAUSED',

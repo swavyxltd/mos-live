@@ -222,6 +222,7 @@ async function handlePOST(request: NextRequest) {
     // Log the action
     await prisma.auditLog.create({
       data: {
+        id: crypto.randomUUID(),
         orgId,
         actorUserId: session.user.id,
         action: 'CREATE_INVOICE',

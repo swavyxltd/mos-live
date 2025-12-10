@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { reportUsage } from '@/lib/stripe'
 import { logger } from '@/lib/logger'
+import crypto from 'crypto'
 
 async function handlePOST(request: NextRequest) {
   try {
@@ -56,6 +57,7 @@ async function handlePOST(request: NextRequest) {
     // Log the cron job execution
     await prisma.auditLog.create({
       data: {
+        id: crypto.randomUUID(),
         action: 'NIGHTLY_USAGE_REPORT',
         targetType: 'CronJob',
         data: {

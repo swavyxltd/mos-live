@@ -2,6 +2,7 @@ export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
+import crypto from 'crypto'
 
 async function handleGET(request: NextRequest) {
   try {
@@ -77,6 +78,7 @@ async function handleGET(request: NextRequest) {
         // Log the action
         await prisma.auditLog.create({
           data: {
+            id: crypto.randomUUID(),
             orgId,
             actorUserId: userId,
             action: 'CONNECT_WHATSAPP',

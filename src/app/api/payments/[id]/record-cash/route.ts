@@ -75,6 +75,7 @@ async function handlePOST(
     // Log the action
     await prisma.auditLog.create({
       data: {
+        id: crypto.randomUUID(),
         orgId,
         actorUserId: session.user.id,
         action: 'RECORD_CASH_PAYMENT',

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { stripe } from '@/lib/stripe'
 import { sendPaymentFailedWarningPlatform } from '@/lib/mail'
 import { logger } from '@/lib/logger'
+import crypto from 'crypto'
 
 // This endpoint should be called daily via cron job
 // It retries failed payments every 3 days, then checks for organisations with overdue payments beyond grace period and suspends them
@@ -187,6 +188,7 @@ async function handlePOST(request: NextRequest) {
 
         await prisma.auditLog.create({
           data: {
+            id: crypto.randomUUID(),
             orgId: billing.orgId,
             action: 'PLATFORM_BILLING_RETRY',
             targetType: 'PlatformOrgBilling',

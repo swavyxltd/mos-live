@@ -5,6 +5,7 @@ import { stripe } from '@/lib/stripe'
 import { getActiveOrg } from '@/lib/org'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
+import crypto from 'crypto'
 
 async function handlePOST(request: NextRequest) {
   try {
@@ -112,6 +113,7 @@ async function handlePOST(request: NextRequest) {
         // Create audit log
         await prisma.auditLog.create({
           data: {
+            id: crypto.randomUUID(),
             orgId: org.id,
             actorUserId: session.user.id,
             action: 'PLATFORM_BILLING_OVERDUE_PAID',

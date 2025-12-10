@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client'
+import crypto from 'crypto'
 
 const prisma = new PrismaClient()
 
@@ -85,10 +86,11 @@ export class OrganisationStatusManager {
       if (action !== 'none') {
         await prisma.auditLog.create({
           data: {
+            id: crypto.randomUUID(),
             action: action === 'pause' ? 'ORG_AUTO_PAUSED' : 'ORG_AUTO_DEACTIVATED',
-            entityType: 'ORG',
-            entityId: data.orgId,
-            userId: 'system', // System action
+            targetType: 'ORG',
+            targetId: data.orgId,
+            orgId: data.orgId,
             details: {
               orgName: data.orgName,
               reason: reason,
@@ -139,10 +141,11 @@ export class OrganisationStatusManager {
       // Log successful payment
       await prisma.auditLog.create({
         data: {
+          id: crypto.randomUUID(),
           action: 'PAYMENT_SUCCESS',
-          entityType: 'ORG',
-          entityId: orgId,
-          userId: 'system',
+          targetType: 'ORG',
+          targetId: orgId,
+          orgId: orgId,
           details: {
             amount,
             paymentDate: new Date(),

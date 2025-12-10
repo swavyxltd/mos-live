@@ -126,6 +126,7 @@ async function handlePUT(request: NextRequest) {
     // Create audit log
     await prisma.auditLog.create({
       data: {
+        id: crypto.randomUUID(),
         actorUserId: session.user.id,
         action: 'PLATFORM_SETTINGS_UPDATED',
         targetType: 'PLATFORM_SETTINGS',

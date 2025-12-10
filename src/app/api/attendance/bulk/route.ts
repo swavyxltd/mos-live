@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma'
 import { checkPaymentMethod } from '@/lib/payment-check'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
+import crypto from 'crypto'
 
 const bulkAttendanceSchema = z.object({
   classId: z.string(),
@@ -73,6 +74,7 @@ async function handlePOST(request: NextRequest) {
     // Log the action
     await prisma.auditLog.create({
       data: {
+        id: crypto.randomUUID(),
         orgId,
         actorUserId: session.user.id,
         action: 'BULK_UPDATE_ATTENDANCE',

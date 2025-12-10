@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
 import { transformInvoiceData } from '@/lib/invoice-data-transform'
+import crypto from 'crypto'
 
 async function handleGET(
   request: NextRequest,
@@ -118,6 +119,7 @@ async function handlePUT(
     // Log the action
     await prisma.auditLog.create({
       data: {
+        id: crypto.randomUUID(),
         orgId,
         actorUserId: session.user.id,
         action: 'UPDATE_INVOICE',

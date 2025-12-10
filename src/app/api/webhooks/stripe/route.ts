@@ -6,6 +6,7 @@ import { stripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
 import { sendPaymentFailedPlatform } from '@/lib/mail'
 import { logger } from '@/lib/logger'
+import crypto from 'crypto'
 
 async function handlePOST(request: NextRequest) {
   const body = await request.text()
@@ -142,6 +143,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: any) {
       // Create audit log
       await prisma.auditLog.create({
         data: {
+          id: crypto.randomUUID(),
           orgId: metadata.orgId,
           action: 'PLATFORM_BILLING_OVERDUE_PAID',
           targetType: 'PlatformOrgBilling',
@@ -189,6 +191,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: any) {
     // Log the action
     await prisma.auditLog.create({
       data: {
+        id: crypto.randomUUID(),
         orgId: metadata.orgId,
         action: 'PAYMENT_SUCCEEDED',
         targetType: 'Payment',
@@ -220,6 +223,7 @@ async function handlePaymentIntentFailed(paymentIntent: any) {
     // Log the action
     await prisma.auditLog.create({
       data: {
+        id: crypto.randomUUID(),
         orgId: metadata.orgId,
         action: 'PAYMENT_FAILED',
         targetType: 'Payment',
@@ -284,6 +288,7 @@ async function handleSetupIntentSucceeded(setupIntent: any) {
     // Log the action
     await prisma.auditLog.create({
       data: {
+        id: crypto.randomUUID(),
         orgId: metadata.orgId,
         action: 'PLATFORM_PAYMENT_METHOD_SAVED',
         targetType: 'PlatformOrgBilling',
@@ -311,6 +316,7 @@ async function handleSetupIntentSucceeded(setupIntent: any) {
     // Log the action
     await prisma.auditLog.create({
       data: {
+        id: crypto.randomUUID(),
         orgId: metadata.orgId,
         action: 'PAYMENT_METHOD_SAVED',
         targetType: 'ParentBillingProfile',
@@ -358,6 +364,7 @@ async function handleInvoicePaymentSucceeded(invoice: any) {
     
     await prisma.auditLog.create({
       data: {
+        id: crypto.randomUUID(),
         orgId: invoice.metadata.orgId,
         action: 'PLATFORM_BILLING_PAID',
         targetType: 'PlatformOrgBilling',
@@ -410,6 +417,7 @@ async function handleSubscriptionUpdated(subscription: any) {
     
     await prisma.auditLog.create({
       data: {
+        id: crypto.randomUUID(),
         orgId: metadata.orgId,
         action: 'PLATFORM_SUBSCRIPTION_UPDATED',
         targetType: 'PlatformOrgBilling',
@@ -441,6 +449,7 @@ async function handleSubscriptionDeleted(subscription: any) {
     
     await prisma.auditLog.create({
       data: {
+        id: crypto.randomUUID(),
         orgId: metadata.orgId,
         action: 'PLATFORM_SUBSCRIPTION_CANCELED',
         targetType: 'PlatformOrgBilling',
@@ -510,6 +519,7 @@ async function handleInvoicePaymentFailed(invoice: any) {
     
     await prisma.auditLog.create({
       data: {
+        id: crypto.randomUUID(),
         orgId: invoice.metadata.orgId,
         action: 'PLATFORM_BILLING_FAILED',
         targetType: 'PlatformOrgBilling',
