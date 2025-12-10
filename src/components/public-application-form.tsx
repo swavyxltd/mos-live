@@ -57,6 +57,7 @@ export function PublicApplicationForm({ org, classes }: PublicApplicationFormPro
   const [guardianPhone, setGuardianPhone] = useState('')
   const [guardianEmail, setGuardianEmail] = useState('')
   const [guardianAddress, setGuardianAddress] = useState('')
+  const [phoneError, setPhoneError] = useState('')
   
   // Children information
   const [children, setChildren] = useState<Child[]>([
