@@ -163,30 +163,14 @@ async function handlePOST(request: NextRequest) {
         const sanitizedOrgPhone = sanitizeText(orgPhone, MAX_STRING_LENGTHS.phone)
         const sanitizedOrgPublicPhone = sanitizeText(orgPublicPhone, MAX_STRING_LENGTHS.phone)
         
-        // Validate postcode
-        if (!isValidUKPostcode(sanitizedOrgPostcode)) {
-          return NextResponse.json(
-            { error: 'Invalid postcode format. Please enter a valid UK postcode (e.g., SW1A 1AA)' },
-            { status: 400 }
-          )
-        }
-        
-        // Validate phone numbers
-        if (!isValidPhone(sanitizedOrgPhone)) {
-          return NextResponse.json(
-            { error: 'Invalid phone number format. Please enter a valid UK phone number (e.g., +44 7700 900123 or 07700 900123)' },
-            { status: 400 }
-          )
-        }
-        if (!isValidPhone(sanitizedOrgPublicPhone)) {
-          return NextResponse.json(
-            { error: 'Invalid public phone number format. Please enter a valid UK phone number (e.g., +44 7700 900123 or 07700 900123)' },
-            { status: 400 }
-          )
-        }
         const sanitizedOrgEmail = orgEmail.toLowerCase().trim()
         const sanitizedOrgPublicEmail = orgPublicEmail.toLowerCase().trim()
         const sanitizedOrgWebsite = orgWebsite ? orgWebsite.trim() : undefined
+        
+        // Validate postcode
+        if (!isValidUKPostcode(sanitizedOrgPostcode)) {
+          throw new Error('Invalid postcode format. Please enter a valid UK postcode (e.g., SW1A 1AA)')
+        }
         
         // Validate org emails
         if (!isValidEmail(sanitizedOrgEmail)) {
@@ -198,10 +182,10 @@ async function handlePOST(request: NextRequest) {
         
         // Validate org phones
         if (!isValidPhone(sanitizedOrgPhone)) {
-          throw new Error('Invalid organisation contact phone format')
+          throw new Error('Invalid phone number format. Please enter a valid UK phone number (e.g., +44 7700 900123 or 07700 900123)')
         }
         if (!isValidPhone(sanitizedOrgPublicPhone)) {
-          throw new Error('Invalid organisation public phone format')
+          throw new Error('Invalid public phone number format. Please enter a valid UK phone number (e.g., +44 7700 900123 or 07700 900123)')
         }
         
         // Get existing org settings or create new ones
@@ -310,13 +294,19 @@ async function handlePOST(request: NextRequest) {
       )
     }
 
-    const isDevelopment = process.env.NODE_ENV === 'development'
+    // Return the actual error message if it's a validation error (status 400)
+    // Otherwise return generic error message for server errors (status 500)
+    const errorMessage = error?.message || 'Failed to create account'
+    const isValidationError = errorMessage.includes('Invalid') || 
+                               errorMessage.includes('required') ||
+                               errorMessage.includes('format')
+    
     return NextResponse.json(
       { 
-        error: 'Failed to create account',
-        ...(isDevelopment && { details: error?.message })
+        error: isValidationError ? errorMessage : 'Failed to create account',
+        ...(process.env.NODE_ENV === 'development' && { details: error?.message, stack: error?.stack })
       },
-      { status: 500 }
+      { status: isValidationError ? 400 : 500 }
     )
   }
 }
