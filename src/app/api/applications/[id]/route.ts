@@ -108,6 +108,7 @@ export async function PATCH(
             // Add parent to organisation
             await tx.userOrgMembership.create({
               data: {
+                id: crypto.randomUUID(),
                 userId: parentUser.id,
                 orgId: org.id,
                 role: 'PARENT'

@@ -150,6 +150,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
               },
               update: {},
               create: {
+                id: crypto.randomUUID(),
                 userId: parentUser.id,
                 orgId: orgId,
                 role: 'PARENT'

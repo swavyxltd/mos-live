@@ -236,6 +236,7 @@ async function handlePOST(request: NextRequest) {
           role: invitation.role
         },
         create: {
+          id: crypto.randomUUID(),
           userId: user.id,
           orgId: invitation.orgId,
           role: invitation.role

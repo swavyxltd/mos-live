@@ -233,6 +233,7 @@ async function handlePOST(request: NextRequest) {
       if (!existingMembership) {
         await tx.userOrgMembership.create({
           data: {
+            id: crypto.randomUUID(),
             userId: parentUser.id,
             orgId: invitation.orgId,
             role: 'PARENT'

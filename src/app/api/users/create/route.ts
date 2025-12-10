@@ -208,7 +208,7 @@ async function handlePOST(request: NextRequest) {
           ...(isInitialAdmin && { isInitialAdmin: true }),
         },
         create: {
-          id: `membership-${user.id}-${orgId}-${Date.now()}`,
+          id: crypto.randomUUID(),
           userId: user.id,
           orgId,
           role,
