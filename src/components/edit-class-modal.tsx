@@ -229,7 +229,11 @@ export function EditClassModal({ classId, isOpen, onClose, onSave }: EditClassMo
 
       if (!response.ok) {
         console.error('Update failed:', responseData)
-        setError(responseData.error || 'Failed to update class')
+        // Show detailed error message if available
+        const errorMessage = responseData.details 
+          ? `${responseData.error}: ${responseData.details}`
+          : responseData.error || 'Failed to update class'
+        setError(errorMessage)
         setIsSubmitting(false)
         return
       }

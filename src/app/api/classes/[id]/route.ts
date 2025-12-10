@@ -124,14 +124,23 @@ async function handlePATCH(
     // Sanitize inputs
     const { sanitizeText, MAX_STRING_LENGTHS } = await import('@/lib/input-validation')
 
-    // Build update data object
+    // Build update data object - only include fields that are explicitly provided
     const updateData: any = {
       updatedAt: new Date()
     }
 
-    if (name !== undefined) updateData.name = sanitizeText(name, MAX_STRING_LENGTHS.name)
-    if (description !== undefined) updateData.description = description ? sanitizeText(description, MAX_STRING_LENGTHS.text) : null
-    if (schedule !== undefined) {
+    if (name !== undefined && name !== null) {
+      const sanitizedName = sanitizeText(name, MAX_STRING_LENGTHS.name)
+      if (sanitizedName.length > 0) {
+        updateData.name = sanitizedName
+      }
+    }
+    
+    if (description !== undefined) {
+      updateData.description = description ? sanitizeText(description, MAX_STRING_LENGTHS.text) : null
+    }
+    
+    if (schedule !== undefined && schedule !== null) {
       // Schedule is a JSON string - validate it's valid JSON but don't sanitize
       // Sanitizing JSON strings can break the JSON structure
       try {
@@ -153,15 +162,31 @@ async function handlePATCH(
         )
       }
     }
-    if (teacherId !== undefined) updateData.teacherId = teacherId || null
-    if (monthlyFeeP !== undefined) {
+    
+    if (teacherId !== undefined) {
+      // Validate teacherId is a valid UUID format if provided
+      if (teacherId && typeof teacherId === 'string' && teacherId.trim().length > 0) {
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+        if (!uuidRegex.test(teacherId.trim())) {
+          return NextResponse.json(
+            { error: 'Invalid teacher ID format' },
+            { status: 400 }
+          )
+        }
+        updateData.teacherId = teacherId.trim()
+      } else {
+        updateData.teacherId = null
+      }
+    }
+    
+    if (monthlyFeeP !== undefined && monthlyFeeP !== null) {
       if (monthlyFeeP < 0) {
         return NextResponse.json(
           { error: 'Monthly fee must be non-negative' },
           { status: 400 }
         )
       }
-      updateData.monthlyFeeP = Math.round(monthlyFeeP)
+      updateData.monthlyFeeP = Math.round(Number(monthlyFeeP))
     }
 
     // Ensure we have at least one field to update besides updatedAt
@@ -172,7 +197,7 @@ async function handlePATCH(
       )
     }
 
-    // Update class
+    // Update class - id is unique so we only need that, but we've already verified orgId above
     const updatedClass = await prisma.class.update({
       where: { id: params.id },
       data: updateData,
@@ -186,13 +211,7 @@ async function handlePATCH(
         },
         _count: {
           select: {
-            StudentClass: {
-              where: {
-                Student: {
-                  isArchived: false
-                }
-              }
-            }
+            StudentClass: true
           }
         }
       }
