@@ -87,7 +87,29 @@ export default function SettingsPage() {
     website: '',
     officeHours: ''
   })
+  const [originalOrgSettings, setOriginalOrgSettings] = useState<OrganisationSettings>({
+    name: '',
+    timezone: 'Europe/London',
+    lateThreshold: 15,
+    feeDueDay: 1,
+    address: '',
+    addressLine1: '',
+    postcode: '',
+    city: '',
+    phone: '',
+    publicPhone: '',
+    email: '',
+    publicEmail: '',
+    website: '',
+    officeHours: ''
+  })
   const [userSettings, setUserSettings] = useState<UserSettings>({
+    name: '',
+    email: '',
+    phone: '',
+    twoFactorEnabled: true
+  })
+  const [originalUserSettings, setOriginalUserSettings] = useState<UserSettings>({
     name: '',
     email: '',
     phone: '',
@@ -126,12 +148,14 @@ export default function SettingsPage() {
       const response = await fetch('/api/settings/user')
       if (response.ok) {
         const data = await response.json()
-        setUserSettings({
+        const settings = {
           name: data.name || '',
           email: data.email || '',
           phone: data.phone || '',
           twoFactorEnabled: data.twoFactorEnabled !== false // Default to true
-        })
+        }
+        setUserSettings(settings)
+        setOriginalUserSettings(settings)
       }
     } catch (error) {
     }
@@ -169,7 +193,7 @@ export default function SettingsPage() {
       const response = await fetch('/api/settings/organisation')
       if (response.ok) {
         const data = await response.json()
-        setOrgSettings({
+        const settings = {
           name: data.name || '',
           timezone: data.timezone || 'Europe/London',
           lateThreshold: data.lateThreshold || 15,
@@ -184,7 +208,9 @@ export default function SettingsPage() {
           publicEmail: data.publicEmail || '',
           website: data.website || '',
           officeHours: data.officeHours || ''
-        })
+        }
+        setOrgSettings(settings)
+        setOriginalOrgSettings(settings)
       }
     } catch (error) {
     } finally {
@@ -760,7 +786,8 @@ export default function SettingsPage() {
                   {orgPostcodeError && (
                     <p className="text-xs text-red-600 mt-1">{orgPostcodeError}</p>
                   )}
-                  {orgSettings.postcode && !orgPostcodeError && isValidUKPostcode(orgSettings.postcode) && (
+                  {orgSettings.postcode && !orgPostcodeError && isValidUKPostcode(orgSettings.postcode) && 
+                   (orgSettings.postcode !== originalOrgSettings.postcode || !originalOrgSettings.postcode) && (
                     <p className="text-xs text-green-600 mt-1">Valid UK postcode</p>
                   )}
                 </div>
@@ -803,7 +830,8 @@ export default function SettingsPage() {
                   {orgPhoneError && (
                     <p className="text-xs text-red-600 mt-1">{orgPhoneError}</p>
                   )}
-                  {orgSettings.phone && !orgPhoneError && isValidPhone(orgSettings.phone) && (
+                  {orgSettings.phone && !orgPhoneError && isValidPhone(orgSettings.phone) && 
+                   (orgSettings.phone !== originalOrgSettings.phone || !originalOrgSettings.phone) && (
                     <p className="text-xs text-green-600 mt-1">Valid UK phone number</p>
                   )}
                   <p className="text-sm text-gray-500 mt-1">For Madrasah OS to contact you</p>
@@ -821,7 +849,8 @@ export default function SettingsPage() {
                   {orgPublicPhoneError && (
                     <p className="text-xs text-red-600 mt-1">{orgPublicPhoneError}</p>
                   )}
-                  {orgSettings.publicPhone && !orgPublicPhoneError && isValidPhone(orgSettings.publicPhone) && (
+                  {orgSettings.publicPhone && !orgPublicPhoneError && isValidPhone(orgSettings.publicPhone) && 
+                   (orgSettings.publicPhone !== originalOrgSettings.publicPhone || !originalOrgSettings.publicPhone) && (
                     <p className="text-xs text-green-600 mt-1">Valid UK phone number</p>
                   )}
                   <p className="text-sm text-gray-500 mt-1">Visible on application form</p>
@@ -935,7 +964,8 @@ export default function SettingsPage() {
                 {userPhoneError && (
                   <p className="text-xs text-red-600 mt-1">{userPhoneError}</p>
                 )}
-                {userSettings.phone && !userPhoneError && isValidPhone(userSettings.phone) && (
+                {userSettings.phone && !userPhoneError && isValidPhone(userSettings.phone) && 
+                 (userSettings.phone !== originalUserSettings.phone || !originalUserSettings.phone) && (
                   <p className="text-xs text-green-600 mt-1">Valid UK phone number</p>
                 )}
               </div>

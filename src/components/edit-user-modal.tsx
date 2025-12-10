@@ -41,6 +41,16 @@ export function EditUserModal({ isOpen, onClose, onSave, userId }: EditUserModal
     postcode: '',
     giftAidStatus: ''
   })
+  const [originalFormData, setOriginalFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    title: '',
+    address: '',
+    city: '',
+    postcode: '',
+    giftAidStatus: ''
+  })
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [phoneError, setPhoneError] = useState('')
@@ -73,7 +83,7 @@ export function EditUserModal({ isOpen, onClose, onSave, userId }: EditUserModal
         throw new Error('Failed to load user')
       }
       const data = await res.json()
-      setFormData({
+      const userData = {
         name: data.name || '',
         email: data.email || '',
         phone: data.phone || '',
@@ -82,7 +92,9 @@ export function EditUserModal({ isOpen, onClose, onSave, userId }: EditUserModal
         city: data.city || '',
         postcode: data.postcode || '',
         giftAidStatus: data.giftAidStatus || ''
-      })
+      }
+      setFormData(userData)
+      setOriginalFormData(userData)
     } catch (error) {
       toast.error('Failed to load user')
       console.error('Error loading user:', error)
@@ -203,7 +215,8 @@ export function EditUserModal({ isOpen, onClose, onSave, userId }: EditUserModal
             {phoneError && (
               <p className="text-xs text-red-600 mt-1">{phoneError}</p>
             )}
-            {formData.phone && !phoneError && isValidPhone(formData.phone) && (
+            {formData.phone && !phoneError && isValidPhone(formData.phone) && 
+             (formData.phone !== originalFormData.phone || !originalFormData.phone) && (
               <p className="text-xs text-green-600 mt-1">Valid UK phone number</p>
             )}
           </div>
@@ -281,7 +294,8 @@ export function EditUserModal({ isOpen, onClose, onSave, userId }: EditUserModal
               {postcodeError && (
                 <p className="text-xs text-red-600 mt-1">{postcodeError}</p>
               )}
-              {formData.postcode && !postcodeError && isValidUKPostcode(formData.postcode) && (
+              {formData.postcode && !postcodeError && isValidUKPostcode(formData.postcode) && 
+               (formData.postcode !== originalFormData.postcode || !originalFormData.postcode) && (
                 <p className="text-xs text-green-600 mt-1">Valid UK postcode</p>
               )}
             </div>

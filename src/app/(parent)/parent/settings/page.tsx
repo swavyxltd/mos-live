@@ -38,6 +38,16 @@ export default function ParentSettingsPage() {
     title: '',
     giftAidStatus: ''
   })
+  const [originalUserSettings, setOriginalUserSettings] = useState<UserSettings>({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    postcode: '',
+    title: '',
+    giftAidStatus: ''
+  })
 
   useEffect(() => {
     if (status === 'authenticated' && session?.user) {
@@ -107,7 +117,7 @@ export default function ParentSettingsPage() {
       
       const data = await response.json()
       console.log('User settings loaded:', data)
-      setUserSettings({
+      const settings = {
         name: data.name || session?.user?.name || '',
         email: data.email || session?.user?.email || '',
         phone: data.phone || '',
@@ -116,7 +126,9 @@ export default function ParentSettingsPage() {
         postcode: data.postcode || '',
         title: data.title || 'none',
         giftAidStatus: data.giftAidStatus || 'none'
-      })
+      }
+      setUserSettings(settings)
+      setOriginalUserSettings(settings)
     } catch (error: any) {
       console.error('Error fetching user settings:', error)
       const errorMessage = error?.message || 'Failed to load settings. Please try again.'
@@ -321,7 +333,8 @@ export default function ParentSettingsPage() {
                 {phoneError && (
                   <p className="text-xs text-red-600 mt-1">{phoneError}</p>
                 )}
-                {userSettings.phone && !phoneError && isValidPhone(userSettings.phone) && (
+                {userSettings.phone && !phoneError && isValidPhone(userSettings.phone) && 
+                 (userSettings.phone !== originalUserSettings.phone || !originalUserSettings.phone) && (
                   <p className="text-xs text-green-600 mt-1">Valid UK phone number</p>
                 )}
               </div>
@@ -397,7 +410,8 @@ export default function ParentSettingsPage() {
                 {postcodeError && (
                   <p className="text-xs text-red-600 mt-1">{postcodeError}</p>
                 )}
-                {userSettings.postcode && !postcodeError && isValidUKPostcode(userSettings.postcode) && (
+                {userSettings.postcode && !postcodeError && isValidUKPostcode(userSettings.postcode) && 
+                 (userSettings.postcode !== originalUserSettings.postcode || !originalUserSettings.postcode) && (
                   <p className="text-xs text-green-600 mt-1">Valid UK postcode</p>
                 )}
               </div>
