@@ -143,8 +143,8 @@ async function handleGET(request: NextRequest) {
           ...(demoOrg ? { orgId: { not: demoOrg.id } } : {})
         },
         include: {
-          org: { select: { name: true } },
-          student: { select: { firstName: true, lastName: true } }
+          Org: { select: { name: true } },
+          Student: { select: { firstName: true, lastName: true } }
         },
         orderBy: { dueDate: 'asc' },
         take: 10
@@ -156,8 +156,8 @@ async function handleGET(request: NextRequest) {
 
     const failedPaymentsFormatted = failedPaymentsList.map((inv: any) => ({
       id: inv.id,
-      orgName: inv.org?.name || 'Unknown Org',
-      studentName: inv.student ? `${inv.student.firstName} ${inv.student.lastName}` : 'Unknown Student',
+      orgName: inv.Org?.name || 'Unknown Org',
+      studentName: inv.Student ? `${inv.Student.firstName} ${inv.Student.lastName}` : 'Unknown Student',
       amount: Number(inv.amountP || 0) / 100,
       failureDate: inv.dueDate ? inv.dueDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
       reason: 'Payment overdue',

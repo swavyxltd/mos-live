@@ -76,7 +76,7 @@ async function handlePOST(request: NextRequest) {
     const invitation = await prisma.invitation.findUnique({
       where: { token },
       include: {
-        org: true
+        Org: true
       }
     })
 
@@ -255,7 +255,16 @@ async function handlePOST(request: NextRequest) {
         }
       })
 
-      return { user, org: invitation.org, isNewOrgSetup }
+      // Fetch the org (may have been updated in transaction)
+      const org = await tx.org.findUnique({
+        where: { id: invitation.orgId }
+      })
+
+      if (!org) {
+        throw new Error('Organisation not found')
+      }
+
+      return { user, org, isNewOrgSetup }
     })
 
     // Send confirmation email

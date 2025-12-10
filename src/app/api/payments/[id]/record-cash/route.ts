@@ -35,7 +35,7 @@ async function handlePOST(
     // Get invoice
     const invoice = await prisma.invoice.findFirst({
       where: { id: invoiceId, orgId },
-      include: { student: true }
+      include: { Student: true }
     })
     
     if (!invoice) {
@@ -80,7 +80,7 @@ async function handlePOST(
         data: {
           invoiceId,
           amount: amountP,
-          studentName: `${invoice.student.firstName} ${invoice.student.lastName}`
+          studentName: `${invoice.Student.firstName} ${invoice.Student.lastName}`
         }
       }
     })

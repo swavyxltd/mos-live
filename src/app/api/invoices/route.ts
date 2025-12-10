@@ -50,12 +50,12 @@ async function handleGET(request: NextRequest) {
     const invoices = await prisma.invoice.findMany({
       where: whereClause,
       include: {
-        student: {
+        Student: {
           select: {
             id: true,
             firstName: true,
             lastName: true,
-            primaryParent: {
+            User: {
               select: {
                 id: true,
                 name: true,
@@ -64,7 +64,7 @@ async function handleGET(request: NextRequest) {
             }
           }
         },
-        payments: {
+        Payment: {
           where: { status: 'SUCCEEDED' },
           orderBy: { createdAt: 'desc' }
         }
@@ -74,7 +74,7 @@ async function handleGET(request: NextRequest) {
 
     // Optimize: Batch fetch all billing profiles to avoid N+1 queries
     const parentIds = invoices
-      .map(inv => inv.student.primaryParent?.id)
+      .map(inv => inv.Student.User?.id)
       .filter((id): id is string => !!id)
     
     const billingProfiles = parentIds.length > 0
@@ -96,14 +96,14 @@ async function handleGET(request: NextRequest) {
 
     // Map billing profiles to invoices
     const invoicesWithStripeStatus = invoices.map((invoice) => {
-      const hasStripeAutoPayment = invoice.student.primaryParent?.id
-        ? billingProfileMap.get(invoice.student.primaryParent.id) || false
+      const hasStripeAutoPayment = invoice.Student.User?.id
+        ? billingProfileMap.get(invoice.Student.User.id) || false
         : false
 
       return {
         ...invoice,
-        student: {
-          ...invoice.student,
+        Student: {
+          ...invoice.Student,
           hasStripeAutoPayment
         }
       }
@@ -111,7 +111,7 @@ async function handleGET(request: NextRequest) {
     
     // Transform the data for frontend using shared utility for consistency
     const transformedInvoices = invoicesWithStripeStatus.map(invoice => 
-      transformInvoiceData(invoice, invoice.student.hasStripeAutoPayment)
+      transformInvoiceData(invoice, invoice.Student.hasStripeAutoPayment)
     )
     
     return NextResponse.json(transformedInvoices)
@@ -207,7 +207,7 @@ async function handlePOST(request: NextRequest) {
       invoice: {
         id: invoice.id,
         invoiceNumber: `INV-${invoice.id.slice(-8).toUpperCase()}`,
-        studentName: `${invoice.student.firstName} ${invoice.student.lastName}`,
+        studentName: `${invoice.Student.firstName} ${invoice.Student.lastName}`,
         amount: invoice.amountP / 100,
         status: invoice.status,
         dueDate: invoice.dueDate

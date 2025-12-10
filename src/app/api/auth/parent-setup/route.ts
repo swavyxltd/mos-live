@@ -85,16 +85,16 @@ async function handlePOST(request: NextRequest) {
     const invitation = await prisma.parentInvitation.findUnique({
       where: { token },
       include: {
-        student: {
+        Student: {
           include: {
-            studentClasses: {
+            StudentClass: {
               include: {
-                class: true
+                Class: true
               }
             }
           }
         },
-        org: true
+        Org: true
       }
     })
 
@@ -121,10 +121,10 @@ async function handlePOST(request: NextRequest) {
 
     // Validate payment method is allowed
     const allowedMethods = []
-    if (invitation.org.acceptsCash ?? invitation.org.cashPaymentEnabled ?? true) allowedMethods.push('CASH')
-    if (invitation.org.acceptsBankTransfer ?? invitation.org.bankTransferEnabled ?? true) allowedMethods.push('BANK_TRANSFER')
-    if (invitation.org.acceptsCard && invitation.org.stripeConnectAccountId) allowedMethods.push('CARD')
-    if (invitation.org.stripeEnabled) allowedMethods.push('STRIPE')
+    if (invitation.Org.acceptsCash ?? invitation.Org.cashPaymentEnabled ?? true) allowedMethods.push('CASH')
+    if (invitation.Org.acceptsBankTransfer ?? invitation.Org.bankTransferEnabled ?? true) allowedMethods.push('BANK_TRANSFER')
+    if (invitation.Org.acceptsCard && invitation.Org.stripeConnectAccountId) allowedMethods.push('CARD')
+    if (invitation.Org.stripeEnabled) allowedMethods.push('STRIPE')
 
     if (!allowedMethods.includes(paymentMethod)) {
       return NextResponse.json(
@@ -213,11 +213,11 @@ async function handlePOST(request: NextRequest) {
         where: { id: invitation.studentId },
         data: {
           primaryParentId: parentUser.id,
-          firstName: sanitizedStudentFirstName || invitation.student.firstName,
-          lastName: sanitizedStudentLastName || invitation.student.lastName,
-          dob: validatedDob || invitation.student.dob,
-          allergies: sanitizedAllergies || invitation.student.allergies,
-          medicalNotes: sanitizedMedicalNotes || invitation.student.medicalNotes,
+          firstName: sanitizedStudentFirstName || invitation.Student.firstName,
+          lastName: sanitizedStudentLastName || invitation.Student.lastName,
+          dob: validatedDob || invitation.Student.dob,
+          allergies: sanitizedAllergies || invitation.Student.allergies,
+          medicalNotes: sanitizedMedicalNotes || invitation.Student.medicalNotes,
           paymentMethod: paymentMethod
         }
       })

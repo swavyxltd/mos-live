@@ -207,7 +207,7 @@ async function handlePOST(request: NextRequest) {
         status: 'DRAFT'
       },
       include: {
-        student: {
+        Student: {
           select: {
             firstName: true,
             lastName: true
@@ -237,7 +237,7 @@ async function handlePOST(request: NextRequest) {
       invoice: {
         id: invoice.id,
         invoiceNumber: `INV-${invoice.id.slice(-8).toUpperCase()}`,
-        studentName: `${invoice.student.firstName} ${invoice.student.lastName}`,
+        studentName: `${invoice.Student.firstName} ${invoice.Student.lastName}`,
         amount: invoice.amountP / 100,
         status: invoice.status,
         dueDate: invoice.dueDate

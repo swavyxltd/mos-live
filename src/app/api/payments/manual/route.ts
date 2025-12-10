@@ -139,12 +139,12 @@ async function handleGET(request: NextRequest) {
         ...(method && { paidMethod: method })
       },
       include: {
-        student: {
+        Student: {
           include: {
-            primaryParent: true
+            User: true
           }
         },
-        payments: {
+        Payment: {
           where: {
             method: { in: ['CASH', 'BANK_TRANSFER'] }
           }
@@ -163,16 +163,16 @@ async function handleGET(request: NextRequest) {
         dueDate: invoice.dueDate,
         status: invoice.status,
         student: {
-          id: invoice.student.id,
-          firstName: invoice.student.firstName,
-          lastName: invoice.student.lastName
+          id: invoice.Student.id,
+          firstName: invoice.Student.firstName,
+          lastName: invoice.Student.lastName
         },
         parent: {
-          id: invoice.student.primaryParent.id,
-          name: invoice.student.primaryParent.name,
-          email: invoice.student.primaryParent.email
+          id: invoice.Student.User.id,
+          name: invoice.Student.User.name,
+          email: invoice.Student.User.email
         },
-        payments: invoice.payments.map(payment => ({
+        payments: invoice.Payment.map(payment => ({
           id: payment.id,
           method: payment.method,
           amount: payment.amountP,
