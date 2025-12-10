@@ -11,7 +11,6 @@ import { Filter, Search, X, Calendar, Users, Heart, AlertTriangle, ChevronDown }
 interface Class {
   id: string
   name: string
-  grade: string
 }
 
 interface StudentsFiltersProps {
@@ -184,7 +183,7 @@ export function StudentsFilters({ classes, onFiltersChange }: StudentsFiltersPro
                           <option value="all">All Classes</option>
                           {classes.map((cls) => (
                             <option key={cls.id} value={cls.id}>
-                              {cls.name} ({cls.grade})
+                              {cls.name}
                             </option>
                           ))}
                         </select>

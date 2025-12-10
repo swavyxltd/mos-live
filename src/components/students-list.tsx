@@ -21,6 +21,7 @@ import {
   Trash2,
   Archive
 } from 'lucide-react'
+import { formatDate } from '@/lib/utils'
 
 interface Student {
   id: string
@@ -30,7 +31,6 @@ interface Student {
   phone: string
   dateOfBirth: Date
   age: number
-  grade: string
   parentName: string
   parentEmail: string
   parentPhone: string
@@ -53,7 +53,6 @@ interface Student {
 interface Class {
   id: string
   name: string
-  grade: string
 }
 
 interface StudentsListProps {
@@ -142,7 +141,7 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
     // Format date objects as strings for the modal
     const formattedStudent = {
       ...student,
-      dateOfBirth: student.dateOfBirth instanceof Date ? student.dateOfBirth.toLocaleDateString() : student.dateOfBirth,
+      dateOfBirth: formatDate(student.dateOfBirth),
       enrollmentDate: student.enrollmentDate instanceof Date ? student.enrollmentDate.toLocaleDateString() : student.enrollmentDate,
       createdAt: student.createdAt instanceof Date ? student.createdAt.toLocaleDateString() : student.createdAt,
       updatedAt: student.updatedAt instanceof Date ? student.updatedAt.toLocaleDateString() : student.updatedAt,
@@ -152,7 +151,6 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
       firstName: student.firstName,
       lastName: student.lastName,
       age: student.age,
-      grade: student.grade,
       address: student.address,
       parentName: student.parentName,
       parentEmail: student.parentEmail,
@@ -184,7 +182,6 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
       firstName: student.firstName,
       lastName: student.lastName,
       age: student.age,
-      grade: student.grade,
       address: student.address,
       parentName: student.parentName,
       parentEmail: student.parentEmail,

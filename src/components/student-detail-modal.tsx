@@ -30,6 +30,7 @@ import {
 import { getAttendanceTrend } from '@/lib/attendance-ratings'
 import { PhoneLink } from './phone-link'
 import { toast } from 'sonner'
+import { formatDate } from '@/lib/utils'
 
 interface AttendanceDay {
   day: string
@@ -45,7 +46,6 @@ interface StudentDetail {
   lastName: string
   dateOfBirth: string
   age: number
-  grade: string
   address: string
   class: string
   teacher: string
@@ -468,12 +468,12 @@ export function StudentDetailModal({
                           <p className="text-sm font-medium text-[var(--foreground)]">{student.name}</p>
                         </div>
                         <div>
-                          <label className="text-sm text-[var(--muted-foreground)]">Age & Grade</label>
-                          <p className="text-sm text-[var(--foreground)]">Age {student.age}, Grade {student.grade}</p>
+                          <label className="text-sm text-[var(--muted-foreground)]">Age</label>
+                          <p className="text-sm text-[var(--foreground)]">Age {student.age}</p>
                         </div>
                         <div>
                           <label className="text-sm text-[var(--muted-foreground)]">Date of Birth</label>
-                          <p className="text-sm text-[var(--foreground)]">{student.dateOfBirth}</p>
+                          <p className="text-sm text-[var(--foreground)]">{formatDate(student.dateOfBirth)}</p>
                         </div>
                       </div>
                       <div className="space-y-3">

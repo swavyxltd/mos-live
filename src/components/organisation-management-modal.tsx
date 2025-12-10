@@ -74,7 +74,6 @@ interface Student {
   email: string
   phone?: string
   dateOfBirth: Date
-  grade: string
   status: 'ACTIVE' | 'INACTIVE' | 'DEACTIVATED' | 'GRADUATED'
   attendanceRate: number
   parentName: string
@@ -179,7 +178,6 @@ export function OrganisationManagementModal({ isOpen, onClose, organisation, ini
           email: s.email || '',
           phone: s.phone || undefined,
           dateOfBirth: s.dob ? new Date(s.dob) : new Date(),
-          grade: s.grade || 'N/A',
           status: s.isArchived ? 'INACTIVE' : 'ACTIVE',
           attendanceRate: s.attendanceRate || 0,
           parentName: s.parentName || 'N/A',
@@ -657,10 +655,6 @@ export function OrganisationManagementModal({ isOpen, onClose, organisation, ini
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor="new-student-grade">Grade</Label>
-                          <Input id="new-student-grade" placeholder="Enter grade" />
-                        </div>
-                        <div>
                           <Label htmlFor="new-student-status">Status</Label>
                           <select id="new-student-status" className="w-full p-2 border border-gray-300 rounded-md">
                             <option value="ACTIVE">Active</option>
@@ -722,10 +716,6 @@ export function OrganisationManagementModal({ isOpen, onClose, organisation, ini
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <Label htmlFor={`student-grade-${student.id}`}>Grade</Label>
-                            <Input id={`student-grade-${student.id}`} defaultValue={student.grade} />
-                          </div>
-                          <div>
                             <Label htmlFor={`student-status-${student.id}`}>Status</Label>
                             <select id={`student-status-${student.id}`} defaultValue={student.status} className="w-full p-2 border border-gray-300 rounded-md">
                               <option value="ACTIVE">Active</option>
@@ -752,7 +742,7 @@ export function OrganisationManagementModal({ isOpen, onClose, organisation, ini
                           <div>
                             <h3 className="font-medium">{student.firstName} {student.lastName}</h3>
                             <p className="text-sm text-gray-500">{student.email}</p>
-                            <p className="text-sm text-gray-500">Grade: {student.grade} • Attendance: {student.attendanceRate}%</p>
+                            <p className="text-sm text-gray-500">Attendance: {student.attendanceRate}%</p>
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">

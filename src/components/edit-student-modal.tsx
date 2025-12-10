@@ -16,7 +16,6 @@ interface Student {
   lastName: string
   dateOfBirth: string
   age: number
-  grade: string
   parentName: string
   parentEmail: string
   parentPhone: string
@@ -33,7 +32,6 @@ interface Student {
 interface Class {
   id: string
   name: string
-  grade: string
 }
 
 interface EditStudentModalProps {
@@ -49,7 +47,6 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
     firstName: '',
     lastName: '',
     dateOfBirth: '',
-    grade: '',
     parentName: '',
     parentEmail: '',
     parentPhone: '',
@@ -83,7 +80,6 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
         firstName: student.firstName || '',
         lastName: student.lastName || '',
         dateOfBirth: student.dateOfBirth || '',
-        grade: student.grade || '',
         parentName: student.parentName || '',
         parentEmail: student.parentEmail || '',
         parentPhone: student.parentPhone || '',
@@ -321,16 +317,6 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
                             className="mt-1"
                           />
                         </div>
-                        <div>
-                          <Label htmlFor="grade">Grade</Label>
-                          <Input
-                            id="grade"
-                            value={formData.grade}
-                            onChange={(e) => handleInputChange('grade', e.target.value)}
-                            placeholder="Enter grade"
-                            className="mt-1"
-                          />
-                        </div>
                       </div>
 
                       <div>
@@ -479,7 +465,7 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
                             className="rounded border-gray-300"
                           />
                           <Label htmlFor={`class-${cls.id}`} className="text-sm">
-                            {cls.name} ({cls.grade})
+                            {cls.name}
                           </Label>
                         </div>
                       ))}

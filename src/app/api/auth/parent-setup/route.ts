@@ -298,7 +298,8 @@ async function handlePOST(request: NextRequest) {
           dob: validatedDob || invitation.Student.dob,
           allergies: sanitizedAllergies || invitation.Student.allergies,
           medicalNotes: sanitizedMedicalNotes || invitation.Student.medicalNotes,
-          paymentMethod: paymentMethod
+          paymentMethod: paymentMethod,
+          updatedAt: new Date()
         }
       })
 
@@ -312,14 +313,17 @@ async function handlePOST(request: NextRequest) {
           }
         },
         create: {
+          id: crypto.randomUUID(),
           orgId: invitation.orgId,
           parentUserId: parentUser.id,
           preferredPaymentMethod: paymentMethod,
-          autoPayEnabled: isCardPayment
+          autoPayEnabled: isCardPayment,
+          updatedAt: new Date()
         },
         update: {
           preferredPaymentMethod: paymentMethod,
-          autoPayEnabled: isCardPayment
+          autoPayEnabled: isCardPayment,
+          updatedAt: new Date()
         }
       })
 

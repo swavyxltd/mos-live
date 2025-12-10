@@ -81,7 +81,7 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
   const [isAddClassModalOpen, setIsAddClassModalOpen] = useState(false)
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false)
   const [quickActionLoading, setQuickActionLoading] = useState<string | null>(null)
-  const [classes, setClasses] = useState<Array<{ id: string; name: string; grade: string }>>([])
+  const [classes, setClasses] = useState<Array<{ id: string; name: string }>>([])
   const [recentActivity, setRecentActivity] = useState<any[]>([])
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([])
   const [topPerformingClasses, setTopPerformingClasses] = useState<any[]>([])
@@ -161,7 +161,6 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
         const classList = data.classes?.map((cls: any) => ({
           id: cls.id,
           name: cls.name,
-          grade: cls.grade || ''
         })) || []
         setClasses(classList)
       }

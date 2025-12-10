@@ -13,7 +13,6 @@ interface Student {
   phone: string
   dateOfBirth: Date
   age: number
-  grade: string
   parentName: string
   parentEmail: string
   parentPhone: string
@@ -36,7 +35,6 @@ interface Student {
 interface Class {
   id: string
   name: string
-  grade: string
 }
 
 interface StudentsPageClientProps {

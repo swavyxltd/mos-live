@@ -4,6 +4,7 @@
  */
 
 import { Student, User, StudentClass, Class } from '@prisma/client'
+import { formatDate } from './utils'
 
 interface StudentWithRelations extends Student {
   User?: User | null
@@ -17,7 +18,6 @@ export interface TransformedStudent {
   name: string
   dateOfBirth: string
   age: number
-  grade: string // Not in schema - always empty string
   address: string // Not in schema - always empty string
   class: string
   teacher: string
@@ -61,9 +61,8 @@ export function transformStudentData(student: StudentWithRelations): Transformed
     firstName: student.firstName,
     lastName: student.lastName,
     name: `${student.firstName} ${student.lastName}`,
-    dateOfBirth: student.dob ? student.dob.toISOString().split('T')[0] : '',
+    dateOfBirth: student.dob ? formatDate(student.dob) : '',
     age,
-    grade: '', // Not in schema
     address: '', // Not in schema
     class: primaryClass?.name || 'N/A',
     teacher: teacherName,

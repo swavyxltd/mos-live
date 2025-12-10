@@ -78,7 +78,6 @@ export default async function ClassDetailsPage({ params }: ClassDetailsPageProps
     id: classData.id,
     name: classData.name,
     description: classData.description || '',
-    grade: '', // Not stored in current schema
     maxStudents: 0, // Not stored in current schema
     room: '', // Not stored in current schema
     schedule: parsedSchedule,

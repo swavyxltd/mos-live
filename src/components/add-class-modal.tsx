@@ -52,7 +52,6 @@ export function AddClassModal({ isOpen, onClose, onSave }: AddClassModalProps) {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    grade: '',
     teacherId: '',
     maxStudents: 15,
     room: '',
@@ -180,7 +179,6 @@ export function AddClassModal({ isOpen, onClose, onSave }: AddClassModalProps) {
     setFormData({
       name: '',
       description: '',
-      grade: '',
       teacherId: '',
       maxStudents: 15,
       room: '',
@@ -221,15 +219,6 @@ export function AddClassModal({ isOpen, onClose, onSave }: AddClassModalProps) {
                   onChange={(e) => handleInputChange('name', e.target.value)}
                   placeholder="e.g., Quran Recitation - Level 1"
                   required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="grade">Grade Level</Label>
-                <Input
-                  id="grade"
-                  value={formData.grade}
-                  onChange={(e) => handleInputChange('grade', e.target.value)}
-                  placeholder="e.g., 1-3, 4-6, 7-9"
                 />
               </div>
             </div>

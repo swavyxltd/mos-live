@@ -110,7 +110,6 @@ export default async function ParentChildrenPage() {
       name: `${student.firstName} ${student.lastName}`,
       dateOfBirth: student.dob ? student.dob.toISOString().split('T')[0] : '',
       age,
-      grade: student.grade || 'N/A',
       address: student.address || '',
       class: primaryClass?.name || 'N/A',
       teacher: teacherName,

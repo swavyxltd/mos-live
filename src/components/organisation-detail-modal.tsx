@@ -102,7 +102,6 @@ export function OrganisationDetailModal({ isOpen, onClose, organisation, onRefre
           email: s.email || '',
           phone: s.phone || '',
           dateOfBirth: s.dob ? new Date(s.dob) : null,
-          grade: s.grade || 'N/A',
           status: s.isArchived ? 'INACTIVE' as const : 'ACTIVE' as const,
           attendanceRate: s.attendanceRate || 0,
           parentName: s.parentName || 'N/A',
@@ -437,7 +436,7 @@ export function OrganisationDetailModal({ isOpen, onClose, organisation, onRefre
                           <div>
                             <h3 className="font-medium">{student.firstName} {student.lastName}</h3>
                             <p className="text-sm text-gray-500">{student.email}</p>
-                            <p className="text-sm text-gray-500">Grade: {student.grade} • Attendance: {student.attendanceRate}%</p>
+                            <p className="text-sm text-gray-500">Attendance: {student.attendanceRate}%</p>
                             <p className="text-sm text-gray-500">Parent: {student.parentName} ({student.parentEmail})</p>
                           </div>
                         </div>

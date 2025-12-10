@@ -380,7 +380,6 @@ export default async function ParentDashboardPage() {
                             {student.firstName} {student.lastName}
                           </h3>
                           <p className="text-sm text-[var(--muted-foreground)] mt-0.5">
-                            Grade {student.grade || 'N/A'}
                           </p>
                           <div className="flex flex-wrap gap-1.5 mt-2">
                             {student.StudentClass?.slice(0, 2).map((sc: any) => (

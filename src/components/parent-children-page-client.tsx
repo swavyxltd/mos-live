@@ -33,7 +33,6 @@ interface Student {
   name: string
   dateOfBirth: string
   age: number
-  grade: string
   address: string
   class: string
   teacher: string
@@ -163,9 +162,6 @@ export function ParentChildrenPageClient({ students: initialStudents }: ParentCh
                         {student.name}
                       </CardTitle>
                       <div className="flex items-center gap-2 text-sm text-[var(--muted-foreground)]">
-                        {student.grade && student.grade !== 'N/A' && (
-                          <span>Grade {student.grade}</span>
-                        )}
                         {student.age > 0 && (
                           <span>• Age {student.age}</span>
                         )}
@@ -250,9 +246,6 @@ export function ParentChildrenPageClient({ students: initialStudents }: ParentCh
                       {viewingStudent.name}
                     </h2>
                     <div className="flex items-center gap-2 text-sm text-[var(--muted-foreground)]">
-                      {viewingStudent.grade && viewingStudent.grade !== 'N/A' && (
-                        <span>Grade {viewingStudent.grade}</span>
-                      )}
                       {viewingStudent.age > 0 && (
                         <span>• Age {viewingStudent.age}</span>
                       )}

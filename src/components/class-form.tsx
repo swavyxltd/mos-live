@@ -13,7 +13,6 @@ import { useRouter } from 'next/navigation'
 interface ClassFormData {
   name: string
   description: string
-  grade: string
   maxStudents: number
   room: string
   schedule: {
@@ -58,7 +57,6 @@ export function ClassForm({ initialData, isEditing = false, onSubmit, onCancel }
   const [formData, setFormData] = React.useState<ClassFormData>({
     name: initialData?.name || '',
     description: initialData?.description || '',
-    grade: initialData?.grade || '',
     maxStudents: initialData?.maxStudents || 15,
     room: initialData?.room || '',
     schedule: {
@@ -156,15 +154,6 @@ export function ClassForm({ initialData, isEditing = false, onSubmit, onCancel }
                 onChange={(e) => handleInputChange('name', e.target.value)}
                 placeholder="e.g., Quran Recitation - Level 1"
                 required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="grade">Grade Level</Label>
-              <Input
-                id="grade"
-                value={formData.grade}
-                onChange={(e) => handleInputChange('grade', e.target.value)}
-                placeholder="e.g., 1-3, 4-6, 7-9"
               />
             </div>
           </div>

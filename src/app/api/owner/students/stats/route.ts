@@ -135,7 +135,6 @@ async function handleGET(request: NextRequest) {
         phone: '', // Students don't have phone in schema
         dateOfBirth: student.dob ? student.dob.toISOString().split('T')[0] : null,
         age,
-        grade: '', // Grade not in schema
         parentName: student.primaryParent?.name || '',
         parentEmail: student.primaryParent?.email || '',
         parentPhone: student.primaryParent?.phone || '',

@@ -60,7 +60,6 @@ async function handleGET(request: NextRequest, { params }: { params: { id: strin
       lastName: student.lastName,
       dateOfBirth: student.dob ? student.dob.toISOString().split('T')[0] : '',
       age,
-      grade: '', // Grade not in schema
       address: '', // Address not in schema
       parentName: student.primaryParent?.name || '',
       parentEmail: student.primaryParent?.email || '',

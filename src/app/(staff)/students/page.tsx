@@ -99,7 +99,6 @@ export default async function StudentsPage() {
       phone: '',
       dateOfBirth: student.dob,
       age,
-      grade: '',
       parentName: student.User?.name || '',
       parentEmail: student.User?.email || '',
       parentPhone: student.User?.phone || '',

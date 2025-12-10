@@ -93,9 +93,6 @@ async function handleGET(
           ? Math.round((presentAttendance / totalAttendance) * 100)
           : 0
 
-        // Get grade from first class (if any)
-        const grade = student.StudentClass?.[0]?.Class?.name || 'N/A'
-
         return {
           id: student.id,
           firstName: student.firstName,
@@ -103,7 +100,6 @@ async function handleGET(
           email: '', // Students don't have emails
           phone: '', // Students don't have phones
           dob: student.dob,
-          grade,
           isArchived: student.isArchived,
           attendanceRate,
           parentName: student.primaryParent?.name || 'N/A',

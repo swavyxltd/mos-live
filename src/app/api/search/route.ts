@@ -222,7 +222,6 @@ async function handleGET(request: NextRequest) {
             { name: { contains: searchQuery, mode: 'insensitive' } },
             { description: { contains: searchQuery, mode: 'insensitive' } },
             { room: { contains: searchQuery, mode: 'insensitive' } },
-            { grade: { contains: searchQuery, mode: 'insensitive' } },
             {
               User: {
                 OR: [

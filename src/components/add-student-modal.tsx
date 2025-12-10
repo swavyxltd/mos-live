@@ -18,7 +18,6 @@ import { isValidName, isValidEmailStrict } from '@/lib/input-validation'
 interface Class {
   id: string
   name: string
-  grade: string
 }
 
 interface AddStudentModalProps {

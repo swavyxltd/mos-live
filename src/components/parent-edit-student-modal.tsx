@@ -14,7 +14,6 @@ interface Student {
   lastName: string
   dateOfBirth: string
   age: number
-  grade: string
   address: string
   emergencyContact: string
   allergies: string
