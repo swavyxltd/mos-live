@@ -2,6 +2,7 @@ export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import crypto from 'crypto'
 import { logger } from '@/lib/logger'
 import { sanitizeText, isValidPhone, isValidUKPostcode, MAX_STRING_LENGTHS } from '@/lib/input-validation'
 import { withRateLimit } from '@/lib/api-middleware'
@@ -160,6 +161,7 @@ async function handlePOST(request: NextRequest) {
       if (!parentUser) {
         parentUser = await tx.user.create({
           data: {
+            id: crypto.randomUUID(),
             email: invitation.parentEmail.toLowerCase(),
             name: sanitizedParentName,
             phone: sanitizedParentPhone,

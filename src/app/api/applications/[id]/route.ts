@@ -82,6 +82,7 @@ export async function PATCH(
             // Create new parent user
             parentUser = await tx.user.create({
               data: {
+                id: crypto.randomUUID(),
                 name: application.guardianName.trim(),
                 email: application.guardianEmail.toLowerCase().trim(),
                 phone: application.guardianPhone?.trim() || null

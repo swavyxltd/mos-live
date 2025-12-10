@@ -6,6 +6,7 @@ import { AuditLogAction, AuditLogTargetType } from '@prisma/client'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
 import { transformStudentData } from '@/lib/student-data-transform'
+import crypto from 'crypto'
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -116,6 +117,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
           if (!parentUser) {
             parentUser = await tx.user.create({
               data: {
+                id: crypto.randomUUID(),
                 email: parentEmail.toLowerCase().trim(),
                 name: parentName || '',
                 phone: parentPhone || null

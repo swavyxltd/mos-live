@@ -120,6 +120,7 @@ async function handlePOST(request: NextRequest) {
             if (!parentUser) {
               parentUser = await tx.user.create({
                 data: {
+                  id: crypto.randomUUID(),
                   email: studentData.parentEmail.toLowerCase().trim(),
                   phone: studentData.parentPhone || undefined // Optional phone if provided
                 }
@@ -181,6 +182,7 @@ async function handlePOST(request: NextRequest) {
             if (!parentUser) {
               parentUser = await tx.user.create({
                 data: {
+                  id: crypto.randomUUID(),
                   email: studentData.parentEmail.toLowerCase().trim(),
                   phone: studentData.parentPhone || undefined // Optional phone if provided
                 }

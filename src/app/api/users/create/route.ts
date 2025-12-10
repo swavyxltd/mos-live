@@ -162,6 +162,7 @@ async function handlePOST(request: NextRequest) {
 
       user = await prisma.user.create({
         data: {
+          id: crypto.randomUUID(),
           email: sanitizedEmail,
           name: sanitizedName,
           password: hashedPassword || crypto.randomBytes(32).toString('hex'), // Temporary password if sending invitation

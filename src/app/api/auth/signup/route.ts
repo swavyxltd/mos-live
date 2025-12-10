@@ -138,6 +138,7 @@ async function handlePOST(request: NextRequest) {
           updatedAt: new Date()
         },
         create: {
+          id: crypto.randomUUID(),
           email: sanitizedEmail,
           name: sanitizedName,
           password: hashedPassword,
