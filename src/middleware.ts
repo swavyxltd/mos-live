@@ -23,22 +23,43 @@ export async function middleware(request: NextRequest) {
   }
   
   // Get role hints from token
-  const roleHints = token.roleHints as {
+  let roleHints = token.roleHints as {
     isOwner: boolean
     orgAdminOf: string[]
     orgStaffOf: string[]
     isParent: boolean
   } | undefined
   
+  // If roleHints are missing or stale, try to reconstruct from token fields
+  // This is a fallback in case the JWT callback hasn't updated the token yet
+  if (!roleHints || (roleHints.isOwner && !token.isSuperAdmin)) {
+    // Reconstruct roleHints from token fields as fallback
+    // Note: We can't check org memberships in middleware (no Prisma on Edge)
+    // So we'll use the token's isSuperAdmin and assume roleHints are correct
+    roleHints = {
+      isOwner: token.isSuperAdmin || false,
+      orgAdminOf: roleHints?.orgAdminOf || [],
+      orgStaffOf: roleHints?.orgStaffOf || [],
+      isParent: roleHints?.isParent || false
+    }
+  }
+  
+  // Ensure isOwner matches isSuperAdmin (they should always be in sync)
+  if (token.isSuperAdmin !== undefined) {
+    roleHints.isOwner = token.isSuperAdmin
+  }
+  
   // Debug logging for production issues
   if (process.env.NODE_ENV === 'development' || pathname.startsWith('/staff') || pathname.startsWith('/owner')) {
     console.log('[Middleware] Token roleHints:', {
       email: token.email,
+      isSuperAdmin: token.isSuperAdmin,
       isOwner: roleHints?.isOwner,
       orgAdminOf: roleHints?.orgAdminOf,
       orgStaffOf: roleHints?.orgStaffOf,
       isParent: roleHints?.isParent,
-      pathname
+      pathname,
+      hasRoleHints: !!token.roleHints
     })
   }
   
