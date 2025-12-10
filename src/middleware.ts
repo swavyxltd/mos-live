@@ -139,34 +139,9 @@ export async function middleware(request: NextRequest) {
     }
   }
   
-  // Block owners from accessing /staff routes - owners and org admins are mutually exclusive
-  // Use token.isSuperAdmin directly - this is updated on every request in JWT callback
-  if (pathname.startsWith('/staff')) {
-    // Check if user has org access first - if they do, allow them through even if they're a super admin
-    // This allows super admins who are also org admins to access staff routes
-    const hasOrgAccess = (roleHints?.orgAdminOf && roleHints.orgAdminOf.length > 0) || 
-                         (roleHints?.orgStaffOf && roleHints.orgStaffOf.length > 0)
-    
-    // If they have org access, allow them through - they're accessing as an org admin/staff, not as a super admin
-    if (hasOrgAccess) {
-      // Allow through - layout will handle permissions like other staff routes
-      // The layout explicitly allows ADMIN users to access /staff without permission checks
-    } else {
-      // No org access - check if they're a super admin trying to access staff routes
-      // Super admins without org access should use the owner portal
-      if (token.isSuperAdmin || roleHints?.isOwner) {
-        return NextResponse.redirect(new URL('/owner/overview', request.url))
-      }
-      // If they don't have org access and aren't a super admin, redirect appropriately
-      if (roleHints?.isParent) {
-        return NextResponse.redirect(new URL('/parent/dashboard', request.url))
-      } else {
-        // If no org access and not a parent, redirect to sign in
-        // Don't redirect to dashboard as that would create a redirect loop
-        return NextResponse.redirect(new URL('/auth/signin', request.url))
-      }
-    }
-  }
+  // Note: /staff routes (like /staff, /staff/[id], etc.) are handled by the (staff) layout
+  // No special middleware check needed - they work exactly like /dashboard, /classes, etc.
+  // The layout will handle permissions and access control
   
   if (pathname.startsWith('/parent') && !roleHints?.isParent) {
     // Redirect to their correct portal
