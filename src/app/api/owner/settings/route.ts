@@ -110,7 +110,11 @@ async function handlePUT(request: NextRequest) {
 
     if (!settings) {
       settings = await prisma.platform_settings.create({
-        data: updateData
+        data: {
+          ...updateData,
+          id: crypto.randomUUID(),
+          updatedAt: new Date()
+        }
       })
     } else {
       settings = await prisma.platform_settings.update({
