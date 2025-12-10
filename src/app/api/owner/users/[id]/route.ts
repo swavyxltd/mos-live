@@ -7,7 +7,7 @@ import { withRateLimit } from '@/lib/api-middleware'
 
 async function handleGET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -16,8 +16,16 @@ async function handleGET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Resolve params if it's a Promise (Next.js 15+)
+    const resolvedParams = params instanceof Promise ? await params : params
+    const userId = resolvedParams.id
+    
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
+    }
+
     const user = await prisma.user.findUnique({
-      where: { id: params.id },
+      where: { id: userId },
       select: {
         id: true,
         name: true,
@@ -119,13 +127,21 @@ async function handleGET(
 
 async function handlePUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
     
     if (!session?.user?.id || !session.user.isSuperAdmin) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Resolve params if it's a Promise (Next.js 15+)
+    const resolvedParams = params instanceof Promise ? await params : params
+    const userId = resolvedParams.id
+    
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
     }
 
     const body = await request.json()
@@ -145,7 +161,7 @@ async function handlePUT(
       select: { id: true }
     })
 
-    if (existingUser && existingUser.id !== params.id) {
+    if (existingUser && existingUser.id !== userId) {
       return NextResponse.json(
         { error: 'Email is already in use' },
         { status: 400 }
@@ -153,7 +169,7 @@ async function handlePUT(
     }
 
     const updatedUser = await prisma.user.update({
-      where: { id: params.id },
+      where: { id: userId },
       data: {
         name,
         email,
@@ -162,7 +178,8 @@ async function handlePUT(
         address: address || null,
         city: city || null,
         postcode: postcode || null,
-        giftAidStatus: giftAidStatus || null
+        giftAidStatus: giftAidStatus || null,
+        updatedAt: new Date()
       },
       select: {
         id: true,

@@ -5,8 +5,9 @@ import { prisma } from '@/lib/prisma'
 import { AuditLogAction, AuditLogTargetType } from '@prisma/client'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
+import crypto from 'crypto'
 
-async function handleGET(request: NextRequest, { params }: { params: { id: string } }) {
+async function handleGET(request: NextRequest, { params }: { params: Promise<{ id: string }> | { id: string } }) {
   try {
     const session = await getServerSession(authOptions)
     
@@ -18,7 +19,13 @@ async function handleGET(request: NextRequest, { params }: { params: { id: strin
       )
     }
 
-    const { id } = params
+    // Resolve params if it's a Promise (Next.js 15+)
+    const resolvedParams = params instanceof Promise ? await params : params
+    const { id } = resolvedParams
+    
+    if (!id) {
+      return NextResponse.json({ error: 'Student ID is required' }, { status: 400 })
+    }
 
     const student = await prisma.student.findUnique({
       where: { id },
@@ -97,7 +104,7 @@ async function handleGET(request: NextRequest, { params }: { params: { id: strin
   }
 }
 
-async function handlePUT(request: NextRequest, { params }: { params: { id: string } }) {
+async function handlePUT(request: NextRequest, { params }: { params: Promise<{ id: string }> | { id: string } }) {
   try {
     const session = await getServerSession(authOptions)
     
@@ -109,7 +116,13 @@ async function handlePUT(request: NextRequest, { params }: { params: { id: strin
       )
     }
 
-    const { id } = params
+    // Resolve params if it's a Promise (Next.js 15+)
+    const resolvedParams = params instanceof Promise ? await params : params
+    const { id } = resolvedParams
+    
+    if (!id) {
+      return NextResponse.json({ error: 'Student ID is required' }, { status: 400 })
+    }
     const updateData = await request.json()
 
     // Import validation functions
@@ -209,7 +222,8 @@ async function handlePUT(request: NextRequest, { params }: { params: { id: strin
           data: {
             ...(parentName && { name: parentName }),
             ...(parentEmail && { email: parentEmail }),
-            ...(parentPhone && { phone: parentPhone })
+            ...(parentPhone && { phone: parentPhone }),
+            updatedAt: new Date()
           }
         })
       } catch (parentError: any) {
@@ -262,6 +276,7 @@ async function handlePUT(request: NextRequest, { params }: { params: { id: strin
       if (selectedClasses.length > 0) {
         await prisma.studentClass.createMany({
           data: selectedClasses.map((classId: string) => ({
+            id: crypto.randomUUID(),
             studentId: id,
             classId,
             orgId
@@ -274,7 +289,7 @@ async function handlePUT(request: NextRequest, { params }: { params: { id: strin
     try {
       await prisma.auditLog.create({
         data: {
-          id: `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          id: crypto.randomUUID(),
           orgId,
           actorUserId: session.user.id,
           action: AuditLogAction.UPDATE,

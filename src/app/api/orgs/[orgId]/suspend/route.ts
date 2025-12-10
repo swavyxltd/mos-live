@@ -67,7 +67,8 @@ async function handlePOST(
           data: {
             subscriptionStatus: 'canceled',
             stripeSubscriptionId: null,
-            stripeSubscriptionItemId: null
+            stripeSubscriptionItemId: null,
+            updatedAt: new Date()
           }
         })
 
@@ -100,7 +101,8 @@ async function handlePOST(
       data: {
         status: 'DEACTIVATED',
         deactivatedAt: new Date(),
-        deactivatedReason: sanitizedReason
+        deactivatedReason: sanitizedReason,
+        updatedAt: new Date()
       },
       include: {
         memberships: {

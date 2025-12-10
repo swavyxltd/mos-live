@@ -106,7 +106,8 @@ async function handlePaymentIntentSucceeded(paymentIntent: any) {
           where: { id: billing.id },
           data: {
             subscriptionStatus,
-            lastBilledAt: new Date()
+            lastBilledAt: new Date(),
+            updatedAt: new Date()
           }
         })
       }
@@ -127,7 +128,8 @@ async function handlePaymentIntentSucceeded(paymentIntent: any) {
             pausedAt: null,
             pausedReason: null,
             paymentFailureCount: 0,
-            lastPaymentDate: new Date()
+            lastPaymentDate: new Date(),
+            updatedAt: new Date()
           }
         })
       } else {
@@ -135,7 +137,8 @@ async function handlePaymentIntentSucceeded(paymentIntent: any) {
           where: { id: metadata.orgId },
           data: {
             lastPaymentDate: new Date(),
-            paymentFailureCount: 0
+            paymentFailureCount: 0,
+            updatedAt: new Date()
           }
         })
       }

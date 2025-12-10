@@ -8,7 +8,7 @@ import { withRateLimit } from '@/lib/api-middleware'
 // GET /api/owner/orgs/[orgId]/staff - Get all staff for a specific org (owner only)
 async function handleGET(
   request: NextRequest,
-  { params }: { params: { orgId: string } }
+  { params }: { params: Promise<{ orgId: string }> | { orgId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -21,7 +21,13 @@ async function handleGET(
       )
     }
 
-    const { orgId } = params
+    // Resolve params if it's a Promise (Next.js 15+)
+    const resolvedParams = params instanceof Promise ? await params : params
+    const { orgId } = resolvedParams
+    
+    if (!orgId) {
+      return NextResponse.json({ error: 'Organisation ID is required' }, { status: 400 })
+    }
 
     // Verify org exists
     const org = await prisma.org.findUnique({

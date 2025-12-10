@@ -41,7 +41,8 @@ async function handlePOST(request: NextRequest) {
         await prisma.org.update({
           where: { id: org.id },
           data: {
-            stripeConnectAccountId: accountId
+            stripeConnectAccountId: accountId,
+            updatedAt: new Date()
           }
         })
 
@@ -84,7 +85,8 @@ async function handlePOST(request: NextRequest) {
     await prisma.org.update({
       where: { id: org.id },
       data: {
-        stripeConnectAccountId: account.id
+        stripeConnectAccountId: account.id,
+        updatedAt: new Date()
       }
     })
 

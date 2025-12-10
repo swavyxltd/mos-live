@@ -7,7 +7,7 @@ import { withRateLimit } from '@/lib/api-middleware'
 
 async function handleDELETE(
   request: NextRequest,
-  { params }: { params: { orgId: string } }
+  { params }: { params: Promise<{ orgId: string }> | { orgId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -20,7 +20,9 @@ async function handleDELETE(
       )
     }
 
-    const { orgId } = params
+    // Resolve params if it's a Promise (Next.js 15+)
+    const resolvedParams = params instanceof Promise ? await params : params
+    const { orgId } = resolvedParams
 
     if (!orgId) {
       return NextResponse.json(

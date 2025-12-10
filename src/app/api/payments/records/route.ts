@@ -136,7 +136,10 @@ async function handlePATCH(request: NextRequest) {
 
     const record = await prisma.monthlyPaymentRecord.update({
       where: { id, orgId },
-      data: updateData,
+      data: {
+        ...updateData,
+        updatedAt: new Date()
+      },
       include: {
         Student: {
           select: {

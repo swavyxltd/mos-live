@@ -102,7 +102,10 @@ async function handlePOST(
     // Update lead
     await prisma.lead.update({
       where: { id },
-      data: updateData,
+      data: {
+        ...updateData,
+        updatedAt: new Date()
+      },
     })
 
     return NextResponse.json({ 

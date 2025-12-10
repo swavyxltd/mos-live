@@ -16,7 +16,7 @@ const recordCashSchema = z.object({
 
 async function handlePOST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await requireRole(['ADMIN', 'OWNER'])(request)
@@ -25,13 +25,19 @@ async function handlePOST(
     const orgId = await requireOrg(request)
     if (orgId instanceof NextResponse) return orgId
     
+    // Resolve params if it's a Promise (Next.js 15+)
+    const resolvedParams = params instanceof Promise ? await params : params
+    const invoiceId = resolvedParams.id
+    
+    if (!invoiceId) {
+      return NextResponse.json({ error: 'Invoice ID is required' }, { status: 400 })
+    }
+    
     const body = await request.json()
     const { amountP, method, notes } = recordCashSchema.parse(body)
     
     // Sanitize notes if provided
     const sanitizedNotes = notes ? sanitizeText(notes, MAX_STRING_LENGTHS.text) : undefined
-    
-    const invoiceId = params.id
     
     // Get invoice
     const invoice = await prisma.invoice.findFirst({
@@ -68,7 +74,8 @@ async function handlePOST(
       data: {
         status: 'PAID',
         paidAt: new Date(),
-        paidMethod: method
+        paidMethod: method,
+        updatedAt: new Date()
       }
     })
     

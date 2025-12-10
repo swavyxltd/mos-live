@@ -12,7 +12,7 @@ import crypto from 'crypto'
 // POST /api/owner/support/tickets/[id]/respond - Respond to a support ticket
 async function handlePOST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -20,7 +20,13 @@ async function handlePOST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const ticketId = params.id
+    // Resolve params if it's a Promise (Next.js 15+)
+    const resolvedParams = params instanceof Promise ? await params : params
+    const ticketId = resolvedParams.id
+    
+    if (!ticketId) {
+      return NextResponse.json({ error: 'Ticket ID is required' }, { status: 400 })
+    }
     const body = await request.json()
     const { responseBody } = body
 

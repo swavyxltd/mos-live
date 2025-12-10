@@ -8,7 +8,7 @@ import crypto from 'crypto'
 
 async function handlePOST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await requireRole(['ADMIN', 'OWNER'])(request)
@@ -17,7 +17,13 @@ async function handlePOST(
     const orgId = await requireOrg(request)
     if (orgId instanceof NextResponse) return orgId
     
-    const { id } = params
+    // Resolve params if it's a Promise (Next.js 15+)
+    const resolvedParams = params instanceof Promise ? await params : params
+    const { id } = resolvedParams
+    
+    if (!id) {
+      return NextResponse.json({ error: 'Student ID is required' }, { status: 400 })
+    }
     const { isArchived } = await request.json()
     
     const archivedAt = isArchived ? new Date() : null
@@ -30,13 +36,14 @@ async function handlePOST(
       },
       data: {
         isArchived,
-        archivedAt
+        archivedAt,
+        updatedAt: new Date()
       },
       include: {
-        primaryParent: true,
-        studentClasses: {
+        User: true,
+        StudentClass: {
           include: {
-            class: true
+            Class: true
           }
         }
       }

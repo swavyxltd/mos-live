@@ -184,6 +184,7 @@ async function handlePOST(
       data: {
         convertedOrgId: org.id,
         status: 'WON',
+        updatedAt: new Date()
       },
     })
 

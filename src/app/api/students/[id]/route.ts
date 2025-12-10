@@ -8,7 +8,7 @@ import { withRateLimit } from '@/lib/api-middleware'
 import { transformStudentData } from '@/lib/student-data-transform'
 import crypto from 'crypto'
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> | { id: string } }) {
   try {
     const session = await requireRole(['ADMIN', 'OWNER', 'STAFF'])(request)
     if (session instanceof NextResponse) return session
@@ -16,7 +16,13 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     const orgId = await requireOrg(request)
     if (orgId instanceof NextResponse) return orgId
 
-    const { id } = params
+    // Resolve params if it's a Promise (Next.js 15+)
+    const resolvedParams = params instanceof Promise ? await params : params
+    const { id } = resolvedParams
+    
+    if (!id) {
+      return NextResponse.json({ error: 'Student ID is required' }, { status: 400 })
+    }
 
     const student = await prisma.student.findUnique({
       where: { id, orgId },
@@ -53,7 +59,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> | { id: string } }) {
   try {
     const session = await requireRole(['ADMIN', 'OWNER'])(request)
     if (session instanceof NextResponse) return session
@@ -61,7 +67,13 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     const orgId = await requireOrg(request)
     if (orgId instanceof NextResponse) return orgId
 
-    const { id } = params
+    // Resolve params if it's a Promise (Next.js 15+)
+    const resolvedParams = params instanceof Promise ? await params : params
+    const { id } = resolvedParams
+    
+    if (!id) {
+      return NextResponse.json({ error: 'Student ID is required' }, { status: 400 })
+    }
     const updateData = await request.json()
 
     // Import validation functions
@@ -175,14 +187,19 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       
       if (parentName || parentEmail || parentPhone || backupPhone !== undefined) {
         if (existingStudent.primaryParentId) {
-          // Update existing parent
+          // Update existing parent - build update data object
+          const parentUpdateData: any = {
+            updatedAt: new Date()
+          }
+          
+          if (parentName) parentUpdateData.name = parentName.trim()
+          if (parentEmail) parentUpdateData.email = parentEmail.toLowerCase().trim()
+          if (parentPhone) parentUpdateData.phone = parentPhone.trim()
+          if (backupPhone !== undefined) parentUpdateData.backupPhone = backupPhone ? backupPhone.trim() : null
+          
           await tx.user.update({
             where: { id: existingStudent.primaryParentId },
-            data: {
-              ...(parentName && { name: parentName }),
-              ...(parentEmail && { email: parentEmail }),
-              ...(parentPhone && { phone: parentPhone })
-            }
+            data: parentUpdateData
           })
           parentUserId = existingStudent.primaryParentId
         } else if (parentEmail) {
@@ -247,19 +264,25 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         }
       }
 
-      // Update the student
-      await tx.student.update({
-        where: { id, orgId },
-        data: {
-          firstName,
-          lastName,
-          dob: dateOfBirth ? new Date(dateOfBirth) : null,
-          allergies,
-          medicalNotes,
-          ...(parentUserId && { primaryParentId: parentUserId }),
-          updatedAt: new Date()
-        }
-      })
+      // Update the student - build update data object
+      const studentUpdateData: any = {
+        updatedAt: new Date()
+      }
+      
+      if (firstName !== undefined && firstName !== null) studentUpdateData.firstName = firstName.trim()
+      if (lastName !== undefined && lastName !== null) studentUpdateData.lastName = lastName.trim()
+      if (dateOfBirth !== undefined) studentUpdateData.dob = dateOfBirth ? new Date(dateOfBirth) : null
+      if (allergies !== undefined) studentUpdateData.allergies = allergies || null
+      if (medicalNotes !== undefined) studentUpdateData.medicalNotes = medicalNotes || null
+      if (parentUserId) studentUpdateData.primaryParentId = parentUserId
+      
+      // Only update if we have fields to update
+      if (Object.keys(studentUpdateData).length > 1 || parentUserId) {
+        await tx.student.update({
+          where: { id, orgId },
+          data: studentUpdateData
+        })
+      }
 
       // Handle class enrollments if provided
       if (selectedClasses && Array.isArray(selectedClasses)) {
@@ -273,7 +296,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
           // Batch create class enrollments
           await tx.studentClass.createMany({
             data: selectedClasses.map((classId: string) => ({
-              id: `student-class-${id}-${classId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              id: crypto.randomUUID(),
               studentId: id,
               classId: classId,
               orgId
@@ -305,7 +328,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     try {
       await prisma.auditLog.create({
         data: {
-          id: `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          id: crypto.randomUUID(),
           orgId,
           actorUserId: session.user.id,
           action: AuditLogAction.UPDATE,
@@ -350,7 +373,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> | { id: string } }) {
   try {
     const session = await requireRole(['ADMIN', 'OWNER'])(request)
     if (session instanceof NextResponse) return session
@@ -358,7 +381,13 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     const orgId = await requireOrg(request)
     if (orgId instanceof NextResponse) return orgId
 
-    const { id } = params
+    // Resolve params if it's a Promise (Next.js 15+)
+    const resolvedParams = params instanceof Promise ? await params : params
+    const { id } = resolvedParams
+    
+    if (!id) {
+      return NextResponse.json({ error: 'Student ID is required' }, { status: 400 })
+    }
 
     // Get student info before deletion for audit log
     const student = await prisma.student.findUnique({
@@ -378,7 +407,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     // Create audit log
     await prisma.auditLog.create({
       data: {
-        id: `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: crypto.randomUUID(),
         orgId,
         actorUserId: session.user.id,
         action: AuditLogAction.DELETE,

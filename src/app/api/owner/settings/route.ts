@@ -119,7 +119,10 @@ async function handlePUT(request: NextRequest) {
     } else {
       settings = await prisma.platform_settings.update({
         where: { id: settings.id },
-        data: updateData
+        data: {
+          ...updateData,
+          updatedAt: new Date()
+        }
       })
     }
 

@@ -7,7 +7,7 @@ import { logger } from '@/lib/logger'
 import { getActiveOrg } from '@/lib/org'
 import { transformStudentData } from '@/lib/student-data-transform'
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> | { id: string } }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -27,7 +27,13 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: 'Unauthorized - Parent access required' }, { status: 403 })
     }
 
-    const { id } = params
+    // Resolve params if it's a Promise (Next.js 15+)
+    const resolvedParams = params instanceof Promise ? await params : params
+    const { id } = resolvedParams
+    
+    if (!id) {
+      return NextResponse.json({ error: 'Student ID is required' }, { status: 400 })
+    }
 
     // Verify the student belongs to the parent
     const student = await prisma.student.findUnique({
@@ -65,7 +71,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> | { id: string } }) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -85,7 +91,13 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: 'Unauthorized - Parent access required' }, { status: 403 })
     }
 
-    const { id } = params
+    // Resolve params if it's a Promise (Next.js 15+)
+    const resolvedParams = params instanceof Promise ? await params : params
+    const { id } = resolvedParams
+    
+    if (!id) {
+      return NextResponse.json({ error: 'Student ID is required' }, { status: 400 })
+    }
     const updateData = await request.json()
 
     // Import validation functions

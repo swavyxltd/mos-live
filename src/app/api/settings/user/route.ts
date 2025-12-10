@@ -156,7 +156,10 @@ async function handlePUT(request: NextRequest) {
 
     const updatedUser = await prisma.user.update({
       where: { id: session.user.id },
-      data: updateData,
+      data: {
+        ...updateData,
+        updatedAt: new Date()
+      },
       select: {
         id: true,
         name: true,

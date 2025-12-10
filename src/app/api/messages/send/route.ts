@@ -7,6 +7,7 @@ import { whatsapp } from '@/lib/whatsapp'
 import { sendEmail } from '@/lib/mail'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
+import crypto from 'crypto'
 
 const sendMessageSchema = z.object({
   title: z.string().min(1),
@@ -260,7 +261,7 @@ async function handlePOST(request: NextRequest) {
   // Log the action
   await prisma.auditLog.create({
     data: {
-      id: `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: crypto.randomUUID(),
       orgId,
       actorUserId: session.user.id,
       action: 'SEND_MESSAGE',

@@ -65,7 +65,10 @@ async function handlePUT(request: NextRequest) {
         if (Object.keys(updateData).length > 0) {
           await prisma.user.update({
             where: { id: session.user.id },
-            data: updateData
+            data: {
+              ...updateData,
+              updatedAt: new Date()
+            }
           })
         }
         break
@@ -130,7 +133,10 @@ async function handlePUT(request: NextRequest) {
         if (Object.keys(updateData).length > 0) {
           await prisma.org.update({
             where: { id: org.id },
-            data: updateData
+            data: {
+              ...updateData,
+              updatedAt: new Date()
+            }
           })
         }
         break
@@ -173,7 +179,10 @@ async function handlePUT(request: NextRequest) {
         if (Object.keys(paymentUpdateData).length > 0) {
           await prisma.org.update({
             where: { id: org.id },
-            data: paymentUpdateData
+            data: {
+              ...paymentUpdateData,
+              updatedAt: new Date()
+            }
           })
         }
         break

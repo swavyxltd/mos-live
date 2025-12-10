@@ -90,7 +90,8 @@ async function handlePOST(request: NextRequest) {
       data: {
         status: 'PAID',
         paidAt: new Date(),
-        paidMethod: paymentMethod
+        paidMethod: paymentMethod,
+        updatedAt: new Date()
       }
     })
 

@@ -172,6 +172,7 @@ async function handlePOST(
         emailOutreachCompleted: nextEmailStage === 'FINAL',
         // Auto-update status if it's NEW
         status: lead.status === 'NEW' ? 'CONTACTED' : lead.status,
+        updatedAt: new Date()
       },
     })
 

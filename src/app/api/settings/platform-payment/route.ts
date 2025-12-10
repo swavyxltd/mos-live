@@ -78,7 +78,8 @@ async function handleGET() {
           await prisma.platformOrgBilling.update({
             where: { orgId: org.id },
             data: {
-              defaultPaymentMethodId: firstMethod.id
+              defaultPaymentMethodId: firstMethod.id,
+              updatedAt: new Date()
             }
           })
           

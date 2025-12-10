@@ -9,7 +9,7 @@ import crypto from 'crypto'
 
 async function handleGET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await requireRole(['ADMIN', 'OWNER', 'PARENT'])(request)
@@ -18,7 +18,13 @@ async function handleGET(
     const orgId = await requireOrg(request)
     if (orgId instanceof NextResponse) return orgId
     
-    const invoiceId = params.id
+    // Resolve params if it's a Promise (Next.js 15+)
+    const resolvedParams = params instanceof Promise ? await params : params
+    const invoiceId = resolvedParams.id
+    
+    if (!invoiceId) {
+      return NextResponse.json({ error: 'Payment ID is required' }, { status: 400 })
+    }
     
     // Build where clause based on user role
     let whereClause: any = { id: invoiceId, orgId }
@@ -76,7 +82,7 @@ async function handleGET(
 
 async function handlePUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await requireRole(['ADMIN', 'OWNER'])(request)
@@ -85,7 +91,13 @@ async function handlePUT(
     const orgId = await requireOrg(request)
     if (orgId instanceof NextResponse) return orgId
     
-    const invoiceId = params.id
+    // Resolve params if it's a Promise (Next.js 15+)
+    const resolvedParams = params instanceof Promise ? await params : params
+    const invoiceId = resolvedParams.id
+    
+    if (!invoiceId) {
+      return NextResponse.json({ error: 'Payment ID is required' }, { status: 400 })
+    }
     const body = await request.json()
     const { status, amountP, dueDate } = body
     
@@ -104,7 +116,8 @@ async function handlePUT(
       data: {
         ...(status && { status }),
         ...(amountP && { amountP }),
-        ...(dueDate && { dueDate: new Date(dueDate) })
+        ...(dueDate && { dueDate: new Date(dueDate) }),
+        updatedAt: new Date()
       },
       include: {
         student: {
@@ -159,7 +172,7 @@ async function handlePUT(
 
 async function handleDELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await requireRole(['ADMIN', 'OWNER'])(request)
@@ -168,7 +181,13 @@ async function handleDELETE(
     const orgId = await requireOrg(request)
     if (orgId instanceof NextResponse) return orgId
     
-    const invoiceId = params.id
+    // Resolve params if it's a Promise (Next.js 15+)
+    const resolvedParams = params instanceof Promise ? await params : params
+    const invoiceId = resolvedParams.id
+    
+    if (!invoiceId) {
+      return NextResponse.json({ error: 'Payment ID is required' }, { status: 400 })
+    }
     
     // Get the invoice first
     const invoice = await prisma.invoice.findFirst({
@@ -194,6 +213,7 @@ async function handleDELETE(
     // Log the action
     await prisma.auditLog.create({
       data: {
+        id: crypto.randomUUID(),
         orgId,
         actorUserId: session.user.id,
         action: 'DELETE_INVOICE',

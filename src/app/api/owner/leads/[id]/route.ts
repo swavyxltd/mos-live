@@ -184,7 +184,9 @@ async function handlePUT(
       )
     }
 
-    const updateData: any = {}
+    const updateData: any = {
+      updatedAt: new Date()
+    }
     if (orgName !== undefined) updateData.orgName = orgName
     if (city !== undefined) updateData.city = city
     if (country !== undefined) updateData.country = country
@@ -220,6 +222,9 @@ async function handlePUT(
         })
       }
     }
+
+    // Always update updatedAt
+    updateData.updatedAt = new Date()
 
     const lead = await prisma.lead.update({
       where: { id },

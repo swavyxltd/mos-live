@@ -73,6 +73,7 @@ async function handlePOST(
         where: { id },
         data: {
           lastContactAt: new Date(),
+          updatedAt: new Date()
         },
       })
     }

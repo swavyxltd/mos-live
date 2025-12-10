@@ -8,7 +8,7 @@ import { withRateLimit } from '@/lib/api-middleware'
 // GET /api/owner/orgs/[orgId] - Get full organisation details (owner only)
 async function handleGET(
   request: NextRequest,
-  { params }: { params: { orgId: string } }
+  { params }: { params: Promise<{ orgId: string }> | { orgId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -19,6 +19,14 @@ async function handleGET(
         { error: 'Unauthorized', message: 'Authentication required' },
         { status: 401 }
       )
+    }
+
+    // Resolve params if it's a Promise (Next.js 15+)
+    const resolvedParams = params instanceof Promise ? await params : params
+    const orgId = resolvedParams.orgId
+    
+    if (!orgId) {
+      return NextResponse.json({ error: 'Organisation ID is required' }, { status: 400 })
     }
 
     // Check if user is super admin - fetch fresh from DB to be sure
@@ -46,7 +54,7 @@ async function handleGET(
       )
     }
 
-    const { orgId } = params
+    // orgId already resolved above
 
     // Get full organisation details
     const org = await prisma.org.findUnique({

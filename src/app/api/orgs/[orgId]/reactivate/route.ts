@@ -31,7 +31,8 @@ async function handlePOST(
         deactivatedReason: null,
         pausedAt: null,
         pausedReason: null,
-        paymentFailureCount: 0
+        paymentFailureCount: 0,
+        updatedAt: new Date()
       },
       include: {
         memberships: {

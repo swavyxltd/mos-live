@@ -11,7 +11,7 @@ import { withRateLimit } from '@/lib/api-middleware'
 // GET /api/support/tickets/[id] - Get a specific support ticket
 async function handleGET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -24,9 +24,17 @@ async function handleGET(
       return NextResponse.json({ error: 'No organisation found' }, { status: 404 })
     }
 
+    // Resolve params if it's a Promise (Next.js 15+)
+    const resolvedParams = params instanceof Promise ? await params : params
+    const ticketId = resolvedParams.id
+    
+    if (!ticketId) {
+      return NextResponse.json({ error: 'Ticket ID is required' }, { status: 400 })
+    }
+
     const ticket = await prisma.supportTicket.findFirst({
       where: {
-        id: params.id,
+        id: ticketId,
         orgId: org.id
       },
       include: {
@@ -61,7 +69,7 @@ async function handleGET(
 // PATCH /api/support/tickets/[id] - Update a support ticket
 async function handlePATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -74,13 +82,21 @@ async function handlePATCH(
       return NextResponse.json({ error: 'No organisation found' }, { status: 404 })
     }
 
+    // Resolve params if it's a Promise (Next.js 15+)
+    const resolvedParams = params instanceof Promise ? await params : params
+    const ticketId = resolvedParams.id
+    
+    if (!ticketId) {
+      return NextResponse.json({ error: 'Ticket ID is required' }, { status: 400 })
+    }
+
     const body = await request.json()
     const { status, subject, body: ticketBody } = body
 
     // Check if ticket exists and belongs to the org
     const existingTicket = await prisma.supportTicket.findFirst({
       where: {
-        id: params.id,
+        id: ticketId,
         orgId: org.id
       }
     })
@@ -89,13 +105,15 @@ async function handlePATCH(
       return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
     }
 
-    const updateData: any = {}
+    const updateData: any = {
+      updatedAt: new Date()
+    }
     if (status) updateData.status = status
     if (subject) updateData.subject = sanitizeText(subject, MAX_STRING_LENGTHS.title)
     if (ticketBody) updateData.body = sanitizeText(ticketBody, MAX_STRING_LENGTHS.body)
 
     const ticket = await prisma.supportTicket.update({
-      where: { id: params.id },
+      where: { id: ticketId },
       data: updateData,
       include: {
         User: {
@@ -125,7 +143,7 @@ async function handlePATCH(
 // DELETE /api/support/tickets/[id] - Delete a support ticket
 async function handleDELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -138,10 +156,18 @@ async function handleDELETE(
       return NextResponse.json({ error: 'No organisation found' }, { status: 404 })
     }
 
+    // Resolve params if it's a Promise (Next.js 15+)
+    const resolvedParams = params instanceof Promise ? await params : params
+    const ticketId = resolvedParams.id
+    
+    if (!ticketId) {
+      return NextResponse.json({ error: 'Ticket ID is required' }, { status: 400 })
+    }
+
     // Check if ticket exists and belongs to the org
     const existingTicket = await prisma.supportTicket.findFirst({
       where: {
-        id: params.id,
+        id: ticketId,
         orgId: org.id
       }
     })
@@ -151,7 +177,7 @@ async function handleDELETE(
     }
 
     await prisma.supportTicket.delete({
-      where: { id: params.id }
+      where: { id: ticketId }
     })
 
     return NextResponse.json({ message: 'Ticket deleted successfully' })

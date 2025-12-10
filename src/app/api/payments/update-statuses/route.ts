@@ -58,7 +58,10 @@ async function handlePOST(request: NextRequest) {
       if (newStatus !== record.status) {
         await prisma.monthlyPaymentRecord.update({
           where: { id: record.id },
-          data: { status: newStatus }
+          data: {
+            status: newStatus,
+            updatedAt: new Date()
+          }
         })
         updatedCount++
       }
