@@ -130,7 +130,11 @@ async function handlePATCH(
 
     if (name !== undefined) updateData.name = sanitizeText(name, MAX_STRING_LENGTHS.name)
     if (description !== undefined) updateData.description = description ? sanitizeText(description, MAX_STRING_LENGTHS.text) : null
-    if (schedule !== undefined) updateData.schedule = sanitizeText(schedule, MAX_STRING_LENGTHS.text)
+    if (schedule !== undefined) {
+      // Schedule is a JSON string, sanitize it but preserve JSON structure
+      const sanitizedSchedule = sanitizeText(schedule, MAX_STRING_LENGTHS.text)
+      updateData.schedule = sanitizedSchedule
+    }
     if (teacherId !== undefined) updateData.teacherId = teacherId || null
     if (monthlyFeeP !== undefined) {
       if (monthlyFeeP < 0) {
@@ -140,6 +144,14 @@ async function handlePATCH(
         )
       }
       updateData.monthlyFeeP = Math.round(monthlyFeeP)
+    }
+
+    // Ensure we have at least one field to update besides updatedAt
+    if (Object.keys(updateData).length === 1) {
+      return NextResponse.json(
+        { error: 'No fields to update' },
+        { status: 400 }
+      )
     }
 
     // Update class
@@ -170,12 +182,16 @@ async function handlePATCH(
 
     return NextResponse.json(updatedClass)
   } catch (error: any) {
-    logger.error('Update class error', error)
+    logger.error('Update class error', { error: error?.message, stack: error?.stack, body })
     const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
       { 
         error: 'Failed to update class',
-        ...(isDevelopment && { details: error?.message })
+        ...(isDevelopment && { 
+          details: error?.message,
+          code: error?.code,
+          meta: error?.meta
+        })
       },
       { status: 500 }
     )
