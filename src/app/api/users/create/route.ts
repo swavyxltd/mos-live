@@ -278,6 +278,7 @@ async function handlePOST(request: NextRequest) {
             // Create invitation
             await prisma.invitation.create({
               data: {
+                id: crypto.randomUUID(),
                 orgId,
                 email: sanitizedEmail,
                 role,

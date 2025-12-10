@@ -1,4 +1,5 @@
 import { prisma } from './prisma'
+import crypto from 'crypto'
 
 /**
  * Get platform settings (singleton pattern)
@@ -20,7 +21,10 @@ export async function getPlatformSettings() {
     if (!settings) {
       // Create default settings if none exist
       settings = await prisma.platform_settings.create({
-        data: {}
+        data: {
+          id: crypto.randomUUID(),
+          updatedAt: new Date()
+        }
       })
     }
 

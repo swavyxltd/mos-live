@@ -193,6 +193,7 @@ async function handlePOST(request: NextRequest) {
     // Create invitation for admin
     await prisma.invitation.create({
       data: {
+        id: crypto.randomUUID(),
         orgId: org.id,
         email: sanitizedAdminEmail,
         role: 'ADMIN',

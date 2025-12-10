@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
+import crypto from 'crypto'
 
 async function handleGET(request: NextRequest) {
   try {
@@ -22,7 +23,10 @@ async function handleGET(request: NextRequest) {
     if (!settings) {
       // Create default settings if none exist
       settings = await prisma.platform_settings.create({
-        data: {}
+        data: {
+          id: crypto.randomUUID(),
+          updatedAt: new Date()
+        }
       })
     }
 
