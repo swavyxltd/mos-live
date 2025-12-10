@@ -124,7 +124,7 @@ async function handlePOST(request: NextRequest) {
                   amountP: Math.round(amount * 100),
                   dueDate,
                   status: 'PAID',
-                  updatedAt: new Date()
+                  updatedAt: new Date(),
                   paidAt: paymentDate,
                   paidMethod: 'STRIPE',
                   createdAt: paymentDate,
@@ -197,7 +197,7 @@ async function handlePOST(request: NextRequest) {
                   amountP: Math.round(amount * 100),
                   dueDate,
                   status: 'PAID',
-                  updatedAt: new Date()
+                  updatedAt: new Date(),
                   paidAt: paymentDate,
                   paidMethod: 'STRIPE',
                   createdAt: paymentDate,

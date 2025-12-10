@@ -178,7 +178,7 @@ async function handlePOST(request: NextRequest) {
         endTime: allDay ? null : (endTime || null),
         classId: classId || null, // null means it's visible to all accounts in the org, otherwise specific class
         studentId: studentId || null, // For meetings, associate with student
-        updatedAt: new Date()
+        updatedAt: new Date(),
       },
       include: {
         Class: {
@@ -241,7 +241,7 @@ async function handlePOST(request: NextRequest) {
               title: `Meeting: ${title}`,
               body: messageBody,
               audience: 'INDIVIDUAL',
-              updatedAt: new Date()
+              updatedAt: new Date(),
               channel: 'EMAIL',
               status: 'SENT',
               targets: JSON.stringify({
