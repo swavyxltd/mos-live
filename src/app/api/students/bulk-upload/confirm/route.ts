@@ -215,6 +215,7 @@ async function handlePOST(request: NextRequest) {
             if (!existingEnrollment) {
               await tx.studentClass.create({
                 data: {
+                  id: crypto.randomUUID(),
                   orgId: org.id,
                   studentId: studentData.existingStudentId,
                   classId: studentData.classId
@@ -278,16 +279,19 @@ async function handlePOST(request: NextRequest) {
             // Create student (only firstName and lastName, matching single add modal)
             const student = await tx.student.create({
               data: {
+                id: crypto.randomUUID(),
                 orgId: org.id,
                 firstName: studentData.firstName.trim(),
                 lastName: studentData.lastName.trim(),
-                primaryParentId: parentUser.id
+                primaryParentId: parentUser.id,
+                updatedAt: new Date()
               }
             })
 
             // Enroll in class
             await tx.studentClass.create({
               data: {
+                id: crypto.randomUUID(),
                 orgId: org.id,
                 studentId: student.id,
                 classId: studentData.classId
@@ -301,6 +305,7 @@ async function handlePOST(request: NextRequest) {
 
             const invitation = await tx.parentInvitation.create({
               data: {
+                id: crypto.randomUUID(),
                 orgId: org.id,
                 studentId: student.id,
                 parentEmail: studentData.parentEmail.toLowerCase().trim(),
@@ -327,13 +332,15 @@ async function handlePOST(request: NextRequest) {
             // Create payment record for start month
             await tx.monthlyPaymentRecord.create({
               data: {
+                id: crypto.randomUUID(),
                 orgId: org.id,
                 studentId: student.id,
                 classId: studentData.classId,
                 month: studentData.startMonth,
                 amountP: classRecord.monthlyFeeP,
                 status: 'PENDING',
-                method: preferredMethod
+                method: preferredMethod,
+                updatedAt: new Date()
               }
             })
 

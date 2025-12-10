@@ -110,7 +110,7 @@ async function handlePOST(request: NextRequest) {
     // Use transaction to ensure data consistency
     const result = await prisma.$transaction(async (tx) => {
       // Generate student ID
-      const studentId = `student_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      const studentId = crypto.randomUUID()
       
       // Create student
       const student = await tx.student.create({
@@ -119,13 +119,15 @@ async function handlePOST(request: NextRequest) {
           orgId,
           firstName: sanitizedFirstName,
           lastName: sanitizedLastName,
-          isArchived: status === 'ARCHIVED'
+          isArchived: status === 'ARCHIVED',
+          updatedAt: new Date()
         }
       })
 
       // Enroll student in class
       await tx.studentClass.create({
         data: {
+          id: crypto.randomUUID(),
           orgId,
           studentId: student.id,
           classId
@@ -139,6 +141,7 @@ async function handlePOST(request: NextRequest) {
 
       const invitation = await tx.parentInvitation.create({
         data: {
+          id: crypto.randomUUID(),
           orgId,
           studentId: student.id,
           parentEmail: sanitizedParentEmail,
@@ -165,13 +168,15 @@ async function handlePOST(request: NextRequest) {
       // Create payment record for start month
       await tx.monthlyPaymentRecord.create({
         data: {
+          id: crypto.randomUUID(),
           orgId,
           studentId: student.id,
           classId,
           month: startMonth,
           amountP: classRecord.monthlyFeeP,
           status: 'PENDING',
-          method: preferredMethod
+          method: preferredMethod,
+          updatedAt: new Date()
         }
       })
 

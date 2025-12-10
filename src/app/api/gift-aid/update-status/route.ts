@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
 import { z } from 'zod'
-import { randomUUID } from 'crypto'
+import crypto from 'crypto'
 
 const updateStatusSchema = z.object({
   userId: z.string(),
@@ -76,7 +76,7 @@ async function handlePOST(request: NextRequest) {
           if (!student) {
             student = await prisma.student.create({
               data: {
-                id: studentId,
+                id: crypto.randomUUID(),
                 orgId,
                 firstName: updatedUser.name.split(' ')[0] || 'Student',
                 lastName: updatedUser.name.split(' ').slice(1).join(' ') || 'Child',
@@ -89,7 +89,7 @@ async function handlePOST(request: NextRequest) {
             // Enroll student in class
             await prisma.studentClass.create({
               data: {
-                id: `demo-studentclass-${student.id}-${classItem.id}`,
+                id: crypto.randomUUID(),
                 orgId,
                 studentId: student.id,
                 classId: classItem.id
