@@ -182,13 +182,23 @@ export default async function StaffLayout({
       const pathname = headersList.get('x-pathname') || ''
       
       if (pathname) {
-        // Normalize the path (remove /staff prefix if present)
-        let normalizedPath = pathname.replace(/^\/staff/, '') || '/dashboard'
+        // Normalize the path (remove /staff prefix if present, but keep /staff as /staff)
+        let normalizedPath: string
+        if (pathname === '/staff') {
+          // Keep /staff as /staff - don't normalize it away
+          normalizedPath = '/staff'
+        } else {
+          // For other paths, remove /staff prefix if present
+          normalizedPath = pathname.replace(/^\/staff\//, '/').replace(/^\/staff$/, '/staff')
+          if (!normalizedPath || normalizedPath === '/') {
+            normalizedPath = '/dashboard'
+          }
+        }
         
         // Handle nested routes (e.g., /classes/[id], /classes/new, /staff/[id]/edit)
         // Extract the base route (e.g., /classes from /classes/123 or /classes/new)
         const pathSegments = normalizedPath.split('/').filter(Boolean)
-        if (pathSegments.length > 1) {
+        if (pathSegments.length > 1 && normalizedPath !== '/staff') {
           // Check if second segment is a UUID (likely an ID) or a known nested route
           const secondSegment = pathSegments[1]
           const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(secondSegment)
@@ -215,7 +225,8 @@ export default async function StaffLayout({
         
         // Only check if this route requires a specific permission
         // Dashboard is not accessible to teachers/finance officers (handled above)
-        if (requiredPermission && normalizedPath !== '/dashboard') {
+        // ADMIN users always have access to /staff page
+        if (requiredPermission && normalizedPath !== '/dashboard' && normalizedPath !== '/staff') {
           if (!permissions.includes(requiredPermission)) {
             // User doesn't have permission for this route - redirect based on subrole
             if (staffSubrole === 'TEACHER') {
