@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { QuickAddMenu } from '@/components/quick-add-menu'
 import { RestrictedAction } from '@/components/restricted-action'
+import { SetupGuide } from '@/components/setup-guide'
 import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import { formatDate } from '@/lib/utils'
@@ -453,8 +454,11 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
 
   return (
     <div className="space-y-6">
-          {/* Header with Quick Actions */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Setup Guide */}
+      <SetupGuide />
+
+      {/* Header with Quick Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
                 {isTeacher ? 'My Classes Overview' : 'Madrasah Overview'}
