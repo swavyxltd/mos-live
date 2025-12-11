@@ -88,7 +88,7 @@ export function OnboardingStudentModal({ student, isOpen, onClose }: OnboardingS
               <User className="h-4 w-4" />
               Student Information
             </h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-medium text-[var(--muted-foreground)]">Full Name</label>
                 <p className="text-sm text-[var(--foreground)] mt-1">
@@ -160,10 +160,10 @@ export function OnboardingStudentModal({ student, isOpen, onClose }: OnboardingS
           {student.parentInfo ? (
             <div className="space-y-4">
               <h3 className="text-sm font-semibold text-[var(--foreground)]">Parent Account</h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-medium text-[var(--muted-foreground)]">Parent Name</label>
-                  <p className="text-sm text-[var(--foreground)] mt-1">
+                  <p className="text-sm text-[var(--foreground)] mt-1 break-words">
                     {student.parentInfo.name}
                   </p>
                 </div>
@@ -172,7 +172,7 @@ export function OnboardingStudentModal({ student, isOpen, onClose }: OnboardingS
                     <Mail className="h-3 w-3" />
                     Email
                   </label>
-                  <p className="text-sm text-[var(--foreground)] mt-1">
+                  <p className="text-sm text-[var(--foreground)] mt-1 break-all">
                     {student.parentInfo.email}
                   </p>
                 </div>
@@ -182,7 +182,7 @@ export function OnboardingStudentModal({ student, isOpen, onClose }: OnboardingS
                       <Phone className="h-3 w-3" />
                       Phone
                     </label>
-                    <p className="text-sm text-[var(--foreground)] mt-1">
+                    <p className="text-sm text-[var(--foreground)] mt-1 break-words">
                       {student.parentInfo.phone}
                     </p>
                   </div>

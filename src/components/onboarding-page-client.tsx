@@ -136,13 +136,14 @@ export function OnboardingPageClient({ students, classes, onRowClick }: Onboardi
         </CardContent>
       </Card>
 
-      {/* Students Table */}
+      {/* Students Table - Desktop */}
       <Card>
         <CardHeader>
           <CardTitle>Students ({filteredStudents.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -217,6 +218,71 @@ export function OnboardingPageClient({ students, classes, onRowClick }: Onboardi
                 )}
               </TableBody>
             </Table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-3">
+            {filteredStudents.length === 0 ? (
+              <div className="text-center py-8 text-[var(--muted-foreground)]">
+                No students found
+              </div>
+            ) : (
+              [...filteredStudents]
+                .sort((a, b) => {
+                  const firstNameCompare = (a.firstName || '').localeCompare(b.firstName || '', undefined, { sensitivity: 'base' })
+                  if (firstNameCompare !== 0) return firstNameCompare
+                  return (a.lastName || '').localeCompare(b.lastName || '', undefined, { sensitivity: 'base' })
+                })
+                .map((student) => (
+                  <div
+                    key={student.id}
+                    onClick={() => onRowClick(student)}
+                    className="p-4 border border-[var(--border)] rounded-lg cursor-pointer hover:bg-[var(--muted)]/50 transition-colors"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-[var(--foreground)] mb-1">
+                          {student.firstName} {student.lastName}
+                        </div>
+                        {student.classes.length > 0 ? (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {student.classes.map(cls => (
+                              <Badge key={cls.id} variant="outline" className="text-xs">
+                                {cls.name}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-[var(--muted-foreground)] text-xs">No classes</span>
+                        )}
+                      </div>
+                      <div className="ml-2 flex-shrink-0">
+                        {getStatusBadge(student.signupStatus)}
+                      </div>
+                    </div>
+                    {student.parentInfo && (
+                      <div className="mt-3 pt-3 border-t border-[var(--border)]">
+                        <div className="flex items-center gap-2 text-sm">
+                          <Mail className="h-4 w-4 text-[var(--muted-foreground)] flex-shrink-0" />
+                          <span className="text-[var(--muted-foreground)] break-all">{student.parentInfo.email}</span>
+                        </div>
+                      </div>
+                    )}
+                    <div className="mt-3 pt-3 border-t border-[var(--border)]">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onRowClick(student)
+                        }}
+                        className="flex items-center gap-2 text-sm text-[var(--foreground)] hover:text-[var(--foreground)]/80"
+                      >
+                        <Eye className="h-4 w-4" />
+                        <span>View Details</span>
+                      </button>
+                    </div>
+                  </div>
+                ))
+            )}
           </div>
         </CardContent>
       </Card>

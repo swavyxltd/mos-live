@@ -31,12 +31,12 @@ export function CopySignupLinkModal({ orgSlug, onClose }: CopySignupLinkModalPro
 
   return (
     <div className="fixed inset-0 bg-white/20 backdrop-blur-md flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl w-[95vw] sm:w-[90vw] md:w-[75vw]">
-        <div className="p-6">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="p-4 sm:p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-900">Copy Signup Link</h2>
-            <Button variant="ghost" size="sm" onClick={onClose}>
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900">Copy Signup Link</h2>
+            <Button variant="ghost" size="sm" onClick={onClose} className="flex-shrink-0">
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -51,16 +51,17 @@ export function CopySignupLinkModal({ orgSlug, onClose }: CopySignupLinkModalPro
               <label className="text-sm font-medium text-gray-700">
                 Public Signup Link
               </label>
-              <div className="flex space-x-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Input
                   value={signupLink}
                   readOnly
-                  className="flex-1"
+                  className="flex-1 text-xs sm:text-sm"
                 />
                 <Button
                   onClick={handleCopy}
                   variant={copied ? "default" : "outline"}
                   size="sm"
+                  className="w-full sm:w-auto flex-shrink-0"
                 >
                   {copied ? (
                     <>
@@ -78,7 +79,7 @@ export function CopySignupLinkModal({ orgSlug, onClose }: CopySignupLinkModalPro
             </div>
 
             <div className="bg-blue-50 p-3 rounded-md">
-              <p className="text-sm text-blue-800">
+              <p className="text-xs sm:text-sm text-blue-800">
                 <strong>Note:</strong> This link is public and doesn't require login. 
                 Parents can use it to sign up and verify their child's information to link their account.
               </p>
@@ -87,7 +88,7 @@ export function CopySignupLinkModal({ orgSlug, onClose }: CopySignupLinkModalPro
 
           {/* Footer */}
           <div className="flex justify-end mt-6">
-            <Button onClick={onClose}>
+            <Button onClick={onClose} className="w-full sm:w-auto">
               Close
             </Button>
           </div>

@@ -39,7 +39,8 @@ export default async function AdminPage() {
           <p className="mt-1 text-sm text-[var(--muted-foreground)] break-words">Manage all users and accounts</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow overflow-hidden w-full min-w-0">
+        {/* Desktop Table View */}
+        <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden w-full min-w-0">
           <div className="px-4 sm:px-5 lg:px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg sm:text-xl font-semibold break-words">All Users ({users.length})</h2>
           </div>
@@ -102,18 +103,74 @@ export default async function AdminPage() {
           </div>
         </div>
 
+        {/* Mobile Card View */}
+        <div className="md:hidden space-y-3">
+          <div className="px-1">
+            <h2 className="text-lg font-semibold text-[var(--foreground)]">All Users ({users.length})</h2>
+          </div>
+          {users.map((user) => (
+            <div key={user.id} className="bg-white rounded-lg shadow p-4 border border-gray-200">
+              <div className="space-y-3">
+                <div>
+                  <div className="text-xs font-medium text-gray-500 uppercase mb-1">Email</div>
+                  <div className="text-sm font-medium text-gray-900 break-all">{user.email}</div>
+                </div>
+                <div>
+                  <div className="text-xs font-medium text-gray-500 uppercase mb-1">Name</div>
+                  <div className="text-sm text-gray-700">{user.name || '-'}</div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-medium text-gray-500 uppercase mb-1">Owner</div>
+                    {user.isSuperAdmin ? (
+                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                        Yes
+                      </span>
+                    ) : (
+                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                        No
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-xs font-medium text-gray-500 uppercase mb-1">Password</div>
+                    <div className="text-sm text-gray-700">{user.password ? '✅ Yes' : '❌ No'}</div>
+                  </div>
+                </div>
+                {user.memberships.length > 0 && (
+                  <div>
+                    <div className="text-xs font-medium text-gray-500 uppercase mb-1">Organisations</div>
+                    <div className="space-y-1">
+                      {user.memberships.map((m) => (
+                        <div key={m.id} className="text-sm text-gray-700">
+                          <span className="font-medium">{m.org.name}</span>
+                          <span className="text-xs text-gray-400 ml-1">({m.role})</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div>
+                  <div className="text-xs font-medium text-gray-500 uppercase mb-1">Created</div>
+                  <div className="text-sm text-gray-700">{user.createdAt.toLocaleDateString()}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
         <div className="mt-4 sm:mt-6 lg:mt-8 bg-white rounded-lg shadow p-4 sm:p-5 lg:p-6 w-full min-w-0">
           <h2 className="text-lg sm:text-xl font-semibold mb-4 break-words">Quick Actions</h2>
           <div className="space-y-2">
             <a
               href="/owner/users/create"
-              className="block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              className="block px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-center font-medium transition-colors"
             >
               Create New Owner/Admin Account
             </a>
             <a
               href="/owner/users"
-              className="block px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+              className="block px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-center font-medium transition-colors"
             >
               Go to Full User Management
             </a>

@@ -159,7 +159,7 @@ export function ParentOnboardingDashboard({ students, classes, stats }: ParentOn
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-[var(--muted-foreground)]">
@@ -262,7 +262,8 @@ export function ParentOnboardingDashboard({ students, classes, stats }: ParentOn
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -327,6 +328,71 @@ export function ParentOnboardingDashboard({ students, classes, stats }: ParentOn
                 )}
               </TableBody>
             </Table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="md:hidden space-y-3">
+            {filteredStudents.length === 0 ? (
+              <div className="text-center text-[var(--muted-foreground)] py-8">
+                No students found matching the filters
+              </div>
+            ) : (
+              filteredStudents.map(student => {
+                const parentEmail = getParentEmail(student)
+                const emailVerified = getParentEmailVerified(student)
+                
+                return (
+                  <div
+                    key={student.id}
+                    className="p-4 border border-[var(--border)] rounded-lg"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-[var(--foreground)] mb-1">
+                          {student.firstName} {student.lastName}
+                        </div>
+                        <div className="text-sm text-[var(--muted-foreground)]">
+                          {student.classes.map(c => c.name).join(', ') || 'No class'}
+                        </div>
+                      </div>
+                      <div className="ml-2 flex-shrink-0">
+                        {getStatusBadge(student.claimStatus, emailVerified)}
+                      </div>
+                    </div>
+                    {parentEmail && (
+                      <div className="mt-3 pt-3 border-t border-[var(--border)]">
+                        <div className="flex items-center gap-2 text-sm">
+                          <Mail className="h-4 w-4 text-[var(--muted-foreground)] flex-shrink-0" />
+                          <span className="text-[var(--muted-foreground)] break-all">{parentEmail}</span>
+                        </div>
+                      </div>
+                    )}
+                    <div className="mt-3 pt-3 border-t border-[var(--border)] flex gap-2">
+                      {parentEmail && !emailVerified && student.claimStatus === 'PENDING_VERIFICATION' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleResendVerification(parentEmail)}
+                          className="flex-1"
+                        >
+                          <Mail className="h-4 w-4 mr-2" />
+                          Resend Email
+                        </Button>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.location.href = `/students?studentId=${student.id}`}
+                        className={parentEmail && !emailVerified && student.claimStatus === 'PENDING_VERIFICATION' ? 'flex-1' : 'w-full'}
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        View Student
+                      </Button>
+                    </div>
+                  </div>
+                )
+              })
+            )}
           </div>
         </CardContent>
       </Card>

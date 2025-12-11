@@ -25,22 +25,23 @@ export function Modal({ isOpen, onClose, title, children, className }: ModalProp
       
       {/* Modal */}
       <div className={cn(
-        "relative bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-xl w-[95vw] sm:w-[90vw] md:w-[75vw] max-h-[90vh] flex flex-col",
+        "relative bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-xl w-[95vw] sm:w-[90vw] md:w-[75vw] lg:max-w-2xl max-h-[90vh] flex flex-col",
         className
       )}>
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-[var(--border)] flex-shrink-0">
-          <h2 className="text-lg font-semibold text-[var(--foreground)]">{title}</h2>
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-[var(--border)] flex-shrink-0">
+          <h2 className="text-base sm:text-lg font-semibold text-[var(--foreground)] break-words pr-2">{title}</h2>
           <button
             onClick={onClose}
-            className="p-1 rounded-md hover:bg-[var(--accent)] transition-colors"
+            className="p-1 rounded-md hover:bg-[var(--accent)] transition-colors flex-shrink-0"
+            aria-label="Close modal"
           >
             <X className="h-4 w-4 text-[var(--muted-foreground)]" />
           </button>
         </div>
         
         {/* Content - Scrollable */}
-        <div className="p-6 overflow-y-auto flex-1">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1">
           {children}
         </div>
       </div>

@@ -6,8 +6,13 @@ import { getToken } from 'next-auth/jwt'
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   
-  // Allow auth routes, API routes, and maintenance page to pass through
-  if (pathname.startsWith('/auth') || pathname.startsWith('/api') || pathname.startsWith('/_next') || pathname.startsWith('/maintenance')) {
+  // Allow auth routes, API routes, maintenance page, and public signup pages to pass through
+  if (pathname.startsWith('/auth') || 
+      pathname.startsWith('/api') || 
+      pathname.startsWith('/_next') || 
+      pathname.startsWith('/maintenance') ||
+      pathname.startsWith('/parent/signup') ||
+      pathname.startsWith('/apply')) {
     return NextResponse.next()
   }
   
