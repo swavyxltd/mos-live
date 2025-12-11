@@ -13,7 +13,7 @@ import {
   BookOpen,
   Loader2
 } from 'lucide-react'
-import { isValidName, isValidEmailStrict } from '@/lib/input-validation'
+import { isValidName, isValidEmailStrict, isValidDateOfBirth } from '@/lib/input-validation'
 
 interface Class {
   id: string
@@ -33,6 +33,7 @@ export function AddStudentModal({ isOpen, onClose, onSave, classes }: AddStudent
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
+    dateOfBirth: '',
     parentEmail: '',
     classId: '',
     startMonth: new Date().toISOString().slice(0, 7), // YYYY-MM format
@@ -49,8 +50,8 @@ export function AddStudentModal({ isOpen, onClose, onSave, classes }: AddStudent
 
   const handleSave = async () => {
     // Basic validation
-    if (!formData.firstName || !formData.lastName || !formData.parentEmail || !formData.classId || !formData.startMonth) {
-      setError('Please fill in all required fields (First Name, Last Name, Parent Email, Class, Start Month).')
+    if (!formData.firstName || !formData.lastName || !formData.dateOfBirth || !formData.classId || !formData.startMonth) {
+      setError('Please fill in all required fields (First Name, Last Name, Date of Birth, Class, Start Month).')
       return
     }
 
@@ -66,8 +67,14 @@ export function AddStudentModal({ isOpen, onClose, onSave, classes }: AddStudent
       return
     }
 
-    // Validate email format
-    if (!isValidEmailStrict(formData.parentEmail)) {
+    // Validate date of birth
+    if (!isValidDateOfBirth(formData.dateOfBirth)) {
+      setError('Date of birth must be a valid date (not in the future, age 0-120 years)')
+      return
+    }
+
+    // Validate email format if provided
+    if (formData.parentEmail && !isValidEmailStrict(formData.parentEmail)) {
       setError('Please enter a valid email address')
       return
     }
@@ -82,7 +89,8 @@ export function AddStudentModal({ isOpen, onClose, onSave, classes }: AddStudent
         body: JSON.stringify({
           firstName: formData.firstName,
           lastName: formData.lastName,
-          parentEmail: formData.parentEmail,
+          dateOfBirth: formData.dateOfBirth,
+          parentEmail: formData.parentEmail || null,
           classId: formData.classId,
           startMonth: formData.startMonth,
           status: formData.status
@@ -116,6 +124,7 @@ export function AddStudentModal({ isOpen, onClose, onSave, classes }: AddStudent
     setFormData({
       firstName: '',
       lastName: '',
+      dateOfBirth: '',
       parentEmail: '',
       classId: '',
       startMonth: new Date().toISOString().slice(0, 7),
@@ -164,21 +173,30 @@ export function AddStudentModal({ isOpen, onClose, onSave, classes }: AddStudent
                 />
               </div>
             </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-900">Date of Birth *</label>
+              <Input
+                type="date"
+                value={formData.dateOfBirth}
+                onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+                className="w-full"
+                required
+              />
+            </div>
         </div>
 
         {/* Parent Information */}
         <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-900">Parent Email *</label>
+              <label className="text-sm font-medium text-gray-900">Parent Email</label>
               <Input
                 type="email"
                 value={formData.parentEmail}
                 onChange={(e) => handleInputChange('parentEmail', e.target.value)}
                 className="w-full"
-                placeholder="Enter parent email address"
-                required
+                placeholder="Enter parent email address (optional)"
               />
-              <p className="text-sm text-gray-500">An invitation email will be sent to this address for the parent to complete setup.</p>
+              <p className="text-sm text-gray-500">An invitation email will be sent to this address for the parent to complete setup. Leave blank if parent email is not available.</p>
             </div>
         </div>
 
@@ -228,7 +246,7 @@ export function AddStudentModal({ isOpen, onClose, onSave, classes }: AddStudent
             ) : (
               <>
                 <Save className="h-4 w-4 mr-2" />
-                Add Student & Send Invite
+                Add Student{formData.parentEmail ? ' & Send Invite' : ''}
               </>
             )}
           </Button>

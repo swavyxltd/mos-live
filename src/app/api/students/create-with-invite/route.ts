@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { sendParentOnboardingEmail } from '@/lib/mail'
 import { checkPaymentMethod } from '@/lib/payment-check'
 import { logger } from '@/lib/logger'
-import { sanitizeText, isValidEmail, isValidEmailStrict, isValidName, MAX_STRING_LENGTHS } from '@/lib/input-validation'
+import { sanitizeText, isValidEmail, isValidEmailStrict, isValidName, isValidDateOfBirth, MAX_STRING_LENGTHS } from '@/lib/input-validation'
 import { withRateLimit } from '@/lib/api-middleware'
 import crypto from 'crypto'
 
@@ -27,12 +27,12 @@ async function handlePOST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { firstName, lastName, parentEmail, classId, startMonth, status = 'ACTIVE' } = body
+    const { firstName, lastName, dateOfBirth, parentEmail, classId, startMonth, status = 'ACTIVE' } = body
 
     // Validate required fields
-    if (!firstName || !lastName || !parentEmail || !classId || !startMonth) {
+    if (!firstName || !lastName || !dateOfBirth || !classId || !startMonth) {
       return NextResponse.json(
-        { error: 'Missing required fields: firstName, lastName, parentEmail, classId, startMonth' },
+        { error: 'Missing required fields: firstName, lastName, dateOfBirth, classId, startMonth' },
         { status: 400 }
       )
     }
@@ -53,13 +53,24 @@ async function handlePOST(request: NextRequest) {
       )
     }
 
-    // Validate and sanitize email format
-    const sanitizedParentEmail = parentEmail.toLowerCase().trim()
-    if (!isValidEmailStrict(sanitizedParentEmail)) {
+    // Validate date of birth
+    if (!isValidDateOfBirth(dateOfBirth)) {
       return NextResponse.json(
-        { error: 'Invalid email format' },
+        { error: 'Date of birth must be a valid date (not in the future, age 0-120 years)' },
         { status: 400 }
       )
+    }
+
+    // Validate and sanitize email format if provided
+    let sanitizedParentEmail: string | null = null
+    if (parentEmail && parentEmail.trim()) {
+      sanitizedParentEmail = parentEmail.toLowerCase().trim()
+      if (!isValidEmailStrict(sanitizedParentEmail)) {
+        return NextResponse.json(
+          { error: 'Invalid email format' },
+          { status: 400 }
+        )
+      }
     }
     
     // Sanitize name fields
@@ -119,6 +130,7 @@ async function handlePOST(request: NextRequest) {
           orgId,
           firstName: sanitizedFirstName,
           lastName: sanitizedLastName,
+          dob: new Date(dateOfBirth),
           isArchived: status === 'ARCHIVED',
           claimStatus: 'NOT_CLAIMED',
           updatedAt: new Date()
@@ -135,21 +147,25 @@ async function handlePOST(request: NextRequest) {
         }
       })
 
-      // Create parent invitation
-      const token = crypto.randomBytes(32).toString('hex')
-      const expiresAt = new Date()
-      expiresAt.setDate(expiresAt.getDate() + 7) // 7 days expiry
+      // Create parent invitation only if email is provided
+      let invitation = null
+      let token: string | null = null
+      if (sanitizedParentEmail) {
+        token = crypto.randomBytes(32).toString('hex')
+        const expiresAt = new Date()
+        expiresAt.setDate(expiresAt.getDate() + 7) // 7 days expiry
 
-      const invitation = await tx.parentInvitation.create({
-        data: {
-          id: crypto.randomUUID(),
-          orgId,
-          studentId: student.id,
-          parentEmail: sanitizedParentEmail,
-          token,
-          expiresAt
-        }
-      })
+        invitation = await tx.parentInvitation.create({
+          data: {
+            id: crypto.randomUUID(),
+            orgId,
+            studentId: student.id,
+            parentEmail: sanitizedParentEmail,
+            token,
+            expiresAt
+          }
+        })
+      }
 
       // Get parent's preferred payment method if parent exists
       let preferredMethod: string | null = null
@@ -181,23 +197,25 @@ async function handlePOST(request: NextRequest) {
         }
       })
 
-      return { student, invitation, token }
+      return { student, invitation, token: token || null }
     })
 
-    // Send onboarding email
-    const baseUrl = process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'https://app.madrasah.io'
-    const setupUrl = `${baseUrl.replace(/\/$/, '')}/auth/parent-setup?token=${result.token}`
+    // Send onboarding email only if email is provided
+    if (sanitizedParentEmail && result.token) {
+      const baseUrl = process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'https://app.madrasah.io'
+      const setupUrl = `${baseUrl.replace(/\/$/, '')}/auth/parent-setup?token=${result.token}`
 
-    try {
-      await sendParentOnboardingEmail({
-        to: sanitizedParentEmail,
-        orgName: org.name,
-        studentName: `${sanitizedFirstName} ${sanitizedLastName}`,
-        setupUrl
-      })
-    } catch (emailError) {
-      logger.error('Failed to send parent onboarding email', emailError)
-      // Don't fail the request if email fails, but log it
+      try {
+        await sendParentOnboardingEmail({
+          to: sanitizedParentEmail,
+          orgName: org.name,
+          studentName: `${sanitizedFirstName} ${sanitizedLastName}`,
+          setupUrl
+        })
+      } catch (emailError) {
+        logger.error('Failed to send parent onboarding email', emailError)
+        // Don't fail the request if email fails, but log it
+      }
     }
 
     return NextResponse.json({
@@ -207,7 +225,7 @@ async function handlePOST(request: NextRequest) {
         firstName: result.student.firstName,
         lastName: result.student.lastName
       },
-      invitationSent: true
+      invitationSent: !!sanitizedParentEmail
     }, { status: 201 })
   } catch (error: any) {
     logger.error('Error creating student with invite', error)
