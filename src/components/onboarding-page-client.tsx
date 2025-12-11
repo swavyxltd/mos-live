@@ -206,7 +206,7 @@ export function OnboardingPageClient({ students, classes, onRowClick }: Onboardi
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => onRowClick(student)}
-                          className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                          className="text-[var(--foreground)] hover:text-[var(--foreground)]/80 flex items-center gap-1"
                         >
                           <Eye className="h-4 w-4" />
                           <span className="text-sm">View</span>

@@ -162,6 +162,7 @@ export default async function OnboardingPage() {
       initialStudents={transformedStudents}
       classes={classes}
       stats={stats}
+      orgSlug={org.slug}
     />
   )
 }
