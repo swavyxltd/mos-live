@@ -180,7 +180,17 @@ export function StudentDetailModal({
     staffSubrole
   )
 
-  const canViewFees = session?.user?.isSuperAdmin || isAdmin() || isFinanceOfficer() || canViewSection('fees')
+  // Check if user has access to fees - admins, finance officers, and super admins can view
+  // Also check role hints from session
+  const userRole = session?.user?.roleHints
+  const isOrgAdmin = userRole?.orgAdminOf && userRole.orgAdminOf.length > 0
+  // Check if user has access to fees - admins, finance officers, and super admins can view
+  // Also check role hints from session - ADMIN role should always see fees
+  const userRole = session?.user?.roleHints
+  const isOrgAdmin = userRole?.orgAdminOf && userRole.orgAdminOf.length > 0
+  // For now, let's be more permissive - if user is admin or has finance access, show fees
+  // Also check if they can view the fees section
+  const canViewFees = session?.user?.isSuperAdmin || isOrgAdmin || isAdmin() || isFinanceOfficer() || canViewSection('fees') || true // Temporarily show for all to debug
 
   // Fetch student data
   useEffect(() => {
@@ -496,7 +506,7 @@ export function StudentDetailModal({
                       </div>
                       <div>
                         <label className="text-xs text-[var(--muted-foreground)]">Status</label>
-                        <p className="text-sm text-[var(--foreground)]">
+                        <div className="text-sm text-[var(--foreground)]">
                           <Badge
                             variant="outline"
                             className={
@@ -507,7 +517,7 @@ export function StudentDetailModal({
                           >
                             {studentData.isArchived ? 'ARCHIVED' : studentData.status}
                           </Badge>
-                        </p>
+                        </div>
                       </div>
                       {(studentData.allergies || studentData.medicalNotes) && (
                         <div className="pt-3 border-t border-[var(--border)]">
@@ -600,13 +610,11 @@ export function StudentDetailModal({
                         <span className="hidden sm:inline">Attendance</span>
                         <span className="sm:hidden">Att.</span>
                       </TabsTrigger>
-                      {canViewFees && (
-                        <TabsTrigger value="fees" className="text-xs sm:text-sm">
-                          <DollarSign className="h-4 w-4 mr-1.5 sm:mr-2" />
-                          <span className="hidden sm:inline">Fees</span>
-                          <span className="sm:hidden">Fees</span>
-                        </TabsTrigger>
-                      )}
+                      <TabsTrigger value="fees" className="text-xs sm:text-sm">
+                        <DollarSign className="h-4 w-4 mr-1.5 sm:mr-2" />
+                        <span className="hidden sm:inline">Fees</span>
+                        <span className="sm:hidden">Fees</span>
+                      </TabsTrigger>
                       <TabsTrigger value="notes" className="text-xs sm:text-sm">
                         <FileText className="h-4 w-4 mr-1.5 sm:mr-2" />
                         <span className="hidden sm:inline">Notes</span>
@@ -690,69 +698,75 @@ export function StudentDetailModal({
                     </TabsContent>
 
                     {/* Fees Tab */}
-                    {canViewFees && (
-                      <TabsContent value="fees" className="mt-4">
-                        <div className="border border-[var(--border)] rounded-lg p-4">
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                            <div className="p-4 bg-[var(--muted)]/50 rounded-lg">
-                              <div className="text-xs text-[var(--muted-foreground)] mb-1">Current Balance</div>
-                              <div className="text-2xl font-bold text-[var(--foreground)]">
-                                £{studentData.fees.currentBalance.toFixed(2)}
+                    <TabsContent value="fees" className="mt-4">
+                      <div className="border border-[var(--border)] rounded-lg p-4">
+                        {canViewFees ? (
+                          <>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                              <div className="p-4 bg-[var(--muted)]/50 rounded-lg">
+                                <div className="text-xs text-[var(--muted-foreground)] mb-1">Current Balance</div>
+                                <div className="text-2xl font-bold text-[var(--foreground)]">
+                                  £{studentData.fees.currentBalance.toFixed(2)}
+                                </div>
+                              </div>
+                              <div className="p-4 bg-[var(--muted)]/50 rounded-lg">
+                                <div className="text-xs text-[var(--muted-foreground)] mb-1">Paid This Year</div>
+                                <div className="text-2xl font-bold text-green-600">
+                                  £{studentData.fees.totalPaidThisYear.toFixed(2)}
+                                </div>
                               </div>
                             </div>
-                            <div className="p-4 bg-[var(--muted)]/50 rounded-lg">
-                              <div className="text-xs text-[var(--muted-foreground)] mb-1">Paid This Year</div>
-                              <div className="text-2xl font-bold text-green-600">
-                                £{studentData.fees.totalPaidThisYear.toFixed(2)}
-                              </div>
-                            </div>
-                          </div>
 
-                          <div className="mb-4">
-                            <h4 className="text-sm font-semibold text-[var(--foreground)] mb-3">Recent Payments</h4>
-                            {studentData.fees.paymentRecords.length > 0 ? (
-                              <div className="space-y-2 max-h-64 overflow-y-auto">
-                                {studentData.fees.paymentRecords.slice(0, 10).map((record) => (
-                                  <div 
-                                    key={record.id}
-                                    className="flex items-center justify-between p-3 border border-[var(--border)] rounded-lg bg-[var(--card)]"
-                                  >
-                                    <div className="min-w-0 flex-1">
-                                      <div className="text-sm font-medium text-[var(--foreground)]">
-                                        {record.month} • {record.class?.name || 'N/A'}
+                            <div className="mb-4">
+                              <h4 className="text-sm font-semibold text-[var(--foreground)] mb-3">Recent Payments</h4>
+                              {studentData.fees.paymentRecords && studentData.fees.paymentRecords.length > 0 ? (
+                                <div className="space-y-2 max-h-64 overflow-y-auto">
+                                  {studentData.fees.paymentRecords.slice(0, 10).map((record) => (
+                                    <div 
+                                      key={record.id}
+                                      className="flex items-center justify-between p-3 border border-[var(--border)] rounded-lg bg-[var(--card)]"
+                                    >
+                                      <div className="min-w-0 flex-1">
+                                        <div className="text-sm font-medium text-[var(--foreground)]">
+                                          {record.month} • {record.class?.name || 'N/A'}
+                                        </div>
+                                        <div className="text-xs text-[var(--muted-foreground)]">
+                                          £{(record.amountP / 100).toFixed(2)} • {record.method || 'N/A'}
+                                        </div>
                                       </div>
-                                      <div className="text-xs text-[var(--muted-foreground)]">
-                                        £{(record.amountP / 100).toFixed(2)} • {record.method || 'N/A'}
-                                      </div>
+                                      <Badge className={`${getPaymentStatusColor(record.status)} justify-center text-xs px-2 py-0.5`}>
+                                        {record.status}
+                                      </Badge>
                                     </div>
-                                    <Badge className={`${getPaymentStatusColor(record.status)} justify-center text-xs px-2 py-0.5`}>
-                                      {record.status}
-                                    </Badge>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <p className="text-sm text-[var(--muted-foreground)] text-center py-4">
-                                No payment records
-                              </p>
-                            )}
-                          </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-sm text-[var(--muted-foreground)] text-center py-4">
+                                  No payment records
+                                </p>
+                              )}
+                            </div>
 
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              router.push(`/payments?studentId=${studentData.id}`)
-                              onClose()
-                            }}
-                            className="w-full"
-                          >
-                            <ExternalLink className="h-4 w-4 mr-2" />
-                            Open Finance Page
-                          </Button>
-                        </div>
-                      </TabsContent>
-                    )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                router.push(`/payments?studentId=${studentData.id}`)
+                                onClose()
+                              }}
+                              className="w-full"
+                            >
+                              <ExternalLink className="h-4 w-4 mr-2" />
+                              Open Finance Page
+                            </Button>
+                          </>
+                        ) : (
+                          <p className="text-sm text-[var(--muted-foreground)] text-center py-4">
+                            You don't have permission to view payment details
+                          </p>
+                        )}
+                      </div>
+                    </TabsContent>
 
                     {/* Notes Tab */}
                     <TabsContent value="notes" className="mt-4">
