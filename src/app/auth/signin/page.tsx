@@ -2,7 +2,7 @@
 
 import { signIn, getSession } from 'next-auth/react'
 import { useSearchParams } from 'next/navigation'
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useState, useRef, Suspense } from 'react'
 import Image from 'next/image'
 import { LogIn } from 'lucide-react'
 import { getPostLoginRedirect } from '@/lib/auth'
@@ -13,52 +13,37 @@ function SignInPageContent() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
-  const [hasCheckedSession, setHasCheckedSession] = useState(false)
+  const sessionCheckedRef = useRef(false)
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
   const resetSuccess = searchParams.get('reset') === 'success'
   const signupSuccess = searchParams.get('signup') === 'success'
 
+  // Handle success messages (only once on mount)
   useEffect(() => {
-    // Only check session once on mount
-    if (hasCheckedSession) return
-    
-    let isMounted = true
+    if (resetSuccess) {
+      setSuccessMessage('Password reset successful! Please sign in with your new password.')
+    }
+    if (signupSuccess) {
+      setSuccessMessage('Account created successfully! Please sign in to continue.')
+    }
+  }, []) // Empty deps - only run once on mount
+
+  // Check session only once on mount
+  useEffect(() => {
+    if (sessionCheckedRef.current) return
+    sessionCheckedRef.current = true
     
     // Check if already signed in
     getSession().then((session) => {
-      if (!isMounted) return
-      setHasCheckedSession(true)
       if ((session?.user as any)?.roleHints) {
         const redirectUrl = getPostLoginRedirect((session.user as any).roleHints)
-        // Use replace instead of href to prevent back button issues and infinite loops
+        // Use replace to prevent back button issues
         window.location.replace(redirectUrl)
-        return
       }
     }).catch((err) => {
       console.error('Error checking session:', err)
-      if (isMounted) {
-        setHasCheckedSession(true)
-      }
     })
-
-    // Show success message if redirected from password reset
-    if (resetSuccess) {
-      setSuccessMessage('Password reset successful! Please sign in with your new password.')
-      // Clear the query parameter
-      window.history.replaceState({}, '', '/auth/signin')
-    }
-
-    // Show success message if redirected from signup
-    if (signupSuccess) {
-      setSuccessMessage('Account created successfully! Please sign in to continue.')
-      // Clear the query parameter
-      window.history.replaceState({}, '', '/auth/signin')
-    }
-    
-    return () => {
-      isMounted = false
-    }
-  }, [hasCheckedSession, resetSuccess, signupSuccess])
+  }, []) // Empty deps - only run once on mount
 
   const handleCredentialsSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
