@@ -1,31 +1,23 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { getActiveOrg } from '@/lib/org'
-import { requireRole } from '@/lib/roles'
+import { getActiveOrg, getUserRoleInOrg } from '@/lib/org'
 import { prisma } from '@/lib/prisma'
-import { Page } from '@/components/shell/page'
-import { OnboardingDashboard } from '@/components/onboarding-dashboard'
+import { OnboardingPageWrapper } from '@/components/onboarding-page-wrapper'
+import { redirect } from 'next/navigation'
 
 export default async function OnboardingPage() {
   const session = await getServerSession(authOptions)
+  const org = await getActiveOrg()
   
-  if (!session?.user?.id) {
-    return <div>Loading...</div>
-  }
-
-  const org = await getActiveOrg(session.user.id)
-  if (!org) {
-    return <div>Loading...</div>
+  if (!session?.user?.id || !org) {
+    redirect('/auth/signin')
   }
 
   // Check role - only ADMIN and OWNER can access
-  const userRole = await requireRole(['ADMIN', 'OWNER'])({ 
-    headers: new Headers(),
-    nextUrl: { pathname: '/admin/onboarding' }
-  } as any)
-
-  if (userRole instanceof Response) {
-    return <div>Unauthorized</div>
+  const userRole = await getUserRoleInOrg(session.user.id, org.id)
+  
+  if (userRole !== 'ADMIN' && userRole !== 'OWNER') {
+    redirect('/dashboard')
   }
 
   // Fetch all students with their parent links
@@ -110,11 +102,7 @@ export default async function OnboardingPage() {
     if (hasParentLink) {
       const parentLink = student.ParentStudentLink[0]
       const parent = parentLink.User
-      if (parent.emailVerified) {
-        signupStatus = 'signed_up_verified'
-      } else {
-        signupStatus = 'signed_up_not_verified'
-      }
+      signupStatus = 'signed_up_verified'
       parentInfo = {
         id: parent.id,
         name: parent.name || 'Unknown',
@@ -124,11 +112,7 @@ export default async function OnboardingPage() {
         linkedAt: parentLink.createdAt
       }
     } else if (primaryParent) {
-      if (primaryParent.emailVerified) {
-        signupStatus = 'signed_up_verified'
-      } else {
-        signupStatus = 'signed_up_not_verified'
-      }
+      signupStatus = 'signed_up_verified'
       parentInfo = {
         id: primaryParent.id,
         name: primaryParent.name || 'Unknown',
@@ -138,11 +122,7 @@ export default async function OnboardingPage() {
         linkedAt: null
       }
     } else if (claimedByParent) {
-      if (claimedByParent.emailVerified) {
-        signupStatus = 'signed_up_verified'
-      } else {
-        signupStatus = 'signed_up_not_verified'
-      }
+      signupStatus = 'signed_up_verified'
       parentInfo = {
         id: claimedByParent.id,
         name: claimedByParent.name || 'Unknown',
@@ -173,27 +153,16 @@ export default async function OnboardingPage() {
   const stats = {
     total: transformedStudents.length,
     notSignedUp: transformedStudents.filter(s => s.signupStatus === 'not_signed_up').length,
-    signedUpNotVerified: transformedStudents.filter(s => s.signupStatus === 'signed_up_not_verified').length,
+    signedUpNotVerified: 0, // No longer used - all signed up parents are considered verified
     signedUpVerified: transformedStudents.filter(s => s.signupStatus === 'signed_up_verified').length
   }
 
   return (
-    <Page
-      user={session.user}
-      org={org}
-      userRole="ADMIN"
-      title="Student Onboarding"
-      breadcrumbs={[
-        { label: 'Dashboard', href: '/dashboard' },
-        { label: 'Onboarding' }
-      ]}
-    >
-      <OnboardingDashboard 
-        students={transformedStudents}
-        classes={classes}
-        stats={stats}
-      />
-    </Page>
+    <OnboardingPageWrapper 
+      initialStudents={transformedStudents}
+      classes={classes}
+      stats={stats}
+    />
   )
 }
 

@@ -22,6 +22,7 @@ import {
   X
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { formatDate } from '@/lib/utils'
 
 interface PaymentRecord {
   id: string
@@ -378,14 +379,7 @@ export default function PaymentRecordsPageClient() {
                       <TableCell>{getMethodLabel(record.method)}</TableCell>
                       <TableCell>{getStatusBadge(record.status)}</TableCell>
                       <TableCell>
-                        {record.paidAt ? (() => {
-                          try {
-                            const date = new Date(record.paidAt)
-                            return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-                          } catch {
-                            return '-'
-                          }
-                        })() : '-'}
+                        {record.paidAt ? formatDate(record.paidAt) : '-'}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-2 justify-end">

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { AttendanceMarking } from '@/components/attendance-marking'
 import { ClassAttendanceOverview } from '@/components/class-attendance-overview'
 import { DetailedClassAttendance } from '@/components/detailed-class-attendance'
@@ -44,18 +44,17 @@ export function AttendancePageClient({ attendanceData }: AttendancePageClientPro
   const [currentWeek, setCurrentWeek] = useState(new Date())
   const [filterType, setFilterType] = useState<'week' | 'month' | 'year'>('week')
   const [dateRange, setDateRange] = useState<{ start: Date; end: Date } | null>(null)
-  const [filteredData, setFilteredData] = useState(attendanceData || [])
 
   // Filter data based on selected filter type and date range
-  useEffect(() => {
-    if (!dateRange) return
+  const filteredData = useMemo(() => {
+    if (!dateRange) {
+      return attendanceData || []
+    }
     
-    const filtered = (attendanceData || []).filter(item => {
+    return (attendanceData || []).filter(item => {
       const itemDate = new Date(item.date)
       return itemDate >= dateRange.start && itemDate <= dateRange.end
     })
-    
-    setFilteredData(filtered)
   }, [dateRange, attendanceData])
 
   const handleClassClick = (classId: string) => {
@@ -87,10 +86,11 @@ export function AttendancePageClient({ attendanceData }: AttendancePageClientPro
     // Data will be updated automatically via useEffect
   }
 
-  const handleDateRangeChange = (startDate: Date, endDate: Date) => {
-    setCurrentWeek(startDate)
+  const handleDateRangeChange = useCallback((startDate: Date, endDate: Date) => {
+    // Only update dateRange, don't update currentWeek to prevent infinite loops
+    // currentWeek is only updated by handleWeekChange (user clicking prev/next/current)
     setDateRange({ start: startDate, end: endDate })
-  }
+  }, [])
 
   const handleFilterTypeChange = (type: 'week' | 'month' | 'year') => {
     setFilterType(type)
@@ -136,6 +136,8 @@ export function AttendancePageClient({ attendanceData }: AttendancePageClientPro
           classDetails={selectedClass}
           onBack={handleBackToOverview}
           onStudentClick={handleStudentClick}
+          filterType={filterType}
+          dateRange={dateRange}
         />
       ) : null}
 

@@ -611,7 +611,12 @@ export function PaymentsPageClient({ classes }: PaymentsPageClientProps) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {getFilteredRecords().map((record) => (
+                  {[...getFilteredRecords()]
+                    .sort((a, b) => {
+                      // Sort by student name alphabetically
+                      return a.studentName.localeCompare(b.studentName, undefined, { sensitivity: 'base' })
+                    })
+                    .map((record) => (
                     <TableRow key={record.id} className="hover:bg-gray-50/30 border-b border-gray-100 transition-colors">
                       <TableCell className="font-medium text-gray-900 px-6 py-4 text-left">
                         <button

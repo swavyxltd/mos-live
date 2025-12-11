@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { Mail, Lock, User, Calendar, AlertCircle, Loader2, CheckCircle, Phone, MapPin, CreditCard, Gift, Building2, Coins, Shield, PhoneCall, Globe, MessageSquare } from 'lucide-react'
 import { isValidEmail, isValidDateOfBirth, isValidName, isValidPhone, isValidUKPostcode } from '@/lib/input-validation'
 import { Onboarding01 } from '@/components/onboarding-01'
+import { formatDate } from '@/lib/utils'
 
 interface VerifiedStudent {
   id: string
@@ -1186,7 +1187,7 @@ function ParentSignupForm() {
                     </div>
                     {student.dob && (
                       <div className="text-sm text-neutral-600 mt-1">
-                        DOB: {new Date(student.dob).toLocaleDateString('en-GB')}
+                        DOB: {formatDate(student.dob)}
                       </div>
                     )}
                     {student.classes.length > 0 && (

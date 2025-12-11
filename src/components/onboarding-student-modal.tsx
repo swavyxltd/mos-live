@@ -12,6 +12,7 @@ import {
   User,
   GraduationCap
 } from 'lucide-react'
+import { formatDate } from '@/lib/utils'
 
 interface Student {
   id: string
@@ -22,7 +23,7 @@ interface Student {
     id: string
     name: string
   }>
-  signupStatus: 'not_signed_up' | 'signed_up_not_verified' | 'signed_up_verified'
+  signupStatus: 'not_signed_up' | 'signed_up_verified'
   parentInfo: {
     id: string
     name: string
@@ -48,14 +49,7 @@ export function OnboardingStudentModal({ student, isOpen, onClose }: OnboardingS
         return (
           <Badge className="bg-green-100 text-green-700 border-green-200">
             <CheckCircle className="h-3 w-3 mr-1" />
-            Signed Up & Verified
-          </Badge>
-        )
-      case 'signed_up_not_verified':
-        return (
-          <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200">
-            <Clock className="h-3 w-3 mr-1" />
-            Signed Up (Not Verified)
+            Signed Up
           </Badge>
         )
       case 'not_signed_up':
@@ -109,11 +103,7 @@ export function OnboardingStudentModal({ student, isOpen, onClose }: OnboardingS
                       Date of Birth
                     </label>
                     <p className="text-sm text-[var(--foreground)] mt-1">
-                      {new Date(student.dob).toLocaleDateString('en-GB', {
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric'
-                      })}
+                      {formatDate(student.dob)}
                     </p>
                   </div>
                   {calculateAge(student.dob) !== null && (
@@ -129,11 +119,7 @@ export function OnboardingStudentModal({ student, isOpen, onClose }: OnboardingS
               <div>
                 <label className="text-xs font-medium text-[var(--muted-foreground)]">Enrolled</label>
                 <p className="text-sm text-[var(--foreground)] mt-1">
-                  {new Date(student.createdAt).toLocaleDateString('en-GB', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric'
-                  })}
+                  {formatDate(student.createdAt)}
                 </p>
               </div>
             </div>
@@ -201,33 +187,11 @@ export function OnboardingStudentModal({ student, isOpen, onClose }: OnboardingS
                     </p>
                   </div>
                 )}
-                <div>
-                  <label className="text-xs font-medium text-[var(--muted-foreground)]">Email Verified</label>
-                  <p className="text-sm text-[var(--foreground)] mt-1">
-                    {student.parentInfo.emailVerified ? (
-                      <Badge className="bg-green-100 text-green-700 border-green-200">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Verified
-                      </Badge>
-                    ) : (
-                      <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200">
-                        <Clock className="h-3 w-3 mr-1" />
-                        Not Verified
-                      </Badge>
-                    )}
-                  </p>
-                </div>
                 {student.parentInfo.linkedAt && (
                   <div>
                     <label className="text-xs font-medium text-[var(--muted-foreground)]">Linked At</label>
                     <p className="text-sm text-[var(--foreground)] mt-1">
-                      {new Date(student.parentInfo.linkedAt).toLocaleDateString('en-GB', {
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
+                      {formatDate(student.parentInfo.linkedAt)}
                     </p>
                   </div>
                 )}

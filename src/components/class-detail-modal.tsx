@@ -27,6 +27,7 @@ import {
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
+import { formatDate } from '@/lib/utils'
 
 interface ClassDetailModalProps {
   classId: string | null
@@ -453,7 +454,7 @@ export function ClassDetailModal({ classId, isOpen, onClose, onClassUpdate }: Cl
                                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                                           <span>{enrollment.student.firstName} {enrollment.student.lastName}</span>
                                           <span className="text-sm text-[var(--muted-foreground)] sm:hidden">
-                                            {new Date(enrollment.enrolledAt).toLocaleDateString()}
+                                            {formatDate(enrollment.enrolledAt)}
                                           </span>
                                         </div>
                                       </TableCell>

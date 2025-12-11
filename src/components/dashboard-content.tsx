@@ -11,6 +11,7 @@ import { QuickAddMenu } from '@/components/quick-add-menu'
 import { RestrictedAction } from '@/components/restricted-action'
 import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
+import { formatDate } from '@/lib/utils'
 
 // Lazy load modals to reduce initial bundle size
 const GenerateReportModal = dynamic(() => import('@/components/generate-report-modal'), {
@@ -226,7 +227,7 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
             id: event.id,
             title: event.title,
             date: new Date(event.date),
-            dateString: new Date(event.date).toLocaleDateString(),
+            dateString: formatDate(new Date(event.date)),
             description: event.description || event.Class?.name || '',
             type: event.type || 'EVENT',
             isHoliday: event.isHoliday || false,
@@ -802,19 +803,19 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
                                   {event.endDate && (event.isHoliday || event.type === 'HOLIDAY') ? (
                                     <>
                                       <span className="sm:hidden">
-                                        {eventDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} - {event.endDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                        {formatDate(eventDate)} - {formatDate(event.endDate)}
                                       </span>
                                       <span className="hidden sm:inline">
-                                        {eventDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })} - {event.endDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                                        {formatDate(eventDate)} - {formatDate(event.endDate)}
                                       </span>
                                     </>
                                   ) : (
                                     <>
                                       <span className="sm:hidden">
-                                        {eventDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                        {formatDate(eventDate)}
                                       </span>
                                       <span className="hidden sm:inline">
-                                        {eventDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                                        {formatDate(eventDate)}
                                       </span>
                                     </>
                                   )}

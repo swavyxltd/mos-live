@@ -6,14 +6,12 @@ import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { 
-  Users, 
   CheckCircle, 
   Clock, 
   XCircle,
   Mail,
   Eye
 } from 'lucide-react'
-import { OnboardingStudentModal } from '@/components/onboarding-student-modal'
 
 interface Student {
   id: string
@@ -24,7 +22,7 @@ interface Student {
     id: string
     name: string
   }>
-  signupStatus: 'not_signed_up' | 'signed_up_not_verified' | 'signed_up_verified'
+  signupStatus: 'not_signed_up' | 'signed_up_verified'
   parentInfo: {
     id: string
     name: string
@@ -42,22 +40,15 @@ interface Class {
   name: string
 }
 
-interface OnboardingDashboardProps {
+interface OnboardingPageClientProps {
   students: Student[]
   classes: Class[]
-  stats: {
-    total: number
-    notSignedUp: number
-    signedUpNotVerified: number
-    signedUpVerified: number
-  }
+  onRowClick: (student: Student) => void
 }
 
-export function OnboardingDashboard({ students, classes, stats }: OnboardingDashboardProps) {
+export function OnboardingPageClient({ students, classes, onRowClick }: OnboardingPageClientProps) {
   const [selectedClass, setSelectedClass] = useState<string>('all')
   const [selectedStatus, setSelectedStatus] = useState<string>('all')
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
 
   // Filter students
   const filteredStudents = useMemo(() => {
@@ -83,14 +74,7 @@ export function OnboardingDashboard({ students, classes, stats }: OnboardingDash
         return (
           <Badge className="bg-green-100 text-green-700 border-green-200">
             <CheckCircle className="h-3 w-3 mr-1" />
-            Signed Up & Verified
-          </Badge>
-        )
-      case 'signed_up_not_verified':
-        return (
-          <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200">
-            <Clock className="h-3 w-3 mr-1" />
-            Signed Up (Not Verified)
+            Signed Up
           </Badge>
         )
       case 'not_signed_up':
@@ -103,64 +87,8 @@ export function OnboardingDashboard({ students, classes, stats }: OnboardingDash
     }
   }
 
-  const handleRowClick = (student: Student) => {
-    setSelectedStudent(student)
-    setIsModalOpen(true)
-  }
-
   return (
-    <div className="space-y-6">
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-[var(--muted-foreground)]">
-              Total Students
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-[var(--foreground)]">{stats.total}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-[var(--muted-foreground)] flex items-center gap-2">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              Signed Up & Verified
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.signedUpVerified}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-[var(--muted-foreground)] flex items-center gap-2">
-              <Clock className="h-4 w-4 text-yellow-600" />
-              Not Verified
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{stats.signedUpNotVerified}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-[var(--muted-foreground)] flex items-center gap-2">
-              <XCircle className="h-4 w-4 text-red-600" />
-              Not Signed Up
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{stats.notSignedUp}</div>
-          </CardContent>
-        </Card>
-      </div>
-
+    <>
       {/* Filters */}
       <Card>
         <CardHeader>
@@ -199,8 +127,7 @@ export function OnboardingDashboard({ students, classes, stats }: OnboardingDash
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="signed_up_verified">Signed Up & Verified</SelectItem>
-                  <SelectItem value="signed_up_not_verified">Signed Up (Not Verified)</SelectItem>
+                  <SelectItem value="signed_up_verified">Signed Up</SelectItem>
                   <SelectItem value="not_signed_up">Not Signed Up</SelectItem>
                 </SelectContent>
               </Select>
@@ -234,11 +161,18 @@ export function OnboardingDashboard({ students, classes, stats }: OnboardingDash
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredStudents.map((student) => (
+                  [...filteredStudents]
+                    .sort((a, b) => {
+                      // Sort by first name, then last name
+                      const firstNameCompare = (a.firstName || '').localeCompare(b.firstName || '', undefined, { sensitivity: 'base' })
+                      if (firstNameCompare !== 0) return firstNameCompare
+                      return (a.lastName || '').localeCompare(b.lastName || '', undefined, { sensitivity: 'base' })
+                    })
+                    .map((student) => (
                     <TableRow 
                       key={student.id}
                       className="cursor-pointer hover:bg-gray-50"
-                      onClick={() => handleRowClick(student)}
+                      onClick={() => onRowClick(student)}
                     >
                       <TableCell className="font-medium">
                         {student.firstName} {student.lastName}
@@ -271,7 +205,7 @@ export function OnboardingDashboard({ students, classes, stats }: OnboardingDash
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <button
-                          onClick={() => handleRowClick(student)}
+                          onClick={() => onRowClick(student)}
                           className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
                         >
                           <Eye className="h-4 w-4" />
@@ -286,19 +220,7 @@ export function OnboardingDashboard({ students, classes, stats }: OnboardingDash
           </div>
         </CardContent>
       </Card>
-
-      {/* Student Details Modal */}
-      {selectedStudent && (
-        <OnboardingStudentModal
-          student={selectedStudent}
-          isOpen={isModalOpen}
-          onClose={() => {
-            setIsModalOpen(false)
-            setSelectedStudent(null)
-          }}
-        />
-      )}
-    </div>
+    </>
   )
 }
 

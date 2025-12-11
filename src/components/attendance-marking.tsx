@@ -6,9 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Modal } from '@/components/ui/modal'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { CheckCircle, XCircle, Clock, User, Calendar, Download, Loader2, ArrowLeft, Users as UsersIcon } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { CheckCircle, XCircle, Clock, User, Calendar, Download, Loader2, ArrowLeft, Users as UsersIcon, Info } from 'lucide-react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { formatDate } from '@/lib/utils'
+import { toast } from 'sonner'
 
 interface Student {
   id: string
@@ -31,16 +32,24 @@ export function AttendanceMarking() {
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [currentDate] = useState(formatDate(new Date()))
-  const [todayDate] = useState(new Date().toISOString().split('T')[0])
+  const hasFetchedRef = useRef(false)
+  
+  // Get today's date in YYYY-MM-DD format (recalculated each time to ensure accuracy)
+  const getTodayDate = () => {
+    const today = new Date()
+    const year = today.getFullYear()
+    const month = String(today.getMonth() + 1).padStart(2, '0')
+    const day = String(today.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
 
-  // Fetch classes and students when modal opens
-  useEffect(() => {
-    if (isOpen && classes.length === 0) {
-      fetchClasses()
+  const fetchClasses = useCallback(async (force = false) => {
+    if (hasFetchedRef.current && !force) return
+    if (force) {
+      hasFetchedRef.current = false // Reset flag when forcing refresh
     }
-  }, [isOpen])
-
-  const fetchClasses = async () => {
+    hasFetchedRef.current = true
+    
     setLoading(true)
     try {
       // Fetch all classes
@@ -56,6 +65,7 @@ export function AttendanceMarking() {
         classesData.map(async (cls: any) => {
           try {
             // Use optimized endpoint that fetches class + students + attendance in one call
+            const todayDate = getTodayDate()
             const classAttendanceResponse = await fetch(
               `/api/attendance/class/${cls.id}?date=${todayDate}`
             )
@@ -164,13 +174,35 @@ export function AttendanceMarking() {
         console.warn('No classes found or all classes failed to load')
       }
 
+      // Log attendance counts for debugging
+      validClasses.forEach(cls => {
+        const markedCount = cls.students.filter(s => s.status !== 'UNMARKED').length
+        if (markedCount > 0) {
+          console.log(`Class ${cls.name}: ${markedCount}/${cls.students.length} students marked`)
+        }
+      })
+
       setClasses(validClasses)
     } catch (error) {
       console.error('Error fetching classes:', error)
+      hasFetchedRef.current = false // Reset on error so we can retry
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  // Fetch classes and students when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      // Always fetch when modal opens to get latest attendance data
+      fetchClasses(true)
+    }
+    // Reset fetch flag when modal closes
+    if (!isOpen) {
+      hasFetchedRef.current = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen])
 
   const handleMarkAttendance = () => {
     setIsOpen(true)
@@ -189,10 +221,19 @@ export function AttendanceMarking() {
           ...cls,
           students: cls.students.map(student => {
             if (student.id === studentId) {
+              // Preserve existing time if status hasn't changed, or if changing to ABSENT
+              const statusChanged = student.status !== status
+              const shouldUpdateTime = statusChanged && status !== 'ABSENT'
+              const shouldClearTime = status === 'ABSENT'
+              
               return {
                 ...student,
                 status,
-                time: status !== 'ABSENT' ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : undefined
+                time: shouldClearTime 
+                  ? undefined 
+                  : shouldUpdateTime 
+                    ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    : student.time // Preserve existing time if status unchanged or already has time
               }
             }
             return student
@@ -220,7 +261,7 @@ export function AttendanceMarking() {
         }))
 
       if (attendanceRecords.length === 0) {
-        alert('Please mark at least one student before saving.')
+        toast.error('Please mark at least one student before saving.')
         setSaving(false)
         return
       }
@@ -233,7 +274,7 @@ export function AttendanceMarking() {
         },
         body: JSON.stringify({
           classId: selectedClass.id,
-          date: todayDate,
+          date: getTodayDate(),
           attendance: attendanceRecords
         })
       })
@@ -243,17 +284,23 @@ export function AttendanceMarking() {
         throw new Error(errorData.error || 'Failed to save attendance')
       }
 
-      // Refresh classes to get updated attendance
-      await fetchClasses()
+      const wasAlreadyMarked = selectedClass.students.some(s => s.status !== 'UNMARKED')
       
+      // Show success message first
+      toast.success(wasAlreadyMarked ? 'Attendance updated successfully!' : 'Attendance saved successfully!')
+      
+      // Small delay to ensure API has processed the save
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      // Refresh classes to get updated attendance
+      await fetchClasses(true)
+      
+      // Close modal after refresh completes
       setIsOpen(false)
       setSelectedClass(null)
-      
-      // Show success message
-      alert('Attendance saved successfully!')
     } catch (error: any) {
       console.error('Error saving attendance:', error)
-      alert(error.message || 'Failed to save attendance. Please try again.')
+      toast.error(error.message || 'Failed to save attendance. Please try again.')
     } finally {
       setSaving(false)
     }
@@ -345,7 +392,9 @@ export function AttendanceMarking() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {classes.map((classItem) => {
+                {[...classes]
+                  .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
+                  .map((classItem) => {
                   const markedCount = classItem.students.filter(s => s.status !== 'UNMARKED').length
                   const totalCount = classItem.students.length
                   return (
@@ -397,6 +446,20 @@ export function AttendanceMarking() {
                   <span>Date: {currentDate}</span>
                   <span>•</span>
                   <span>{selectedClass.students.length} {selectedClass.students.length === 1 ? 'student' : 'students'}</span>
+                  {(() => {
+                    const markedCount = selectedClass.students.filter(s => s.status !== 'UNMARKED').length
+                    if (markedCount > 0) {
+                      return (
+                        <>
+                          <span>•</span>
+                          <span className="font-medium text-[var(--foreground)]">
+                            {markedCount} already marked
+                          </span>
+                        </>
+                      )
+                    }
+                    return null
+                  })()}
                 </div>
               </div>
               <Button
@@ -408,6 +471,43 @@ export function AttendanceMarking() {
                 Back to Classes
               </Button>
             </div>
+
+            {/* Attendance Already Marked Indicator */}
+            {(() => {
+              const markedCount = selectedClass.students.filter(s => s.status !== 'UNMARKED').length
+              const totalCount = selectedClass.students.length
+              const isFullyMarked = markedCount === totalCount && totalCount > 0
+              
+              return markedCount > 0 ? (
+                <div className={`flex items-start gap-3 p-3 rounded-lg ${
+                  isFullyMarked 
+                    ? 'bg-green-50 border border-green-200' 
+                    : 'bg-blue-50 border border-blue-200'
+                }`}>
+                  <Info className={`h-5 w-5 flex-shrink-0 mt-0.5 ${
+                    isFullyMarked ? 'text-green-600' : 'text-blue-600'
+                  }`} />
+                  <div className="flex-1">
+                    <p className={`text-sm font-medium ${
+                      isFullyMarked ? 'text-green-900' : 'text-blue-900'
+                    }`}>
+                      {isFullyMarked 
+                        ? `All ${totalCount} students marked for this day`
+                        : `${markedCount} of ${totalCount} students marked for this day`
+                      }
+                    </p>
+                    <p className={`text-xs mt-1 ${
+                      isFullyMarked ? 'text-green-700' : 'text-blue-700'
+                    }`}>
+                      {isFullyMarked
+                        ? 'You can edit any student\'s attendance below. Changes will update existing records.'
+                        : 'You can mark remaining students or edit existing attendance. Changes will update existing records.'
+                      }
+                    </p>
+                  </div>
+                </div>
+              ) : null
+            })()}
 
             {/* Students Table */}
             {selectedClass.students.length === 0 ? (
@@ -427,7 +527,21 @@ export function AttendanceMarking() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {selectedClass.students.map((student) => (
+                      {[...selectedClass.students]
+                        .sort((a, b) => {
+                          // Sort by first name, then last name
+                          const aParts = a.name.split(' ')
+                          const bParts = b.name.split(' ')
+                          const aFirstName = aParts[0] || ''
+                          const bFirstName = bParts[0] || ''
+                          const aLastName = aParts.length > 1 ? aParts[aParts.length - 1] : ''
+                          const bLastName = bParts.length > 1 ? bParts[bParts.length - 1] : ''
+                          
+                          const firstNameCompare = aFirstName.localeCompare(bFirstName, undefined, { sensitivity: 'base' })
+                          if (firstNameCompare !== 0) return firstNameCompare
+                          return aLastName.localeCompare(bLastName, undefined, { sensitivity: 'base' })
+                        })
+                        .map((student) => (
                         <TableRow key={student.id} className="hover:bg-[var(--muted)]/50">
                           <TableCell>
                             <div>
@@ -517,12 +631,12 @@ export function AttendanceMarking() {
                 {saving ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Saving...
+                    {selectedClass.students.some(s => s.status !== 'UNMARKED') ? 'Updating...' : 'Saving...'}
                   </>
                 ) : (
                   <>
                     <CheckCircle className="h-4 w-4 mr-2" />
-                    Save Attendance
+                    {selectedClass.students.some(s => s.status !== 'UNMARKED') ? 'Update Attendance' : 'Save Attendance'}
                   </>
                 )}
               </Button>

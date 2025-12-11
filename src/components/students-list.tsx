@@ -251,10 +251,10 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
     const formattedStudent = {
       ...student,
       dateOfBirth: student.dateOfBirth instanceof Date ? student.dateOfBirth.toISOString().split('T')[0] : student.dateOfBirth,
-      enrollmentDate: student.enrollmentDate instanceof Date ? student.enrollmentDate.toLocaleDateString() : student.enrollmentDate,
-      createdAt: student.createdAt instanceof Date ? student.createdAt.toLocaleDateString() : student.createdAt,
-      updatedAt: student.updatedAt instanceof Date ? student.updatedAt.toLocaleDateString() : student.updatedAt,
-      lastAttendance: student.lastAttendance instanceof Date ? student.lastAttendance.toLocaleDateString() : student.lastAttendance,
+      enrollmentDate: student.enrollmentDate instanceof Date ? formatDate(student.enrollmentDate) : student.enrollmentDate,
+      createdAt: student.createdAt instanceof Date ? formatDate(student.createdAt) : student.createdAt,
+      updatedAt: student.updatedAt instanceof Date ? formatDate(student.updatedAt) : student.updatedAt,
+      lastAttendance: student.lastAttendance instanceof Date ? formatDate(student.lastAttendance) : student.lastAttendance,
       // Add missing fields for the modal
       name: `${student.firstName} ${student.lastName}`,
       firstName: student.firstName,
@@ -541,7 +541,7 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
                         </div>
                         {student.isArchived && student.archivedAt && (
                           <div className="text-sm text-gray-500">
-                            Archived on {new Date(student.archivedAt).toLocaleDateString()}
+                            Archived on {formatDate(student.archivedAt)}
                           </div>
                         )}
                     </div>

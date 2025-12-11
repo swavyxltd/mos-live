@@ -362,7 +362,9 @@ export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent, initi
                 <SelectValue placeholder={loadingClasses ? "Loading classes..." : "Choose a class"} />
               </SelectTrigger>
               <SelectContent>
-                {classes.map((cls) => (
+                {[...classes]
+                  .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
+                  .map((cls) => (
                   <SelectItem key={cls.id} value={cls.id}>
                     {cls.name}
                   </SelectItem>
@@ -384,7 +386,13 @@ export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent, initi
                 <SelectValue placeholder={loadingParents ? "Loading parents..." : "Choose a parent"} />
               </SelectTrigger>
               <SelectContent>
-                {parents.map((parent) => (
+                {[...parents]
+                  .sort((a, b) => {
+                    const aName = a.name || a.email || ''
+                    const bName = b.name || b.email || ''
+                    return aName.localeCompare(bName, undefined, { sensitivity: 'base' })
+                  })
+                  .map((parent) => (
                   <SelectItem key={parent.id} value={parent.id}>
                     {parent.name || parent.email}
                   </SelectItem>

@@ -133,7 +133,21 @@ export function TeachersList({ teachers, onEditTeacher }: TeachersListProps) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {teachers.map((teacher) => (
+              {[...teachers]
+                .sort((a, b) => {
+                  // Sort by name alphabetically
+                  const aParts = a.name.split(' ')
+                  const bParts = b.name.split(' ')
+                  const aFirstName = aParts[0] || ''
+                  const bFirstName = bParts[0] || ''
+                  const aLastName = aParts.length > 1 ? aParts[aParts.length - 1] : ''
+                  const bLastName = bParts.length > 1 ? bParts[bParts.length - 1] : ''
+                  
+                  const firstNameCompare = aFirstName.localeCompare(bFirstName, undefined, { sensitivity: 'base' })
+                  if (firstNameCompare !== 0) return firstNameCompare
+                  return aLastName.localeCompare(bLastName, undefined, { sensitivity: 'base' })
+                })
+                .map((teacher) => (
                 <TableRow key={teacher.id}>
                   <TableCell>
                     <div className="flex items-center">

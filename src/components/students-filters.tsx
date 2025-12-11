@@ -181,7 +181,9 @@ export function StudentsFilters({ classes, onFiltersChange }: StudentsFiltersPro
                           className="w-48 px-3 py-2 border border-gray-300 rounded-md"
                         >
                           <option value="all">All Classes</option>
-                          {classes.map((cls) => (
+                          {[...classes]
+                            .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
+                            .map((cls) => (
                             <option key={cls.id} value={cls.id}>
                               {cls.name}
                             </option>
