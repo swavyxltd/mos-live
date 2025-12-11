@@ -97,12 +97,17 @@ async function handlePOST(request: NextRequest) {
       }
     })
 
+    // For owner accounts, always require memorable word (either to set or verify)
+    const hasMemorableWord = !!(user as any).memorableWord
+    const needsMemorableWord = user.isSuperAdmin // Always require for owner accounts
+
     return NextResponse.json({
       success: true,
       signinToken,
       email: user.email,
       isSuperAdmin: user.isSuperAdmin,
-      needsMemorableWord: user.isSuperAdmin && !(user as any).memorableWord
+      needsMemorableWord,
+      hasMemorableWord // Indicates if word exists (for setting vs verifying)
     })
   } catch (error: any) {
     logger.error('Complete signin error', error)

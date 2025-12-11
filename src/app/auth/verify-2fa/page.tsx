@@ -17,8 +17,10 @@ function Verify2FAContent() {
   const [email, setEmail] = useState('')
   const [pendingUserId, setPendingUserId] = useState<string | null>(null)
   const [needsMemorableWord, setNeedsMemorableWord] = useState(false)
+  const [hasMemorableWord, setHasMemorableWord] = useState(false)
   const [memorableWord, setMemorableWord] = useState('')
   const [isSavingMemorableWord, setIsSavingMemorableWord] = useState(false)
+  const [isVerifyingMemorableWord, setIsVerifyingMemorableWord] = useState(false)
   const [showMemorableWordStep, setShowMemorableWordStep] = useState(false)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
@@ -147,9 +149,10 @@ function Verify2FAContent() {
       }
 
       // Check if owner account needs memorable word
-      // Only show if explicitly needed (column exists and user is owner without word)
+      // Always show for owner accounts (either to set or verify)
       if (sessionData.needsMemorableWord === true) {
         setNeedsMemorableWord(true)
+        setHasMemorableWord(sessionData.hasMemorableWord === true)
         setShowMemorableWordStep(true)
         setIsLoading(false)
         return
@@ -193,6 +196,7 @@ function Verify2FAContent() {
         setError('Failed to complete sign in. Please try again.')
         setIsLoading(false)
         setIsSavingMemorableWord(false)
+        setIsVerifyingMemorableWord(false)
         return
       }
 
@@ -215,15 +219,17 @@ function Verify2FAContent() {
         setError('An error occurred during sign in. Please try again.')
         setIsLoading(false)
         setIsSavingMemorableWord(false)
+        setIsVerifyingMemorableWord(false)
       }
     } catch (error) {
       setError('An error occurred during sign in. Please try again.')
       setIsLoading(false)
       setIsSavingMemorableWord(false)
+      setIsVerifyingMemorableWord(false)
     }
   }
 
-  const handleSaveMemorableWord = async (e: React.FormEvent) => {
+  const handleMemorableWord = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!memorableWord.trim()) {
@@ -242,48 +248,98 @@ function Verify2FAContent() {
       return
     }
 
-    setIsSavingMemorableWord(true)
-    setError('')
+    // If word doesn't exist, save it. If it exists, verify it.
+    if (!hasMemorableWord) {
+      // Save memorable word (first time setup)
+      setIsSavingMemorableWord(true)
+      setError('')
 
-    try {
-      // Get signin token first (we need it for completing signin)
-      const sessionResponse = await fetch('/api/auth/complete-signin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: pendingUserId })
-      })
-
-      const sessionData = await sessionResponse.json()
-
-      if (!sessionResponse.ok || !sessionData.success) {
-        setError(sessionData.error || 'Failed to get signin token. Please try again.')
-        setIsSavingMemorableWord(false)
-        return
-      }
-
-      // Save memorable word
-      const saveResponse = await fetch('/api/auth/save-memorable-word', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: pendingUserId,
-          memorableWord: memorableWord.trim()
+      try {
+        // Get signin token first (we need it for completing signin)
+        const sessionResponse = await fetch('/api/auth/complete-signin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: pendingUserId })
         })
-      })
 
-      const saveData = await saveResponse.json()
+        const sessionData = await sessionResponse.json()
 
-      if (!saveResponse.ok) {
-        setError(saveData.error || 'Failed to save memorable word. Please try again.')
+        if (!sessionResponse.ok || !sessionData.success) {
+          setError(sessionData.error || 'Failed to get signin token. Please try again.')
+          setIsSavingMemorableWord(false)
+          return
+        }
+
+        // Save memorable word
+        const saveResponse = await fetch('/api/auth/save-memorable-word', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: pendingUserId,
+            memorableWord: memorableWord.trim()
+          })
+        })
+
+        const saveData = await saveResponse.json()
+
+        if (!saveResponse.ok) {
+          setError(saveData.error || 'Failed to save memorable word. Please try again.')
+          setIsSavingMemorableWord(false)
+          return
+        }
+
+        // Memorable word saved - complete signin
+        await completeSignIn(sessionData.signinToken)
+      } catch (error) {
+        setError('An error occurred. Please try again.')
         setIsSavingMemorableWord(false)
-        return
       }
+    } else {
+      // Verify memorable word (subsequent sign-ins)
+      setIsVerifyingMemorableWord(true)
+      setError('')
 
-      // Memorable word saved - complete signin
-      await completeSignIn(sessionData.signinToken)
-    } catch (error) {
-      setError('An error occurred. Please try again.')
-      setIsSavingMemorableWord(false)
+      try {
+        // Verify memorable word
+        const verifyResponse = await fetch('/api/auth/verify-memorable-word', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: pendingUserId,
+            memorableWord: memorableWord.trim()
+          })
+        })
+
+        const verifyData = await verifyResponse.json()
+
+        if (!verifyResponse.ok) {
+          setError(verifyData.error || 'Incorrect memorable word. Please try again.')
+          setMemorableWord('') // Clear on error
+          setIsVerifyingMemorableWord(false)
+          return
+        }
+
+        // Memorable word verified - get signin token and complete signin
+        const sessionResponse = await fetch('/api/auth/complete-signin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: pendingUserId })
+        })
+
+        const sessionData = await sessionResponse.json()
+
+        if (!sessionResponse.ok || !sessionData.success) {
+          setError(sessionData.error || 'Failed to complete sign in. Please try again.')
+          setIsVerifyingMemorableWord(false)
+          return
+        }
+
+        // Complete signin
+        await completeSignIn(sessionData.signinToken)
+      } catch (error) {
+        setError('An error occurred. Please try again.')
+        setIsVerifyingMemorableWord(false)
+      }
     }
   }
 
@@ -378,13 +434,15 @@ function Verify2FAContent() {
 
           {/* Memorable Word Step - Only for owner accounts */}
           {showMemorableWordStep && needsMemorableWord ? (
-            <form onSubmit={handleSaveMemorableWord} className="space-y-6">
+            <form onSubmit={handleMemorableWord} className="space-y-6">
               <div>
                 <label htmlFor="memorableWord" className="block text-sm font-medium text-gray-700 mb-2">
                   Enter Memorable Word *
                 </label>
                 <p className="text-xs text-gray-500 mb-3">
-                  Please enter a memorable word for your owner account. This will be stored securely.
+                  {hasMemorableWord 
+                    ? 'Please enter your memorable word to continue.'
+                    : 'Please enter a memorable word for your owner account. This will be stored securely.'}
                 </p>
                 <input
                   id="memorableWord"
@@ -395,22 +453,28 @@ function Verify2FAContent() {
                     setError('')
                   }}
                   className="w-full h-11 px-4 text-base border-2 border-gray-200 rounded-lg focus:outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100 transition-colors"
-                  placeholder="Enter your memorable word"
-                  disabled={isSavingMemorableWord}
+                  placeholder={hasMemorableWord ? "Enter your memorable word" : "Enter your memorable word (e.g., Liverpool)"}
+                  disabled={isSavingMemorableWord || isVerifyingMemorableWord}
                   autoFocus
                   maxLength={50}
                 />
-                <p className="text-xs text-gray-500 mt-2">
-                  Minimum 3 characters
-                </p>
+                {!hasMemorableWord && (
+                  <p className="text-xs text-gray-500 mt-2">
+                    Minimum 3 characters
+                  </p>
+                )}
               </div>
 
               <button
                 type="submit"
-                disabled={isSavingMemorableWord || !memorableWord.trim() || memorableWord.trim().length < 3}
+                disabled={(isSavingMemorableWord || isVerifyingMemorableWord) || !memorableWord.trim() || memorableWord.trim().length < 3}
                 className="w-full h-11 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSavingMemorableWord ? 'Saving...' : 'Continue'}
+                {isSavingMemorableWord 
+                  ? 'Saving...' 
+                  : isVerifyingMemorableWord 
+                    ? 'Verifying...' 
+                    : 'Continue'}
               </button>
             </form>
           ) : (
