@@ -547,13 +547,24 @@ function ParentSignupForm() {
 
   if (loading) {
     return (
-      <div className="flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
-        <div className="flex w-[60vw] flex-col gap-6">
-          <a href="/" className="flex items-center gap-2 self-center">
-            <Image src="/logo.png" alt="Madrasah OS" width={128} height={32} className="h-8 w-auto" priority fetchPriority="high" />
-          </a>
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
+      <div className="min-h-screen relative flex items-center justify-center p-4" data-theme="light">
+        {/* Background image - same as auth page */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: 'url(/auth-bg.png)'
+          }}
+        />
+        
+        {/* Content - centered with relative z-index */}
+        <div className="relative z-10 w-full flex flex-col items-center justify-center gap-6 p-6 md:p-10">
+          <div className="flex w-[60vw] flex-col gap-6">
+            <a href="/" className="flex items-center gap-2 self-center">
+              <Image src="/logo.png" alt="Madrasah OS" width={128} height={32} className="h-8 w-auto" priority fetchPriority="high" />
+            </a>
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
+            </div>
           </div>
         </div>
       </div>
@@ -562,20 +573,31 @@ function ParentSignupForm() {
 
   if (success) {
     return (
-      <div className="flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
-        <div className="flex w-[60vw] flex-col gap-6">
-          <a href="/" className="flex items-center gap-2 self-center">
-            <Image src="/logo.png" alt="Madrasah OS" width={128} height={32} className="h-8 w-auto" priority fetchPriority="high" />
-          </a>
-          <div className="text-center py-8">
-            <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-neutral-900 mb-2">Check Your Email</h2>
-            <p className="text-sm text-neutral-600 mb-4">
-              We've sent a verification email to <strong>{formData.email}</strong>. Please click the link in the email to verify your account and complete the setup.
-            </p>
-            <p className="text-xs text-neutral-500">
-              Didn't receive the email? Check your spam folder or contact the madrasah for assistance.
-            </p>
+      <div className="min-h-screen relative flex items-center justify-center p-4" data-theme="light">
+        {/* Background image - same as auth page */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: 'url(/auth-bg.png)'
+          }}
+        />
+        
+        {/* Content - centered with relative z-index */}
+        <div className="relative z-10 w-full flex flex-col items-center justify-center gap-6 p-6 md:p-10">
+          <div className="flex w-[60vw] flex-col gap-6">
+            <a href="/" className="flex items-center gap-2 self-center">
+              <Image src="/logo.png" alt="Madrasah OS" width={128} height={32} className="h-8 w-auto" priority fetchPriority="high" />
+            </a>
+            <div className="text-center py-8">
+              <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
+              <h2 className="text-xl font-semibold text-neutral-900 mb-2">Check Your Email</h2>
+              <p className="text-sm text-neutral-600 mb-4">
+                We've sent a verification email to <strong>{formData.email}</strong>. Please click the link in the email to verify your account and complete the setup.
+              </p>
+              <p className="text-xs text-neutral-500">
+                Didn't receive the email? Check your spam folder or contact the madrasah for assistance.
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -586,7 +608,7 @@ function ParentSignupForm() {
   const pageTitle = `Create Your Parent Account`
   
   const pageSubtitle = applicationId && applicationData
-    ? `Your child's application has been accepted. Create your account to access the Parent Portal.`
+    ? `Alhamdulillah! Your child's application has been accepted. Create your account to access the Parent Portal and stay up to date with your child's progress.`
     : verifiedStudent
     ? `Verified: ${verifiedStudent.firstName} ${verifiedStudent.lastName}`
     : `Verify your child's details to create your Parent Portal account.`
@@ -1255,8 +1277,18 @@ function ParentSignupForm() {
   const showVerificationForm = !applicationId && !canProceedToSignup
 
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
-      <div className="flex w-full md:w-[60vw] flex-col gap-6">
+    <div className="min-h-screen relative flex items-center justify-center p-4" data-theme="light">
+      {/* Background image - same as auth page */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: 'url(/auth-bg.png)'
+        }}
+      />
+      
+      {/* Content - centered with relative z-index */}
+      <div className="relative z-10 w-full flex flex-col items-center justify-center gap-6 p-6 md:p-10">
+        <div className="flex w-full md:w-[60vw] flex-col gap-6">
         {/* Logo/Branding */}
         <a href="/" className="flex items-center gap-2 self-center">
           <Image src="/logo.png" alt="Madrasah OS" width={128} height={32} className="h-8 w-auto" priority fetchPriority="high" />
@@ -1440,6 +1472,7 @@ function ParentSignupForm() {
             Sign in
           </a>
         </p>
+        </div>
       </div>
     </div>
   )
@@ -1448,13 +1481,24 @@ function ParentSignupForm() {
 export default function ParentSignupPage() {
   return (
     <Suspense fallback={
-      <div className="flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
-        <div className="flex w-[60vw] flex-col gap-6">
-          <a href="/" className="flex items-center gap-2 self-center">
-            <Image src="/logo.png" alt="Madrasah OS" width={128} height={32} className="h-8 w-auto" priority fetchPriority="high" />
-          </a>
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
+      <div className="min-h-screen relative flex items-center justify-center p-4" data-theme="light">
+        {/* Background image - same as auth page */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: 'url(/auth-bg.png)'
+          }}
+        />
+        
+        {/* Content - centered with relative z-index */}
+        <div className="relative z-10 w-full flex flex-col items-center justify-center gap-6 p-6 md:p-10">
+          <div className="flex w-[60vw] flex-col gap-6">
+            <a href="/" className="flex items-center gap-2 self-center">
+              <Image src="/logo.png" alt="Madrasah OS" width={128} height={32} className="h-8 w-auto" priority fetchPriority="high" />
+            </a>
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
+            </div>
           </div>
         </div>
       </div>

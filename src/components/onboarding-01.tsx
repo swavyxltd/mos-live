@@ -247,7 +247,7 @@ export function Onboarding01({
 
   return (
     <div className="w-full">
-      <div className="w-full bg-white p-4 text-card-foreground">
+      <div className="w-full bg-white p-4 text-card-foreground rounded-lg border border-border">
           <div className="mb-4 mr-2 flex flex-col justify-between sm:flex-row sm:items-center">
             <h3 className="ml-2 font-semibold text-foreground">
               {title}
