@@ -369,7 +369,9 @@ export function StudentDetailModal({
                         {student.name}
                       </h2>
                       <p className="text-sm text-[var(--muted-foreground)]">
-                        {student.class} • {student.teacher}
+                        {student.class && student.class !== 'N/A' && student.class !== 'No Class'
+                          ? `${student.class}${student.teacher && student.teacher !== 'N/A' && student.teacher !== 'No Teacher' ? ` • ${student.teacher}` : ''}`
+                          : 'Not enrolled in any classes'}
                       </p>
                     </div>
                   </div>
@@ -451,7 +453,9 @@ export function StudentDetailModal({
                           <label className="text-xs text-[var(--muted-foreground)]">Class & Teacher</label>
                           <p className="text-sm text-[var(--foreground)] flex items-center gap-2">
                             <GraduationCap className="h-4 w-4 text-[var(--muted-foreground)]" />
-                            {student.class} - {student.teacher}
+                            {student.class && student.class !== 'N/A' && student.class !== 'No Class' 
+                              ? `${student.class}${student.teacher && student.teacher !== 'N/A' && student.teacher !== 'No Teacher' ? ` • ${student.teacher}` : ''}`
+                              : 'Not enrolled in any classes'}
                           </p>
                         </div>
                         <div>

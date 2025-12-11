@@ -139,35 +139,111 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
     return age
   }
 
-  const handleViewStudent = (student: Student) => {
-    // Format date objects as strings for the modal
-    const formattedStudent = {
-      ...student,
-      dateOfBirth: formatDate(student.dateOfBirth),
-      enrollmentDate: student.enrollmentDate instanceof Date ? student.enrollmentDate.toLocaleDateString() : student.enrollmentDate,
-      createdAt: student.createdAt instanceof Date ? student.createdAt.toLocaleDateString() : student.createdAt,
-      updatedAt: student.updatedAt instanceof Date ? student.updatedAt.toLocaleDateString() : student.updatedAt,
-      lastAttendance: student.lastAttendance instanceof Date ? student.lastAttendance.toLocaleDateString() : student.lastAttendance,
-      // Add missing fields for the modal
-      name: `${student.firstName} ${student.lastName}`,
-      firstName: student.firstName,
-      lastName: student.lastName,
-      age: student.age,
-      address: student.address,
-      parentName: student.parentName,
-      parentEmail: student.parentEmail,
-      parentPhone: student.parentPhone,
-      backupPhone: student.backupPhone || '',
-      allergies: student.allergies,
-      medicalNotes: student.medicalNotes,
-      status: student.status,
-      overallAttendance: student.attendanceRate || 0,
-      weeklyAttendance: student.weeklyAttendance || [],
-      recentTrend: 'stable' as 'up' | 'down' | 'stable'
+  const handleViewStudent = async (student: Student) => {
+    // Fetch full student details to get class and teacher info
+    try {
+      const response = await fetch(`/api/students/${student.id}`)
+      if (response.ok) {
+        const fullStudent = await response.json()
+        
+        // Get primary class and teacher
+        const primaryClass = fullStudent.StudentClass?.[0]?.Class || null
+        const classNames = fullStudent.StudentClass?.map((sc: any) => sc.Class?.name).filter(Boolean) || []
+        const className = classNames.length > 0 ? classNames.join(', ') : 'No Class'
+        const teacherName = primaryClass?.User?.name || 'No Teacher'
+        
+        // Format date objects as strings for the modal
+        const formattedStudent = {
+          ...student,
+          dateOfBirth: formatDate(student.dateOfBirth),
+          enrollmentDate: student.enrollmentDate instanceof Date ? student.enrollmentDate.toISOString() : student.enrollmentDate,
+          createdAt: student.createdAt instanceof Date ? student.createdAt.toISOString() : student.createdAt,
+          updatedAt: student.updatedAt instanceof Date ? student.updatedAt.toISOString() : student.updatedAt,
+          lastAttendance: student.lastAttendance instanceof Date ? student.lastAttendance.toISOString() : student.lastAttendance,
+          // Add missing fields for the modal
+          name: `${student.firstName} ${student.lastName}`,
+          firstName: student.firstName,
+          lastName: student.lastName,
+          age: student.age,
+          address: student.address,
+          class: className,
+          teacher: teacherName,
+          parentName: student.parentName,
+          parentEmail: student.parentEmail,
+          parentPhone: student.parentPhone,
+          backupPhone: student.backupPhone || '',
+          allergies: student.allergies,
+          medicalNotes: student.medicalNotes,
+          status: student.status,
+          overallAttendance: student.attendanceRate || 0,
+          weeklyAttendance: student.weeklyAttendance || [],
+          recentTrend: 'stable' as 'up' | 'down' | 'stable'
+        }
+        setSelectedStudent(formattedStudent)
+        setStartInEditMode(false)
+        setIsDetailModalOpen(true)
+      } else {
+        // Fallback if API fails - use available data
+        const formattedStudent = {
+          ...student,
+          dateOfBirth: formatDate(student.dateOfBirth),
+          enrollmentDate: student.enrollmentDate instanceof Date ? student.enrollmentDate.toISOString() : student.enrollmentDate,
+          createdAt: student.createdAt instanceof Date ? student.createdAt.toISOString() : student.createdAt,
+          updatedAt: student.updatedAt instanceof Date ? student.updatedAt.toISOString() : student.updatedAt,
+          lastAttendance: student.lastAttendance instanceof Date ? student.lastAttendance.toISOString() : student.lastAttendance,
+          name: `${student.firstName} ${student.lastName}`,
+          firstName: student.firstName,
+          lastName: student.lastName,
+          age: student.age,
+          address: student.address,
+          class: student.classes?.[0]?.name || 'No Class',
+          teacher: 'N/A',
+          parentName: student.parentName,
+          parentEmail: student.parentEmail,
+          parentPhone: student.parentPhone,
+          backupPhone: student.backupPhone || '',
+          allergies: student.allergies,
+          medicalNotes: student.medicalNotes,
+          status: student.status,
+          overallAttendance: student.attendanceRate || 0,
+          weeklyAttendance: student.weeklyAttendance || [],
+          recentTrend: 'stable' as 'up' | 'down' | 'stable'
+        }
+        setSelectedStudent(formattedStudent)
+        setStartInEditMode(false)
+        setIsDetailModalOpen(true)
+      }
+    } catch (error) {
+      // Fallback if API fails
+      const formattedStudent = {
+        ...student,
+        dateOfBirth: formatDate(student.dateOfBirth),
+        enrollmentDate: student.enrollmentDate instanceof Date ? student.enrollmentDate.toISOString() : student.enrollmentDate,
+        createdAt: student.createdAt instanceof Date ? student.createdAt.toISOString() : student.createdAt,
+        updatedAt: student.updatedAt instanceof Date ? student.updatedAt.toISOString() : student.updatedAt,
+        lastAttendance: student.lastAttendance instanceof Date ? student.lastAttendance.toISOString() : student.lastAttendance,
+        name: `${student.firstName} ${student.lastName}`,
+        firstName: student.firstName,
+        lastName: student.lastName,
+        age: student.age,
+        address: student.address,
+        class: student.classes?.[0]?.name || 'No Class',
+        teacher: 'N/A',
+        parentName: student.parentName,
+        parentEmail: student.parentEmail,
+        parentPhone: student.parentPhone,
+        backupPhone: student.backupPhone || '',
+        allergies: student.allergies,
+        medicalNotes: student.medicalNotes,
+        status: student.status,
+        overallAttendance: student.attendanceRate || 0,
+        weeklyAttendance: student.weeklyAttendance || [],
+        recentTrend: 'stable' as 'up' | 'down' | 'stable'
+      }
+      setSelectedStudent(formattedStudent)
+      setStartInEditMode(false)
+      setIsDetailModalOpen(true)
     }
-    setSelectedStudent(formattedStudent)
-    setStartInEditMode(false)
-    setIsDetailModalOpen(true)
   }
 
   const handleEditStudent = (student: Student) => {
