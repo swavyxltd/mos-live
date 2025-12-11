@@ -40,19 +40,28 @@ async function handleGET(request: NextRequest) {
         // Ignore if query fails
       }
 
+      // If connection succeeds, DATABASE_URL must be configured
+      // Check if it's a Neon connection (contains 'neon' or 'vercel-postgres')
+      const dbUrl = process.env.DATABASE_URL || ''
+      const isNeon = dbUrl.includes('neon.tech') || dbUrl.includes('neon')
+      const isVercelPostgres = dbUrl.includes('vercel-postgres')
+      const providerName = isNeon ? 'Neon' : isVercelPostgres ? 'Vercel Postgres' : 'PostgreSQL'
+
       checks.database = {
         status: 'connected',
-        provider: dbInfo,
+        provider: `${providerName} (${dbInfo})`,
         responseTime: `${dbResponseTime}ms`,
-        connectionString: process.env.DATABASE_URL ? '✓ Configured' : '✗ Missing',
+        connectionString: '✓ Configured', // If we got here, connection works, so URL is set
         details: dbResponseTime < 100 ? 'Excellent' : dbResponseTime < 500 ? 'Good' : 'Slow'
       }
       overallStatus.push('database')
     } catch (error: any) {
+      // If connection fails, check if DATABASE_URL is set
+      const hasDbUrl = !!process.env.DATABASE_URL
       checks.database = {
         status: 'disconnected',
         error: error?.message || 'Connection failed',
-        connectionString: process.env.DATABASE_URL ? '✗ Invalid' : '✗ Missing'
+        connectionString: hasDbUrl ? '✗ Invalid (connection failed)' : '✗ Missing (not configured)'
       }
     }
 
@@ -82,10 +91,23 @@ async function handleGET(request: NextRequest) {
           let priceInfo = 'Not configured'
           if (process.env.STRIPE_PRICE_ID) {
             try {
-              const price = await stripe.prices.retrieve(process.env.STRIPE_PRICE_ID)
-              priceInfo = `£${(price.unit_amount || 0) / 100} per ${price.recurring?.interval || 'month'}`
+              // Sanitize price ID - trim whitespace and remove control characters
+              const priceId = process.env.STRIPE_PRICE_ID.trim().replace(/[\r\n\t]/g, '')
+              
+              // Validate format (should start with 'price_')
+              if (!priceId.startsWith('price_')) {
+                priceInfo = `✗ Invalid format (must start with 'price_')`
+              } else {
+                const price = await stripe.prices.retrieve(priceId)
+                priceInfo = `£${(price.unit_amount || 0) / 100} per ${price.recurring?.interval || 'month'}`
+              }
             } catch (e: any) {
-              priceInfo = `✗ Invalid (${e?.message || 'Not found'})`
+              // Provide more helpful error message
+              let errorMsg = e?.message || 'Not found'
+              if (errorMsg.includes('forbidden characters') || errorMsg.includes('control characters')) {
+                errorMsg = 'Price ID contains invalid characters (check for whitespace/newlines in environment variable)'
+              }
+              priceInfo = `✗ Invalid (${errorMsg})`
             }
           }
 
@@ -139,12 +161,28 @@ async function handleGET(request: NextRequest) {
           const resendResponseTime = Date.now() - resendStart
 
           if (resendResponse.ok) {
+            // Get from address from platform settings (database) or environment variable
+            let fromAddress = 'Not set'
+            try {
+              const platformSettings = await prisma.platform_settings.findFirst()
+              if (platformSettings?.emailFromAddress) {
+                fromAddress = platformSettings.emailFromAddress
+              } else if (process.env.RESEND_FROM) {
+                fromAddress = process.env.RESEND_FROM
+              } else if (process.env.EMAIL_FROM_ADDRESS) {
+                fromAddress = process.env.EMAIL_FROM_ADDRESS
+              }
+            } catch (e) {
+              // If we can't get from settings, fall back to env var
+              fromAddress = process.env.RESEND_FROM || process.env.EMAIL_FROM_ADDRESS || 'Not set'
+            }
+
             checks.email = {
               status: 'connected',
               provider: 'Resend',
               responseTime: `${resendResponseTime}ms`,
               apiKey: '✓ Configured',
-              fromAddress: process.env.EMAIL_FROM_ADDRESS || 'Not set'
+              fromAddress: fromAddress
             }
             overallStatus.push('email')
           } else {
