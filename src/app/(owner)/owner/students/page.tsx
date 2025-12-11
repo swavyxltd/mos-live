@@ -58,7 +58,8 @@ export default function OwnerStudentsPage() {
   const [dataLoading, setDataLoading] = useState(true)
   
   // Modal states
-  const [selectedStudent, setSelectedStudent] = useState<any>(null)
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null)
+  const [selectedStudent, setSelectedStudent] = useState<any>(null) // For edit modal
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [allClasses, setAllClasses] = useState<any[]>([])
@@ -210,7 +211,7 @@ export default function OwnerStudentsPage() {
           weeklyAttendance: [], // Would need to fetch from attendance API
           recentTrend: 'stable' as const
         }
-        setSelectedStudent(detailStudent)
+        setSelectedStudentId(student.id)
         setIsViewModalOpen(true)
       } else {
         toast.error('Failed to load student details')
@@ -240,18 +241,18 @@ export default function OwnerStudentsPage() {
     // Refresh the student list
     fetchStudents()
     setIsEditModalOpen(false)
-    setSelectedStudent(null)
+    setSelectedStudentId(null)
     toast.success('Student updated successfully!')
   }
 
   const handleCloseViewModal = () => {
     setIsViewModalOpen(false)
-    setSelectedStudent(null)
+    setSelectedStudentId(null)
   }
 
   const handleCloseEditModal = () => {
     setIsEditModalOpen(false)
-    setSelectedStudent(null)
+    setSelectedStudentId(null)
   }
 
   const getStatusBadge = (status: string) => {
@@ -573,11 +574,15 @@ export default function OwnerStudentsPage() {
 
       {/* View Student Modal */}
       <StudentDetailModal
-        student={selectedStudent}
+        studentId={selectedStudentId}
         isOpen={isViewModalOpen}
         onClose={handleCloseViewModal}
-        onEdit={handleEditStudent}
-        classes={allClasses}
+        onEdit={(studentId) => {
+          const student = students.find(s => s.id === studentId)
+          if (student) {
+            handleEditStudent(student)
+          }
+        }}
       />
 
       {/* Edit Student Modal */}

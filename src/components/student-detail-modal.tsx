@@ -1,18 +1,16 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { Textarea } from '@/components/ui/textarea'
 import { 
-  CheckCircle, 
-  XCircle, 
-  Clock, 
   X,
   User,
-  Calendar,
-  ChevronLeft,
-  ChevronRight,
   Mail,
   Phone,
   MapPin,
@@ -22,213 +20,258 @@ import {
   UserCheck,
   Archive,
   Edit,
-  TrendingUp,
-  TrendingDown,
-  Minus
+  Calendar,
+  DollarSign,
+  FileText,
+  Activity,
+  CheckCircle,
+  XCircle,
+  Clock,
+  ExternalLink,
+  Loader2,
+  Plus
 } from 'lucide-react'
 import { getAttendanceRating } from '@/lib/attendance-ratings'
 import { PhoneLink } from './phone-link'
+import { useStaffPermissions } from '@/lib/staff-permissions'
 import { toast } from 'sonner'
 import { formatDate } from '@/lib/utils'
 
-interface AttendanceDay {
-  day: string
-  date: string
-  status: 'PRESENT' | 'ABSENT' | 'LATE' | 'NOT_SCHEDULED'
-  time?: string
-}
-
-interface StudentDetail {
+// Comprehensive student data interface
+interface StudentDetailsData {
   id: string
-  name: string
   firstName: string
   lastName: string
-  dateOfBirth: string
+  name: string
+  dateOfBirth: string | null
   age: number
-  address: string
-  class: string
-  teacher: string
-  parentName: string
-  parentEmail: string
-  parentPhone: string
-  backupPhone: string
-  allergies: string
-  medicalNotes: string
+  allergies: string | null
+  medicalNotes: string | null
   enrollmentDate: string
-  status: 'ACTIVE' | 'INACTIVE'
+  status: 'ACTIVE' | 'ARCHIVED'
   isArchived: boolean
-  archivedAt?: string
-  overallAttendance: number
-  weeklyAttendance: AttendanceDay[]
-  recentTrend: 'up' | 'down' | 'stable'
-}
-
-interface StudentDetailModalProps {
-  student: StudentDetail | null
-  isOpen: boolean
-  onClose: () => void
-  onEdit?: (student: StudentDetail) => void
-  onDelete?: (studentId: string) => void
-  onArchive?: (studentId: string, isArchived: boolean) => void
-  startInEditMode?: boolean
-  classes?: Array<{
+  archivedAt: string | null
+  studentId: string
+  classes: Array<{
     id: string
     name: string
+    teacher: {
+      id: string
+      name: string
+      email: string
+    } | null
+  }>
+  parents: Array<{
+    id: string
+    name: string
+    email: string
+    phone: string | null
+    backupPhone: string | null
+    isPrimary: boolean
+  }>
+  attendance: {
+    overall: number
+    stats: {
+      present: number
+      absent: number
+      late: number
+      total: number
+    }
+    recent: Array<{
+      id: string
+      date: string
+      status: string
+      time: string | null
+      class: {
+        id: string
+        name: string
+      } | null
+    }>
+  }
+  fees: {
+    currentBalance: number
+    totalPaidThisYear: number
+    paymentRecords: Array<{
+      id: string
+      month: string
+      amountP: number
+      method: string | null
+      status: string
+      paidAt: string | null
+      notes: string | null
+      reference: string | null
+      class: {
+        id: string
+        name: string
+      } | null
+      createdAt: string
+    }>
+    invoices: Array<{
+      id: string
+      invoiceNumber: string | null
+      amountP: number
+      currency: string
+      status: string
+      dueDate: string | null
+      paidAt: string | null
+      createdAt: string
+    }>
+  }
+  notes: Array<{
+    id: string
+    body: string
+    createdAt: string
+    author: {
+      id: string
+      name: string
+      email: string
+    } | null
+  }>
+  activity: Array<{
+    id: string
+    action: string
+    targetType: string
+    data: any
+    createdAt: string
+    actor: {
+      id: string
+      name: string
+      email: string
+    } | null
   }>
 }
 
+interface StudentDetailModalProps {
+  studentId?: string | null // New: fetch from API
+  student?: any | null // Legacy: pass student object
+  isOpen: boolean
+  onClose: () => void
+  onEdit?: (studentId: string) => void
+  onArchive?: (studentId: string, isArchived: boolean) => void
+}
+
 export function StudentDetailModal({ 
-  student, 
+  studentId,
+  student: legacyStudent,
   isOpen, 
   onClose, 
-  onEdit, 
-  onDelete, 
-  onArchive,
-  startInEditMode = false, 
-  classes = [] 
+  onEdit,
+  onArchive
 }: StudentDetailModalProps) {
-  const [selectedWeek, setSelectedWeek] = useState(new Date())
+  const { data: session } = useSession()
+  const router = useRouter()
+  const [studentData, setStudentData] = useState<StudentDetailsData | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState('attendance')
   const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false)
   const [isArchiving, setIsArchiving] = useState(false)
-  const [weeklyAttendance, setWeeklyAttendance] = useState<AttendanceDay[]>([])
-  const [isLoadingAttendance, setIsLoadingAttendance] = useState(false)
-  const [scheduledDays, setScheduledDays] = useState<string[]>([])
-  const [enrollmentDate, setEnrollmentDate] = useState<Date | null>(null)
+  const [newNote, setNewNote] = useState('')
+  const [isSavingNote, setIsSavingNote] = useState(false)
 
-  // Get enrollment date - earliest class enrollment or student creation date
+  // Get user permissions
+  const staffSubrole = (session?.user?.staffSubrole || 'TEACHER') as any
+  const { canViewSection, isAdmin, isFinanceOfficer } = useStaffPermissions(
+    session?.user ? {
+      id: session.user.id,
+      email: session.user.email || '',
+      name: session.user.name || '',
+      isSuperAdmin: session.user.isSuperAdmin
+    } : undefined,
+    staffSubrole
+  )
+
+  const canViewFees = session?.user?.isSuperAdmin || isAdmin() || isFinanceOfficer() || canViewSection('fees')
+
+  // Fetch student data
   useEffect(() => {
-    if (student) {
-      // Parse enrollment date from student data
-      const enrollment = new Date(student.enrollmentDate)
-      setEnrollmentDate(enrollment)
-      
-      // Set initial week to enrollment date or current week, whichever is later
-      const today = new Date()
-      const weekStart = getWeekStart(today)
-      const enrollmentWeekStart = getWeekStart(enrollment)
-      
-      // If enrollment is in the future relative to current week, use enrollment week
-      // Otherwise use current week
-      if (enrollmentWeekStart > weekStart) {
-        setSelectedWeek(enrollment)
-      } else {
-        setSelectedWeek(today)
-      }
+    const idToFetch = studentId || legacyStudent?.id
+    if (isOpen && idToFetch) {
+      fetchStudentDetails(idToFetch)
+    } else if (isOpen) {
+      setStudentData(null)
+      setLoading(false)
     }
-  }, [student])
+  }, [isOpen, studentId, legacyStudent?.id])
 
-  const getWeekStart = (date: Date) => {
-    const start = new Date(date)
-    const day = start.getDay()
-    const diff = start.getDate() - day + (day === 0 ? -6 : 1) // Monday
-    start.setDate(diff)
-    start.setHours(0, 0, 0, 0)
-    return start
-  }
-
-  const getWeekEnd = (date: Date) => {
-    const end = getWeekStart(date)
-    end.setDate(end.getDate() + 6) // Sunday
-    end.setHours(23, 59, 59, 999)
-    return end
-  }
-
-  const fetchWeeklyAttendance = useCallback(async () => {
-    if (!student || !enrollmentDate) return
+  const fetchStudentDetails = async (id: string) => {
+    if (!id) return
     
-    setIsLoadingAttendance(true)
+    setLoading(true)
     try {
-      const weekStart = getWeekStart(selectedWeek)
-      const weekEnd = getWeekEnd(selectedWeek)
-      
-      // Don't fetch if week is before enrollment
-      if (weekEnd < enrollmentDate) {
-        setWeeklyAttendance([])
-        setIsLoadingAttendance(false)
-        return
-      }
-
-      // Adjust start date to enrollment date if week starts before enrollment
-      const actualStart = weekStart < enrollmentDate ? enrollmentDate : weekStart
-      
-      const response = await fetch(
-        `/api/students/${student.id}/attendance?startDate=${actualStart.toISOString()}&endDate=${weekEnd.toISOString()}`
-      )
-      
+      const response = await fetch(`/api/students/${id}/details`)
       if (response.ok) {
-        const responseData = await response.json()
-        const attendanceData = responseData.attendance || []
-        const apiScheduledDays = responseData.scheduledDays || []
-        
-        setScheduledDays(apiScheduledDays)
-        
-        const dayNameMap: { [key: string]: string } = {
-          'Monday': 'Mon',
-          'Tuesday': 'Tue',
-          'Wednesday': 'Wed',
-          'Thursday': 'Thu',
-          'Friday': 'Fri',
-          'Saturday': 'Sat',
-          'Sunday': 'Sun'
-        }
-        
-        const scheduledDayAbbrevs = apiScheduledDays.map((day: string) => dayNameMap[day] || day)
-        const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-        const fullDayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-        
-        const attendanceDays: AttendanceDay[] = []
-        const currentDate = new Date(weekStart)
-        
-        while (currentDate <= weekEnd) {
-          // Skip dates before enrollment
-          if (currentDate < enrollmentDate) {
-            currentDate.setDate(currentDate.getDate() + 1)
-            continue
-          }
-          
-          const dayIndex = currentDate.getDay()
-          const dayName = daysOfWeek[dayIndex === 0 ? 6 : dayIndex - 1]
-          const fullDayName = fullDayNames[dayIndex === 0 ? 6 : dayIndex - 1]
-          
-          const isScheduled = scheduledDayAbbrevs.length > 0 
-            ? (scheduledDayAbbrevs.includes(dayName) || apiScheduledDays.includes(fullDayName))
-            : false
-          
-          const today = new Date()
-          today.setHours(0, 0, 0, 0)
-          const isFuture = currentDate > today
-          
-          if (isScheduled) {
-            const dayAttendance = attendanceData.find((a: any) => {
-              const aDate = new Date(a.date)
-              return aDate.toDateString() === currentDate.toDateString()
-            })
-
-            attendanceDays.push({
-              day: dayName,
-              date: currentDate.toISOString().split('T')[0],
-              status: isFuture ? 'NOT_SCHEDULED' : (dayAttendance?.status || 'ABSENT'),
-              time: dayAttendance?.time || undefined
-            })
-          }
-          
-          currentDate.setDate(currentDate.getDate() + 1)
-        }
-        
-        setWeeklyAttendance(attendanceDays)
+        const data = await response.json()
+        setStudentData(data)
+      } else {
+        toast.error('Failed to load student details')
       }
     } catch (error) {
-      console.error('Failed to fetch attendance', error)
+      console.error('Failed to fetch student details', error)
+      toast.error('Failed to load student details')
     } finally {
-      setIsLoadingAttendance(false)
+      setLoading(false)
     }
-  }, [student, selectedWeek, enrollmentDate])
+  }
 
-  useEffect(() => {
-    if (student && isOpen && enrollmentDate) {
-      fetchWeeklyAttendance()
+  const handleAddNote = async () => {
+    if (!studentData || !newNote.trim()) return
+
+    setIsSavingNote(true)
+    try {
+      const response = await fetch(`/api/students/${studentData.id}/notes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          body: newNote.trim()
+        }),
+      })
+
+      if (response.ok) {
+        toast.success('Note added successfully')
+        setNewNote('')
+        // Refresh student data
+        await fetchStudentDetails()
+      } else {
+        toast.error('Failed to add note')
+      }
+    } catch (error) {
+      console.error('Failed to add note', error)
+      toast.error('Failed to add note')
+    } finally {
+      setIsSavingNote(false)
     }
-  }, [student, isOpen, selectedWeek, enrollmentDate, fetchWeeklyAttendance])
+  }
+
+  const handleConfirmArchive = async () => {
+    if (!studentData || !onArchive) return
+    
+    setIsArchiving(true)
+    try {
+      const response = await fetch(`/api/students/${studentData.id}/archive`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          isArchived: true
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to archive student')
+      }
+
+      onArchive(studentData.id, true)
+      toast.success('Student archived successfully')
+      setIsArchiveDialogOpen(false)
+    } catch (error) {
+      toast.error('Failed to archive student')
+    } finally {
+      setIsArchiving(false)
+    }
+  }
 
   useEffect(() => {
     if (isOpen) {
@@ -242,7 +285,31 @@ export function StudentDetailModal({
     }
   }, [isOpen])
 
-  if (!isOpen || !student) return null
+  // Don't render if not open
+  if (!isOpen) return null
+
+  // Show loading state
+  if (loading || !studentData) {
+    return (
+      <div 
+        className="fixed inset-0 bg-white/20 backdrop-blur-md flex items-center justify-center z-50 p-4"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            onClose()
+          }
+        }}
+      >
+        <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-md p-8">
+          <div className="flex items-center gap-3">
+            <Loader2 className="h-5 w-5 animate-spin text-[var(--muted-foreground)]" />
+            <span className="text-sm text-[var(--muted-foreground)]">Loading student details...</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const attendanceRating = getAttendanceRating(studentData.attendance.overall)
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -270,79 +337,18 @@ export function StudentDetailModal({
     }
   }
 
-  const formatWeekRange = (date: Date) => {
-    const start = getWeekStart(date)
-    const end = getWeekEnd(date)
-    return `${start.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })} - ${end.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })}`
-  }
-
-  const handlePreviousWeek = () => {
-    if (!enrollmentDate) return
-    
-    const previousWeek = new Date(selectedWeek)
-    previousWeek.setDate(previousWeek.getDate() - 7)
-    
-    // Don't allow going before enrollment date
-    const enrollmentWeekStart = getWeekStart(enrollmentDate)
-    const newWeekStart = getWeekStart(previousWeek)
-    
-    if (newWeekStart >= enrollmentWeekStart) {
-      setSelectedWeek(previousWeek)
+  const getPaymentStatusColor = (status: string) => {
+    switch (status) {
+      case 'PAID':
+        return 'bg-green-100 text-green-800 border-green-200'
+      case 'PENDING':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200'
+      case 'OVERDUE':
+        return 'bg-red-100 text-red-800 border-red-200'
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200'
     }
   }
-
-  const handleNextWeek = () => {
-    const nextWeek = new Date(selectedWeek)
-    nextWeek.setDate(nextWeek.getDate() + 7)
-    const today = new Date()
-    
-    // Don't allow going past today
-    if (getWeekStart(nextWeek) <= getWeekStart(today)) {
-      setSelectedWeek(nextWeek)
-    }
-  }
-
-  const handleCurrentWeek = () => {
-    setSelectedWeek(new Date())
-  }
-
-  const handleConfirmArchive = async () => {
-    if (!student || !onArchive) return
-    
-    setIsArchiving(true)
-    try {
-      const response = await fetch(`/api/students/${student.id}/archive`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          isArchived: true
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to archive student')
-      }
-
-      onArchive(student.id, true)
-      toast.success('Student archived successfully')
-      setIsArchiveDialogOpen(false)
-    } catch (error) {
-      toast.error('Failed to archive student')
-    } finally {
-      setIsArchiving(false)
-    }
-  }
-
-  const attendanceRating = getAttendanceRating(student.overallAttendance)
-  const weekStart = getWeekStart(selectedWeek)
-  const weekEnd = getWeekEnd(selectedWeek)
-  const canGoBack = enrollmentDate ? getWeekStart(selectedWeek) > getWeekStart(enrollmentDate) : false
-  const canGoForward = getWeekStart(selectedWeek) < getWeekStart(new Date())
-  
-  const weekPresentCount = weeklyAttendance.filter(d => d.status === 'PRESENT' || d.status === 'LATE').length
-  const weekScheduledCount = weeklyAttendance.filter(d => d.status !== 'NOT_SCHEDULED').length
 
   return (
     <>
@@ -354,42 +360,56 @@ export function StudentDetailModal({
           }
         }}
       >
-        <div className="w-[95vw] sm:w-[90vw] md:w-[70vw] lg:w-[60vw] max-w-4xl my-8">
+        <div className="w-[95vw] sm:w-[90vw] md:w-[85vw] lg:w-[80vw] max-w-6xl my-8">
           <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-md overflow-hidden">
             {/* Header */}
-            <div className="p-4 sm:p-6 border-b border-[var(--border)]">
+            <div className="p-4 sm:p-6 border-b border-[var(--border)] bg-[var(--muted)]/30">
               <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-[var(--muted)]">
-                      <User className="h-5 w-5 text-[var(--foreground)]" />
+                    <div className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 bg-[var(--muted)]">
+                      <User className="h-6 w-6 text-[var(--foreground)]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h2 className="text-lg sm:text-xl font-semibold text-[var(--foreground)] truncate">
-                        {student.name}
+                      <h2 className="text-xl sm:text-2xl font-semibold text-[var(--foreground)] truncate">
+                        {studentData.name}
                       </h2>
-                      <p className="text-sm text-[var(--muted-foreground)]">
-                        {student.class && student.class !== 'N/A' && student.class !== 'No Class'
-                          ? `${student.class}${student.teacher && student.teacher !== 'N/A' && student.teacher !== 'No Teacher' ? ` • ${student.teacher}` : ''}`
-                          : 'Not enrolled in any classes'}
-                      </p>
+                      <div className="flex items-center gap-2 flex-wrap mt-1">
+                        <span className="text-sm text-[var(--muted-foreground)]">Age {studentData.age}</span>
+                        {studentData.classes.length > 0 && (
+                          <>
+                            <span className="text-sm text-[var(--muted-foreground)]">•</span>
+                            <span className="text-sm text-[var(--muted-foreground)] truncate">
+                              {studentData.classes.map(c => c.name).join(', ')}
+                            </span>
+                            {studentData.classes[0]?.teacher && (
+                              <>
+                                <span className="text-sm text-[var(--muted-foreground)]">•</span>
+                                <span className="text-sm text-[var(--muted-foreground)] truncate">
+                                  {studentData.classes[0].teacher.name}
+                                </span>
+                              </>
+                            )}
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <Badge
                       variant="outline"
                       className={
-                        student.isArchived
+                        studentData.isArchived
                           ? 'bg-red-100 text-red-800 border border-red-200'
-                          : student.status === 'ACTIVE'
+                          : studentData.status === 'ACTIVE'
                             ? 'bg-[#e8f5e9] text-[#1b5e20] border border-[#c8e6c9]'
                             : 'bg-[#f5f5f5] text-[#374151] border border-[#e5e7eb]'
                       }
                     >
-                      {student.isArchived ? 'ARCHIVED' : student.status}
+                      {studentData.isArchived ? 'ARCHIVED' : studentData.status}
                     </Badge>
                     <Badge variant="outline" className={`${attendanceRating.bgColor} ${attendanceRating.color} ${attendanceRating.borderColor} border`}>
-                      {student.overallAttendance}% • {attendanceRating.text}
+                      {studentData.attendance.overall}% • {attendanceRating.text}
                     </Badge>
                   </div>
                 </div>
@@ -398,14 +418,17 @@ export function StudentDetailModal({
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => onEdit(student)}
+                      onClick={() => {
+                        onEdit(studentData.id)
+                        onClose()
+                      }}
                       className="hidden sm:flex"
                     >
                       <Edit className="h-4 w-4 mr-2" />
                       Edit
                     </Button>
                   )}
-                  {onArchive && !student.isArchived && (
+                  {onArchive && !studentData.isArchived && (
                     <Button
                       variant="destructive"
                       size="sm"
@@ -419,290 +442,436 @@ export function StudentDetailModal({
                     onClick={onClose}
                     className="p-1 rounded-md hover:bg-[var(--accent)] transition-colors flex-shrink-0"
                   >
-                    <X className="h-4 w-4 text-[var(--muted-foreground)]" />
+                    <X className="h-5 w-5 text-[var(--muted-foreground)]" />
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Content */}
-            <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 max-h-[calc(90vh-200px)] overflow-y-auto">
-              {/* Student Information */}
-              <div className="border border-[var(--border)] rounded-lg p-4">
-                <div className="flex items-start gap-3 mb-4">
-                  <User className="h-5 w-5 text-[var(--muted-foreground)] flex-shrink-0 mt-0.5" />
-                  <div className="flex-1">
-                    <h3 className="text-sm font-semibold text-[var(--foreground)] mb-3">Student Information</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                      <div className="space-y-2">
-                        <div>
-                          <label className="text-xs text-[var(--muted-foreground)]">Full Name</label>
-                          <p className="text-sm font-medium text-[var(--foreground)]">{student.name}</p>
-                        </div>
-                        <div>
-                          <label className="text-xs text-[var(--muted-foreground)]">Age</label>
-                          <p className="text-sm text-[var(--foreground)]">Age {student.age}</p>
-                        </div>
-                        <div>
-                          <label className="text-xs text-[var(--muted-foreground)]">Date of Birth</label>
-                          <p className="text-sm text-[var(--foreground)]">{formatDate(student.dateOfBirth)}</p>
+            {/* Content - Two Column Layout */}
+            <div className="p-4 sm:p-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Left Column - Student Info & Parents */}
+                <div className="lg:col-span-1 space-y-4">
+                  {/* Core Student Information */}
+                  <div className="border border-[var(--border)] rounded-lg p-4">
+                    <h3 className="text-sm font-semibold text-[var(--foreground)] mb-3 flex items-center gap-2">
+                      <User className="h-4 w-4 text-[var(--muted-foreground)]" />
+                      Student Information
+                    </h3>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-xs text-[var(--muted-foreground)]">Date of Birth</label>
+                        <p className="text-sm text-[var(--foreground)]">
+                          {studentData.dateOfBirth ? formatDate(studentData.dateOfBirth) : 'Not provided'}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-xs text-[var(--muted-foreground)]">Classes</label>
+                        <div className="space-y-1">
+                          {studentData.classes.length > 0 ? (
+                            studentData.classes.map((cls, idx) => (
+                              <p key={idx} className="text-sm text-[var(--foreground)] flex items-center gap-2">
+                                <GraduationCap className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
+                                {cls.name}
+                                {cls.teacher && (
+                                  <span className="text-xs text-[var(--muted-foreground)]">
+                                    • {cls.teacher.name}
+                                  </span>
+                                )}
+                              </p>
+                            ))
+                          ) : (
+                            <p className="text-sm text-[var(--muted-foreground)]">Not enrolled in any classes</p>
+                          )}
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <div>
-                          <label className="text-xs text-[var(--muted-foreground)]">Class & Teacher</label>
-                          <p className="text-sm text-[var(--foreground)] flex items-center gap-2">
-                            <GraduationCap className="h-4 w-4 text-[var(--muted-foreground)]" />
-                            {student.class && student.class !== 'N/A' && student.class !== 'No Class' 
-                              ? `${student.class}${student.teacher && student.teacher !== 'N/A' && student.teacher !== 'No Teacher' ? ` • ${student.teacher}` : ''}`
-                              : 'Not enrolled in any classes'}
-                          </p>
-                        </div>
-                        <div>
-                          <label className="text-xs text-[var(--muted-foreground)]">Enrollment Date</label>
-                          <p className="text-sm text-[var(--foreground)]">{formatDate(student.enrollmentDate)}</p>
-                        </div>
-                        {student.address && (
-                          <div>
-                            <label className="text-xs text-[var(--muted-foreground)]">Address</label>
-                            <p className="text-sm text-[var(--foreground)] flex items-center gap-2">
-                              <MapPin className="h-4 w-4 text-[var(--muted-foreground)] flex-shrink-0" />
-                              <span className="truncate">{student.address}</span>
-                            </p>
-                          </div>
-                        )}
+                      <div>
+                        <label className="text-xs text-[var(--muted-foreground)]">Enrollment Date</label>
+                        <p className="text-sm text-[var(--foreground)]">{formatDate(studentData.enrollmentDate)}</p>
                       </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Parent Information */}
-              <div className="border border-[var(--border)] rounded-lg p-4">
-                <div className="flex items-start gap-3 mb-4">
-                  <UserCheck className="h-5 w-5 text-[var(--muted-foreground)] flex-shrink-0 mt-0.5" />
-                  <div className="flex-1">
-                    <h3 className="text-sm font-semibold text-[var(--foreground)] mb-3">Parent Information</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                      <div className="space-y-2">
-                        <div>
-                          <label className="text-xs text-[var(--muted-foreground)]">Parent Name</label>
-                          <p className="text-sm text-[var(--foreground)]">{student.parentName || 'N/A'}</p>
-                        </div>
-                        <div>
-                          <label className="text-xs text-[var(--muted-foreground)]">Email</label>
-                          <p className="text-sm text-[var(--foreground)] flex items-center gap-2 truncate">
-                            <Mail className="h-4 w-4 text-[var(--muted-foreground)] flex-shrink-0" />
-                            <span className="truncate">{student.parentEmail || 'N/A'}</span>
-                          </p>
-                        </div>
+                      <div>
+                        <label className="text-xs text-[var(--muted-foreground)]">Student ID</label>
+                        <p className="text-sm font-mono text-[var(--foreground)]">{studentData.studentId.slice(0, 8)}...</p>
                       </div>
-                      <div className="space-y-2">
-                        <div>
-                          <label className="text-xs text-[var(--muted-foreground)]">Phone</label>
-                          <p className="text-sm text-[var(--foreground)] flex items-center gap-2">
-                            <Phone className="h-4 w-4 text-[var(--muted-foreground)] flex-shrink-0" />
-                            {student.parentPhone ? <PhoneLink phone={student.parentPhone} /> : 'N/A'}
-                          </p>
-                        </div>
-                        {student.backupPhone && (
-                          <div>
-                            <label className="text-xs text-[var(--muted-foreground)]">Backup Phone</label>
-                            <p className="text-sm text-[var(--foreground)] flex items-center gap-2">
-                              <Phone className="h-4 w-4 text-[var(--muted-foreground)] flex-shrink-0" />
-                              <PhoneLink phone={student.backupPhone} />
-                            </p>
-                          </div>
-                        )}
+                      <div>
+                        <label className="text-xs text-[var(--muted-foreground)]">Status</label>
+                        <p className="text-sm text-[var(--foreground)]">
+                          <Badge
+                            variant="outline"
+                            className={
+                              studentData.isArchived
+                                ? 'bg-red-100 text-red-800 border border-red-200'
+                                : 'bg-[#e8f5e9] text-[#1b5e20] border border-[#c8e6c9]'
+                            }
+                          >
+                            {studentData.isArchived ? 'ARCHIVED' : studentData.status}
+                          </Badge>
+                        </p>
                       </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Medical Information */}
-              {(student.allergies || student.medicalNotes) && (
-                <div className="border border-[var(--border)] rounded-lg p-4">
-                  <div className="flex items-start gap-3 mb-4">
-                    <Heart className="h-5 w-5 text-[var(--muted-foreground)] flex-shrink-0 mt-0.5" />
-                    <div className="flex-1">
-                      <h3 className="text-sm font-semibold text-[var(--foreground)] mb-3">Medical Information</h3>
-                      <div className="space-y-2">
-                        {student.allergies && (
-                          <div>
-                            <label className="text-xs text-[var(--muted-foreground)]">Allergies</label>
-                            <p className="text-sm text-[var(--foreground)] flex items-center gap-2">
-                              {student.allergies !== 'None' ? (
-                                <AlertTriangle className="h-4 w-4 text-red-500 flex-shrink-0" />
+                      {(studentData.allergies || studentData.medicalNotes) && (
+                        <div className="pt-3 border-t border-[var(--border)]">
+                          <label className="text-xs text-[var(--muted-foreground)] flex items-center gap-1 mb-2">
+                            <Heart className="h-3.5 w-3.5" />
+                            Medical Information
+                          </label>
+                          {studentData.allergies && (
+                            <p className="text-sm text-[var(--foreground)] flex items-center gap-1 mb-1">
+                              {studentData.allergies !== 'None' ? (
+                                <AlertTriangle className="h-3.5 w-3.5 text-red-500" />
                               ) : (
-                                <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                                <CheckCircle className="h-3.5 w-3.5 text-green-500" />
                               )}
-                              {student.allergies || 'No known allergies'}
+                              <span>Allergies: {studentData.allergies}</span>
                             </p>
-                          </div>
-                        )}
-                        {student.medicalNotes && (
-                          <div>
-                            <label className="text-xs text-[var(--muted-foreground)]">Medical Notes</label>
-                            <p className="text-sm text-[var(--foreground)]">{student.medicalNotes}</p>
-                          </div>
-                        )}
-                      </div>
+                          )}
+                          {studentData.medicalNotes && (
+                            <p className="text-sm text-[var(--foreground)]">{studentData.medicalNotes}</p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
-              )}
 
-              {/* Attendance Section */}
-              <div className="border border-[var(--border)] rounded-lg p-4">
-                <div className="flex items-start gap-3 mb-4">
-                  <Calendar className="h-5 w-5 text-[var(--muted-foreground)] flex-shrink-0 mt-0.5" />
-                  <div className="flex-1">
-                    <h3 className="text-sm font-semibold text-[var(--foreground)] mb-4">Attendance Information</h3>
-                    
-                    {/* Attendance Overview */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                      <div className="p-4 bg-[var(--muted)]/50 rounded-lg border border-[var(--border)]">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wide">Overall</div>
-                          <attendanceRating.icon className={`h-4 w-4 ${attendanceRating.color}`} />
-                        </div>
-                        <div className={`text-3xl font-bold ${attendanceRating.color} mb-1`}>
-                          {student.overallAttendance}%
-                        </div>
-                        <div className="text-xs text-[var(--muted-foreground)]">Attendance Rate</div>
-                        <div className={`flex items-center gap-1 mt-2 text-xs ${attendanceRating.color}`}>
-                          {student.recentTrend === 'up' ? <TrendingUp className="h-3 w-3" /> : 
-                           student.recentTrend === 'down' ? <TrendingDown className="h-3 w-3" /> : 
-                           <Minus className="h-3 w-3" />}
-                          <span>
-                            {student.recentTrend === 'up' ? 'Improving' : 
-                             student.recentTrend === 'down' ? 'Declining' : 'Stable'}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className="p-4 bg-[var(--muted)]/50 rounded-lg border border-[var(--border)]">
-                        <div className="text-xs font-medium text-[var(--muted-foreground)] uppercase tracking-wide mb-2">This Week</div>
-                        <div className="text-3xl font-bold text-[var(--foreground)] mb-1">
-                          {weekPresentCount}
-                        </div>
-                        <div className="text-xs text-[var(--muted-foreground)]">Days Present</div>
-                        <div className="text-xs text-[var(--muted-foreground)] mt-2">
-                          {weekScheduledCount} scheduled days
-                        </div>
+                  {/* Parent/Guardian Information */}
+                  {studentData.parents.length > 0 && (
+                    <div className="border border-[var(--border)] rounded-lg p-4">
+                      <h3 className="text-sm font-semibold text-[var(--foreground)] mb-3 flex items-center gap-2">
+                        <UserCheck className="h-4 w-4 text-[var(--muted-foreground)]" />
+                        Parent/Guardian
+                      </h3>
+                      <div className="space-y-4">
+                        {studentData.parents.map((parent, idx) => (
+                          <div key={idx} className={idx > 0 ? 'pt-4 border-t border-[var(--border)]' : ''}>
+                            {parent.isPrimary && (
+                              <Badge variant="outline" className="mb-2 text-xs">Primary</Badge>
+                            )}
+                            <div className="space-y-2">
+                              <div>
+                                <label className="text-xs text-[var(--muted-foreground)]">Name</label>
+                                <p className="text-sm text-[var(--foreground)]">{parent.name}</p>
+                              </div>
+                              {parent.email && (
+                                <div>
+                                  <label className="text-xs text-[var(--muted-foreground)]">Email</label>
+                                  <p className="text-sm text-[var(--foreground)] flex items-center gap-2">
+                                    <Mail className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
+                                    <a 
+                                      href={`mailto:${parent.email}`}
+                                      className="text-blue-600 hover:underline truncate"
+                                    >
+                                      {parent.email}
+                                    </a>
+                                  </p>
+                                </div>
+                              )}
+                              {parent.phone && (
+                                <div>
+                                  <label className="text-xs text-[var(--muted-foreground)]">Phone</label>
+                                  <p className="text-sm text-[var(--foreground)] flex items-center gap-2">
+                                    <Phone className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
+                                    <PhoneLink phone={parent.phone} />
+                                  </p>
+                                </div>
+                              )}
+                              {parent.backupPhone && (
+                                <div>
+                                  <label className="text-xs text-[var(--muted-foreground)]">Backup Phone</label>
+                                  <p className="text-sm text-[var(--foreground)] flex items-center gap-2">
+                                    <Phone className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
+                                    <PhoneLink phone={parent.backupPhone} />
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
+                  )}
+                </div>
 
-                    {/* Week Navigation */}
-                    <div className="mb-4">
-                      <div className="flex items-center justify-between gap-3 p-3 bg-[var(--muted)]/30 rounded-lg border border-[var(--border)]">
-                        <div className="flex items-center gap-2 flex-1">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handlePreviousWeek}
-                            disabled={!canGoBack}
-                            className="h-8 w-8 p-0"
-                          >
-                            <ChevronLeft className="h-4 w-4" />
-                          </Button>
-                          
-                          <div className="text-center min-w-0 flex-1 px-2">
-                            <div className="text-sm font-semibold text-[var(--foreground)]">
-                              {formatWeekRange(selectedWeek)}
-                            </div>
-                            <div className="text-xs text-[var(--muted-foreground)]">Week View</div>
+                {/* Right Column - Tabbed Interface */}
+                <div className="lg:col-span-2">
+                  <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                    <TabsList className="grid w-full grid-cols-4">
+                      <TabsTrigger value="attendance" className="text-xs sm:text-sm">
+                        <Calendar className="h-4 w-4 mr-1.5 sm:mr-2" />
+                        <span className="hidden sm:inline">Attendance</span>
+                        <span className="sm:hidden">Att.</span>
+                      </TabsTrigger>
+                      {canViewFees && (
+                        <TabsTrigger value="fees" className="text-xs sm:text-sm">
+                          <DollarSign className="h-4 w-4 mr-1.5 sm:mr-2" />
+                          <span className="hidden sm:inline">Fees</span>
+                          <span className="sm:hidden">Fees</span>
+                        </TabsTrigger>
+                      )}
+                      <TabsTrigger value="notes" className="text-xs sm:text-sm">
+                        <FileText className="h-4 w-4 mr-1.5 sm:mr-2" />
+                        <span className="hidden sm:inline">Notes</span>
+                        <span className="sm:hidden">Notes</span>
+                      </TabsTrigger>
+                      <TabsTrigger value="activity" className="text-xs sm:text-sm">
+                        <Activity className="h-4 w-4 mr-1.5 sm:mr-2" />
+                        <span className="hidden sm:inline">Activity</span>
+                        <span className="sm:hidden">Act.</span>
+                      </TabsTrigger>
+                    </TabsList>
+
+                    {/* Attendance Tab */}
+                    <TabsContent value="attendance" className="mt-4">
+                      <div className="border border-[var(--border)] rounded-lg p-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+                          <div className="p-3 bg-[var(--muted)]/50 rounded-lg">
+                            <div className="text-xs text-[var(--muted-foreground)] mb-1">Present</div>
+                            <div className="text-2xl font-bold text-green-600">{studentData.attendance.stats.present}</div>
                           </div>
-                          
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleNextWeek}
-                            disabled={!canGoForward}
-                            className="h-8 w-8 p-0"
-                          >
-                            <ChevronRight className="h-4 w-4" />
-                          </Button>
+                          <div className="p-3 bg-[var(--muted)]/50 rounded-lg">
+                            <div className="text-xs text-[var(--muted-foreground)] mb-1">Absent</div>
+                            <div className="text-2xl font-bold text-red-600">{studentData.attendance.stats.absent}</div>
+                          </div>
+                          <div className="p-3 bg-[var(--muted)]/50 rounded-lg">
+                            <div className="text-xs text-[var(--muted-foreground)] mb-1">Late</div>
+                            <div className="text-2xl font-bold text-yellow-600">{studentData.attendance.stats.late}</div>
+                          </div>
+                          <div className="p-3 bg-[var(--muted)]/50 rounded-lg">
+                            <div className="text-xs text-[var(--muted-foreground)] mb-1">Total</div>
+                            <div className="text-2xl font-bold text-[var(--foreground)]">{studentData.attendance.stats.total}</div>
+                          </div>
+                        </div>
+
+                        <div className="mb-4">
+                          <h4 className="text-sm font-semibold text-[var(--foreground)] mb-3">Recent Attendance</h4>
+                          {studentData.attendance.recent.length > 0 ? (
+                            <div className="space-y-2 max-h-64 overflow-y-auto">
+                              {studentData.attendance.recent.map((att) => (
+                                <div 
+                                  key={att.id}
+                                  className="flex items-center justify-between p-3 border border-[var(--border)] rounded-lg bg-[var(--card)] hover:bg-[var(--accent)] transition-colors"
+                                >
+                                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                                    {getStatusIcon(att.status)}
+                                    <div className="min-w-0 flex-1">
+                                      <div className="text-sm font-medium text-[var(--foreground)]">
+                                        {formatDate(att.date)}
+                                      </div>
+                                      {att.class && (
+                                        <div className="text-xs text-[var(--muted-foreground)]">{att.class.name}</div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <Badge className={`${getStatusColor(att.status)} justify-center text-xs px-2 py-0.5`}>
+                                    {att.status}
+                                  </Badge>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-[var(--muted-foreground)] text-center py-4">
+                              No attendance records yet
+                            </p>
+                          )}
                         </div>
 
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={handleCurrentWeek}
-                          className="flex items-center gap-1.5 text-sm"
+                          onClick={() => {
+                            router.push(`/students/${studentData.id}/attendance`)
+                            onClose()
+                          }}
+                          className="w-full"
                         >
-                          <Calendar className="h-3.5 w-3.5" />
-                          <span className="hidden sm:inline">This Week</span>
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          View Full Attendance
                         </Button>
                       </div>
-                    </div>
+                    </TabsContent>
 
-                    {/* Weekly Attendance Details */}
-                    <div className="space-y-2">
-                      <div className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wide mb-2">Daily Attendance</div>
-                      {isLoadingAttendance ? (
-                        <div className="text-center py-6 text-sm text-[var(--muted-foreground)]">
-                          Loading attendance data...
-                        </div>
-                      ) : weeklyAttendance.length > 0 ? (
-                        weeklyAttendance.map((day, index) => (
-                          <div 
-                            key={index}
-                            className="flex items-center justify-between p-3 border border-[var(--border)] rounded-lg bg-[var(--card)] hover:bg-[var(--accent)] transition-colors"
-                          >
-                            <div className="flex items-center gap-3 min-w-0 flex-1">
-                              {getStatusIcon(day.status)}
-                              <div className="min-w-0 flex-1">
-                                <div className="font-medium text-sm text-[var(--foreground)]">{day.day}</div>
-                                <div className="text-xs text-[var(--muted-foreground)]">{day.date}</div>
+                    {/* Fees Tab */}
+                    {canViewFees && (
+                      <TabsContent value="fees" className="mt-4">
+                        <div className="border border-[var(--border)] rounded-lg p-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                            <div className="p-4 bg-[var(--muted)]/50 rounded-lg">
+                              <div className="text-xs text-[var(--muted-foreground)] mb-1">Current Balance</div>
+                              <div className="text-2xl font-bold text-[var(--foreground)]">
+                                £{studentData.fees.currentBalance.toFixed(2)}
                               </div>
                             </div>
-                            
-                            <div className="flex items-center gap-3 flex-shrink-0">
-                              {day.time && (
-                                <div className="text-xs text-[var(--muted-foreground)] min-w-[50px] text-right font-mono">{day.time}</div>
-                              )}
-                              <div className="min-w-[100px] text-right">
-                                <Badge className={`${getStatusColor(day.status)} justify-center text-xs px-2 py-0.5`}>
-                                  {day.status === 'NOT_SCHEDULED' ? 'Not Scheduled' : day.status}
-                                </Badge>
+                            <div className="p-4 bg-[var(--muted)]/50 rounded-lg">
+                              <div className="text-xs text-[var(--muted-foreground)] mb-1">Paid This Year</div>
+                              <div className="text-2xl font-bold text-green-600">
+                                £{studentData.fees.totalPaidThisYear.toFixed(2)}
                               </div>
                             </div>
                           </div>
-                        ))
-                      ) : (
-                        <div className="text-center py-6 text-sm text-[var(--muted-foreground)]">
-                          {enrollmentDate && weekEnd < enrollmentDate 
-                            ? 'No attendance data - student not enrolled yet' 
-                            : 'No attendance data for this week'}
+
+                          <div className="mb-4">
+                            <h4 className="text-sm font-semibold text-[var(--foreground)] mb-3">Recent Payments</h4>
+                            {studentData.fees.paymentRecords.length > 0 ? (
+                              <div className="space-y-2 max-h-64 overflow-y-auto">
+                                {studentData.fees.paymentRecords.slice(0, 10).map((record) => (
+                                  <div 
+                                    key={record.id}
+                                    className="flex items-center justify-between p-3 border border-[var(--border)] rounded-lg bg-[var(--card)]"
+                                  >
+                                    <div className="min-w-0 flex-1">
+                                      <div className="text-sm font-medium text-[var(--foreground)]">
+                                        {record.month} • {record.class?.name || 'N/A'}
+                                      </div>
+                                      <div className="text-xs text-[var(--muted-foreground)]">
+                                        £{(record.amountP / 100).toFixed(2)} • {record.method || 'N/A'}
+                                      </div>
+                                    </div>
+                                    <Badge className={`${getPaymentStatusColor(record.status)} justify-center text-xs px-2 py-0.5`}>
+                                      {record.status}
+                                    </Badge>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-[var(--muted-foreground)] text-center py-4">
+                                No payment records
+                              </p>
+                            )}
+                          </div>
+
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              router.push(`/payments?studentId=${studentData.id}`)
+                              onClose()
+                            }}
+                            className="w-full"
+                          >
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            Open Finance Page
+                          </Button>
                         </div>
-                      )}
-                    </div>
-                  </div>
+                      </TabsContent>
+                    )}
+
+                    {/* Notes Tab */}
+                    <TabsContent value="notes" className="mt-4">
+                      <div className="border border-[var(--border)] rounded-lg p-4">
+                        <div className="mb-4">
+                          <h4 className="text-sm font-semibold text-[var(--foreground)] mb-3">Add Note</h4>
+                          <div className="space-y-2">
+                            <Textarea
+                              value={newNote}
+                              onChange={(e) => setNewNote(e.target.value)}
+                              placeholder="Enter a note about this student..."
+                              className="min-h-[100px]"
+                            />
+                            <Button
+                              onClick={handleAddNote}
+                              disabled={!newNote.trim() || isSavingNote}
+                              size="sm"
+                              className="w-full sm:w-auto"
+                            >
+                              {isSavingNote ? (
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              ) : (
+                                <Plus className="h-4 w-4 mr-2" />
+                              )}
+                              Save Note
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <h4 className="text-sm font-semibold text-[var(--foreground)] mb-3">Notes History</h4>
+                          {studentData.notes.length > 0 ? (
+                            <div className="space-y-3 max-h-96 overflow-y-auto">
+                              {studentData.notes.map((note) => (
+                                <div 
+                                  key={note.id}
+                                  className="p-3 border border-[var(--border)] rounded-lg bg-[var(--card)]"
+                                >
+                                  <div className="flex items-start justify-between mb-2">
+                                    <div className="text-xs text-[var(--muted-foreground)]">
+                                      {note.author?.name || 'Unknown'} • {formatDate(note.createdAt)}
+                                    </div>
+                                  </div>
+                                  <p className="text-sm text-[var(--foreground)] whitespace-pre-wrap">{note.body}</p>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-[var(--muted-foreground)] text-center py-4">
+                              No notes yet
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </TabsContent>
+
+                    {/* Activity Tab */}
+                    <TabsContent value="activity" className="mt-4">
+                      <div className="border border-[var(--border)] rounded-lg p-4">
+                        <h4 className="text-sm font-semibold text-[var(--foreground)] mb-3">Recent Activity</h4>
+                        {studentData.activity.length > 0 ? (
+                          <div className="space-y-2 max-h-96 overflow-y-auto">
+                            {studentData.activity.map((log) => (
+                              <div 
+                                key={log.id}
+                                className="flex items-start gap-3 p-3 border border-[var(--border)] rounded-lg bg-[var(--card)]"
+                              >
+                                <Activity className="h-4 w-4 text-[var(--muted-foreground)] mt-0.5 flex-shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-sm text-[var(--foreground)]">
+                                    <span className="font-medium">{log.action}</span>
+                                    {log.actor && (
+                                      <span className="text-[var(--muted-foreground)]"> by {log.actor.name}</span>
+                                    )}
+                                  </div>
+                                  <div className="text-xs text-[var(--muted-foreground)] mt-1">
+                                    {formatDate(log.createdAt)}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-[var(--muted-foreground)] text-center py-4">
+                            No activity logged
+                          </p>
+                        )}
+                      </div>
+                    </TabsContent>
+                  </Tabs>
                 </div>
               </div>
+            </div>
 
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-4 border-t border-[var(--border)]">
+            {/* Footer Actions */}
+            <div className="p-4 sm:p-6 border-t border-[var(--border)] bg-[var(--muted)]/30">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    router.push(`/students/${studentData.id}`)
+                    onClose()
+                  }}
+                  className="flex-1 sm:flex-initial"
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Open Full Profile
+                </Button>
                 {onEdit && (
-                  <Button 
-                    variant="outline" 
-                    onClick={() => onEdit(student)}
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      onEdit(studentData.id)
+                      onClose()
+                    }}
                     className="flex-1 sm:flex-initial"
                   >
                     <Edit className="h-4 w-4 mr-2" />
                     Edit Student
-                  </Button>
-                )}
-                {onArchive && !student.isArchived && (
-                  <Button
-                    variant="destructive"
-                    onClick={() => setIsArchiveDialogOpen(true)}
-                    className="flex-1 sm:flex-initial"
-                  >
-                    <Archive className="h-4 w-4 mr-2" />
-                    Archive Student
                   </Button>
                 )}
               </div>
@@ -717,7 +886,7 @@ export function StudentDetailModal({
         onClose={() => setIsArchiveDialogOpen(false)}
         onConfirm={handleConfirmArchive}
         title="Archive Student"
-        message={`Are you sure you want to archive ${student.name}? This will disable their account and remove them from active students.`}
+        message={`Are you sure you want to archive ${studentData.name}? This will disable their account and remove them from active students.`}
         confirmText="Archive Student"
         cancelText="Cancel"
         variant="destructive"
@@ -726,3 +895,4 @@ export function StudentDetailModal({
     </>
   )
 }
+

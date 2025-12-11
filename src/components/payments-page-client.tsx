@@ -109,7 +109,7 @@ export function PaymentsPageClient({ classes }: PaymentsPageClientProps) {
   const initialMonth = getInitialMonth()
   const [monthFilter, setMonthFilter] = useState<string>(initialMonth)
   const [overviewMonthFilter, setOverviewMonthFilter] = useState<string>(initialMonth)
-  const [selectedStudent, setSelectedStudent] = useState<any>(null)
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null)
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false)
 
   const selectedClass = selectedClassId 
@@ -201,7 +201,7 @@ export function PaymentsPageClient({ classes }: PaymentsPageClientProps) {
           weeklyAttendance: [], // Would need to fetch from attendance API
           recentTrend: 'stable' as const
         }
-        setSelectedStudent(detailStudent)
+        setSelectedStudentId(studentId)
         setIsStudentModalOpen(true)
       } else {
         toast.error('Failed to load student details')
@@ -860,13 +860,12 @@ export function PaymentsPageClient({ classes }: PaymentsPageClientProps) {
 
       {/* Student Detail Modal */}
       <StudentDetailModal
-        student={selectedStudent}
+        studentId={selectedStudentId}
         isOpen={isStudentModalOpen}
         onClose={() => {
           setIsStudentModalOpen(false)
-          setSelectedStudent(null)
+          setSelectedStudentId(null)
         }}
-        classes={selectedClass ? [{ id: selectedClass.id, name: selectedClass.name }] : []}
       />
     </div>
   )

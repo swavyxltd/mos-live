@@ -39,7 +39,7 @@ interface AttendancePageClientProps {
 
 export function AttendancePageClient({ attendanceData }: AttendancePageClientProps) {
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null)
-  const [selectedStudent, setSelectedStudent] = useState<any>(null)
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null)
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false)
   const [currentWeek, setCurrentWeek] = useState(new Date())
   const [filteredData, setFilteredData] = useState(attendanceData || [])
@@ -77,25 +77,13 @@ export function AttendancePageClient({ attendanceData }: AttendancePageClientPro
     const student = classData.students.find(s => s.id === studentId)
     if (!student) return
 
-    // Create detailed student data for the modal
-    const studentDetail = {
-      id: student.id,
-      name: student.name,
-      class: classData.name,
-      teacher: classData.teacher,
-      overallAttendance: student.attendancePercentage || 0,
-      weeklyAttendance: student.weeklyAttendance || [],
-      recentTrend: (student.attendancePercentage || 0) >= 95 ? 'up' : 
-                  (student.attendancePercentage || 0) < 90 ? 'down' : 'stable'
-    }
-
-    setSelectedStudent(studentDetail)
+    setSelectedStudentId(student.id)
     setIsStudentModalOpen(true)
   }
 
   const handleCloseStudentModal = () => {
     setIsStudentModalOpen(false)
-    setSelectedStudent(null)
+    setSelectedStudentId(null)
   }
 
   const handleWeekChange = (week: Date) => {
@@ -150,7 +138,7 @@ export function AttendancePageClient({ attendanceData }: AttendancePageClientPro
 
       {/* Student Detail Modal */}
       <StudentDetailModal
-        student={selectedStudent}
+        studentId={selectedStudentId}
         isOpen={isStudentModalOpen}
         onClose={handleCloseStudentModal}
       />

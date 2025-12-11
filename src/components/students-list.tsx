@@ -76,7 +76,7 @@ interface StudentsListProps {
 export function StudentsList({ students, filters, onAddStudent, onStudentArchiveChange, onStudentUpdate, classes = [], showArchived = false }: StudentsListProps) {
   const [sortBy, setSortBy] = useState<'name' | 'age' | 'enrollment' | 'attendance'>('name')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [startInEditMode, setStartInEditMode] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -179,7 +179,7 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
           weeklyAttendance: student.weeklyAttendance || [],
           recentTrend: 'stable' as 'up' | 'down' | 'stable'
         }
-        setSelectedStudent(formattedStudent)
+        setSelectedStudentId(student.id)
         setStartInEditMode(false)
         setIsDetailModalOpen(true)
       } else {
@@ -209,7 +209,7 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
           weeklyAttendance: student.weeklyAttendance || [],
           recentTrend: 'stable' as 'up' | 'down' | 'stable'
         }
-        setSelectedStudent(formattedStudent)
+        setSelectedStudentId(student.id)
         setStartInEditMode(false)
         setIsDetailModalOpen(true)
       }
@@ -240,7 +240,7 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
         weeklyAttendance: student.weeklyAttendance || [],
         recentTrend: 'stable' as 'up' | 'down' | 'stable'
       }
-      setSelectedStudent(formattedStudent)
+      setSelectedStudentId(student.id)
       setStartInEditMode(false)
       setIsDetailModalOpen(true)
     }
@@ -279,12 +279,12 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
   const handleDeleteStudent = (studentId: string) => {
     // TODO: Implement delete functionality
     setIsDetailModalOpen(false)
-    setSelectedStudent(null)
+    setSelectedStudentId(null)
   }
 
   const handleCloseModal = () => {
     setIsDetailModalOpen(false)
-    setSelectedStudent(null)
+    setSelectedStudentId(null)
   }
 
   const handleEditModalClose = () => {
@@ -334,9 +334,7 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
     setStudentToEdit(null)
     
     // Also update the selected student if it's the same one
-    if (selectedStudent && selectedStudent.id === transformedStudent.id) {
-      setSelectedStudent(transformedStudent)
-    }
+    // Note: Modal now fetches data from API, so no need to update selectedStudent
   }
 
   // Filter students based on current filters
@@ -620,14 +618,16 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
 
       {/* Student Detail Modal */}
       <StudentDetailModal
-        student={selectedStudent}
+        studentId={selectedStudentId}
         isOpen={isDetailModalOpen}
         onClose={handleCloseModal}
-        onEdit={handleEditStudent}
-        onDelete={handleDeleteStudent}
+        onEdit={(studentId) => {
+          const student = students.find(s => s.id === studentId)
+          if (student) {
+            handleEditStudent(student)
+          }
+        }}
         onArchive={onStudentArchiveChange}
-        startInEditMode={startInEditMode}
-        classes={classes}
       />
 
       {/* Edit Student Modal */}
