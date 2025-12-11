@@ -26,26 +26,33 @@ model Account {
 }
 
 model Application {
-  id                 String             @id
-  orgId              String
-  status             String             @default("NEW")
-  guardianName       String
-  guardianPhone      String
-  guardianEmail      String
-  guardianAddress    String?
-  preferredClass     String?
-  preferredTerm      String?
-  preferredStartDate DateTime?
-  additionalNotes    String?
-  adminNotes         String?
-  submittedAt        DateTime           @default(now())
-  reviewedAt         DateTime?
-  reviewedById       String?
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime
-  Org                Org                @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  User               User?              @relation(fields: [reviewedById], references: [id])
-  ApplicationChild   ApplicationChild[]
+  id                       String             @id
+  orgId                    String
+  status                   String             @default("NEW")
+  guardianName             String
+  guardianPhone            String
+  guardianEmail            String
+  guardianAddress          String?
+  preferredClass           String?
+  preferredTerm            String?
+  preferredStartDate       DateTime?
+  additionalNotes          String?
+  adminNotes               String?
+  submittedAt              DateTime           @default(now())
+  reviewedAt               DateTime?
+  reviewedById             String?
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime
+  // Application acceptance token for parent signup
+  acceptanceToken          String?            @unique
+  acceptanceTokenExpiresAt DateTime?
+  acceptanceTokenUsedAt    DateTime?
+  Org                      Org                @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  User                     User?              @relation(fields: [reviewedById], references: [id])
+  ApplicationChild         ApplicationChild[]
+
+  @@index([acceptanceToken])
+  @@index([status])
 }
 
 model ApplicationChild {
@@ -300,71 +307,72 @@ model MonthlyPaymentRecord {
 }
 
 model Org {
-  id                   String                 @id
-  name                 String
-  slug                 String                 @unique
-  timezone             String                 @default("Europe/London")
-  settings             String?
-  createdAt            DateTime               @default(now())
-  updatedAt            DateTime
-  status               String                 @default("ACTIVE")
-  pausedAt             DateTime?
-  pausedReason         String?
-  lastPaymentDate      DateTime?
-  paymentFailureCount  Int                    @default(0)
-  autoSuspendEnabled   Boolean                @default(true)
-  address              String?
-  phone                String?
-  email                String?
-  officeHours          String?
-  stripeEnabled        Boolean                @default(false)
-  stripePublishableKey String?
-  stripeSecretKey      String?
-  stripeWebhookSecret  String?
-  autoPaymentEnabled   Boolean                @default(true)
-  cashPaymentEnabled   Boolean                @default(true)
-  bankTransferEnabled  Boolean                @default(true)
-  paymentInstructions  String?
-  addressLine1         String?
-  city                 String?
-  postcode             String?
-  publicEmail          String?
-  publicPhone          String?
-  deactivatedAt        DateTime?
-  deactivatedReason    String?
-  bankAccountName      String?
-  bankAccountNumber    String?
-  bankSortCode         String?
-  feeDueDay            Int?                   @default(1)
+  id                     String                 @id
+  name                   String
+  slug                   String                 @unique
+  timezone               String                 @default("Europe/London")
+  settings               String?
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime
+  status                 String                 @default("ACTIVE")
+  pausedAt               DateTime?
+  pausedReason           String?
+  lastPaymentDate        DateTime?
+  paymentFailureCount    Int                    @default(0)
+  autoSuspendEnabled     Boolean                @default(true)
+  address                String?
+  phone                  String?
+  email                  String?
+  officeHours            String?
+  stripeEnabled          Boolean                @default(false)
+  stripePublishableKey   String?
+  stripeSecretKey        String?
+  stripeWebhookSecret    String?
+  autoPaymentEnabled     Boolean                @default(true)
+  cashPaymentEnabled     Boolean                @default(true)
+  bankTransferEnabled    Boolean                @default(true)
+  paymentInstructions    String?
+  addressLine1           String?
+  city                   String?
+  postcode               String?
+  publicEmail            String?
+  publicPhone            String?
+  deactivatedAt          DateTime?
+  deactivatedReason      String?
+  bankAccountName        String?
+  bankAccountNumber      String?
+  bankSortCode           String?
+  feeDueDay              Int?                   @default(1)
   stripeConnectAccountId String?
-  acceptsCard          Boolean                @default(false)
-  acceptsCash          Boolean                @default(true)
-  acceptsBankTransfer  Boolean                @default(true)
-  billingDay           Int?                   @default(1)
-  Application          Application[]
-  Attendance           Attendance[]
-  AuditLog             AuditLog[]
-  Class                Class[]
-  Event                Event[]
-  Exam                 Exam[]
-  FeesPlan             FeesPlan[]
-  GiftAidSubmission    GiftAidSubmission[]
-  Holiday              Holiday[]
-  Invitation           Invitation[]
-  Invoice              Invoice[]
-  Lead                 Lead[]
-  Message              Message[]
-  MonthlyPaymentRecord MonthlyPaymentRecord[]
-  ParentBillingProfile ParentBillingProfile[]
-  ParentInvitation     ParentInvitation[]
-  Payment              Payment[]
-  PlatformOrgBilling   PlatformOrgBilling?
-  ProgressLog          ProgressLog[]
-  Student              Student[]
-  StudentClass         StudentClass[]
-  SupportTicket        SupportTicket[]
-  Term                 Term[]
-  UserOrgMembership    UserOrgMembership[]
+  acceptsCard            Boolean                @default(false)
+  acceptsCash            Boolean                @default(true)
+  acceptsBankTransfer    Boolean                @default(true)
+  billingDay             Int?                   @default(1)
+  Application            Application[]
+  Attendance             Attendance[]
+  AuditLog               AuditLog[]
+  Class                  Class[]
+  Event                  Event[]
+  Exam                   Exam[]
+  FeesPlan               FeesPlan[]
+  GiftAidSubmission      GiftAidSubmission[]
+  Holiday                Holiday[]
+  Invitation             Invitation[]
+  Invoice                Invoice[]
+  Lead                   Lead[]
+  Message                Message[]
+  MonthlyPaymentRecord   MonthlyPaymentRecord[]
+  ParentBillingProfile   ParentBillingProfile[]
+  ParentInvitation       ParentInvitation[]
+  Payment                Payment[]
+  PlatformOrgBilling     PlatformOrgBilling?
+  ProgressLog            ProgressLog[]
+  Student                Student[]
+  StudentClass           StudentClass[]
+  SupportTicket          SupportTicket[]
+  ParentStudentLink      ParentStudentLink[]
+  Term                   Term[]
+  UserOrgMembership      UserOrgMembership[]
 }
 
 model ParentBillingProfile {
@@ -397,6 +405,24 @@ model ParentInvitation {
 
   @@index([parentEmail])
   @@index([token])
+}
+
+model ParentStudentLink {
+  id        String    @id
+  orgId     String
+  parentId  String
+  studentId String
+  claimedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime
+  Org       Org       @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  User      User      @relation("ParentStudentLinks", fields: [parentId], references: [id], onDelete: Cascade)
+  Student   Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([parentId, studentId])
+  @@index([parentId])
+  @@index([studentId])
+  @@index([orgId])
 }
 
 model PasswordResetToken {
@@ -505,6 +531,11 @@ model Student {
   archivedAt           DateTime?
   createdAt            DateTime               @default(now())
   updatedAt            DateTime
+  // Parent Claim System fields
+  claimCode            String?                @unique
+  claimCodeExpiresAt   DateTime?
+  claimedByParentId    String?
+  claimStatus          String                 @default("NOT_CLAIMED") // NOT_CLAIMED, PENDING_VERIFICATION, CLAIMED
   Attendance           Attendance[]
   Event                Event[]
   Invoice              Invoice[]
@@ -512,8 +543,14 @@ model Student {
   ParentInvitation     ParentInvitation[]
   ProgressLog          ProgressLog[]
   Org                  Org                    @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  User                 User?                  @relation(fields: [primaryParentId], references: [id])
+  User                 User?                  @relation("StudentPrimaryParent", fields: [primaryParentId], references: [id])
+  ClaimedByParent      User?                  @relation("ClaimedStudents", fields: [claimedByParentId], references: [id])
   StudentClass         StudentClass[]
+  ParentStudentLink    ParentStudentLink[]
+
+  @@index([claimCode])
+  @@index([claimStatus])
+  @@index([claimedByParentId])
 }
 
 model StudentClass {
@@ -595,6 +632,9 @@ model User {
   Application            Application[]
   AuditLog               AuditLog[]
   Class                  Class[]
+  ClaimedStudents        Student[]               @relation("ClaimedStudents")
+  ParentStudentLinks     ParentStudentLink[]     @relation("ParentStudentLinks")
+  PrimaryParentStudents  Student[]               @relation("StudentPrimaryParent")
   GiftAidSubmission      GiftAidSubmission[]
   Lead                   Lead[]
   LeadActivity           LeadActivity[]
@@ -602,7 +642,6 @@ model User {
   PasswordResetToken     PasswordResetToken[]
   ProgressLog            ProgressLog[]
   Session                Session[]
-  Student                Student[]
   SupportTicket          SupportTicket[]
   SupportTicketResponse  SupportTicketResponse[]
   UserOrgMembership      UserOrgMembership[]

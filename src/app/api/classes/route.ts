@@ -86,7 +86,7 @@ async function handlePOST(request: NextRequest) {
 export const POST = withRateLimit(handlePOST)
 
 async function handleGET(request: NextRequest) {
-  const session = await requireRole(['ADMIN', 'OWNER'])(request)
+  const session = await requireRole(['ADMIN', 'OWNER', 'STAFF'])(request)
   if (session instanceof NextResponse) {
     return session
   }
@@ -95,9 +95,31 @@ async function handleGET(request: NextRequest) {
   if (orgId instanceof NextResponse) {
     return orgId
   }
+
+  // Check if user is a teacher - if so, only show their assigned classes
+  const { getUserRoleInOrg } = await import('@/lib/org')
+  const userRole = await getUserRoleInOrg(session.user.id, orgId)
+  const membership = await prisma.userOrgMembership.findUnique({
+    where: {
+      userId_orgId: {
+        userId: session.user.id,
+        orgId: orgId
+      }
+    },
+    select: {
+      staffSubrole: true
+    }
+  })
+
+  const isTeacher = membership?.staffSubrole === 'TEACHER' || (userRole === 'STAFF' && !membership?.staffSubrole)
   
   const classes = await prisma.class.findMany({
-    where: { orgId, isArchived: false },
+    where: { 
+      orgId, 
+      isArchived: false,
+      // If user is a teacher, only show classes assigned to them
+      ...(isTeacher && { teacherId: session.user.id })
+    },
     select: {
       id: true,
       name: true,

@@ -70,11 +70,11 @@ async function handlePOST(
         action: isArchived ? 'ARCHIVE' : 'UNARCHIVE',
         targetType: 'STUDENT',
         targetId: id,
-        data: {
+        data: JSON.stringify({
           studentName: `${student.firstName} ${student.lastName}`,
           isArchived,
           timestamp: new Date().toISOString()
-        }
+        })
       }
     })
     

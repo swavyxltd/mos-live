@@ -118,7 +118,11 @@ export default async function StudentsPage() {
         name: sc.Class.name
       })),
       attendanceRate,
-      lastAttendance: attendance.lastDate || student.createdAt
+      lastAttendance: attendance.lastDate || student.createdAt,
+      // Claim status fields
+      claimStatus: student.claimStatus || 'NOT_CLAIMED',
+      claimCode: student.claimCode,
+      parentLinks: [] // Will be populated from API if needed
     }
   })
 

@@ -1,6 +1,6 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { getActiveOrg } from '@/lib/org'
+import { getActiveOrg, getUserRoleInOrg } from '@/lib/org'
 import { prisma } from '@/lib/prisma'
 import { ClassesList } from '@/components/classes-list'
 import { ClassesPageClient } from '@/components/classes-page-client'
@@ -13,12 +13,30 @@ export default async function ClassesPage() {
     return <div>Loading...</div>
   }
 
+  // Check if user is a teacher - if so, only show their assigned classes
+  const userRole = await getUserRoleInOrg(session.user.id, org.id)
+  const membership = await prisma.userOrgMembership.findUnique({
+    where: {
+      userId_orgId: {
+        userId: session.user.id,
+        orgId: org.id
+      }
+    },
+    select: {
+      staffSubrole: true
+    }
+  })
+
+  const isTeacher = membership?.staffSubrole === 'TEACHER' || userRole === 'STAFF'
+
   // Always use real database data
-  // Get classes from database
+  // Get classes from database - filter by teacher if user is a teacher
   const classes = await prisma.class.findMany({
     where: { 
       orgId: org.id,
-      isArchived: false
+      isArchived: false,
+      // If user is a teacher, only show classes assigned to them
+      ...(isTeacher && { teacherId: session.user.id })
     },
     include: {
       User: {

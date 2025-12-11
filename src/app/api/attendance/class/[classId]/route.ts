@@ -45,12 +45,31 @@ async function handleGET(
     const nextDay = new Date(targetDate)
     nextDay.setDate(nextDay.getDate() + 1)
 
+    // Check if user is a teacher - if so, verify they're assigned to this class
+    const { getUserRoleInOrg } = await import('@/lib/org')
+    const userRole = await getUserRoleInOrg(session.user.id, orgId)
+    const membership = await prisma.userOrgMembership.findUnique({
+      where: {
+        userId_orgId: {
+          userId: session.user.id,
+          orgId: orgId
+        }
+      },
+      select: {
+        staffSubrole: true
+      }
+    })
+
+    const isTeacher = membership?.staffSubrole === 'TEACHER' || (userRole === 'STAFF' && !membership?.staffSubrole)
+
     // Fetch class with teacher and enrolled students
     const classData = await prisma.class.findFirst({
       where: {
         id: classId,
         orgId: orgId,
         isArchived: false,
+        // If user is a teacher, only allow access to classes assigned to them
+        ...(isTeacher && { teacherId: session.user.id })
       },
       select: {
         id: true,

@@ -19,6 +19,7 @@ import {
   GraduationCap,
   UserCheck,
   Archive,
+  ArchiveRestore,
   Edit,
   Calendar,
   DollarSign,
@@ -31,6 +32,7 @@ import {
   Loader2,
   Plus,
   Send,
+  RefreshCw,
 } from 'lucide-react'
 import { getAttendanceRating } from '@/lib/attendance-ratings'
 import { PhoneLink } from './phone-link'
@@ -70,7 +72,17 @@ interface StudentDetailsData {
     phone: string | null
     backupPhone: string | null
     isPrimary: boolean
+    claimedAt?: string | null
   }>
+  claimStatus?: 'NOT_CLAIMED' | 'PENDING_VERIFICATION' | 'CLAIMED'
+  claimCode?: string | null
+  claimCodeExpiresAt?: string | null
+  claimedBy?: {
+    id: string
+    name: string
+    email: string
+    phone: string | null
+  } | null
   attendance: {
     overall: number
     stats: {
@@ -167,6 +179,7 @@ export function StudentDetailModal({
   const [activeTab, setActiveTab] = useState('overview')
   const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false)
   const [isArchiving, setIsArchiving] = useState(false)
+  const [isUnarchiving, setIsUnarchiving] = useState(false)
   const [newNote, setNewNote] = useState('')
   const [isSavingNote, setIsSavingNote] = useState(false)
   const [isMessageModalOpen, setIsMessageModalOpen] = useState(false)
@@ -307,7 +320,13 @@ export function StudentDetailModal({
   const handleConfirmArchive = async () => {
     if (!studentData || !onArchive) return
     
-    setIsArchiving(true)
+    const isArchiving = !studentData.isArchived
+    if (isArchiving) {
+      setIsArchiving(true)
+    } else {
+      setIsUnarchiving(true)
+    }
+    
     try {
       const response = await fetch(`/api/students/${studentData.id}/archive`, {
         method: 'POST',
@@ -315,27 +334,28 @@ export function StudentDetailModal({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          isArchived: true
+          isArchived: isArchiving
         }),
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        const errorMessage = errorData.error || errorData.details || 'Failed to archive student'
+        const errorMessage = data.error || data.details || `Failed to ${isArchiving ? 'archive' : 'unarchive'} student`
         throw new Error(errorMessage)
       }
 
-      const updatedStudent = await response.json()
-      onArchive(studentData.id, true)
-      toast.success('Student archived successfully')
+      onArchive(studentData.id, isArchiving)
+      toast.success(`Student ${isArchiving ? 'archived' : 'unarchived'} successfully`)
       setIsArchiveDialogOpen(false)
       // Refresh student data
       await fetchStudentDetails(studentData.id)
     } catch (error: any) {
       console.error('Archive error:', error)
-      toast.error(error.message || 'Failed to archive student')
+      toast.error(error.message || `Failed to ${isArchiving ? 'archive' : 'unarchive'} student`)
     } finally {
       setIsArchiving(false)
+      setIsUnarchiving(false)
     }
   }
 
@@ -494,15 +514,26 @@ export function StudentDetailModal({
                       Edit
                     </Button>
                   )}
-                  {onArchive && !studentData.isArchived && (
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => setIsArchiveDialogOpen(true)}
-                    >
-                      <Archive className="h-4 w-4 mr-2" />
-                      <span className="hidden sm:inline">Archive</span>
-                    </Button>
+                  {onArchive && (
+                    studentData.isArchived ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsArchiveDialogOpen(true)}
+                      >
+                        <ArchiveRestore className="h-4 w-4 mr-2" />
+                        <span className="hidden sm:inline">Unarchive</span>
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setIsArchiveDialogOpen(true)}
+                      >
+                        <Archive className="h-4 w-4 mr-2" />
+                        <span className="hidden sm:inline">Archive</span>
+                      </Button>
+                    )
                   )}
                   <button
                     onClick={onClose}
@@ -977,17 +1008,21 @@ export function StudentDetailModal({
         </div>
       </div>
 
-      {/* Archive Confirmation Dialog */}
+      {/* Archive/Unarchive Confirmation Dialog */}
       <ConfirmationDialog
         isOpen={isArchiveDialogOpen}
         onClose={() => setIsArchiveDialogOpen(false)}
         onConfirm={handleConfirmArchive}
-        title="Archive Student"
-        message={`Are you sure you want to archive ${studentData?.name}? This will disable their account and remove them from active students.`}
-        confirmText="Archive Student"
+        title={studentData?.isArchived ? "Unarchive Student" : "Archive Student"}
+        message={
+          studentData?.isArchived
+            ? `Are you sure you want to unarchive ${studentData?.name}? This will restore their account and make them visible in active students.`
+            : `Are you sure you want to archive ${studentData?.name}? This will disable their account and remove them from active students.`
+        }
+        confirmText={studentData?.isArchived ? "Unarchive Student" : "Archive Student"}
         cancelText="Cancel"
-        variant="destructive"
-        isLoading={isArchiving}
+        variant={studentData?.isArchived ? "default" : "destructive"}
+        isLoading={isArchiving || isUnarchiving}
       />
 
       {/* Send Message Modal */}

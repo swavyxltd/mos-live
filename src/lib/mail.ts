@@ -951,10 +951,10 @@ export async function sendApplicationAcceptanceEmail({
     <!-- Sign Up CTA -->
     <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; margin: 32px 0; text-align: center;">
       <h2 style="margin: 0 0 12px 0; font-size: 18px; font-weight: 600; color: #111827;">
-        Create Your Parent Account
+        Create Your Parent Portal Account
       </h2>
       <p style="margin: 0 0 24px 0; font-size: 15px; color: #6b7280; line-height: 1.6;">
-        Sign up for a free account to stay connected with your child's education and access all our features.
+        Your child's application has been accepted. Click the button below to create your Parent Portal account and access all our features.
       </p>
       <a href="${safeSignupUrl.replace(/&/g, '&amp;')}" style="display: inline-block; background-color: #111827; color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 16px;">
         Sign Up Now
@@ -1126,6 +1126,13 @@ export async function sendApplicationSubmissionConfirmation({
     <p style="margin: 0 0 24px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">
       We have successfully received your application. Our team will review it and get back to you shortly, inshallah.
     </p>
+    
+    <!-- Important Note -->
+    <div style="background-color: #fef3c7; border: 1px solid #fde68a; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 16px; margin: 24px 0;">
+      <p style="margin: 0; font-size: 15px; color: #92400e; line-height: 1.6; text-align: center;">
+        <strong>Important:</strong> If your application is accepted, you will receive an email with a link to create your Parent Portal account.
+      </p>
+    </div>
     
     <!-- Next Steps -->
     <div style="margin: 32px 0;">

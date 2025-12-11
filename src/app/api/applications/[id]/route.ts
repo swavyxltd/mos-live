@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma'
 import { sendApplicationAcceptanceEmail } from '@/lib/mail'
 import { logger } from '@/lib/logger'
 import crypto from 'crypto'
+import { generateUniqueClaimCode, generateClaimCodeExpiration } from '@/lib/claim-codes'
 
 // PATCH /api/applications/[id] - Update application status
 export async function PATCH(
@@ -79,57 +80,35 @@ export async function PATCH(
     let emailSent = false
     if (status === 'ACCEPTED') {
       try {
+        // Generate acceptance token for application
+        const acceptanceToken = crypto.randomBytes(32).toString('hex')
+        const acceptanceTokenExpiresAt = new Date()
+        acceptanceTokenExpiresAt.setDate(acceptanceTokenExpiresAt.getDate() + 30) // 30 days
+
         // Use transaction to ensure all-or-nothing student creation
         const result = await prisma.$transaction(async (tx) => {
-          // Find or create parent user
-          let parentUser = await tx.user.findUnique({
-            where: { email: application.guardianEmail.toLowerCase().trim() }
+          // Update application with acceptance token
+          await tx.application.update({
+            where: { id: application.id },
+            data: {
+              acceptanceToken,
+              acceptanceTokenExpiresAt
+            }
           })
 
-          if (!parentUser) {
-            // Create new parent user
-            try {
-              parentUser = await tx.user.create({
-                data: {
-                  id: crypto.randomUUID(),
-                  name: application.guardianName.trim(),
-                  email: application.guardianEmail.toLowerCase().trim(),
-                  phone: application.guardianPhone?.trim() || null,
-                  updatedAt: new Date()
-                }
-              })
-            } catch (createError: any) {
-              // Handle unique constraint violation (race condition)
-              if (createError.code === 'P2002') {
-                // User was created between our check and create, fetch it
-                parentUser = await tx.user.findUnique({
-                  where: { email: application.guardianEmail.toLowerCase().trim() }
-                })
-                if (!parentUser) {
-                  throw new Error('This email is already being used. Please use a different one.')
-                }
-              } else {
-                throw createError
-              }
-            }
+          // Note: We no longer create parent user here - parent will be created during signup
 
-            // Add parent to organisation
-            await tx.userOrgMembership.create({
-              data: {
-                id: crypto.randomUUID(),
-                userId: parentUser.id,
-                orgId: org.id,
-                role: 'PARENT'
-              }
-            })
-          }
+          // Note: Parent user will be created during signup, not here
 
           const childrenNames: string[] = []
           const createdStudentIds: string[] = []
-          const invitations: Array<{ studentId: string; token: string }> = []
 
           // Create student records for each child
           for (const child of application.ApplicationChild) {
+            // Generate claim code for accepted application
+            const claimCode = await generateUniqueClaimCode(tx)
+            const claimCodeExpiresAt = generateClaimCodeExpiration(90) // 90 days
+
             const student = await tx.student.create({
               data: {
                 id: crypto.randomUUID(),
@@ -137,31 +116,16 @@ export async function PATCH(
                 firstName: child.firstName.trim(),
                 lastName: child.lastName.trim(),
                 dob: child.dob ? new Date(child.dob) : undefined,
-                primaryParentId: parentUser.id,
+                // No primaryParentId - will be set when parent claims
+                claimCode,
+                claimCodeExpiresAt,
+                claimStatus: 'NOT_CLAIMED', // Will be claimed when parent signs up
                 updatedAt: new Date()
               }
             })
 
             childrenNames.push(`${child.firstName} ${child.lastName}`)
             createdStudentIds.push(student.id)
-
-            // Create parent invitation for this student
-            const token = crypto.randomBytes(32).toString('hex')
-            const expiresAt = new Date()
-            expiresAt.setDate(expiresAt.getDate() + 30) // 30 days expiry
-
-            await tx.parentInvitation.create({
-              data: {
-                id: crypto.randomUUID(),
-                orgId: org.id,
-                studentId: student.id,
-                parentEmail: application.guardianEmail.toLowerCase().trim(),
-                token,
-                expiresAt
-              }
-            })
-
-            invitations.push({ studentId: student.id, token })
 
             // If a preferred class was specified, try to enroll the student
             if (application.preferredClass) {
@@ -190,18 +154,18 @@ export async function PATCH(
             }
           }
 
-          return { childrenNames, createdStudentIds, invitations }
+          return { childrenNames, createdStudentIds }
         })
 
-        const { childrenNames, createdStudentIds, invitations } = result
+        const { childrenNames, createdStudentIds } = result
 
         // Send acceptance email to parent
-        if (childrenNames.length > 0 && createdStudentIds.length > 0 && invitations.length > 0) {
+        if (childrenNames.length > 0 && createdStudentIds.length > 0) {
           try {
             const baseUrl = process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'https://app.madrasah.io'
             const cleanBaseUrl = baseUrl.trim().replace(/\/+$/, '')
-            // Use the first student's invitation token from transaction result
-            const signupUrl = `${cleanBaseUrl}/auth/parent-setup?token=${invitations[0].token}`
+            // Use application acceptance token
+            const signupUrl = `${cleanBaseUrl}/parent/signup?applicationToken=${acceptanceToken}`
 
             logger.info('Sending application acceptance email', {
               to: application.guardianEmail,
@@ -231,10 +195,9 @@ export async function PATCH(
             // Don't fail the request if email fails, but log it
           }
         } else {
-          logger.warn('Cannot send email: No children or invitations created', {
+          logger.warn('Cannot send email: No children or students created', {
             childrenCount: childrenNames.length,
-            studentIdsCount: createdStudentIds.length,
-            invitationsCount: invitations.length
+            studentIdsCount: createdStudentIds.length
           })
         }
       } catch (error: any) {

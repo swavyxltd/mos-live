@@ -585,8 +585,11 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
           <CardContent className="p-8 text-center">
             <Users className="h-12 w-12 text-[var(--muted-foreground)] mx-auto mb-4 opacity-50" />
             <h3 className="text-lg font-medium text-[var(--foreground)] mb-2">No Children Found</h3>
-            <p className="text-[var(--muted-foreground)]">
-              No children are registered under your account. Please contact your madrasah administrator.
+            <p className="text-[var(--muted-foreground)] mb-2">
+              No children are registered under your account yet.
+            </p>
+            <p className="text-sm text-[var(--muted-foreground)]">
+              If you've just signed up, your child's information may still be being linked. Please contact the madrasah if you need assistance.
             </p>
           </CardContent>
         </Card>

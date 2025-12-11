@@ -72,6 +72,27 @@ async function handleGET(
             backupPhone: true
           }
         },
+        // Claim status and parent links
+        ClaimedByParent: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true
+          }
+        },
+        ParentStudentLink: {
+          include: {
+            User: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true
+              }
+            }
+          }
+        },
         // All classes with teachers
         StudentClass: {
           include: {
@@ -264,16 +285,27 @@ async function handleGET(
     const totalPaidThisYear = totalPaidThisYearResult._sum.amountP || 0
     const currentBalance = currentBalanceResult._sum.amountP || 0
 
-    // Get all parents (if there are multiple ways to link parents, expand this)
-    const parents = []
-    if (student.User) {
+    // Get all parents from ParentStudentLink (new claim system)
+    const parents = student.ParentStudentLink.map(link => ({
+      id: link.User.id,
+      name: link.User.name || '',
+      email: link.User.email || '',
+      phone: link.User.phone || '',
+      backupPhone: null,
+      isPrimary: false,
+      claimedAt: link.claimedAt ? link.claimedAt.toISOString() : null
+    }))
+
+    // Also include primary parent if exists (legacy)
+    if (student.User && !parents.some(p => p.id === student.User!.id)) {
       parents.push({
         id: student.User.id,
         name: student.User.name || '',
         email: student.User.email || '',
         phone: student.User.phone || '',
         backupPhone: student.User.backupPhone || '',
-        isPrimary: true
+        isPrimary: true,
+        claimedAt: null
       })
     }
 
@@ -370,6 +402,17 @@ async function handleGET(
       isArchived: student.isArchived,
       archivedAt: student.archivedAt ? student.archivedAt.toISOString() : null,
       studentId: student.id, // Reference ID
+      
+      // Claim status
+      claimStatus: student.claimStatus || 'NOT_CLAIMED',
+      claimCode: student.claimCode,
+      claimCodeExpiresAt: student.claimCodeExpiresAt ? student.claimCodeExpiresAt.toISOString() : null,
+      claimedBy: student.ClaimedByParent ? {
+        id: student.ClaimedByParent.id,
+        name: student.ClaimedByParent.name || '',
+        email: student.ClaimedByParent.email,
+        phone: student.ClaimedByParent.phone
+      } : null,
 
       // Classes and teachers
       classes,

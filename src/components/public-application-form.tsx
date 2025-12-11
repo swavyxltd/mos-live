@@ -262,8 +262,11 @@ export function PublicApplicationForm({ org, classes }: PublicApplicationFormPro
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-center text-sm text-[var(--muted-foreground)]">
+                  <p className="text-center text-sm text-[var(--muted-foreground)] mb-2">
                     We will review your application and contact you shortly.
+                  </p>
+                  <p className="text-center text-xs text-[var(--muted-foreground)]">
+                    If your application is accepted, you will receive an email with a link to create your Parent Portal account.
                   </p>
                 </CardContent>
               </Card>

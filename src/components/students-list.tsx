@@ -19,7 +19,10 @@ import {
   Eye,
   Edit,
   Trash2,
-  Archive
+  Archive,
+  Plus,
+  Clock,
+  XCircle
 } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
@@ -48,6 +51,17 @@ interface Student {
   }>
   attendanceRate: number
   lastAttendance: Date
+  claimStatus?: 'NOT_CLAIMED' | 'PENDING_VERIFICATION' | 'CLAIMED'
+  claimCode?: string | null
+  parentLinks?: Array<{
+    id: string
+    parent: {
+      id: string
+      name: string
+      email: string
+    }
+    claimedAt: Date | null
+  }>
 }
 
 interface Class {
@@ -480,6 +494,43 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
     return sortOrder === 'asc' ? comparison : -comparison
   })
 
+  // Show empty state if no students
+  if (sortedStudents.length === 0) {
+    const hasFilters = filters && Object.values(filters).some(v => v !== '' && v !== null && v !== undefined)
+    
+    return (
+      <Card>
+        <CardContent className="text-center py-12">
+          <div className="mx-auto w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+            <Users className="h-6 w-6 text-gray-400" />
+          </div>
+          {hasFilters ? (
+            <>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No students match your filters</h3>
+              <p className="text-gray-500 mb-4">Try adjusting your search or filter criteria.</p>
+            </>
+          ) : (
+            <>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No students yet</h3>
+              <p className="text-gray-500 mb-4">
+                Add your first student to start tracking attendance and managing enrollments.
+              </p>
+              <p className="text-sm text-gray-400 mb-4">
+                Tip: You can add students one at a time or upload multiple students using bulk upload.
+              </p>
+              {onAddStudent && (
+                <Button onClick={onAddStudent} className="mt-2">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Your First Student
+                </Button>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
     <div className="space-y-4">
       {/* Controls */}
@@ -516,6 +567,7 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
                         <TableHead>Student</TableHead>
                         <TableHead>Age</TableHead>
                         <TableHead className="hidden md:table-cell">Parent</TableHead>
+                        <TableHead className="hidden lg:table-cell">Claim Status</TableHead>
                         <TableHead>Attendance (YTD)</TableHead>
                         <TableHead className="hidden md:table-cell">Status</TableHead>
                         <TableHead>Actions</TableHead>
