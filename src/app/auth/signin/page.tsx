@@ -35,32 +35,10 @@ function SignInPageContent() {
     }
   }, []) // Empty deps - only run once on mount
 
-  // Check session separately with a delay to avoid race conditions in production
-  useEffect(() => {
-    if (sessionCheckedRef.current) return
-    sessionCheckedRef.current = true
-    
-    // Add a small delay to ensure page is fully loaded and cookies are available
-    const timeoutId = setTimeout(() => {
-      getSession().then((session) => {
-        // Only redirect if we have a valid session with roleHints
-        if (session?.user && (session.user as any)?.roleHints) {
-          try {
-            const redirectUrl = getPostLoginRedirect((session.user as any).roleHints)
-            // Use replace to prevent back button issues
-            window.location.replace(redirectUrl)
-          } catch (err) {
-            console.error('Error getting redirect URL:', err)
-          }
-        }
-      }).catch((err) => {
-        // Silently fail - user is not logged in, which is expected on signin page
-        console.error('Session check error:', err)
-      })
-    }, 100) // Small delay to ensure cookies are available in production
-    
-    return () => clearTimeout(timeoutId)
-  }, []) // Empty deps - only run once on mount
+  // Note: We don't check session here because:
+  // 1. Middleware will handle redirecting authenticated users
+  // 2. Checking session on client-side can cause race conditions in production
+  // 3. If user is already logged in, middleware will redirect them before this page loads
 
   const handleCredentialsSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
