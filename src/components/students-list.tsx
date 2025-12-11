@@ -523,7 +523,11 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
                     </TableHeader>
             <TableBody>
               {sortedStudents.map((student) => (
-                <TableRow key={student.id} className={student.isArchived ? 'bg-gray-50 opacity-75' : ''}>
+                <TableRow 
+                  key={student.id} 
+                  className={`${student.isArchived ? 'bg-gray-50 opacity-75' : ''} cursor-pointer hover:bg-gray-50 transition-colors`}
+                  onClick={() => handleViewStudent(student)}
+                >
                   <TableCell>
                     <div className="flex items-center space-x-3">
                       <div className={`h-10 w-10 rounded-full flex items-center justify-center ${getAttendanceBgColor(student.attendanceRate)} hidden md:flex`}>
@@ -590,7 +594,7 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center space-x-1">
+                    <div className="flex items-center space-x-1" onClick={(e) => e.stopPropagation()}>
                       <Button 
                         variant="ghost" 
                         size="sm" 
