@@ -8,12 +8,6 @@ import { Button } from '@/components/ui/button'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { 
   X,
   User,
@@ -36,7 +30,6 @@ import {
   ExternalLink,
   Loader2,
   Plus,
-  ChevronDown,
   Send,
 } from 'lucide-react'
 import { getAttendanceRating } from '@/lib/attendance-ratings'
@@ -579,10 +572,6 @@ export function StudentDetailModal({
                             <p className="text-sm text-[var(--foreground)]">{formatDate(studentData.enrollmentDate)}</p>
                           </div>
                           <div>
-                            <label className="text-xs text-[var(--muted-foreground)]">Student ID</label>
-                            <p className="text-sm font-mono text-[var(--foreground)]">{studentData.studentId.slice(0, 8)}...</p>
-                          </div>
-                          <div>
                             <label className="text-xs text-[var(--muted-foreground)]">Status</label>
                             <div className="text-sm text-[var(--foreground)]">
                               <Badge
@@ -647,43 +636,55 @@ export function StudentDetailModal({
                                         <Mail className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
                                         <a 
                                           href={`mailto:${parent.email}`}
-                                          className="text-blue-600 hover:underline truncate"
+                                          className="hover:underline truncate"
                                         >
                                           {parent.email}
                                         </a>
                                       </p>
                                     </div>
                                   )}
-                                  {(parent.phone || parent.backupPhone) && (
+                                  {parent.phone && (
                                     <div>
-                                      <label className="text-xs text-[var(--muted-foreground)] mb-2 block">Phone</label>
-                                      <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                          <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                                      <label className="text-xs text-[var(--muted-foreground)]">Phone</label>
+                                      <div className="flex items-center gap-2">
+                                        <p className="text-sm text-[var(--foreground)] flex items-center gap-2">
+                                          <Phone className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
+                                          {parent.phone}
+                                        </p>
+                                        <Button 
+                                          variant="outline" 
+                                          size="sm" 
+                                          asChild
+                                          className="ml-2"
+                                        >
+                                          <a href={`tel:${parent.phone}`}>
                                             <Phone className="h-4 w-4 mr-2" />
                                             Call
-                                            <ChevronDown className="h-4 w-4 ml-2" />
-                                          </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent>
-                                          {parent.phone && (
-                                            <DropdownMenuItem asChild>
-                                              <a href={`tel:${parent.phone}`} className="flex items-center w-full">
-                                                <Phone className="h-4 w-4 mr-2" />
-                                                {parent.phone}
-                                              </a>
-                                            </DropdownMenuItem>
-                                          )}
-                                          {parent.backupPhone && (
-                                            <DropdownMenuItem asChild>
-                                              <a href={`tel:${parent.backupPhone}`} className="flex items-center w-full">
-                                                <Phone className="h-4 w-4 mr-2" />
-                                                {parent.backupPhone} (Backup)
-                                              </a>
-                                            </DropdownMenuItem>
-                                          )}
-                                        </DropdownMenuContent>
-                                      </DropdownMenu>
+                                          </a>
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  )}
+                                  {parent.backupPhone && (
+                                    <div>
+                                      <label className="text-xs text-[var(--muted-foreground)]">Backup Phone</label>
+                                      <div className="flex items-center gap-2">
+                                        <p className="text-sm text-[var(--foreground)] flex items-center gap-2">
+                                          <Phone className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
+                                          {parent.backupPhone}
+                                        </p>
+                                        <Button 
+                                          variant="outline" 
+                                          size="sm" 
+                                          asChild
+                                          className="ml-2"
+                                        >
+                                          <a href={`tel:${parent.backupPhone}`}>
+                                            <Phone className="h-4 w-4 mr-2" />
+                                            Call
+                                          </a>
+                                        </Button>
+                                      </div>
                                     </div>
                                   )}
                                   <Button
