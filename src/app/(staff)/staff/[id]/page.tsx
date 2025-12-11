@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { getActiveOrg } from '@/lib/org'
+import { prisma } from '@/lib/prisma'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -110,6 +111,60 @@ export default async function StaffDetailsPage({ params }: StaffDetailsPageProps
     ]
 
     teacherData = demoTeachers.find(teacher => teacher.id === id)
+  } else {
+    // Fetch actual teacher data from database
+    // The id is the userId
+    const membership = await prisma.userOrgMembership.findUnique({
+      where: {
+        userId_orgId: {
+          userId: id,
+          orgId: org.id
+        }
+      },
+      include: {
+        User: {
+          include: {
+            Class: {
+              where: {
+                isArchived: false
+              },
+              include: {
+                _count: {
+                  select: {
+                    StudentClass: true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    })
+
+    if (membership && membership.User) {
+      const classes = membership.User.Class || []
+      const totalStudents = classes.reduce((sum, cls) => sum + (cls._count?.StudentClass || 0), 0)
+      
+      teacherData = {
+        id: membership.User.id,
+        name: membership.User.name || membership.User.email || 'Unknown',
+        email: membership.User.email || '',
+        phone: membership.User.phone || '',
+        username: membership.User.email?.split('@')[0] || '',
+        isActive: !membership.User.isArchived,
+        createdAt: membership.User.createdAt,
+        updatedAt: membership.User.updatedAt,
+        classes: classes.map(cls => ({
+          id: cls.id,
+          name: cls.name,
+          students: cls._count?.StudentClass || 0
+        })),
+        _count: {
+          classes: classes.length,
+          students: totalStudents
+        }
+      }
+    }
   }
 
   if (!teacherData) {
