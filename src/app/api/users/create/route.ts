@@ -152,8 +152,32 @@ async function handlePOST(request: NextRequest) {
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
-      where: { email: sanitizedEmail }
+      where: { email: sanitizedEmail },
+      select: {
+        id: true,
+        isSuperAdmin: true
+      }
     })
+
+    // Block using existing emails for new accounts
+    // This endpoint can update existing users, but cannot create duplicates
+    if (existingUser) {
+      // If trying to change account type (owner to non-owner or vice versa), block it
+      if (existingUser.isSuperAdmin && !isSuperAdmin) {
+        return NextResponse.json(
+          { error: 'This email belongs to an owner account and cannot be used for organisation accounts.' },
+          { status: 403 }
+        )
+      }
+      if (!existingUser.isSuperAdmin && isSuperAdmin) {
+        return NextResponse.json(
+          { error: 'This email belongs to an organisation account and cannot be converted to an owner account.' },
+          { status: 403 }
+        )
+      }
+      // If user exists, we'll update them (handled in update logic below)
+      // This prevents creating duplicate accounts with the same email
+    }
 
     let user
     if (existingUser) {

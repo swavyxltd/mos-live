@@ -120,13 +120,17 @@ async function handlePOST(request: NextRequest) {
       )
     }
 
-    // Check if user already exists
+    // Check if user already exists - block ALL existing emails
     const existingUser = await prisma.user.findUnique({
-      where: { email: sanitizedEmail }
+      where: { email: sanitizedEmail },
+      select: {
+        id: true,
+        isSuperAdmin: true
+      }
     })
 
     if (existingUser) {
-      // Check if user is already a parent in this org
+      // Check if user is already a parent in this org (allow linking to additional students)
       const existingMembership = await prisma.userOrgMembership.findUnique({
         where: {
           userId_orgId: {
@@ -136,9 +140,14 @@ async function handlePOST(request: NextRequest) {
         }
       })
 
+      // If user is already a parent in this org, allow them to link additional students
       if (existingMembership && existingMembership.role === 'PARENT') {
+        // Allow linking additional students to existing parent account
+        // Continue with the signup flow to link students
+      } else {
+        // Email exists but user is not a parent in this org - block signup
         return NextResponse.json(
-          { error: 'An account with this email already exists for this organisation. Please sign in instead.' },
+          { error: 'This email is already registered. Please sign in with your existing account or use a different email.' },
           { status: 400 }
         )
       }

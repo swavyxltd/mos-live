@@ -111,14 +111,18 @@ async function handlePOST(request: NextRequest) {
       )
     }
 
-    // Check if user already exists
+    // Check if user already exists - block ALL existing emails
     const existingUser = await prisma.user.findUnique({
-      where: { email: sanitizedEmail }
+      where: { email: sanitizedEmail },
+      select: {
+        id: true,
+        isSuperAdmin: true
+      }
     })
 
     if (existingUser) {
       return NextResponse.json(
-        { error: 'This email is already being used. Please use a different one.' },
+        { error: 'This email is already registered. Please use a different email or sign in with your existing account.' },
         { status: 400 }
       )
     }
