@@ -90,11 +90,11 @@ async function handleGET(
             }
           }
         },
-        // Recent attendance records (last 30 days)
+        // Recent attendance records (last 14 days, limit to 20)
         Attendance: {
           where: {
             date: {
-              gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
+              gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) // Last 14 days
             }
           },
           include: {
@@ -108,13 +108,13 @@ async function handleGET(
           orderBy: {
             date: 'desc'
           },
-          take: 50
+          take: 20
         },
-        // Payment records (last 12 months)
+        // Payment records (last 6 months, limit to 20)
         MonthlyPaymentRecord: {
           where: {
             createdAt: {
-              gte: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000) // Last year
+              gte: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000) // Last 6 months
             }
           },
           include: {
@@ -127,9 +127,10 @@ async function handleGET(
           },
           orderBy: {
             month: 'desc'
-          }
+          },
+          take: 20
         },
-        // Progress notes
+        // Progress notes (limit to 20)
         ProgressLog: {
           include: {
             User: {
@@ -143,19 +144,19 @@ async function handleGET(
           orderBy: {
             createdAt: 'desc'
           },
-          take: 50
+          take: 20
         },
-        // Invoices (last 12 months)
+        // Invoices (last 6 months, limit to 20)
         Invoice: {
           where: {
             createdAt: {
-              gte: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000)
+              gte: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000)
             }
           },
           orderBy: {
             createdAt: 'desc'
           },
-          take: 50
+          take: 20
         }
       }
     })
@@ -189,33 +190,46 @@ async function handleGET(
       }
     })
 
-    const presentCount = allAttendance.filter(a => a.status === 'PRESENT' || a.status === 'LATE').length
-    const absentCount = allAttendance.filter(a => a.status === 'ABSENT').length
-    const lateCount = allAttendance.filter(a => a.status === 'LATE').length
-    const totalAttendance = allAttendance.length
-    const attendanceRate = totalAttendance > 0
-      ? Math.round((presentCount / totalAttendance) * 100)
+    const presentAndLateCount = presentCount + lateCount
+    const attendanceRate = totalCount > 0
+      ? Math.round((presentAndLateCount / totalCount) * 100)
       : 0
 
-    // Calculate fees stats
+    // Calculate fees stats - use aggregation for better performance
     const currentYear = new Date().getFullYear()
     const yearStart = new Date(currentYear, 0, 1)
     
-    const yearPayments = student.MonthlyPaymentRecord.filter(
-      record => new Date(record.createdAt) >= yearStart && record.status === 'PAID'
-    )
-    const totalPaidThisYear = yearPayments.reduce((sum, record) => sum + record.amountP, 0)
+    const [totalPaidThisYearResult, currentBalanceResult] = await Promise.all([
+      prisma.monthlyPaymentRecord.aggregate({
+        where: {
+          studentId: id,
+          orgId: finalOrgId,
+          createdAt: { gte: yearStart },
+          status: 'PAID'
+        },
+        _sum: {
+          amountP: true
+        }
+      }),
+      prisma.monthlyPaymentRecord.aggregate({
+        where: {
+          studentId: id,
+          orgId: finalOrgId,
+          status: { in: ['PENDING', 'OVERDUE'] }
+        },
+        _sum: {
+          amountP: true
+        }
+      })
+    ])
+    
+    const totalPaidThisYear = totalPaidThisYearResult._sum.amountP || 0
+    const currentBalance = currentBalanceResult._sum.amountP || 0
 
-    // Calculate current balance (pending + overdue payments)
-    const pendingPayments = student.MonthlyPaymentRecord.filter(
-      record => record.status === 'PENDING' || record.status === 'OVERDUE'
-    )
-    const currentBalance = pendingPayments.reduce((sum, record) => sum + record.amountP, 0)
-
-    // Get activity log (recent audit logs for this student)
+    // Get activity log (recent audit logs for this student) - limit to 10
     const activityLog = await prisma.auditLog.findMany({
       where: {
-        orgId,
+        orgId: orgId || student.orgId,
         targetType: 'STUDENT',
         targetId: id
       },
@@ -231,7 +245,7 @@ async function handleGET(
       orderBy: {
         createdAt: 'desc'
       },
-      take: 20
+      take: 10
     })
 
     // Get all parents (if there are multiple ways to link parents, expand this)
@@ -350,12 +364,12 @@ async function handleGET(
       // Attendance
       attendance: {
         overall: attendanceRate,
-        stats: {
-          present: presentCount,
-          absent: absentCount,
-          late: lateCount,
-          total: totalAttendance
-        },
+      stats: {
+        present: presentCount,
+        absent: absentCount,
+        late: lateCount,
+        total: totalCount
+      },
         recent: recentAttendance
       },
 

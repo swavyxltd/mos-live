@@ -360,8 +360,8 @@ export function StudentDetailModal({
           }
         }}
       >
-        <div className="w-[95vw] sm:w-[90vw] md:w-[85vw] lg:w-[80vw] max-w-6xl my-8 max-h-[90vh] flex flex-col">
-          <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-md overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="w-[95vw] sm:w-[90vw] md:w-[85vw] lg:w-[80vw] max-w-6xl my-8">
+          <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-md overflow-hidden">
             {/* Header */}
             <div className="p-4 sm:p-6 border-b border-[var(--border)] bg-[var(--muted)]/30">
               <div className="flex items-start justify-between gap-4">
@@ -449,7 +449,7 @@ export function StudentDetailModal({
             </div>
 
             {/* Content - Two Column Layout */}
-            <div className="p-4 sm:p-6 overflow-y-auto flex-1">
+            <div className="p-4 sm:p-6">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Left Column - Student Info & Parents */}
                 <div className="lg:col-span-1 space-y-4">
@@ -848,8 +848,19 @@ export function StudentDetailModal({
             </div>
 
             {/* Footer Actions */}
-            <div className="p-4 sm:p-6 border-t border-[var(--border)] bg-[var(--muted)]/30 flex-shrink-0">
+            <div className="p-4 sm:p-6 border-t border-[var(--border)] bg-[var(--muted)]/30">
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    router.push(`/students/${studentData.id}`)
+                    onClose()
+                  }}
+                  className="flex-1 sm:flex-initial"
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Open Full Profile
+                </Button>
                 {onEdit && (
                   <Button
                     variant="outline"
