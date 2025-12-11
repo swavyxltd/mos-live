@@ -109,14 +109,7 @@ export function OnboardingDashboard({ students, classes, stats }: OnboardingDash
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-[var(--foreground)]">Student Onboarding</h1>
-        <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-          Track which students have parents who have signed up for accounts
-        </p>
-      </div>
+    <div className="space-y-6 w-full">
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
