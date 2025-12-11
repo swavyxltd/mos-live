@@ -95,7 +95,7 @@ export function PaymentRequiredModal({ isOpen, onClose, action, userRole }: Paym
                     </h2>
                   </div>
                   <p className="text-sm text-[var(--muted-foreground)]">
-                    You need to set up your payment method before you can {getActionDescription()}.
+                    Add a payment method to start your free 30-day trial and unlock all features. You won't be charged during the trial period.
                   </p>
                 </div>
                 <button

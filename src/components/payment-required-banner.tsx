@@ -103,11 +103,10 @@ export function PaymentRequiredBanner() {
             </div>
             <div className="flex-1">
               <h3 className="text-sm font-semibold text-[var(--foreground)] mb-1">
-                Payment Method Required
+                Start Your Free 30-Day Trial
               </h3>
               <p className="text-sm text-[var(--muted-foreground)] mb-3">
-                You need to add a payment method before you can add students, staff, classes, or any other data to your madrasah. 
-                Add your card details to get started.
+                Add a payment method to start your free 30-day trial. You won't be charged during the trial period, and you can add students, staff, classes, and use all features right away.
               </p>
               <Button
                 onClick={() => setShowPaymentModal(true)}
