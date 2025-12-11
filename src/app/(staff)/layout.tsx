@@ -133,9 +133,9 @@ export default async function StaffLayout({
       const headersList = await headers()
       const pathname = headersList.get('x-pathname') || ''
       
-      // Redirect to onboarding if not complete and not already on onboarding page
-      if (!onboardingComplete && !pathname.includes('/onboarding')) {
-        redirect('/onboarding')
+      // Redirect to setup if not complete and not already on setup page
+      if (!onboardingComplete && !pathname.includes('/setup')) {
+        redirect('/setup')
       }
     }
   }
