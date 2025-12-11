@@ -109,7 +109,7 @@ export function OnboardingDashboard({ students, classes, stats }: OnboardingDash
   }
 
   return (
-    <div className="space-y-6 w-full">
+    <div className="space-y-6">
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
