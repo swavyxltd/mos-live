@@ -7,13 +7,13 @@ import crypto from 'crypto'
 import { sendParentOnboardingEmail } from '@/lib/mail'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
-import { isValidName, isValidEmailStrict, isValidPhone } from '@/lib/input-validation'
+import { isValidName, isValidEmailStrict, isValidDateOfBirth } from '@/lib/input-validation'
 
 interface StudentData {
   firstName: string
   lastName: string
-  parentEmail: string
-  parentPhone?: string
+  email?: string
+  dob: string
   startMonth: string
   classId: string
   rowNumber: number
@@ -98,18 +98,30 @@ async function handlePOST(request: NextRequest) {
           continue
         }
         
-        if (!isValidEmailStrict(studentData.parentEmail.trim())) {
+        // Email is optional but validate if provided
+        if (studentData.email && studentData.email.trim()) {
+          if (!isValidEmailStrict(studentData.email.trim())) {
+            results.errors.push({
+              rowNumber: studentData.rowNumber,
+              error: 'Email must be a valid email address'
+            })
+            continue
+          }
+        }
+        
+        // DOB is required
+        if (!studentData.dob || !studentData.dob.trim()) {
           results.errors.push({
             rowNumber: studentData.rowNumber,
-            error: 'Parent email must be a valid email address'
+            error: 'Date of birth is required'
           })
           continue
         }
         
-        if (studentData.parentPhone && studentData.parentPhone.trim() && !isValidPhone(studentData.parentPhone.trim())) {
+        if (!isValidDateOfBirth(studentData.dob.trim())) {
           results.errors.push({
             rowNumber: studentData.rowNumber,
-            error: 'Parent phone must be a valid UK phone number'
+            error: 'Date of birth must be a valid date (not in the future, age 0-120 years)'
           })
           continue
         }
@@ -137,72 +149,65 @@ async function handlePOST(request: NextRequest) {
         const result = await prisma.$transaction(async (tx) => {
           // Handle duplicate (update existing)
           if (studentData.isDuplicate && studentData.existingStudentId) {
-            // Update existing student (only firstName and lastName, matching single add modal)
+            // Update existing student with new data
             const updatedStudent = await tx.student.update({
               where: { id: studentData.existingStudentId },
               data: {
                 firstName: studentData.firstName.trim(),
-                lastName: studentData.lastName.trim()
+                lastName: studentData.lastName.trim(),
+                dob: new Date(studentData.dob.trim())
               }
             })
 
-            // Find or create parent user (only email initially, parent will provide name/phone during signup)
-            let parentUser = await tx.user.findUnique({
-              where: { email: studentData.parentEmail.toLowerCase().trim() }
-            })
+            // Only create parent user and link if email is provided
+            let parentUser = null
+            if (studentData.email && studentData.email.trim()) {
+              parentUser = await tx.user.findUnique({
+                where: { email: studentData.email.toLowerCase().trim() }
+              })
 
-            if (!parentUser) {
-              try {
-                parentUser = await tx.user.create({
+              if (!parentUser) {
+                try {
+                  parentUser = await tx.user.create({
+                    data: {
+                      id: crypto.randomUUID(),
+                      email: studentData.email.toLowerCase().trim(),
+                      updatedAt: new Date()
+                    }
+                  })
+                } catch (createError: any) {
+                  // Handle unique constraint violation (race condition)
+                  if (createError.code === 'P2002') {
+                    // User was created between our check and create, fetch it
+                    parentUser = await tx.user.findUnique({
+                      where: { email: studentData.email.toLowerCase().trim() }
+                    })
+                    if (!parentUser) {
+                      throw new Error('This email is already being used. Please use a different one.')
+                    }
+                  } else {
+                    throw createError
+                  }
+                }
+
+                await tx.userOrgMembership.create({
                   data: {
                     id: crypto.randomUUID(),
-                    email: studentData.parentEmail.toLowerCase().trim(),
-                    phone: studentData.parentPhone || undefined, // Optional phone if provided
-                    updatedAt: new Date()
+                    userId: parentUser.id,
+                    orgId: org.id,
+                    role: 'PARENT'
                   }
                 })
-              } catch (createError: any) {
-                // Handle unique constraint violation (race condition)
-                if (createError.code === 'P2002') {
-                  // User was created between our check and create, fetch it
-                  parentUser = await tx.user.findUnique({
-                    where: { email: studentData.parentEmail.toLowerCase().trim() }
-                  })
-                  if (!parentUser) {
-                    throw new Error('This email is already being used. Please use a different one.')
-                  }
-                } else {
-                  throw createError
-                }
               }
 
-              await tx.userOrgMembership.create({
+              // Link student to parent
+              await tx.student.update({
+                where: { id: studentData.existingStudentId },
                 data: {
-                  id: crypto.randomUUID(),
-                  userId: parentUser.id,
-                  orgId: org.id,
-                  role: 'PARENT'
+                  primaryParentId: parentUser.id
                 }
               })
-            } else {
-              // Update parent phone if provided
-              if (studentData.parentPhone) {
-                await tx.user.update({
-                  where: { id: parentUser.id },
-                  data: {
-                    phone: studentData.parentPhone
-                  }
-                })
-              }
             }
-
-            // Link student to parent
-            await tx.student.update({
-              where: { id: studentData.existingStudentId },
-              data: {
-                primaryParentId: parentUser.id
-              }
-            })
 
             // Check if student is already enrolled in class
             const existingEnrollment = await tx.studentClass.findFirst({
@@ -225,66 +230,61 @@ async function handlePOST(request: NextRequest) {
 
             return { student: updatedStudent, parentUser, isUpdate: true }
           } else {
-            // Create new student (matching single "Add Student" modal flow)
-            // Find or create parent user (only email initially, parent will provide name/phone during signup)
-            let parentUser = await tx.user.findUnique({
-              where: { email: studentData.parentEmail.toLowerCase().trim() }
-            })
+            // Create new student
+            // Only create parent user if email is provided
+            let parentUser = null
+            let invitation = null
+            
+            if (studentData.email && studentData.email.trim()) {
+              parentUser = await tx.user.findUnique({
+                where: { email: studentData.email.toLowerCase().trim() }
+              })
 
-            if (!parentUser) {
-              try {
-                parentUser = await tx.user.create({
+              if (!parentUser) {
+                try {
+                  parentUser = await tx.user.create({
+                    data: {
+                      id: crypto.randomUUID(),
+                      email: studentData.email.toLowerCase().trim(),
+                      updatedAt: new Date()
+                    }
+                  })
+                } catch (createError: any) {
+                  // Handle unique constraint violation (race condition)
+                  if (createError.code === 'P2002') {
+                    // User was created between our check and create, fetch it
+                    parentUser = await tx.user.findUnique({
+                      where: { email: studentData.email.toLowerCase().trim() }
+                    })
+                    if (!parentUser) {
+                      throw new Error('This email is already being used. Please use a different one.')
+                    }
+                  } else {
+                    throw createError
+                  }
+                }
+
+                await tx.userOrgMembership.create({
                   data: {
                     id: crypto.randomUUID(),
-                    email: studentData.parentEmail.toLowerCase().trim(),
-                    phone: studentData.parentPhone || undefined, // Optional phone if provided
-                    updatedAt: new Date()
-                  }
-                })
-              } catch (createError: any) {
-                // Handle unique constraint violation (race condition)
-                if (createError.code === 'P2002') {
-                  // User was created between our check and create, fetch it
-                  parentUser = await tx.user.findUnique({
-                    where: { email: studentData.parentEmail.toLowerCase().trim() }
-                  })
-                  if (!parentUser) {
-                    throw new Error('This email is already being used. Please use a different one.')
-                  }
-                } else {
-                  throw createError
-                }
-              }
-
-              await tx.userOrgMembership.create({
-                data: {
-                  id: crypto.randomUUID(),
-                  userId: parentUser.id,
-                  orgId: org.id,
-                  role: 'PARENT'
-                }
-              })
-            } else {
-              // Update parent phone if provided
-              if (studentData.parentPhone) {
-                await tx.user.update({
-                  where: { id: parentUser.id },
-                  data: {
-                    phone: studentData.parentPhone
+                    userId: parentUser.id,
+                    orgId: org.id,
+                    role: 'PARENT'
                   }
                 })
               }
             }
 
-            // Create student (only firstName and lastName, matching single add modal)
+            // Create student with DOB
             const student = await tx.student.create({
               data: {
                 id: crypto.randomUUID(),
                 orgId: org.id,
                 firstName: studentData.firstName.trim(),
                 lastName: studentData.lastName.trim(),
-                primaryParentId: parentUser.id,
-                claimStatus: 'NOT_CLAIMED',
+                dob: new Date(studentData.dob.trim()),
+                primaryParentId: parentUser?.id || null,
+                claimStatus: parentUser ? 'NOT_CLAIMED' : 'UNVERIFIED',
                 updatedAt: new Date()
               }
             })
@@ -299,64 +299,81 @@ async function handlePOST(request: NextRequest) {
               }
             })
 
-            // Create parent invitation
-            const token = crypto.randomBytes(32).toString('hex')
-            const expiresAt = new Date()
-            expiresAt.setDate(expiresAt.getDate() + 7) // 7 days
+            // Create parent invitation only if email is provided
+            if (studentData.email && studentData.email.trim() && parentUser) {
+              const token = crypto.randomBytes(32).toString('hex')
+              const expiresAt = new Date()
+              expiresAt.setDate(expiresAt.getDate() + 7) // 7 days
 
-            const invitation = await tx.parentInvitation.create({
-              data: {
-                id: crypto.randomUUID(),
-                orgId: org.id,
-                studentId: student.id,
-                parentEmail: studentData.parentEmail.toLowerCase().trim(),
-                token,
-                expiresAt
-              }
-            })
-
-            // Get parent's preferred payment method if parent exists
-            let preferredMethod: string | null = null
-            if (student.primaryParentId) {
-              const billingProfile = await tx.parentBillingProfile.findUnique({
-                where: {
-                  orgId_parentUserId: {
-                    orgId: org.id,
-                    parentUserId: student.primaryParentId
-                  }
-                },
-                select: { preferredPaymentMethod: true }
+              invitation = await tx.parentInvitation.create({
+                data: {
+                  id: crypto.randomUUID(),
+                  orgId: org.id,
+                  studentId: student.id,
+                  parentEmail: studentData.email.toLowerCase().trim(),
+                  token,
+                  expiresAt
+                }
               })
-              preferredMethod = billingProfile?.preferredPaymentMethod || null
-            }
 
-            // Create payment record for start month
-            await tx.monthlyPaymentRecord.create({
-              data: {
-                id: crypto.randomUUID(),
-                orgId: org.id,
-                studentId: student.id,
-                classId: studentData.classId,
-                month: studentData.startMonth,
-                amountP: classRecord.monthlyFeeP,
-                status: 'PENDING',
-                method: preferredMethod,
-                updatedAt: new Date()
+              // Get parent's preferred payment method if parent exists
+              let preferredMethod: string | null = null
+              if (student.primaryParentId) {
+                const billingProfile = await tx.parentBillingProfile.findUnique({
+                  where: {
+                    orgId_parentUserId: {
+                      orgId: org.id,
+                      parentUserId: student.primaryParentId
+                    }
+                  },
+                  select: { preferredPaymentMethod: true }
+                })
+                preferredMethod = billingProfile?.preferredPaymentMethod || null
               }
-            })
 
-            // Send parent onboarding email
-            const setupUrl = `${baseUrl.replace(/\/$/, '')}/auth/parent-setup?token=${token}`
-            try {
-              await sendParentOnboardingEmail({
-                to: studentData.parentEmail,
-                orgName: org.name,
-                studentName: `${studentData.firstName} ${studentData.lastName}`,
-                setupUrl
+              // Create payment record for start month
+              await tx.monthlyPaymentRecord.create({
+                data: {
+                  id: crypto.randomUUID(),
+                  orgId: org.id,
+                  studentId: student.id,
+                  classId: studentData.classId,
+                  month: studentData.startMonth,
+                  amountP: classRecord.monthlyFeeP,
+                  status: 'PENDING',
+                  method: preferredMethod,
+                  updatedAt: new Date()
+                }
               })
-            } catch (emailError: any) {
-              logger.error('Failed to send parent onboarding email', emailError)
-              // Don't fail the transaction if email fails
+
+              // Send parent onboarding email
+              const setupUrl = `${baseUrl.replace(/\/$/, '')}/auth/parent-setup?token=${token}`
+              try {
+                await sendParentOnboardingEmail({
+                  to: studentData.email,
+                  orgName: org.name,
+                  studentName: `${studentData.firstName} ${studentData.lastName}`,
+                  setupUrl
+                })
+              } catch (emailError: any) {
+                logger.error('Failed to send parent onboarding email', emailError)
+                // Don't fail the transaction if email fails
+              }
+            } else {
+              // Create payment record even without email (parent can claim later)
+              await tx.monthlyPaymentRecord.create({
+                data: {
+                  id: crypto.randomUUID(),
+                  orgId: org.id,
+                  studentId: student.id,
+                  classId: studentData.classId,
+                  month: studentData.startMonth,
+                  amountP: classRecord.monthlyFeeP,
+                  status: 'PENDING',
+                  method: null,
+                  updatedAt: new Date()
+                }
+              })
             }
 
             return { student, parentUser, invitation, isUpdate: false }

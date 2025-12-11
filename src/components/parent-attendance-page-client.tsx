@@ -9,7 +9,10 @@ import {
   ChevronRight, 
   Calendar,
   Users,
-  User
+  User,
+  CheckCircle2,
+  XCircle,
+  Clock
 } from 'lucide-react'
 import { getAttendanceRating } from '@/lib/attendance-ratings'
 
@@ -28,10 +31,16 @@ interface WeeklyAttendance {
 }
 
 interface MonthlyAttendance {
-  month: string
-  present: number
-  absent: number
-  late: number
+  month?: string
+  present?: number
+  absent?: number
+  late?: number
+  date?: string
+  status?: 'PRESENT' | 'ABSENT' | 'LATE' | 'NOT_SCHEDULED'
+  time?: string
+  averagePercentage?: number
+  monthIndex?: number
+  year?: number
 }
 
 interface ChildAttendance {
@@ -58,7 +67,7 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
   const getWeekStart = (date: Date) => {
     const start = new Date(date)
     const day = start.getDay()
-    const diff = start.getDate() - day + (day === 0 ? -6 : 1) // Monday
+    const diff = start.getDate() - day + (day === 0 ? -6 : 1)
     start.setDate(diff)
     return start
   }
@@ -66,7 +75,7 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
   const getWeekEnd = (date: Date) => {
     const end = new Date(date)
     const day = end.getDay()
-    const diff = end.getDate() - day + (day === 0 ? 0 : 7) - (day === 0 ? 6 : 1) // Sunday
+    const diff = end.getDate() - day + (day === 0 ? 0 : 7) - (day === 0 ? 6 : 1)
     end.setDate(diff)
     return end
   }
@@ -153,55 +162,9 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
     setCurrentDate(new Date())
   }
 
-  const getStatusDot = (status: string, day: string, time?: string) => {
-    const baseClasses = "w-5 h-5 rounded-full transition-all duration-200 hover:scale-110 cursor-pointer shadow-sm"
-    const tooltipText = status === 'LATE' && time 
-      ? `${day}: ${status} (arrived at ${time})`
-      : `${day}: ${status}`
-    
-    switch (status) {
-      case 'PRESENT':
-        return (
-          <div 
-            className={`${baseClasses} bg-green-500 hover:bg-green-600 shadow-green-500/30`}
-            title={tooltipText}
-          />
-        )
-      case 'ABSENT':
-        return (
-          <div 
-            className={`${baseClasses} bg-red-500 hover:bg-red-600 shadow-red-500/30`}
-            title={tooltipText}
-          />
-        )
-      case 'LATE':
-        return (
-          <div 
-            className={`${baseClasses} bg-yellow-500 hover:bg-yellow-600 shadow-yellow-500/30`}
-            title={tooltipText}
-          />
-        )
-      case 'NOT_SCHEDULED':
-        return (
-          <div 
-            className={`${baseClasses} bg-gray-300 hover:bg-gray-400`}
-            title={tooltipText}
-          />
-        )
-      default:
-        return (
-          <div 
-            className={`${baseClasses} bg-gray-300 hover:bg-gray-400`}
-            title={tooltipText}
-          />
-        )
-    }
-  }
-
   const calculatePeriodAttendance = (child: ChildAttendance, view: ViewType) => {
     switch (view) {
       case 'week':
-        // Only count days that have occurred so far (today or earlier) AND have actual attendance records
         const today = new Date()
         today.setHours(0, 0, 0, 0)
         const todayDateString = today.toISOString().split('T')[0]
@@ -220,259 +183,405 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
         return Math.round((weekPresent / daysSoFar.length) * 100)
 
       case 'month':
-        const monthTotal = child.monthlyAttendance.reduce((sum, week) => 
-          sum + week.present + week.absent + week.late, 0
-        )
-        const monthPresent = child.monthlyAttendance.reduce((sum, week) => 
-          sum + week.present + week.late, 0
-        )
+        const selectedMonth = currentDate.getMonth()
+        const selectedYear = currentDate.getFullYear()
+        const monthDays = child.monthlyAttendance.filter(day => {
+          if (!day.date) return false
+          const dayDate = new Date(day.date)
+          return dayDate.getMonth() === selectedMonth && dayDate.getFullYear() === selectedYear
+        })
+        const monthTotal = monthDays.length
+        const monthPresent = monthDays.filter(day => 
+          day.status === 'PRESENT' || day.status === 'LATE'
+        ).length
         return monthTotal > 0 ? Math.round((monthPresent / monthTotal) * 100) : 0
 
       case 'year':
-        const yearTotal = child.yearlyAttendance.reduce((sum, month) => 
-          sum + month.present + month.absent + month.late, 0
-        )
-        const yearPresent = child.yearlyAttendance.reduce((sum, month) => 
-          sum + month.present + month.late, 0
-        )
-        return yearTotal > 0 ? Math.round((yearPresent / yearTotal) * 100) : 0
+        const selectedYearForCalc = currentDate.getFullYear()
+        const yearMonths = child.yearlyAttendance.filter(month => month.year === selectedYearForCalc)
+        if (yearMonths.length === 0) return 0
+        const yearAverage = yearMonths.reduce((sum, month) => 
+          sum + (month.averagePercentage || 0), 0
+        ) / yearMonths.length
+        return Math.round(yearAverage)
 
       default:
         return child.overallAttendance
     }
   }
 
-  const renderWeekView = (child: ChildAttendance) => (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between pb-2 border-b border-[var(--border)]">
-        <h3 className="text-sm font-semibold text-[var(--foreground)] uppercase tracking-wide">Weekly Breakdown</h3>
-        <Badge variant="outline" className="flex items-center gap-1.5 text-xs">
-          <Calendar className="h-3 w-3" />
-          {formatDateRange(currentDate, 'week')}
-        </Badge>
-      </div>
-      
-      <div className="grid grid-cols-5 gap-2">
-        {child.weeklyAttendance.map((day, index) => (
-          <div 
-            key={index} 
-            className="flex flex-col items-center gap-2 p-3 bg-[var(--accent)]/30 rounded-[var(--radius-md)] border border-[var(--border)] hover:bg-[var(--accent)]/50 hover:border-[var(--primary)]/30 transition-all group"
-          >
-            <div className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wide">
-              {day.day}
-            </div>
-            <div className="flex flex-col items-center gap-1.5">
-              {getStatusDot(day.status, day.day, day.time)}
-              <div className="text-xs text-[var(--muted-foreground)] text-center font-medium">
-                {day.status === 'PRESENT' || day.status === 'LATE' 
-                  ? day.time 
-                  : day.status === 'ABSENT' 
-                  ? 'Absent' 
-                  : day.status === 'NOT_SCHEDULED'
-                  ? 'N/A'
-                  : day.status}
+  const renderWeekView = (child: ChildAttendance) => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const todayDateString = today.toISOString().split('T')[0]
+    
+    const presentDays = child.weeklyAttendance.filter(d => 
+      (d.status === 'PRESENT' || d.status === 'LATE') && d.date <= todayDateString
+    ).length
+    const absentDays = child.weeklyAttendance.filter(d => 
+      d.status === 'ABSENT' && d.date <= todayDateString
+    ).length
+    const lateDays = child.weeklyAttendance.filter(d => 
+      d.status === 'LATE' && d.date <= todayDateString
+    ).length
+    const totalDays = child.weeklyAttendance.filter(d => 
+      d.status !== 'NOT_SCHEDULED' && d.date <= todayDateString
+    ).length
+
+    return (
+      <div className="space-y-4">
+        {/* Quick Stats */}
+        <div className="grid grid-cols-3 gap-3">
+          <div className="border border-[var(--border)] rounded-lg p-4 bg-[var(--card)]">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 bg-[var(--muted)] rounded-lg flex items-center justify-center flex-shrink-0">
+                <CheckCircle2 className="h-4 w-4 text-[var(--foreground)]" />
               </div>
+              <span className="text-sm font-medium text-[var(--muted-foreground)]">Present</span>
+            </div>
+            <div className="text-2xl font-bold text-[var(--foreground)]">{presentDays}</div>
+            <div className="text-xs text-[var(--muted-foreground)] mt-1">of {totalDays} days</div>
+          </div>
+          
+          <div className="border border-[var(--border)] rounded-lg p-4 bg-[var(--card)]">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 bg-[var(--muted)] rounded-lg flex items-center justify-center flex-shrink-0">
+                <XCircle className="h-4 w-4 text-[var(--foreground)]" />
+              </div>
+              <span className="text-sm font-medium text-[var(--muted-foreground)]">Absent</span>
+            </div>
+            <div className="text-2xl font-bold text-[var(--foreground)]">{absentDays}</div>
+            <div className="text-xs text-[var(--muted-foreground)] mt-1">missed days</div>
+          </div>
+          
+          <div className="border border-[var(--border)] rounded-lg p-4 bg-[var(--card)]">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 bg-[var(--muted)] rounded-lg flex items-center justify-center flex-shrink-0">
+                <Clock className="h-4 w-4 text-[var(--foreground)]" />
+              </div>
+              <span className="text-sm font-medium text-[var(--muted-foreground)]">Late</span>
+            </div>
+            <div className="text-2xl font-bold text-[var(--foreground)]">{lateDays}</div>
+            <div className="text-xs text-[var(--muted-foreground)] mt-1">arrivals</div>
+          </div>
+        </div>
+
+        {/* Week Days */}
+        <div className="border border-[var(--border)] rounded-lg p-4 bg-[var(--card)]">
+          <h3 className="text-sm font-semibold text-[var(--foreground)] mb-4">Daily Breakdown</h3>
+          <div className="grid grid-cols-5 gap-3">
+            {child.weeklyAttendance.map((day, index) => {
+              const isToday = day.date === todayDateString
+              const isFuture = day.date > todayDateString
+              
+              return (
+                <div 
+                  key={index} 
+                  className={`
+                    flex flex-col items-center gap-2 p-3 rounded-lg border transition-all
+                    ${isToday ? 'border-[var(--primary)] bg-[var(--primary)]/5' : 'border-[var(--border)] bg-[var(--card)]'}
+                    ${!isFuture && day.status !== 'NOT_SCHEDULED' ? 'hover:bg-[var(--accent)]' : 'opacity-60'}
+                  `}
+                >
+                  <div className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wide">
+                    {day.day}
+                  </div>
+                  
+                  <div className={`
+                    w-10 h-10 rounded-full flex items-center justify-center border-2
+                    ${day.status === 'NOT_SCHEDULED' || isFuture 
+                      ? 'bg-[var(--muted)] border-[var(--border)]' 
+                      : day.status === 'PRESENT'
+                      ? 'bg-green-500 border-green-600'
+                      : day.status === 'ABSENT'
+                      ? 'bg-red-500 border-red-600'
+                      : 'bg-yellow-500 border-yellow-600'
+                    }
+                  `}>
+                    {day.status !== 'NOT_SCHEDULED' && !isFuture && (
+                      day.status === 'PRESENT' ? <CheckCircle2 className="h-5 w-5 text-white" /> :
+                      day.status === 'ABSENT' ? <XCircle className="h-5 w-5 text-white" /> :
+                      <Clock className="h-5 w-5 text-white" />
+                    )}
+                  </div>
+                  
+                  <div className="text-center">
+                    {day.status === 'PRESENT' || day.status === 'LATE' ? (
+                      <div className="text-xs font-medium text-[var(--foreground)]">{day.time}</div>
+                    ) : day.status === 'ABSENT' ? (
+                      <div className="text-xs font-medium text-red-600">Absent</div>
+                    ) : isFuture ? (
+                      <div className="text-xs text-[var(--muted-foreground)]">Upcoming</div>
+                    ) : (
+                      <div className="text-xs text-[var(--muted-foreground)]">No class</div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const renderMonthView = (child: ChildAttendance) => {
+    const selectedMonth = currentDate.getMonth()
+    const selectedYear = currentDate.getFullYear()
+    const monthDays = child.monthlyAttendance.filter(day => {
+      if (!day.date) return false
+      const dayDate = new Date(day.date)
+      return dayDate.getMonth() === selectedMonth && dayDate.getFullYear() === selectedYear
+    })
+    
+    const presentCount = monthDays.filter(d => d.status === 'PRESENT').length
+    const lateCount = monthDays.filter(d => d.status === 'LATE').length
+    const absentCount = monthDays.filter(d => d.status === 'ABSENT').length
+    const totalDays = monthDays.length
+    const attendanceRate = totalDays > 0 ? Math.round(((presentCount + lateCount) / totalDays) * 100) : 0
+    
+    return (
+      <div className="space-y-4">
+        {/* Month Summary */}
+        <div className="border border-[var(--border)] rounded-lg p-4 bg-[var(--muted)]">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-sm font-semibold text-[var(--foreground)] mb-1">Monthly Overview</h3>
+              <div className="text-2xl font-bold text-[var(--foreground)]">{attendanceRate}%</div>
+            </div>
+            <div className="text-right">
+              <div className="text-xl font-bold text-[var(--foreground)]">{totalDays}</div>
+              <div className="text-xs text-[var(--muted-foreground)]">class days</div>
             </div>
           </div>
-        ))}
-      </div>
-    </div>
-  )
-
-  const renderMonthView = (child: ChildAttendance) => (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between pb-2 border-b border-[var(--border)]">
-        <h3 className="text-sm font-semibold text-[var(--foreground)] uppercase tracking-wide">Monthly Breakdown</h3>
-        <Badge variant="outline" className="flex items-center gap-1.5 text-xs">
-          <Calendar className="h-3 w-3" />
-          {formatDateRange(currentDate, 'month')}
-        </Badge>
-      </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        {child.monthlyAttendance.map((week, index) => {
-          const totalDays = week.present + week.absent + week.late
-          const weekPercentage = totalDays > 0 
-            ? Math.round(((week.present + week.late) / totalDays) * 100) 
-            : 0
           
-          return (
-            <div key={index} className="p-3 bg-[var(--accent)]/30 rounded-[var(--radius-md)] border border-[var(--border)] hover:bg-[var(--accent)]/50 transition-all">
-              <div className="flex items-center justify-between mb-2">
-                <div className="text-sm font-semibold text-[var(--foreground)]">{week.week}</div>
-                <div className="flex items-center gap-2">
-                  <div className="text-xs text-[var(--muted-foreground)]">
-                    {totalDays} days
-                  </div>
-                  <div className="text-sm font-bold text-[var(--foreground)]">
-                    {weekPercentage}%
-                  </div>
-              </div>
+          <div className="w-full bg-[var(--card)] rounded-full h-2 mb-4">
+            <div 
+              className="h-full bg-green-500 rounded-full transition-all duration-500"
+              style={{ width: `${attendanceRate}%` }}
+            />
+          </div>
+          
+          <div className="grid grid-cols-3 gap-3">
+            <div className="text-center p-3 bg-[var(--card)] rounded-lg border border-[var(--border)]">
+              <div className="text-lg font-bold text-[var(--foreground)]">{presentCount}</div>
+              <div className="text-xs text-[var(--muted-foreground)] font-medium">Present</div>
             </div>
+            <div className="text-center p-3 bg-[var(--card)] rounded-lg border border-[var(--border)]">
+              <div className="text-lg font-bold text-[var(--foreground)]">{lateCount}</div>
+              <div className="text-xs text-[var(--muted-foreground)] font-medium">Late</div>
+            </div>
+            <div className="text-center p-3 bg-[var(--card)] rounded-lg border border-[var(--border)]">
+              <div className="text-lg font-bold text-[var(--foreground)]">{absentCount}</div>
+              <div className="text-xs text-[var(--muted-foreground)] font-medium">Absent</div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Daily Dots */}
+        <div className="border border-[var(--border)] rounded-lg p-4 bg-[var(--card)]">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-semibold text-[var(--foreground)]">Daily Attendance</h4>
+            <Badge variant="outline" className="text-xs">
+              {totalDays} days
+            </Badge>
+          </div>
+          
+          <div className="flex gap-1.5 flex-wrap">
+            {monthDays.map((day, index) => {
+              const dayDate = day.date ? new Date(day.date) : null
+              const dayLabel = dayDate ? dayDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : `Day ${index + 1}`
+              
+              if (day.status === 'PRESENT') {
+                return (
+                  <div 
+                    key={index}
+                    className="w-3.5 h-3.5 rounded-full bg-green-500 hover:bg-green-600 transition-colors cursor-pointer border border-green-600"
+                    title={`${dayLabel}: Present${day.time ? ` (${day.time})` : ''}`}
+                  />
+                )
+              } else if (day.status === 'LATE') {
+                return (
+                  <div 
+                    key={index}
+                    className="w-3.5 h-3.5 rounded-full bg-yellow-500 hover:bg-yellow-600 transition-colors cursor-pointer border border-yellow-600"
+                    title={`${dayLabel}: Late${day.time ? ` (${day.time})` : ''}`}
+                  />
+                )
+              } else if (day.status === 'ABSENT') {
+                return (
+                  <div 
+                    key={index}
+                    className="w-3.5 h-3.5 rounded-full bg-red-500 hover:bg-red-600 transition-colors cursor-pointer border border-red-600"
+                    title={`${dayLabel}: Absent`}
+                  />
+                )
+              }
+              return null
+            })}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const renderYearView = (child: ChildAttendance) => {
+    const selectedYear = currentDate.getFullYear()
+    const yearMonths = child.yearlyAttendance.filter(month => month.year === selectedYear)
+    
+    const totalDays = yearMonths.reduce((sum, m) => 
+      sum + ((m.present || 0) + (m.absent || 0) + (m.late || 0)), 0
+    )
+    const totalPresent = yearMonths.reduce((sum, m) => sum + (m.present || 0), 0)
+    const totalLate = yearMonths.reduce((sum, m) => sum + (m.late || 0), 0)
+    const totalAbsent = yearMonths.reduce((sum, m) => sum + (m.absent || 0), 0)
+    const yearAverage = yearMonths.length > 0
+      ? Math.round(yearMonths.reduce((sum, m) => sum + (m.averagePercentage || 0), 0) / yearMonths.length)
+      : 0
+    
+    return (
+      <div className="space-y-4">
+        {/* Year Summary */}
+        <div className="border border-[var(--border)] rounded-lg p-4 bg-[var(--muted)]">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-sm font-semibold text-[var(--foreground)] mb-1">Year Overview</h3>
+              <div className="text-2xl font-bold text-[var(--foreground)]">{yearAverage}%</div>
+              <div className="text-xs text-[var(--muted-foreground)] mt-1">Average attendance</div>
+            </div>
+            <div className="text-right">
+              <div className="text-xl font-bold text-[var(--foreground)]">{totalDays}</div>
+              <div className="text-xs text-[var(--muted-foreground)]">total days</div>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-3 gap-3">
+            <div className="text-center p-3 bg-[var(--card)] rounded-lg border border-[var(--border)]">
+              <div className="text-lg font-bold text-[var(--foreground)]">{totalPresent}</div>
+              <div className="text-xs text-[var(--muted-foreground)] font-medium">Present</div>
+            </div>
+            <div className="text-center p-3 bg-[var(--card)] rounded-lg border border-[var(--border)]">
+              <div className="text-lg font-bold text-[var(--foreground)]">{totalLate}</div>
+              <div className="text-xs text-[var(--muted-foreground)] font-medium">Late</div>
+            </div>
+            <div className="text-center p-3 bg-[var(--card)] rounded-lg border border-[var(--border)]">
+              <div className="text-lg font-bold text-[var(--foreground)]">{totalAbsent}</div>
+              <div className="text-xs text-[var(--muted-foreground)] font-medium">Absent</div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Monthly Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+          {yearMonths.map((month, index) => {
+            const averagePercentage = month.averagePercentage || 0
             
-              {/* Week dots and stats combined */}
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2 flex-1">
-                  <div className="flex gap-1 flex-wrap">
-                {/* Present dots */}
-                {Array.from({ length: week.present }).map((_, i) => (
+            const getDotColor = (percentage: number) => {
+              if (percentage >= 95) return 'bg-green-500 border-green-600'
+              if (percentage >= 90) return 'bg-yellow-500 border-yellow-600'
+              if (percentage >= 85) return 'bg-orange-500 border-orange-600'
+              return 'bg-red-500 border-red-600'
+            }
+            
+            return (
+              <div 
+                key={index} 
+                className="border border-[var(--border)] rounded-lg p-4 bg-[var(--card)] hover:bg-[var(--accent)] transition-colors"
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className="text-sm font-semibold text-[var(--foreground)]">{month.month}</div>
+                  <div className="text-sm font-bold text-[var(--foreground)]">{averagePercentage}%</div>
+                </div>
+                
+                <div className="flex justify-center mb-3">
                   <div 
-                    key={`present-${i}`}
-                        className="w-3.5 h-3.5 rounded-full bg-green-500 hover:bg-green-600 transition-colors shadow-sm"
-                    title={`Present - Day ${i + 1}`}
-                  />
-                ))}
-                {/* Late dots */}
-                {Array.from({ length: week.late }).map((_, i) => (
-                  <div 
-                    key={`late-${i}`}
-                        className="w-3.5 h-3.5 rounded-full bg-yellow-500 hover:bg-yellow-600 transition-colors shadow-sm"
-                    title={`Late - Day ${week.present + i + 1}`}
-                  />
-                ))}
-                {/* Absent dots */}
-                {Array.from({ length: week.absent }).map((_, i) => (
-                  <div 
-                    key={`absent-${i}`}
-                        className="w-3.5 h-3.5 rounded-full bg-red-500 hover:bg-red-600 transition-colors shadow-sm"
-                    title={`Absent - Day ${week.present + week.late + i + 1}`}
-                  />
-                ))}
+                    className={`w-10 h-10 rounded-full ${getDotColor(averagePercentage)} border-2 flex items-center justify-center`}
+                    title={`${month.month}: ${averagePercentage}% average`}
+                  >
+                    <span className="text-xs font-bold text-white">{averagePercentage}%</span>
                   </div>
                 </div>
                 
-                {/* Summary stats - compact */}
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                    <span className="text-xs text-[var(--muted-foreground)]">{week.present}</span>
+                <div className="pt-3 border-t border-[var(--border)]">
+                  <div className="flex items-center justify-center gap-2 text-xs text-[var(--muted-foreground)] mb-2">
+                    <span>{((month.present || 0) + (month.absent || 0) + (month.late || 0))} days</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
-                    <span className="text-xs text-[var(--muted-foreground)]">{week.late}</span>
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="flex items-center gap-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                      <span className="text-xs text-[var(--muted-foreground)]">{month.present || 0}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-yellow-500"></div>
+                      <span className="text-xs text-[var(--muted-foreground)]">{month.late || 0}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
+                      <span className="text-xs text-[var(--muted-foreground)]">{month.absent || 0}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                    <span className="text-xs text-[var(--muted-foreground)]">{week.absent}</span>
-                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-          )
-        })}
+            )
+          })}
+        </div>
       </div>
-    </div>
-  )
+    )
+  }
 
-  const renderYearView = (child: ChildAttendance) => (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between pb-2 border-b border-[var(--border)]">
-        <h3 className="text-sm font-semibold text-[var(--foreground)] uppercase tracking-wide">Yearly Breakdown</h3>
-        <Badge variant="outline" className="flex items-center gap-1.5 text-xs">
-          <Calendar className="h-3 w-3" />
-          {formatDateRange(currentDate, 'year')}
-        </Badge>
-      </div>
-      
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-        {child.yearlyAttendance.map((month, index) => {
-          const totalDays = month.present + month.absent + month.late
-          const attendancePercentage = totalDays > 0
-            ? Math.round(((month.present + month.late) / totalDays) * 100)
-            : 0
-          
-          return (
-            <div key={index} className="p-3 bg-[var(--accent)]/30 rounded-[var(--radius-md)] border border-[var(--border)] hover:bg-[var(--accent)]/50 hover:border-[var(--primary)]/30 transition-all">
-              {/* Month header */}
-              <div className="flex items-center justify-between mb-2">
-                <div className="text-sm font-semibold text-[var(--foreground)]">{month.month}</div>
-                <div className="text-sm font-bold text-[var(--foreground)]">{attendancePercentage}%</div>
-              </div>
-              
-              {/* Attendance dots grid */}
-              <div className="mb-2">
-                <div className="flex gap-0.5 flex-wrap">
-                  {/* Present dots */}
-                  {Array.from({ length: month.present }).map((_, i) => (
-                    <div 
-                      key={`present-${i}`}
-                      className="w-2.5 h-2.5 rounded-full bg-green-500 hover:bg-green-600 transition-colors shadow-sm"
-                      title={`Present - Day ${i + 1}`}
-                    />
-                  ))}
-                  {/* Late dots */}
-                  {Array.from({ length: month.late }).map((_, i) => (
-                    <div 
-                      key={`late-${i}`}
-                      className="w-2.5 h-2.5 rounded-full bg-yellow-500 hover:bg-yellow-600 transition-colors shadow-sm"
-                      title={`Late - Day ${month.present + i + 1}`}
-                    />
-                  ))}
-                  {/* Absent dots */}
-                  {Array.from({ length: month.absent }).map((_, i) => (
-                    <div 
-                      key={`absent-${i}`}
-                      className="w-2.5 h-2.5 rounded-full bg-red-500 hover:bg-red-600 transition-colors shadow-sm"
-                      title={`Absent - Day ${month.present + month.late + i + 1}`}
-                    />
-                  ))}
-                </div>
-              </div>
-              
-              {/* Summary stats */}
-              <div className="pt-2 border-t border-[var(--border)]">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs text-[var(--muted-foreground)]">{totalDays} days</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-0.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-                    <span className="text-xs text-[var(--muted-foreground)]">{month.present}</span>
-                    </div>
-                  <div className="flex items-center gap-0.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-yellow-500"></div>
-                    <span className="text-xs text-[var(--muted-foreground)]">{month.late}</span>
-                    </div>
-                  <div className="flex items-center gap-0.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
-                    <span className="text-xs text-[var(--muted-foreground)]">{month.absent}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
+  const overallStats = attendanceData.reduce((acc, child) => {
+    const periodAttendance = calculatePeriodAttendance(child, viewType)
+    acc.total += periodAttendance
+    acc.count += 1
+    return acc
+  }, { total: 0, count: 0 })
+  
+  const averageAttendance = overallStats.count > 0 
+    ? Math.round(overallStats.total / overallStats.count) 
+    : 0
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-[var(--foreground)]">Attendance</h1>
-          <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-            Track your children's attendance history.
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-[var(--muted)] rounded-lg flex items-center justify-center flex-shrink-0">
+              <Calendar className="h-5 w-5 text-[var(--foreground)]" />
+            </div>
+            <h1 className="text-2xl font-semibold text-[var(--foreground)]">Attendance</h1>
+          </div>
+          <p className="text-sm text-[var(--muted-foreground)] ml-13">
+            Track your children's attendance history and progress
           </p>
         </div>
+        {attendanceData.length > 0 && (
+          <div className="border border-[var(--border)] rounded-lg p-4 bg-[var(--card)]">
+            <div className="text-right">
+              <div className="text-3xl font-bold text-[var(--foreground)] mb-1">
+                {averageAttendance}%
+              </div>
+              <div className="text-xs text-[var(--muted-foreground)]">Average Attendance</div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* View Toggle and Navigation */}
-      <Card className="hover:shadow-lg transition-shadow border-[var(--border)]">
-        <CardContent className="p-3">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      {/* View Controls */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             {/* View Type Toggle */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <span className="text-sm font-medium text-[var(--foreground)]">View:</span>
-              <div className="flex bg-[var(--accent)] rounded-lg p-1">
+              <div className="flex bg-[var(--muted)] rounded-lg p-1 gap-1">
                 {(['week', 'month', 'year'] as ViewType[]).map((view) => (
                   <Button
                     key={view}
                     variant={viewType === view ? 'default' : 'ghost'}
                     size="sm"
                     onClick={() => setViewType(view)}
-                    className="capitalize"
+                    className="capitalize min-w-[70px]"
                   >
                     {view}
                   </Button>
@@ -481,7 +590,7 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
             </div>
 
             {/* Navigation */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -489,14 +598,14 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
                 className="flex items-center gap-1"
               >
                 <ChevronLeft className="h-4 w-4" />
-                Previous
+                <span className="hidden sm:inline">Previous</span>
               </Button>
               
-              <div className="text-center min-w-0 flex-1">
-                <div className="text-sm font-medium text-[var(--foreground)]">
+              <div className="px-4 py-2 bg-[var(--muted)] rounded-lg min-w-[140px] text-center border border-[var(--border)]">
+                <div className="text-sm font-semibold text-[var(--foreground)]">
                   {formatDateRange(currentDate, viewType)}
                 </div>
-                <div className="text-xs text-[var(--muted-foreground)] capitalize">{viewType} View</div>
+                <div className="text-xs text-[var(--muted-foreground)] capitalize">{viewType} view</div>
               </div>
               
               <Button
@@ -506,26 +615,25 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
                 disabled={!canNavigateNext(currentDate, viewType)}
                 className="flex items-center gap-1"
               >
-                Next
+                <span className="hidden sm:inline">Next</span>
                 <ChevronRight className="h-4 w-4" />
               </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCurrent}
+                className="flex items-center gap-1"
+              >
+                <Calendar className="h-4 w-4" />
+                <span className="hidden sm:inline">Today</span>
+              </Button>
             </div>
-
-            {/* Current Button */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCurrent}
-              className="flex items-center gap-1"
-            >
-              <Calendar className="h-4 w-4" />
-              Current
-            </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Children Attendance Cards */}
+      {/* Children Cards */}
       <div className="space-y-6">
         {attendanceData.map((child) => {
           const periodAttendance = calculatePeriodAttendance(child, viewType)
@@ -533,34 +641,41 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
           const TrendIcon = rating.icon
           
           return (
-            <Card key={child.id} className="hover:shadow-lg transition-all border-[var(--border)]">
-            <CardHeader className="pb-3">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0">
-                      <div className="h-10 w-10 rounded-full bg-[var(--primary)]/10 flex items-center justify-center">
-                        <User className="h-5 w-5 text-[var(--primary)]" />
-                      </div>
+            <Card key={child.id}>
+              <CardHeader>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 bg-[var(--muted)] rounded-lg flex items-center justify-center flex-shrink-0">
+                      <User className="h-5 w-5 text-[var(--foreground)]" />
                     </div>
-                  <div>
-                      <CardTitle className="text-lg font-semibold text-[var(--foreground)]">
-                      {child.name}
-                    </CardTitle>
-                      <p className="text-sm text-[var(--muted-foreground)] mt-1">
-                      {child.class} • {child.teacher}
-                    </p>
+                    <div>
+                      <CardTitle className="text-lg font-semibold text-[var(--foreground)] mb-1">
+                        {child.name}
+                      </CardTitle>
+                      <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--muted-foreground)]">
+                        <span className="flex items-center gap-1">
+                          <Users className="h-3.5 w-3.5" />
+                          {child.class}
+                        </span>
+                        <span>•</span>
+                        <span>{child.teacher}</span>
+                      </div>
                     </div>
                   </div>
                   
                   <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <div className="text-3xl font-bold text-[var(--foreground)]">
+                    <div className="text-right border border-[var(--border)] rounded-lg p-3 bg-[var(--card)]">
+                      <div className="text-3xl font-bold text-[var(--foreground)] mb-1">
                         {periodAttendance}%
                       </div>
-                      <div className="text-xs text-[var(--muted-foreground)] mt-0.5 capitalize">{viewType} View</div>
+                      <div className="text-xs text-[var(--muted-foreground)] capitalize">{viewType} attendance</div>
                     </div>
                     
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-[var(--radius-md)] bg-[var(--accent)]">
+                    <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border border-[var(--border)] ${
+                      rating.color.includes('green') ? 'bg-green-50' : 
+                      rating.color.includes('yellow') ? 'bg-yellow-50' : 
+                      'bg-red-50'
+                    }`}>
                       <TrendIcon className={`h-4 w-4 ${rating.color}`} />
                       <span className={`text-sm font-medium ${rating.color}`}>
                         {rating.text}
@@ -581,10 +696,10 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
       </div>
 
       {attendanceData.length === 0 && (
-        <Card className="border-[var(--border)]">
-          <CardContent className="p-8 text-center">
-            <Users className="h-12 w-12 text-[var(--muted-foreground)] mx-auto mb-4 opacity-50" />
-            <h3 className="text-lg font-medium text-[var(--foreground)] mb-2">No Children Found</h3>
+        <Card>
+          <CardContent className="p-12 text-center">
+            <Users className="h-16 w-16 text-[var(--muted-foreground)] mx-auto mb-4 opacity-50" />
+            <h3 className="text-lg font-semibold text-[var(--foreground)] mb-2">No Children Found</h3>
             <p className="text-[var(--muted-foreground)] mb-2">
               No children are registered under your account yet.
             </p>

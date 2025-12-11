@@ -155,11 +155,11 @@ export default async function ParentAttendancePage() {
         }
       })
 
-      // Calculate monthly attendance (group by week)
-      const monthlyAttendance = calculateMonthlyAttendance(studentAttendance)
+      // Calculate monthly attendance - all days with attendance in the month
+      const monthlyAttendance = calculateMonthlyAttendanceDaily(studentAttendance)
 
-      // Calculate yearly attendance (group by month)
-      const yearlyAttendance = calculateYearlyAttendance(studentAttendance)
+      // Calculate yearly attendance - monthly averages (one dot per month)
+      const yearlyAttendance = calculateYearlyAttendanceMonthlyAverage(studentAttendance)
 
       // Calculate overall attendance for current week (only count days that have occurred so far)
       // Same logic as dashboard - reuse todayDateString from above
@@ -227,34 +227,18 @@ function getWeekNumber(date: Date): number {
   return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7)
 }
 
-function calculateMonthlyAttendance(attendance: any[]): any[] {
-  const weekMap = new Map<string, { present: number; absent: number; late: number }>()
-  
-  attendance.forEach(att => {
-    const date = new Date(att.date)
-    const weekKey = getWeekKey(date)
-    
-    if (!weekMap.has(weekKey)) {
-      weekMap.set(weekKey, { present: 0, absent: 0, late: 0 })
-    }
-    
-    const week = weekMap.get(weekKey)!
-    if (att.status === 'PRESENT') week.present++
-    else if (att.status === 'ABSENT') week.absent++
-    else if (att.status === 'LATE') week.late++
-  })
-
-  const weeks = Array.from(weekMap.entries())
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .slice(-4) // Last 4 weeks
-  
-  return weeks.map(([key, data], index) => ({
-    week: `Week ${index + 1}`,
-    ...data
-  }))
+function calculateMonthlyAttendanceDaily(attendance: any[]): any[] {
+  // Return all days with attendance records, sorted by date
+  return attendance
+    .map(att => ({
+      date: new Date(att.date).toISOString().split('T')[0],
+      status: att.status,
+      time: att.time || undefined
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date))
 }
 
-function calculateYearlyAttendance(attendance: any[]): any[] {
+function calculateYearlyAttendanceMonthlyAverage(attendance: any[]): any[] {
   const monthMap = new Map<string, { present: number; absent: number; late: number }>()
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
   
@@ -276,8 +260,15 @@ function calculateYearlyAttendance(attendance: any[]): any[] {
     .sort((a, b) => a[0].localeCompare(b[0]))
     .map(([key, data]) => {
       const [year, month] = key.split('-')
+      const totalDays = data.present + data.absent + data.late
+      const averagePercentage = totalDays > 0 
+        ? Math.round(((data.present + data.late) / totalDays) * 100)
+        : 0
       return {
         month: monthNames[parseInt(month)],
+        monthIndex: parseInt(month),
+        year: parseInt(year),
+        averagePercentage,
         ...data
       }
     })

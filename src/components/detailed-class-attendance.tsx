@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { 
-  CheckCircle, 
+  CheckCircle2, 
   XCircle, 
   Clock, 
   ArrowLeft,
@@ -24,6 +24,7 @@ interface Student {
   attendancePercentage?: number
   weeklyAttendance?: {
     day: string
+    date?: string
     status: 'PRESENT' | 'ABSENT' | 'LATE' | 'NOT_SCHEDULED'
     time?: string
   }[]
@@ -57,20 +58,16 @@ export function DetailedClassAttendance({
   dateRange
 }: DetailedClassAttendanceProps) {
   
-  // Get week days for week view
   const getWeekDays = () => {
     if (!dateRange || filterType !== 'week') return []
     
     const days: { day: string; date: Date; shortDay: string }[] = []
-    // Handle both Date objects and string dates
     const start = dateRange.start instanceof Date ? dateRange.start : new Date(dateRange.start)
     const end = dateRange.end instanceof Date ? dateRange.end : new Date(dateRange.end)
     
-    // Get Monday to Friday (weekdays)
     const current = new Date(start)
     while (current <= end) {
       const dayOfWeek = current.getDay()
-      // Only include weekdays (Monday = 1, Friday = 5)
       if (dayOfWeek >= 1 && dayOfWeek <= 5) {
         const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
         const shortDayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -88,34 +85,13 @@ export function DetailedClassAttendance({
   
   const weekDays = getWeekDays()
   const showWeekBreakdown = filterType === 'week' && weekDays.length > 0
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'PRESENT':
-        return <CheckCircle className="h-4 w-4 text-green-600" />
-      case 'ABSENT':
-        return <XCircle className="h-4 w-4 text-red-600" />
-      case 'LATE':
-        return <Clock className="h-4 w-4 text-yellow-600" />
-      default:
-        return <User className="h-4 w-4 text-gray-400" />
-    }
-  }
+  
+  const attendanceRate = classDetails.totalStudents > 0
+    ? Math.round(((classDetails.present + classDetails.late) / classDetails.totalStudents) * 100)
+    : 0
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'PRESENT':
-        return 'bg-green-100 text-green-800 border-green-200'
-      case 'ABSENT':
-        return 'bg-red-100 text-red-800 border-red-200'
-      case 'LATE':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200'
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200'
-    }
-  }
-
-  const getWeeklyStatusIcon = (status: string, day: string, time?: string) => {
-    const baseClasses = "w-4 h-4 rounded-full transition-all duration-200 hover:scale-110 cursor-pointer"
+  const getWeeklyStatusDot = (status: string, day: string, time?: string) => {
+    const baseClasses = "w-5 h-5 rounded-full transition-all duration-200 hover:scale-110 cursor-pointer border-2"
     const tooltipText = status === 'LATE' && time 
       ? `${day}: ${status} (arrived at ${time})`
       : `${day}: ${status}`
@@ -124,35 +100,41 @@ export function DetailedClassAttendance({
       case 'PRESENT':
         return (
           <div 
-            className={`${baseClasses} bg-green-500 hover:bg-green-600`}
+            className={`${baseClasses} bg-green-500 border-green-600 hover:bg-green-600`}
             title={tooltipText}
-          />
+          >
+            <CheckCircle2 className="h-3 w-3 text-white m-0.5" />
+          </div>
         )
       case 'ABSENT':
         return (
           <div 
-            className={`${baseClasses} bg-red-500 hover:bg-red-600`}
+            className={`${baseClasses} bg-red-500 border-red-600 hover:bg-red-600`}
             title={tooltipText}
-          />
+          >
+            <XCircle className="h-3 w-3 text-white m-0.5" />
+          </div>
         )
       case 'LATE':
         return (
           <div 
-            className={`${baseClasses} bg-yellow-500 hover:bg-yellow-600`}
+            className={`${baseClasses} bg-yellow-500 border-yellow-600 hover:bg-yellow-600`}
             title={tooltipText}
-          />
+          >
+            <Clock className="h-3 w-3 text-white m-0.5" />
+          </div>
         )
       case 'NOT_SCHEDULED':
         return (
           <div 
-            className={`${baseClasses} bg-gray-300 hover:bg-gray-400`}
+            className={`${baseClasses} bg-[var(--muted)] border-[var(--border)] hover:bg-[var(--accent)]`}
             title={`${day}: Not scheduled`}
           />
         )
       default:
         return (
           <div 
-            className={`${baseClasses} bg-gray-300 hover:bg-gray-400`}
+            className={`${baseClasses} bg-[var(--muted)] border-[var(--border)] hover:bg-[var(--accent)]`}
             title={`${day}: Unknown status`}
           />
         )
@@ -161,131 +143,185 @@ export function DetailedClassAttendance({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={onBack}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Button>
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">{classDetails.name}</h2>
-            <p className="text-sm text-gray-600">
-              {formatDate(classDetails.date)} • {classDetails.teacher}
-            </p>
+      {/* Header Card */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={onBack}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </Button>
+              <div>
+                <div className="flex items-center gap-3 mb-1">
+                  <div className="w-10 h-10 bg-[var(--muted)] rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Users className="h-5 w-5 text-[var(--foreground)]" />
+                  </div>
+                  <CardTitle className="text-xl font-semibold text-[var(--foreground)]">{classDetails.name}</CardTitle>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--muted-foreground)] ml-13">
+                  <span className="flex items-center gap-1">
+                    <Calendar className="h-3.5 w-3.5" />
+                    {formatDate(classDetails.date)}
+                  </span>
+                  <span>•</span>
+                  <span>{classDetails.teacher}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="outline" className="flex items-center gap-1.5 px-3 py-1.5">
+                <Users className="h-3.5 w-3.5" />
+                {classDetails.totalStudents} students
+              </Badge>
+              <Badge 
+                className={`flex items-center gap-1.5 px-3 py-1.5 ${
+                  attendanceRate >= 95 ? 'bg-green-50 text-green-700 border-green-200' :
+                  attendanceRate >= 90 ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                  attendanceRate >= 85 ? 'bg-orange-50 text-orange-700 border-orange-200' :
+                  'bg-red-50 text-red-700 border-red-200'
+                }`}
+              >
+                {attendanceRate}% attendance
+              </Badge>
+            </div>
           </div>
-        </div>
-        
-        <div className="flex flex-wrap gap-2">
-          <Badge variant="outline" className="flex items-center gap-1">
-            <Users className="h-3 w-3" />
-            {classDetails.totalStudents} students
-          </Badge>
-          <Badge variant="outline" className="flex items-center gap-1">
-            <Calendar className="h-3 w-3" />
-            {classDetails.totalStudents > 0 
-              ? `${Math.round(((classDetails.present + classDetails.late) / classDetails.totalStudents) * 100)}% attendance`
-              : '0% attendance'}
-          </Badge>
-        </div>
-      </div>
+        </CardHeader>
+      </Card>
 
       {/* Summary Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {(() => {
-          // Calculate total attendance for the week
-          const total = classDetails.present + classDetails.absent + classDetails.late
-          const presentPercentage = total > 0 ? Math.round((classDetails.present / total) * 100) : 0
-          const absentPercentage = total > 0 ? Math.round((classDetails.absent / total) * 100) : 0
-          const latePercentage = total > 0 ? Math.round((classDetails.late / total) * 100) : 0
-          
-          return (
-            <>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-green-100 rounded-lg flex-shrink-0">
-                      <CheckCircle className="h-5 w-5 text-green-600" />
-                    </div>
-                    <div className="flex flex-col justify-center">
-                      <div className="text-2xl font-bold text-green-700 leading-tight">{presentPercentage}%</div>
-                      <div className="text-sm text-green-600 leading-tight">Present</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-red-100 rounded-lg flex-shrink-0">
-                      <XCircle className="h-5 w-5 text-red-600" />
-                    </div>
-                    <div className="flex flex-col justify-center">
-                      <div className="text-2xl font-bold text-red-700 leading-tight">{absentPercentage}%</div>
-                      <div className="text-sm text-red-600 leading-tight">Absent</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-yellow-100 rounded-lg flex-shrink-0">
-                      <Clock className="h-5 w-5 text-yellow-600" />
-                    </div>
-                    <div className="flex flex-col justify-center">
-                      <div className="text-2xl font-bold text-yellow-700 leading-tight">{latePercentage}%</div>
-                      <div className="text-sm text-yellow-600 leading-tight">Late</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </>
-          )
-        })()}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 bg-[var(--muted)] rounded-lg flex items-center justify-center flex-shrink-0">
+                <CheckCircle2 className="h-5 w-5 text-[var(--foreground)]" />
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-[var(--foreground)]">{classDetails.present}</div>
+                <div className="text-xs text-[var(--muted-foreground)]">students</div>
+              </div>
+            </div>
+            <div className="text-sm font-semibold text-[var(--foreground)] mb-2">Present</div>
+            <div className="w-full bg-[var(--muted)] rounded-full h-2">
+              <div 
+                className="bg-green-500 h-2 rounded-full transition-all duration-500"
+                style={{ 
+                  width: `${classDetails.totalStudents > 0 
+                    ? Math.round((classDetails.present / classDetails.totalStudents) * 100) 
+                    : 0}%` 
+                }}
+              />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 bg-[var(--muted)] rounded-lg flex items-center justify-center flex-shrink-0">
+                <XCircle className="h-5 w-5 text-[var(--foreground)]" />
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-[var(--foreground)]">{classDetails.absent}</div>
+                <div className="text-xs text-[var(--muted-foreground)]">students</div>
+              </div>
+            </div>
+            <div className="text-sm font-semibold text-[var(--foreground)] mb-2">Absent</div>
+            <div className="w-full bg-[var(--muted)] rounded-full h-2">
+              <div 
+                className="bg-red-500 h-2 rounded-full transition-all duration-500"
+                style={{ 
+                  width: `${classDetails.totalStudents > 0 
+                    ? Math.round((classDetails.absent / classDetails.totalStudents) * 100) 
+                    : 0}%` 
+                }}
+              />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 bg-[var(--muted)] rounded-lg flex items-center justify-center flex-shrink-0">
+                <Clock className="h-5 w-5 text-[var(--foreground)]" />
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-[var(--foreground)]">{classDetails.late}</div>
+                <div className="text-xs text-[var(--muted-foreground)]">students</div>
+              </div>
+            </div>
+            <div className="text-sm font-semibold text-[var(--foreground)] mb-2">Late</div>
+            <div className="w-full bg-[var(--muted)] rounded-full h-2">
+              <div 
+                className="bg-yellow-500 h-2 rounded-full transition-all duration-500"
+                style={{ 
+                  width: `${classDetails.totalStudents > 0 
+                    ? Math.round((classDetails.late / classDetails.totalStudents) * 100) 
+                    : 0}%` 
+                }}
+              />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Student List */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Student Attendance</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg font-semibold text-[var(--foreground)]">Student Attendance</CardTitle>
+            <Badge variant="outline" className="text-xs">
+              {classDetails.students.length} {classDetails.students.length === 1 ? 'student' : 'students'}
+            </Badge>
+          </div>
         </CardHeader>
         <CardContent>
           {classDetails.students.length === 0 ? (
             <div className="text-center py-12">
-              <Users className="h-12 w-12 text-[var(--muted-foreground)] mx-auto mb-3 opacity-50" />
+              <Users className="h-16 w-16 text-[var(--muted-foreground)] mx-auto mb-4 opacity-50" />
+              <h3 className="text-lg font-semibold text-[var(--foreground)] mb-2">No Students</h3>
               <p className="text-sm text-[var(--muted-foreground)]">No students enrolled in this class.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Student Name</TableHead>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="font-semibold">Student Name</TableHead>
                     {showWeekBreakdown ? (
                       <>
-                        {weekDays.map((day) => (
-                          <TableHead key={day.date.toISOString()} className="text-center min-w-[60px]">
-                            <div className="flex flex-col items-center">
-                              <span className="text-xs font-medium">{day.shortDay}</span>
-                              <span className="text-xs text-gray-500">
-                                {day.date.getDate()}/{day.date.getMonth() + 1}
-                              </span>
-                            </div>
-                          </TableHead>
-                        ))}
+                        {weekDays.map((day) => {
+                          const today = new Date()
+                          today.setHours(0, 0, 0, 0)
+                          const isToday = day.date.toISOString().split('T')[0] === today.toISOString().split('T')[0]
+                          
+                          return (
+                            <TableHead 
+                              key={day.date.toISOString()} 
+                              className={`text-center min-w-[80px] ${isToday ? 'bg-[var(--primary)]/5' : ''}`}
+                            >
+                              <div className="flex flex-col items-center gap-1">
+                                <span className="text-xs font-semibold uppercase tracking-wide">{day.shortDay}</span>
+                                <span className="text-xs text-[var(--muted-foreground)]">
+                                  {day.date.getDate()}/{day.date.getMonth() + 1}
+                                </span>
+                              </div>
+                            </TableHead>
+                          )
+                        })}
                       </>
                     ) : (
                       <>
-                        <TableHead className="hidden md:table-cell">Time</TableHead>
-                        <TableHead>Status</TableHead>
+                        <TableHead className="hidden md:table-cell font-semibold">Time</TableHead>
+                        <TableHead className="font-semibold">Status</TableHead>
                       </>
                     )}
                   </TableRow>
@@ -293,7 +329,6 @@ export function DetailedClassAttendance({
                 <TableBody>
                   {[...classDetails.students]
                     .sort((a, b) => {
-                      // Extract firstName and lastName from name (format: "FirstName LastName")
                       const aParts = a.name.split(' ')
                       const bParts = b.name.split(' ')
                       const aFirstName = aParts[0] || ''
@@ -306,14 +341,18 @@ export function DetailedClassAttendance({
                       return aLastName.localeCompare(bLastName, undefined, { sensitivity: 'base' })
                     })
                     .map((student) => {
-                      // Get attendance status for each day of the week
                       const getDayStatus = (dayDate: Date) => {
                         if (!student.weeklyAttendance || student.weeklyAttendance.length === 0) {
                           return 'NOT_SCHEDULED'
                         }
                         const dateKey = dayDate.toISOString().split('T')[0]
                         const dayAttendance = student.weeklyAttendance.find(
-                          (wa: any) => wa.date === dateKey || new Date(wa.date).toISOString().split('T')[0] === dateKey
+                          (wa: any) => {
+                            const waDate = typeof wa.date === 'string' 
+                              ? wa.date 
+                              : new Date(wa.date).toISOString().split('T')[0]
+                            return waDate === dateKey
+                          }
                         )
                         return dayAttendance?.status || 'NOT_SCHEDULED'
                       }
@@ -321,12 +360,15 @@ export function DetailedClassAttendance({
                       return (
                         <TableRow 
                           key={student.id} 
-                          className="hover:bg-[var(--muted)]/50 cursor-pointer"
+                          className="hover:bg-[var(--muted)]/30 cursor-pointer transition-colors"
                           onClick={() => onStudentClick(student.id)}
                         >
                           <TableCell>
-                            <div>
-                              <p className="font-medium text-[var(--foreground)]">{student.name}</p>
+                            <div className="flex items-center gap-2">
+                              <div className="h-8 w-8 rounded-full bg-[var(--muted)] flex items-center justify-center flex-shrink-0">
+                                <User className="h-4 w-4 text-[var(--foreground)]" />
+                              </div>
+                              <span className="font-medium text-[var(--foreground)]">{student.name}</span>
                             </div>
                           </TableCell>
                           {showWeekBreakdown ? (
@@ -339,12 +381,21 @@ export function DetailedClassAttendance({
                                   return waDate === dayDateKey
                                 }
                               )
+                              const today = new Date()
+                              today.setHours(0, 0, 0, 0)
+                              const isToday = day.date.toISOString().split('T')[0] === today.toISOString().split('T')[0]
+                              
                               return (
-                                <TableCell key={day.date.toISOString()} className="text-center">
-                                  <div className="flex flex-col items-center gap-1">
-                                    {getWeeklyStatusIcon(dayStatus, day.shortDay, dayAttendance?.time)}
+                                <TableCell 
+                                  key={day.date.toISOString()} 
+                                  className={`text-center ${isToday ? 'bg-[var(--primary)]/5' : ''}`}
+                                >
+                                  <div className="flex flex-col items-center gap-1.5">
+                                    {getWeeklyStatusDot(dayStatus, day.shortDay, dayAttendance?.time)}
                                     {dayAttendance?.time && (
-                                      <span className="text-xs text-gray-500">{dayAttendance.time}</span>
+                                      <span className="text-xs text-[var(--muted-foreground)] font-medium">
+                                        {dayAttendance.time}
+                                      </span>
                                     )}
                                   </div>
                                 </TableCell>
@@ -357,22 +408,20 @@ export function DetailedClassAttendance({
                               </TableCell>
                               <TableCell>
                                 <Badge 
-                                  className={
+                                  className={`flex items-center gap-1.5 w-fit ${
                                     student.status === 'PRESENT'
-                                      ? 'bg-green-50 text-green-700 border-green-200 border-0'
+                                      ? 'bg-green-50 text-green-700 border-green-200'
                                       : student.status === 'ABSENT'
-                                      ? 'bg-red-50 text-red-700 border-red-200 border-0'
+                                      ? 'bg-red-50 text-red-700 border-red-200'
                                       : student.status === 'LATE'
-                                      ? 'bg-yellow-50 text-yellow-700 border-yellow-200 border-0'
-                                      : 'bg-gray-50 text-gray-700 border-gray-200 border-0'
-                                  }
+                                      ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                                      : 'bg-gray-50 text-gray-700 border-gray-200'
+                                  }`}
                                 >
-                                  <div className="flex items-center gap-1.5">
-                                    {student.status === 'PRESENT' && <CheckCircle className="h-3 w-3" />}
-                                    {student.status === 'ABSENT' && <XCircle className="h-3 w-3" />}
-                                    {student.status === 'LATE' && <Clock className="h-3 w-3" />}
-                                    {student.status || 'Unmarked'}
-                                  </div>
+                                  {student.status === 'PRESENT' && <CheckCircle2 className="h-3 w-3" />}
+                                  {student.status === 'ABSENT' && <XCircle className="h-3 w-3" />}
+                                  {student.status === 'LATE' && <Clock className="h-3 w-3" />}
+                                  {student.status || 'Unmarked'}
                                 </Badge>
                               </TableCell>
                             </>

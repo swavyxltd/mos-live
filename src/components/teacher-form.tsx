@@ -233,39 +233,6 @@ export function TeacherForm({ initialData, isEditing = false, onSubmit, onCancel
             isEditing={isEditing}
           />
 
-          {!isEditing && (
-            <div className="border-t pt-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Shield className="h-5 w-5" />
-                <h3 className="text-lg font-medium">Account Setup</h3>
-              </div>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm text-blue-900">
-                  The staff member will receive an onboarding email at <strong>{formData.email}</strong> to set up their password and complete their profile. 
-                  The username will be automatically set to their email address.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Status */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div>
-              <Label htmlFor="isActive" className="text-base font-medium">
-                Account Status
-              </Label>
-              <p className="text-sm text-gray-600">
-                {formData.isActive ? 'Staff member can sign in and access their portal' : 'Staff account is disabled - cannot login'}
-              </p>
-            </div>
-            <Switch
-              id="isActive"
-              checked={formData.isActive}
-              onCheckedChange={(checked) => handleInputChange('isActive', checked)}
-              className={formData.isActive ? 'bg-green-100' : 'bg-red-100'}
-              circleClassName={formData.isActive ? 'bg-green-500' : 'bg-red-500'}
-            />
-          </div>
       </div>
 
       {/* Action Buttons */}

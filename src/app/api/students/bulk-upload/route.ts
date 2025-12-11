@@ -6,13 +6,13 @@ import { prisma } from '@/lib/prisma'
 import { parse } from 'csv-parse/sync'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
-import { isValidName, isValidEmailStrict, isValidPhone } from '@/lib/input-validation'
+import { isValidName, isValidEmailStrict, isValidDateOfBirth } from '@/lib/input-validation'
 
 interface CSVRow {
   firstName: string
   lastName: string
-  parentEmail: string
-  parentPhone?: string
+  email?: string
+  dob: string
 }
 
 interface ValidatedRow extends CSVRow {
@@ -104,7 +104,7 @@ async function handlePOST(request: NextRequest) {
       }
     })
 
-    // Create a Map for fast duplicate lookup: key = "firstName|lastName|parentEmail"
+    // Create a Map for fast duplicate lookup: key = "firstName|lastName|email"
     const duplicateMap = new Map<string, { id: string }>()
     existingStudents.forEach(student => {
       const key = `${student.firstName.toLowerCase().trim()}|${student.lastName.toLowerCase().trim()}|${student.User?.email?.toLowerCase().trim() || ''}`
@@ -129,7 +129,7 @@ async function handlePOST(request: NextRequest) {
         return validated
       }
 
-      // Required fields validation (matching single "Add Student" modal)
+      // Required fields validation
       if (!row.firstName || !row.firstName.trim()) {
         errors.push('First name is required')
       } else if (!isValidName(row.firstName.trim())) {
@@ -142,19 +142,24 @@ async function handlePOST(request: NextRequest) {
         errors.push('Last name must be a valid name (2-50 characters, letters only)')
       }
       
-      if (!row.parentEmail || !row.parentEmail.trim()) {
-        errors.push('Parent email is required')
-      } else if (!isValidEmailStrict(row.parentEmail.trim())) {
-        errors.push('Invalid parent email format')
+      // Email is optional but validate if provided
+      if (row.email && row.email.trim()) {
+        if (!isValidEmailStrict(row.email.trim())) {
+          errors.push('Invalid email format')
+        }
       }
 
-      // parentPhone is optional but validate if provided
-      if (row.parentPhone && row.parentPhone.trim() && !isValidPhone(row.parentPhone.trim())) {
-        errors.push('Invalid parent phone number format (must be a valid UK phone number)')
+      // DOB is required
+      if (!row.dob || !row.dob.trim()) {
+        errors.push('Date of birth is required')
+      } else if (!isValidDateOfBirth(row.dob.trim())) {
+        errors.push('Date of birth must be a valid date (not in the future, age 0-120 years)')
       }
 
       // Check for duplicates using optimized Map lookup (O(1) instead of O(n))
-      const duplicateKey = `${(row.firstName || '').toLowerCase().trim()}|${(row.lastName || '').toLowerCase().trim()}|${(row.parentEmail || '').toLowerCase().trim()}`
+      // Use email if provided, otherwise use empty string for matching
+      const emailForDuplicate = (row.email || '').toLowerCase().trim()
+      const duplicateKey = `${(row.firstName || '').toLowerCase().trim()}|${(row.lastName || '').toLowerCase().trim()}|${emailForDuplicate}`
       const duplicate = duplicateMap.get(duplicateKey)
 
       if (duplicate) {

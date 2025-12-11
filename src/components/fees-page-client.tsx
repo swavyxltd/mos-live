@@ -78,10 +78,13 @@ export function FeesPageClient({ classes, summary }: FeesPageClientProps) {
 
     setIsSaving(true)
     try {
+      // Convert pounds to pence (multiply by 100 and round)
+      const newFeeInPence = Math.round(newFee * 100)
+      
       const response = await fetch(`/api/classes/${editingClass.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ monthlyFeeP: newFee })
+        body: JSON.stringify({ monthlyFeeP: newFeeInPence })
       })
 
       if (!response.ok) {
@@ -238,93 +241,202 @@ export function FeesPageClient({ classes, summary }: FeesPageClientProps) {
               </Link>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Class Name</TableHead>
-                    <TableHead>Teacher</TableHead>
-                    <TableHead className="text-right">Students</TableHead>
-                    <TableHead className="text-right">Monthly Fee</TableHead>
-                    <TableHead className="text-right">Monthly Revenue</TableHead>
-                    <TableHead className="text-center">Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {localClasses.map((classItem) => {
-                    const monthlyRevenue = getMonthlyRevenue(classItem)
-                    const hasFee = classItem.monthlyFee > 0
-                    
-                    return (
-                      <TableRow key={classItem.id}>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium text-gray-900">{classItem.name}</div>
-                            {classItem.description && (
-                              <div className="text-sm text-gray-500">{classItem.description}</div>
+            <>
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="min-w-[180px]">Class Name</TableHead>
+                      <TableHead className="min-w-[120px]">Teacher</TableHead>
+                      <TableHead className="text-right min-w-[80px]">Students</TableHead>
+                      <TableHead className="text-right min-w-[100px]">Monthly Fee</TableHead>
+                      <TableHead className="text-right min-w-[120px] hidden lg:table-cell">Monthly Revenue</TableHead>
+                      <TableHead className="text-center min-w-[100px] hidden xl:table-cell">Status</TableHead>
+                      <TableHead className="text-right min-w-[100px]">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {localClasses.map((classItem) => {
+                      const monthlyRevenue = getMonthlyRevenue(classItem)
+                      const hasFee = classItem.monthlyFee > 0
+                      
+                      return (
+                        <TableRow key={classItem.id}>
+                          <TableCell className="min-w-[180px]">
+                            <div className="min-w-0">
+                              <div className="font-medium text-gray-900 truncate">{classItem.name}</div>
+                              {classItem.description && (
+                                <div className="text-sm text-gray-500 truncate hidden lg:block">{classItem.description}</div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="min-w-[120px]">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <User className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                              <span className="text-sm truncate">{classItem.teacherName}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right min-w-[80px]">
+                            <div className="flex items-center justify-end gap-1">
+                              <Users className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                              <span className="font-medium">{classItem.studentCount}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right min-w-[100px]">
+                            {hasFee ? (
+                              <span className="font-medium whitespace-nowrap">
+                                {formatCurrency(Math.round(classItem.monthlyFee * 100))}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400 text-sm">Not set</span>
                             )}
+                          </TableCell>
+                          <TableCell className="text-right min-w-[120px] hidden lg:table-cell">
+                            {hasFee && classItem.studentCount > 0 ? (
+                              <span className="font-medium text-green-600 whitespace-nowrap">
+                                {formatCurrency(Math.round(monthlyRevenue * 100))}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400 text-sm">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center min-w-[100px] hidden xl:table-cell">
+                            {hasFee ? (
+                              <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                Active
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                                <AlertCircle className="h-3 w-3 mr-1" />
+                                No Fee
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right min-w-[100px]">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditFee(classItem)}
+                              className="whitespace-nowrap"
+                            >
+                              <Edit className="h-4 w-4 mr-1" />
+                              <span className="hidden lg:inline">Edit Fee</span>
+                              <span className="lg:hidden">Edit</span>
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="block md:hidden">
+                {localClasses.map((classItem, index) => {
+                  const monthlyRevenue = getMonthlyRevenue(classItem)
+                  const hasFee = classItem.monthlyFee > 0
+                  const isLast = index === localClasses.length - 1
+                  
+                  return (
+                    <div key={classItem.id}>
+                      <Card className="border-0 shadow-none">
+                        <CardContent className="p-4 space-y-3">
+                          <div className="flex items-start justify-between gap-3 pt-4">
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-semibold text-[var(--foreground)] mb-1">
+                                {classItem.name}
+                              </h3>
+                              {classItem.description && (
+                                <p className="text-sm text-[var(--muted-foreground)] line-clamp-2">
+                                  {classItem.description}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex-shrink-0">
+                              {hasFee ? (
+                                <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                  Active
+                                </Badge>
+                              ) : (
+                                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
+                                  <AlertCircle className="h-3 w-3 mr-1" />
+                                  No Fee
+                                </Badge>
+                              )}
+                            </div>
                           </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <User className="h-4 w-4 text-gray-400" />
-                            <span className="text-sm">{classItem.teacherName}</span>
+
+                          <div className="grid grid-cols-2 gap-3 pt-2">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-1.5 text-sm text-[var(--muted-foreground)]">
+                                <User className="h-3.5 w-3.5" />
+                                <span>Teacher</span>
+                              </div>
+                              <p className="text-sm font-medium text-[var(--foreground)]">
+                                {classItem.teacherName}
+                              </p>
+                            </div>
+
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-1.5 text-sm text-[var(--muted-foreground)]">
+                                <Users className="h-3.5 w-3.5" />
+                                <span>Students</span>
+                              </div>
+                              <p className="text-sm font-medium text-[var(--foreground)]">
+                                {classItem.studentCount}
+                              </p>
+                            </div>
                           </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <Users className="h-4 w-4 text-gray-400" />
-                            <span className="font-medium">{classItem.studentCount}</span>
+
+                          <div className="grid grid-cols-2 gap-3 pt-2">
+                            <div className="space-y-1">
+                              <div className="text-xs text-[var(--muted-foreground)]">Monthly Fee</div>
+                              {hasFee ? (
+                                <p className="text-base font-semibold text-[var(--foreground)]">
+                                  {formatCurrency(Math.round(classItem.monthlyFee * 100))}
+                                </p>
+                              ) : (
+                                <p className="text-sm text-[var(--muted-foreground)]">Not set</p>
+                              )}
+                            </div>
+
+                            <div className="space-y-1">
+                              <div className="text-xs text-[var(--muted-foreground)]">Monthly Revenue</div>
+                              {hasFee && classItem.studentCount > 0 ? (
+                                <p className="text-base font-semibold text-green-600">
+                                  {formatCurrency(Math.round(monthlyRevenue * 100))}
+                                </p>
+                              ) : (
+                                <p className="text-sm text-[var(--muted-foreground)]">—</p>
+                              )}
+                            </div>
                           </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {hasFee ? (
-                            <span className="font-medium">
-                              {formatCurrency(Math.round(classItem.monthlyFee * 100))}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 text-sm">Not set</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {hasFee && classItem.studentCount > 0 ? (
-                            <span className="font-medium text-green-600">
-                              {formatCurrency(Math.round(monthlyRevenue * 100))}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 text-sm">—</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {hasFee ? (
-                            <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
-                              <CheckCircle className="h-3 w-3 mr-1" />
-                              Active
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                              <AlertCircle className="h-3 w-3 mr-1" />
-                              No Fee
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditFee(classItem)}
-                          >
-                            <Edit className="h-4 w-4 mr-1" />
-                            Edit Fee
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
-            </div>
+
+                          <div className="pt-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full"
+                              onClick={() => handleEditFee(classItem)}
+                            >
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit Fee
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      {!isLast && (
+                        <div className="border-b border-[var(--border)] mx-4"></div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

@@ -150,18 +150,7 @@ export function TeachersList({ teachers, onEditTeacher }: TeachersListProps) {
                 .map((teacher) => (
                 <TableRow key={teacher.id}>
                   <TableCell>
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10 hidden sm:block">
-                        <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
-                          <span className="text-sm font-medium text-gray-700">
-                            {teacher.name.split(' ').map(n => n[0]).join('')}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="sm:ml-4">
-                        <div className="text-sm font-medium text-gray-900">{teacher.name}</div>
-                      </div>
-                    </div>
+                    <div className="text-sm font-medium text-gray-900">{teacher.name}</div>
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
                     <div className="flex items-center">

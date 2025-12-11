@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -36,7 +36,6 @@ export function AttendanceWeekFilter({
   
   const filterType = externalFilterType ?? internalFilterType
   
-  // Use refs to track the last date range we sent to prevent infinite loops
   const lastDateRangeRef = useRef<{ start: Date; end: Date } | null>(null)
   const isInitialMount = useRef(true)
   
@@ -51,7 +50,7 @@ export function AttendanceWeekFilter({
   const getWeekStart = (date: Date) => {
     const start = new Date(date)
     const day = start.getDay()
-    const diff = start.getDate() - day + (day === 0 ? -6 : 1) // Monday
+    const diff = start.getDate() - day + (day === 0 ? -6 : 1)
     start.setDate(diff)
     return start
   }
@@ -59,7 +58,7 @@ export function AttendanceWeekFilter({
   const getWeekEnd = (date: Date) => {
     const end = new Date(date)
     const day = end.getDay()
-    const diff = end.getDate() - day + (day === 0 ? 0 : 7) - (day === 0 ? 6 : 1) // Sunday
+    const diff = end.getDate() - day + (day === 0 ? 0 : 7) - (day === 0 ? 6 : 1)
     end.setDate(diff)
     return end
   }
@@ -91,14 +90,12 @@ export function AttendanceWeekFilter({
   const formatWeekRange = (date: Date) => {
     const start = getWeekStart(date)
     const end = getWeekEnd(date)
-    // Format as dd/mm - dd/mm/yyyy
-    const startFormatted = formatDate(start).substring(0, 5) // Get dd/mm part
-    const endFormatted = formatDate(end) // Get full dd/mm/yyyy
+    const startFormatted = formatDate(start).substring(0, 5)
+    const endFormatted = formatDate(end)
     return `${startFormatted} - ${endFormatted}`
   }
 
   const formatMonthRange = (date: Date) => {
-    // Format as "Month YYYY" but keep dd/mm/yyyy for consistency
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
     return `${monthNames[date.getMonth()]} ${date.getFullYear()}`
   }
@@ -150,7 +147,6 @@ export function AttendanceWeekFilter({
         break
     }
     
-    // Don't allow future dates
     const today = new Date()
     if (next <= today) {
       onWeekChange(next)
@@ -167,11 +163,8 @@ export function AttendanceWeekFilter({
       const endDate = new Date(customEndDate)
       const today = new Date()
       
-      // Don't allow future dates
       if (startDate <= today && endDate <= today) {
-        // Update the week to match the start date
         onWeekChange(startDate)
-        // Update the date range ref to prevent duplicate calls
         lastDateRangeRef.current = { start: startDate, end: endDate }
         onDateRangeChange(startDate, endDate)
         setShowDateRange(false)
@@ -185,7 +178,6 @@ export function AttendanceWeekFilter({
     setShowDateRange(false)
     const today = new Date()
     onWeekChange(today)
-    // Reset the date range ref
     lastDateRangeRef.current = null
   }
 
@@ -202,106 +194,78 @@ export function AttendanceWeekFilter({
     }
   }
 
-  // Update date range when filter type or date changes
   useEffect(() => {
     const { start, end } = getDateRange(currentWeek)
     
-    // Only call if dates are valid
     if (!start || !end || isNaN(start.getTime()) || isNaN(end.getTime())) {
       return
     }
     
-    // Check if the date range has actually changed
     const lastRange = lastDateRangeRef.current
     if (
       lastRange &&
       lastRange.start.getTime() === start.getTime() &&
       lastRange.end.getTime() === end.getTime()
     ) {
-      // Date range hasn't changed, don't call onDateRangeChange
       return
     }
     
-    // Update the ref with the new date range
     lastDateRangeRef.current = { start, end }
-    
-    // Always call onDateRangeChange, but the ref check prevents duplicate calls
-    // The parent's useCallback ensures this function is stable
     onDateRangeChange(start, end)
     
-    // Mark that we've completed the initial mount
     if (isInitialMount.current) {
       isInitialMount.current = false
     }
   }, [currentWeek, filterType, onDateRangeChange])
 
-  return (
-    <Card className="mb-6">
-      <CardContent className="p-4 sm:p-6">
-        <div className="flex flex-col gap-4">
-          {/* Top Row: Filter Type and Action Buttons */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            {/* Filter Type Selector */}
-            <div className="flex items-center gap-2">
-              <Select value={filterType} onValueChange={(value) => handleFilterTypeChange(value as FilterType)}>
-                <SelectTrigger className="w-[120px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="week">Week</SelectItem>
-                  <SelectItem value="month">Month</SelectItem>
-                  <SelectItem value="year">Year</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+  const canNavigateNext = () => {
+    const next = new Date(currentWeek)
+    switch (filterType) {
+      case 'week':
+        return new Date(next.getTime() + 7 * 24 * 60 * 60 * 1000) <= new Date()
+      case 'month':
+        next.setMonth(next.getMonth() + 1)
+        return next <= new Date()
+      case 'year':
+        next.setFullYear(next.getFullYear() + 1)
+        return next <= new Date()
+      default:
+        return false
+    }
+  }
 
-            {/* Action Buttons */}
-            <div className="flex items-center gap-2 flex-wrap">
+  return (
+    <Card className="border-0 shadow-none">
+      <CardContent className="p-4 pt-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          {/* View Type Toggle */}
+          <div className="flex bg-[var(--muted)] rounded-lg p-1 gap-1">
+            {(['week', 'month', 'year'] as FilterType[]).map((type) => (
               <Button
-                variant="outline"
+                key={type}
+                variant={filterType === type ? 'default' : 'ghost'}
                 size="sm"
-                onClick={handleCurrent}
-                className="flex items-center gap-1.5 whitespace-nowrap"
+                onClick={() => handleFilterTypeChange(type)}
+                className="capitalize min-w-[70px]"
               >
-                <Calendar className="h-4 w-4" />
-                <span className="hidden sm:inline">Current </span>
-                {filterType === 'week' ? 'Week' : filterType === 'month' ? 'Month' : 'Year'}
+                {type}
               </Button>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowDateRange(!showDateRange)}
-                className={`flex items-center gap-1.5 whitespace-nowrap ${
-                  showDateRange 
-                    ? 'bg-gray-100 border-gray-300 text-gray-900' 
-                    : 'border-gray-200 hover:bg-gray-50'
-                }`}
-              >
-                <Filter className="h-4 w-4" />
-                <span className="hidden sm:inline">Custom </span>Range
-              </Button>
-            </div>
+            ))}
           </div>
 
-          {/* Date Navigation */}
-          <div className="flex items-center justify-center gap-3 px-2">
+          {/* Navigation */}
+          <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={handlePrevious}
-              className="flex items-center gap-1.5 whitespace-nowrap"
             >
               <ChevronLeft className="h-4 w-4" />
-              <span className="hidden sm:inline">Previous</span>
             </Button>
             
-            <div className="text-center min-w-0 flex-1 px-4">
-              <div className="text-base sm:text-lg font-semibold text-[var(--foreground)]">
+            <div className="px-3 py-1.5 bg-[var(--muted)] rounded-lg text-center min-w-[140px]">
+              <div className="text-sm font-semibold text-[var(--foreground)]">
                 {formatDateRange(currentWeek)}
-              </div>
-              <div className="text-xs sm:text-sm text-[var(--muted-foreground)] capitalize mt-0.5">
-                {filterType} View
               </div>
             </div>
             
@@ -309,79 +273,64 @@ export function AttendanceWeekFilter({
               variant="outline"
               size="sm"
               onClick={handleNext}
-              disabled={
-                (() => {
-                  const next = new Date(currentWeek)
-                  switch (filterType) {
-                    case 'week':
-                      return new Date(next.getTime() + 7 * 24 * 60 * 60 * 1000) > new Date()
-                    case 'month':
-                      next.setMonth(next.getMonth() + 1)
-                      return next > new Date()
-                    case 'year':
-                      next.setFullYear(next.getFullYear() + 1)
-                      return next > new Date()
-                    default:
-                      return false
-                  }
-                })()
-              }
-              className="flex items-center gap-1.5 whitespace-nowrap"
+              disabled={!canNavigateNext()}
             >
-              <span className="hidden sm:inline">Next</span>
               <ChevronRight className="h-4 w-4" />
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCurrent}
+            >
+              <Calendar className="h-4 w-4" />
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDateRange(!showDateRange)}
+            >
+              <Filter className="h-4 w-4" />
             </Button>
           </div>
         </div>
 
-        {/* Custom Date Range Picker */}
+        {/* Custom Date Range */}
         {showDateRange && (
-          <div className="mt-4 p-4 bg-gray-50 rounded-lg border">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Start Date
-                </label>
-                      <input
-                        type="date"
-                        value={customStartDate}
-                        onChange={(e) => setCustomStartDate(e.target.value)}
-                        max={new Date().toISOString().split('T')[0]}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-300 bg-white"
-                      />
-              </div>
-              
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  End Date
-                </label>
-                      <input
-                        type="date"
-                        value={customEndDate}
-                        onChange={(e) => setCustomEndDate(e.target.value)}
-                        max={new Date().toISOString().split('T')[0]}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-300 bg-white"
-                      />
-              </div>
-              
-              <div className="flex items-end gap-2">
-                <Button
-                  onClick={handleCustomDateRange}
-                  disabled={!customStartDate || !customEndDate}
-                  size="sm"
-                  className="px-4"
-                >
-                  Apply
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleClearCustomRange}
-                  size="sm"
-                >
-                  Clear
-                </Button>
-              </div>
-            </div>
+          <div className="mt-3 pt-3 border-t border-[var(--border)] flex flex-col sm:flex-row gap-2">
+            <Input
+              type="date"
+              value={customStartDate}
+              onChange={(e) => setCustomStartDate(e.target.value)}
+              max={new Date().toISOString().split('T')[0]}
+              className="h-9 flex-1"
+              placeholder="Start date"
+            />
+            <Input
+              type="date"
+              value={customEndDate}
+              onChange={(e) => setCustomEndDate(e.target.value)}
+              max={new Date().toISOString().split('T')[0]}
+              className="h-9 flex-1"
+              placeholder="End date"
+            />
+            <Button
+              onClick={handleCustomDateRange}
+              disabled={!customStartDate || !customEndDate}
+              size="sm"
+              className="h-9"
+            >
+              Apply
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleClearCustomRange}
+              size="sm"
+              className="h-9"
+            >
+              Clear
+            </Button>
           </div>
         )}
       </CardContent>
