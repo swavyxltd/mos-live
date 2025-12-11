@@ -19,8 +19,13 @@ function Verify2FAContent() {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
+  const initializedRef = useRef(false)
 
   useEffect(() => {
+    // Only run once on mount
+    if (initializedRef.current) return
+    initializedRef.current = true
+
     // Get pending user info from sessionStorage
     const storedUserId = sessionStorage.getItem('pendingUserId')
     const storedEmail = sessionStorage.getItem('pendingEmail')
@@ -34,14 +39,9 @@ function Verify2FAContent() {
     setPendingUserId(storedUserId)
     setEmail(storedEmail)
 
-    // Check if already signed in
-    getSession().then((session) => {
-      if ((session?.user as any)?.roleHints) {
-        const redirectUrl = getPostLoginRedirect((session.user as any).roleHints)
-        window.location.href = redirectUrl
-      }
-    })
-  }, [router])
+    // Don't check session here - let middleware handle redirects if user is already authenticated
+    // Checking session can cause race conditions in production
+  }, []) // Empty deps - only run once on mount
 
   const handleCodeChange = (index: number, value: string) => {
     // Only allow digits
