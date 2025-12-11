@@ -165,8 +165,8 @@ export function StudentsPageWrapper({ initialStudents, classes }: StudentsPageWr
             ? students.filter(s => s.isArchived).length 
             : students.filter(s => !s.isArchived).length
           }
-          icon={<Users className="h-4 w-4 text-blue-600" />}
-          className="border-l-4 border-l-blue-500 bg-blue-50/30"
+          icon={<Users className="h-4 w-4 text-gray-600" />}
+          className="border-l-4 border-l-gray-500 bg-gray-50/30"
         />
         
         <StatCard

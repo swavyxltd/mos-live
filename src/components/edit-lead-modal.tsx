@@ -257,7 +257,7 @@ export function EditLeadModal({ isOpen, onClose, onSave, leadId }: EditLeadModal
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      NEW: 'bg-blue-100 text-blue-700',
+      NEW: 'bg-gray-100 text-gray-700',
       CONTACTED: 'bg-yellow-100 text-yellow-700',
       FOLLOW_UP: 'bg-orange-100 text-orange-700',
       DEMO_BOOKED: 'bg-purple-100 text-purple-700',

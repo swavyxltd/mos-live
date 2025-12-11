@@ -335,7 +335,7 @@ export default function OwnerSettingsPage() {
                 </div>
               )}
 
-              <div className={formData.maintenanceMode ? "bg-blue-50 border border-blue-200 rounded-lg p-4" : "bg-green-50 border border-green-200 rounded-lg p-4"}>
+              <div className={formData.maintenanceMode ? "bg-gray-50 border border-gray-200 rounded-lg p-4" : "bg-green-50 border border-green-200 rounded-lg p-4"}>
                 <div className="flex items-center gap-2">
                   {formData.maintenanceMode ? (
                     <>
@@ -505,11 +505,11 @@ export default function OwnerSettingsPage() {
                 </div>
               </div>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm text-blue-800">
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <p className="text-sm text-gray-800">
                   <strong>Billing Email Notifications:</strong> Organisations will automatically receive email notifications after each billing attempt - both when payment succeeds and when it fails.
                 </p>
-                <p className="text-sm text-blue-700 mt-2">
+                <p className="text-sm text-gray-700 mt-2">
                   <strong>Grace Period:</strong> Organisations have a 14-day grace period after payment failure before their account is automatically suspended.
                 </p>
               </div>

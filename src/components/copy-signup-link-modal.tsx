@@ -78,8 +78,8 @@ export function CopySignupLinkModal({ orgSlug, onClose }: CopySignupLinkModalPro
               </div>
             </div>
 
-            <div className="bg-blue-50 p-3 rounded-md">
-              <p className="text-xs sm:text-sm text-blue-800">
+            <div className="bg-gray-50 p-3 rounded-md">
+              <p className="text-xs sm:text-sm text-gray-800">
                 <strong>Note:</strong> This link is public and doesn't require login. 
                 Parents can use it to sign up and verify their child's information to link their account.
               </p>

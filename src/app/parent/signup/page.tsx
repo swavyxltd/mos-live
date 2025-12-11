@@ -553,25 +553,25 @@ function ParentSignupForm() {
       customContent: (
         <div className="mt-2 space-y-4" onClick={(e) => e.stopPropagation()}>
           {applicationId && applicationData && (
-            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="mb-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
               <div className="space-y-2">
                 <div>
-                  <label className="text-xs font-medium text-blue-600">Madrasah</label>
-                  <p className="text-sm font-medium text-blue-900">
+                  <label className="text-xs font-medium text-gray-600">Madrasah</label>
+                  <p className="text-sm font-medium text-gray-900">
                     {applicationData.org.name}
                   </p>
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-blue-600">Parent Name</label>
-                  <p className="text-sm font-medium text-blue-900">
+                  <label className="text-xs font-medium text-gray-600">Parent Name</label>
+                  <p className="text-sm font-medium text-gray-900">
                     {applicationData.application.guardianName}
                   </p>
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-blue-600">Children</label>
+                  <label className="text-xs font-medium text-gray-600">Children</label>
                   <div className="space-y-1">
                     {applicationData.application.children.map((child, idx) => (
-                      <p key={idx} className="text-sm font-medium text-blue-900">
+                      <p key={idx} className="text-sm font-medium text-gray-900">
                         {child.firstName} {child.lastName}
                       </p>
                     ))}
@@ -920,12 +920,12 @@ function ParentSignupForm() {
               
               {/* Billing Date Info */}
               {paymentSettings.billingDay && (
-                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
                   <div className="flex items-center gap-2 mb-1">
-                    <Calendar className="h-4 w-4 text-blue-600" />
-                    <span className="text-xs font-medium text-blue-900">Payment Date</span>
+                    <Calendar className="h-4 w-4 text-gray-600" />
+                    <span className="text-xs font-medium text-gray-900">Payment Date</span>
                   </div>
-                  <p className="text-xs text-blue-800">
+                  <p className="text-xs text-gray-800">
                     Fees are due on the <strong>{paymentSettings.billingDay}{paymentSettings.billingDay === 1 ? 'st' : paymentSettings.billingDay === 2 ? 'nd' : paymentSettings.billingDay === 3 ? 'rd' : 'th'}</strong> of each month.
                   </p>
                 </div>
@@ -944,10 +944,10 @@ function ParentSignupForm() {
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <CreditCard className="h-4 w-4 text-blue-600" />
+                        <CreditCard className="h-4 w-4 text-gray-600" />
                         <span className="text-sm font-medium text-neutral-900">Card Payment</span>
                         {paymentSettings.hasStripeConnect && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-blue-50 text-blue-700 border border-blue-200">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-gray-50 text-gray-700 border border-gray-200">
                             <Shield className="h-3 w-3" />
                             Secure
                           </span>

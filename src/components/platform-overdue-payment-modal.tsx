@@ -203,8 +203,8 @@ export function PlatformOverduePaymentModal({
         <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-md overflow-hidden">
           <div className="p-6 border-b border-[var(--border)]">
             <div className="text-center">
-              <div className="mx-auto w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-3">
-                <CreditCard className="h-6 w-6 text-blue-600" />
+              <div className="mx-auto w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                <CreditCard className="h-6 w-6 text-gray-600" />
               </div>
               <h2 className="text-xl font-semibold text-[var(--foreground)]">Pay Overdue Balance</h2>
               <p className="text-sm text-[var(--muted-foreground)] mt-2">

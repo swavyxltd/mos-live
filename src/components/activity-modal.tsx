@@ -104,7 +104,7 @@ export function ActivityModal({ isOpen, onClose }: ActivityModalProps) {
 
   const getActionColor = (action: string) => {
     if (action.includes('PAYMENT') || action.includes('INVOICE')) {
-      return 'bg-blue-100 text-blue-700'
+      return 'bg-gray-100 text-gray-700'
     } else if (action.includes('STUDENT')) {
       return 'bg-green-100 text-green-700'
     } else if (action.includes('CLASS')) {

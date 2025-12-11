@@ -482,10 +482,10 @@ export function AttendanceMarking() {
                 <div className={`flex items-start gap-3 p-3 rounded-lg ${
                   isFullyMarked 
                     ? 'bg-green-50 border border-green-200' 
-                    : 'bg-blue-50 border border-blue-200'
+                    : 'bg-gray-50 border border-gray-200'
                 }`}>
                   <Info className={`h-5 w-5 flex-shrink-0 mt-0.5 ${
-                    isFullyMarked ? 'text-green-600' : 'text-blue-600'
+                    isFullyMarked ? 'text-green-600' : 'text-gray-600'
                   }`} />
                   <div className="flex-1">
                     <p className={`text-sm font-medium ${

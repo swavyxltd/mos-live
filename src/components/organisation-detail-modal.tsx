@@ -262,7 +262,7 @@ export function OrganisationDetailModal({ isOpen, onClose, organisation, onRefre
                   onClick={() => setActiveTab(tab.id as any)}
                   className={`flex items-center space-x-2 py-2 px-1 border-b-2 font-medium text-sm ${
                     activeTab === tab.id
-                      ? 'border-blue-500 text-blue-600'
+                      ? 'border-gray-500 text-gray-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
                 >
@@ -282,8 +282,8 @@ export function OrganisationDetailModal({ isOpen, onClose, organisation, onRefre
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <SplitTitle title="Students" />
-                  <div className="p-2 rounded-full bg-blue-100 flex-shrink-0">
-                    <Users className="h-4 w-4 text-blue-600" />
+                  <div className="p-2 rounded-full bg-gray-100 flex-shrink-0">
+                    <Users className="h-4 w-4 text-gray-600" />
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -577,7 +577,7 @@ export function OrganisationDetailModal({ isOpen, onClose, organisation, onRefre
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
                     <div className="flex-1">
                       <p className="text-sm font-medium">Last activity</p>
                       <p className="text-sm text-gray-500">{formatDate(organisation.lastActivity)}</p>

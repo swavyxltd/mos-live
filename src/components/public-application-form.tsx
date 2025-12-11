@@ -341,8 +341,8 @@ export function PublicApplicationForm({ org, classes }: PublicApplicationFormPro
           {/* Guardian Information */}
           <Card className="p-6 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
             <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg mr-3">
-                <User className="h-6 w-6 text-blue-600" />
+              <div className="p-2 bg-gray-100 rounded-lg mr-3">
+                <User className="h-6 w-6 text-gray-600" />
               </div>
               Guardian Information
             </h2>

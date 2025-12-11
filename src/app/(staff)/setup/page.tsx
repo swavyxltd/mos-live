@@ -333,7 +333,7 @@ export default function OnboardingPage() {
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${
                       index <= currentStepIndex
-                        ? 'bg-blue-600 border-blue-600 text-white'
+                        ? 'bg-gray-600 border-gray-600 text-white'
                         : 'bg-white border-gray-300 text-gray-400'
                     }`}
                   >
@@ -350,7 +350,7 @@ export default function OnboardingPage() {
                 {index < steps.length - 1 && (
                   <div
                     className={`h-1 flex-1 mx-2 ${
-                      index < currentStepIndex ? 'bg-blue-600' : 'bg-gray-300'
+                      index < currentStepIndex ? 'bg-gray-600' : 'bg-gray-300'
                     }`}
                   />
                 )}

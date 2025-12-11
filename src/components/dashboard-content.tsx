@@ -700,7 +700,7 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
                       <div className="flex items-start gap-3 p-2 hover:bg-[var(--muted)]/50 transition-colors">
                       <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${
                         activity.type === 'enrollment' ? 'bg-green-100 text-green-700' :
-                        activity.type === 'payment' ? 'bg-blue-100 text-blue-700' :
+                        activity.type === 'payment' ? 'bg-gray-100 text-gray-700' :
                         activity.type === 'attendance' ? 'bg-purple-100 text-purple-700' :
                         activity.type === 'message' ? 'bg-orange-100 text-orange-700' :
                         'bg-gray-100 text-gray-700'
@@ -770,7 +770,7 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
                           <div className={`w-3 h-3 rounded-full mt-1.5 flex-shrink-0 ${
                             event.isHoliday || event.type === 'HOLIDAY' ? 'bg-green-500' : 
                             event.type === 'EXAM' ? 'bg-yellow-500' : 
-                            event.type === 'MEETING' ? 'bg-blue-500' : 
+                            event.type === 'MEETING' ? 'bg-gray-500' : 
                             'bg-purple-500'
                           }`} />
                           <div className="flex-1 min-w-0">
@@ -785,7 +785,7 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
                                   className={`sm:hidden ${
                                     event.isHoliday || event.type === 'HOLIDAY' ? 'border-green-500 text-green-700 bg-green-50' : 
                                     event.type === 'EXAM' ? 'border-yellow-500 text-yellow-700 bg-yellow-50' : 
-                                    event.type === 'MEETING' ? 'border-blue-500 text-blue-700 bg-blue-50' : 
+                                    event.type === 'MEETING' ? 'border-gray-500 text-gray-700 bg-gray-50' : 
                                     'border-purple-500 text-purple-700 bg-purple-50'
                                   }`}
                                 >

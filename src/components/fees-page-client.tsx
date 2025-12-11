@@ -336,8 +336,8 @@ export function FeesPageClient({ classes, summary }: FeesPageClientProps) {
         title={`Edit Fee - ${editingClass?.name || ''}`}
       >
         <div className="space-y-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-sm text-blue-900">
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <p className="text-sm text-gray-900">
               <strong>Note:</strong> Changing the fee will affect future invoices. Existing payment records will not be changed.
             </p>
           </div>

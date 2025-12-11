@@ -91,7 +91,7 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
       case 'DEACTIVATED':
         return 'bg-red-50 text-red-600 border-0'
       case 'GRADUATED':
-        return 'bg-blue-50 text-blue-600 border-0'
+        return 'bg-gray-50 text-gray-600 border-0'
       default:
         return 'bg-gray-50 text-gray-600 border-0'
     }

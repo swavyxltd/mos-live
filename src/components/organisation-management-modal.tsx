@@ -438,7 +438,7 @@ export function OrganisationManagementModal({ isOpen, onClose, organisation, ini
                   onClick={() => setActiveTab(tab.id as any)}
                   className={`flex items-center space-x-2 py-2 px-1 border-b-2 font-medium text-sm ${
                     activeTab === tab.id
-                      ? 'border-blue-500 text-blue-600'
+                      ? 'border-gray-500 text-gray-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
                 >
@@ -458,8 +458,8 @@ export function OrganisationManagementModal({ isOpen, onClose, organisation, ini
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <SplitTitle title="Students" />
-                  <div className="p-2 rounded-full bg-blue-100 flex-shrink-0">
-                    <Users className="h-4 w-4 text-blue-600" />
+                  <div className="p-2 rounded-full bg-gray-100 flex-shrink-0">
+                    <Users className="h-4 w-4 text-gray-600" />
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -629,10 +629,10 @@ export function OrganisationManagementModal({ isOpen, onClose, organisation, ini
 
             <div className="space-y-4">
               {isAddingStudent && (
-                <Card className="border-blue-200 bg-blue-50">
+                <Card className="border-gray-200 bg-gray-50">
                   <CardContent className="p-4">
                     <div className="space-y-4">
-                      <h3 className="font-medium text-blue-900">Add New Student</h3>
+                      <h3 className="font-medium text-gray-900">Add New Student</h3>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="new-student-first">First Name</Label>
