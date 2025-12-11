@@ -525,177 +525,18 @@ function ParentSignupForm() {
     ? `Verified: ${verifiedStudent.firstName} ${verifiedStudent.lastName}`
     : `Verify your child's details to create your Parent Portal account.`
 
-  // Define onboarding steps - always show all steps, but disable later ones until verification
+  // Define onboarding steps - verification step is now shown separately above the form
   const canProceedToSignup = showSignupForm || (applicationId && applicationData);
   
   const onboardingSteps = [
-    // Step 1: Verify Child (only if no applicationId and not yet verified)
-    ...((!applicationId) ? [{
-      id: 'verify',
-      title: 'Verify Your Child',
-      description: 'Enter your child\'s details to verify they are enrolled.',
-      completed: completedSteps.has('verify'),
-      customContent: (
-        <div className="mt-2 space-y-4" onClick={(e) => e.stopPropagation()}>
-          <p className="text-sm text-muted-foreground w-full sm:max-w-64 md:max-w-xs mb-4">
-            Please enter your child's details to verify they are enrolled at the madrasah.
-          </p>
-
-          {error && (
-            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-              {error}
-            </div>
-          )}
-
-          {/* Multiple students selection */}
-          {multipleStudents.length > 0 && (
-            <div className="space-y-3">
-              <p className="text-sm font-medium text-neutral-700">
-                Multiple students found. Please select which one is yours:
-              </p>
-              {multipleStudents.map((student) => (
-                <button
-                  key={student.id}
-                  type="button"
-                  onClick={() => handleSelectStudent(student.id)}
-                  className="w-full p-4 border border-neutral-200 rounded-lg hover:border-neutral-400 hover:bg-neutral-50 transition-colors text-left"
-                >
-                  <div className="font-medium text-neutral-900">
-                    {student.firstName} {student.lastName}
-                  </div>
-                  {student.dob && (
-                    <div className="text-sm text-neutral-600 mt-1">
-                      DOB: {new Date(student.dob).toLocaleDateString('en-GB')}
-                    </div>
-                  )}
-                  {student.classes.length > 0 && (
-                    <div className="text-sm text-neutral-600">
-                      Class: {student.classes.map(c => c.name).join(', ')}
-                    </div>
-                  )}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Verify child form */}
-          {multipleStudents.length === 0 && (
-            <form onSubmit={handleVerifyChild} className="space-y-4">
-              <div>
-                <label htmlFor="childFirstName" className="block text-sm font-medium text-neutral-700 mb-1">
-                  Child First Name *
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-                  <input
-                    id="childFirstName"
-                    name="childFirstName"
-                    type="text"
-                    required
-                    value={verifyFormData.childFirstName}
-                    onChange={(e) => {
-                      const value = e.target.value.charAt(0).toUpperCase() + e.target.value.slice(1)
-                      setVerifyFormData({ ...verifyFormData, childFirstName: value })
-                      setError('')
-                    }}
-                    className="w-full pl-9 pr-3 h-10 text-sm rounded-md border border-neutral-200/70 bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
-                    placeholder="Enter first name"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="childLastName" className="block text-sm font-medium text-neutral-700 mb-1">
-                  Child Last Name *
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-                  <input
-                    id="childLastName"
-                    name="childLastName"
-                    type="text"
-                    required
-                    value={verifyFormData.childLastName}
-                    onChange={(e) => {
-                      const value = e.target.value.charAt(0).toUpperCase() + e.target.value.slice(1)
-                      setVerifyFormData({ ...verifyFormData, childLastName: value })
-                      setError('')
-                    }}
-                    className="w-full pl-9 pr-3 h-10 text-sm rounded-md border border-neutral-200/70 bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
-                    placeholder="Enter last name"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="childDob" className="block text-sm font-medium text-neutral-700 mb-1">
-                  Child Date of Birth *
-                </label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-                  <input
-                    id="childDob"
-                    name="childDob"
-                    type="date"
-                    required
-                    value={verifyFormData.childDob}
-                    onChange={(e) => {
-                      setVerifyFormData({ ...verifyFormData, childDob: e.target.value })
-                      setError('')
-                    }}
-                    className="w-full pl-9 pr-3 h-10 text-sm rounded-md border border-neutral-200/70 bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full h-10 text-sm rounded-md bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {submitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin inline" />
-                    Verifying...
-                  </>
-                ) : (
-                  'Verify Child'
-                )}
-              </button>
-            </form>
-          )}
-
-          {/* Show verified student info */}
-          {verifiedStudent && selectedStudentId && (
-            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <span className="text-sm font-medium text-green-900">Child verified</span>
-              </div>
-              <div className="space-y-1 text-sm text-green-800">
-                <p><strong>Student:</strong> {verifiedStudent.firstName} {verifiedStudent.lastName}</p>
-                {verifiedStudent.classes.length > 0 && (
-                  <p><strong>Class:</strong> {verifiedStudent.classes.map(c => c.name).join(', ')}</p>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      )
-    }] : []),
-    // Step 2: Account Details (always show, but disable if verification not passed)
+    // Step 1: Account Details
     {
       id: 'account',
       title: 'Account Details',
       description: 'Set up your email and password.',
       completed: completedSteps.has('account'),
       customContent: (
-        <div className={`mt-2 space-y-4 ${!canProceedToSignup ? 'opacity-50 pointer-events-none' : ''}`} onClick={(e) => e.stopPropagation()}>
-          {!canProceedToSignup && (
-            <div className="mb-4 bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-lg text-sm">
-              Please complete the "Verify Your Child" step first.
-            </div>
-          )}
+        <div className="mt-2 space-y-4" onClick={(e) => e.stopPropagation()}>
           {applicationId && applicationData && (
             <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="space-y-2">
@@ -814,19 +655,14 @@ function ParentSignupForm() {
         </div>
       )
     },
-    // Step 3: Personal Information
+    // Step 2: Personal Information
     {
       id: 'personal',
       title: 'Personal Information',
       description: 'Tell us about yourself.',
       completed: completedSteps.has('personal'),
       customContent: (
-        <div className={`mt-2 space-y-4 ${!canProceedToSignup ? 'opacity-50 pointer-events-none' : ''}`} onClick={(e) => e.stopPropagation()}>
-          {!canProceedToSignup && (
-            <div className="mb-4 bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-lg text-sm">
-              Please complete the previous steps first.
-            </div>
-          )}
+        <div className="mt-2 space-y-4" onClick={(e) => e.stopPropagation()}>
           {error && (
             <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
               {error}
@@ -1043,19 +879,14 @@ function ParentSignupForm() {
         </div>
       )
     },
-    // Step 4: Payment Setup
+    // Step 3: Payment Setup
     {
       id: 'payment',
       title: 'Payment Setup',
       description: 'Select your preferred payment method.',
       completed: completedSteps.has('payment'),
       customContent: (
-        <div className={`mt-2 space-y-4 ${!canProceedToSignup ? 'opacity-50 pointer-events-none' : ''}`} onClick={(e) => e.stopPropagation()}>
-          {!canProceedToSignup && (
-            <div className="mb-4 bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-lg text-sm">
-              Please complete the previous steps first.
-            </div>
-          )}
+        <div className="mt-2 space-y-4" onClick={(e) => e.stopPropagation()}>
           {error && (
             <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
               {error}
@@ -1216,19 +1047,14 @@ function ParentSignupForm() {
         </div>
       )
     },
-    // Step 5: Gift Aid Declaration
+    // Step 4: Gift Aid Declaration
     {
       id: 'giftAid',
       title: 'Gift Aid Declaration',
       description: 'Help the madrasah claim Gift Aid on your donations.',
       completed: completedSteps.has('giftAid'),
       customContent: (
-        <div className={`mt-2 space-y-4 ${!canProceedToSignup ? 'opacity-50 pointer-events-none' : ''}`} onClick={(e) => e.stopPropagation()}>
-          {!canProceedToSignup && (
-            <div className="mb-4 bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-lg text-sm">
-              Please complete the previous steps first.
-            </div>
-          )}
+        <div className="mt-2 space-y-4" onClick={(e) => e.stopPropagation()}>
           {error && (
             <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
               {error}
@@ -1312,6 +1138,9 @@ function ParentSignupForm() {
     }
   ]
 
+  // Show verification form if no applicationId and not yet verified
+  const showVerificationForm = !applicationId && !canProceedToSignup
+
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
       <div className="flex w-[60vw] flex-col gap-6">
@@ -1325,16 +1154,162 @@ function ParentSignupForm() {
           <p className="text-sm text-neutral-600 mt-1">{pageSubtitle}</p>
         </div>
 
-        {onboardingSteps.length > 0 ? (
+        {/* Student Verification Form - Shown BEFORE signup form */}
+        {showVerificationForm && (
+          <div className="bg-white border border-neutral-200 rounded-lg p-6 shadow-sm">
+            <h2 className="text-lg font-semibold text-neutral-900 mb-2">Verify Your Child</h2>
+            <p className="text-sm text-neutral-600 mb-6">
+              Please enter your child's details to verify they are enrolled at the madrasah.
+            </p>
+
+            {error && (
+              <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+
+            {/* Multiple students selection */}
+            {multipleStudents.length > 0 && (
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-neutral-700">
+                  Multiple students found. Please select which one is yours:
+                </p>
+                {multipleStudents.map((student) => (
+                  <button
+                    key={student.id}
+                    type="button"
+                    onClick={() => handleSelectStudent(student.id)}
+                    className="w-full p-4 border border-neutral-200 rounded-lg hover:border-neutral-400 hover:bg-neutral-50 transition-colors text-left"
+                  >
+                    <div className="font-medium text-neutral-900">
+                      {student.firstName} {student.lastName}
+                    </div>
+                    {student.dob && (
+                      <div className="text-sm text-neutral-600 mt-1">
+                        DOB: {new Date(student.dob).toLocaleDateString('en-GB')}
+                      </div>
+                    )}
+                    {student.classes.length > 0 && (
+                      <div className="text-sm text-neutral-600">
+                        Class: {student.classes.map(c => c.name).join(', ')}
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Verify child form */}
+            {multipleStudents.length === 0 && (
+              <form onSubmit={handleVerifyChild} className="space-y-4">
+                <div>
+                  <label htmlFor="childFirstName" className="block text-sm font-medium text-neutral-700 mb-1">
+                    Child First Name *
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                    <input
+                      id="childFirstName"
+                      name="childFirstName"
+                      type="text"
+                      required
+                      value={verifyFormData.childFirstName}
+                      onChange={(e) => {
+                        const value = e.target.value.charAt(0).toUpperCase() + e.target.value.slice(1)
+                        setVerifyFormData({ ...verifyFormData, childFirstName: value })
+                        setError('')
+                      }}
+                      className="w-full pl-9 pr-3 h-10 text-sm rounded-md border border-neutral-200/70 bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
+                      placeholder="Enter first name"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="childLastName" className="block text-sm font-medium text-neutral-700 mb-1">
+                    Child Last Name *
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                    <input
+                      id="childLastName"
+                      name="childLastName"
+                      type="text"
+                      required
+                      value={verifyFormData.childLastName}
+                      onChange={(e) => {
+                        const value = e.target.value.charAt(0).toUpperCase() + e.target.value.slice(1)
+                        setVerifyFormData({ ...verifyFormData, childLastName: value })
+                        setError('')
+                      }}
+                      className="w-full pl-9 pr-3 h-10 text-sm rounded-md border border-neutral-200/70 bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
+                      placeholder="Enter last name"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="childDob" className="block text-sm font-medium text-neutral-700 mb-1">
+                    Child Date of Birth *
+                  </label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                    <input
+                      id="childDob"
+                      name="childDob"
+                      type="date"
+                      required
+                      value={verifyFormData.childDob}
+                      onChange={(e) => {
+                        setVerifyFormData({ ...verifyFormData, childDob: e.target.value })
+                        setError('')
+                      }}
+                      className="w-full pl-9 pr-3 h-10 text-sm rounded-md border border-neutral-200/70 bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full h-10 text-sm rounded-md bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin inline" />
+                      Verifying...
+                    </>
+                  ) : (
+                    'Verify Child'
+                  )}
+                </button>
+              </form>
+            )}
+
+            {/* Show verified student info */}
+            {verifiedStudent && selectedStudentId && (
+              <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <span className="text-sm font-medium text-green-900">Child verified</span>
+                </div>
+                <div className="space-y-1 text-sm text-green-800">
+                  <p><strong>Student:</strong> {verifiedStudent.firstName} {verifiedStudent.lastName}</p>
+                  {verifiedStudent.classes.length > 0 && (
+                    <p><strong>Class:</strong> {verifiedStudent.classes.map(c => c.name).join(', ')}</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Signup Form - Only shown after verification or if applicationId is present */}
+        {canProceedToSignup && onboardingSteps.length > 0 && (
           <Onboarding01
             steps={onboardingSteps}
             title="Create your parent account"
           />
-        ) : (
-          <div className="text-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-neutral-400 mx-auto mb-4" />
-            <p className="text-sm text-neutral-600">Loading...</p>
-          </div>
         )}
 
         <p className="text-xs text-center text-neutral-500">
