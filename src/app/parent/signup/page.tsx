@@ -3,26 +3,20 @@
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useState, useEffect, Suspense } from 'react'
 import Image from 'next/image'
-import { Mail, Lock, Key, AlertCircle, Loader2, CheckCircle, User } from 'lucide-react'
-import { isValidEmail } from '@/lib/input-validation'
+import { Mail, Lock, User, Calendar, AlertCircle, Loader2, CheckCircle, Phone, MapPin, CreditCard, Gift, Building2, Coins, Shield, PhoneCall, Globe, MessageSquare } from 'lucide-react'
+import { isValidEmail, isValidDateOfBirth, isValidName, isValidPhone, isValidUKPostcode } from '@/lib/input-validation'
 import { Onboarding01 } from '@/components/onboarding-01'
 
-interface ClaimData {
-  student: {
-    id: string
-    firstName: string
-    lastName: string
-    dob: string | null
-    claimStatus: string
-  }
-  org: {
-    id: string
-    name: string
-  }
+interface VerifiedStudent {
+  id: string
+  firstName: string
+  lastName: string
+  dob: string | null
   classes: Array<{
     id: string
     name: string
   }>
+  claimStatus: string
 }
 
 interface ApplicationData {
@@ -39,12 +33,12 @@ interface ApplicationData {
   org: {
     id: string
     name: string
+    slug: string
   }
   students: Array<{
     id: string
     firstName: string
     lastName: string
-    claimCode: string | null
     classes: Array<{
       id: string
       name: string
@@ -55,45 +49,86 @@ interface ApplicationData {
 function ParentSignupForm() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const claimCode = searchParams.get('code')
-  const applicationToken = searchParams.get('applicationToken')
+  const applicationId = searchParams.get('applicationId')
+  const orgSlug = searchParams.get('org') // Get orgSlug from URL query param
 
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
-  const [claimData, setClaimData] = useState<ClaimData | null>(null)
+  const [verifiedStudent, setVerifiedStudent] = useState<VerifiedStudent | null>(null)
+  const [multipleStudents, setMultipleStudents] = useState<VerifiedStudent[]>([])
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null)
   const [applicationData, setApplicationData] = useState<ApplicationData | null>(null)
 
+  // Verify child form data (only shown when no applicationId)
+  const [verifyFormData, setVerifyFormData] = useState({
+    childFirstName: '',
+    childLastName: '',
+    childDob: ''
+  })
+
+  // Signup form data - all parent details
   const [formData, setFormData] = useState({
+    // Account details
     email: '',
     password: '',
     confirmPassword: '',
-    claimCode: ''
+    // Personal information
+    title: '',
+    firstName: '',
+    lastName: '',
+    phone: '',
+    backupPhone: '',
+    address: '',
+    city: '',
+    postcode: '',
+    relationshipToStudent: 'PARENT',
+    // Payment & Gift Aid
+    preferredPaymentMethod: '',
+    giftAidStatus: 'NOT_DECLARED'
   })
 
+  const [paymentSettings, setPaymentSettings] = useState<{
+    acceptsCard: boolean
+    acceptsCash: boolean
+    acceptsBankTransfer: boolean
+    hasStripeConfigured: boolean
+    hasStripeConnect: boolean
+    stripeEnabled: boolean
+    bankAccountName: string | null
+    bankSortCode: string | null
+    bankAccountNumber: string | null
+    paymentInstructions: string | null
+    billingDay: number
+  } | null>(null)
+
+  const [showSignupForm, setShowSignupForm] = useState(false)
+  const [currentStep, setCurrentStep] = useState<'account' | 'personal' | 'payment'>('account')
   const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    if (applicationToken) {
-      // Application token flow
+    if (applicationId) {
+      // Case A: Application flow - skip verification
       fetchApplicationData()
-    } else if (claimCode) {
-      // Claim code flow - pre-fill claim code
-      setFormData(prev => ({ ...prev, claimCode }))
-      setLoading(false)
     } else {
-      // No token or code - show form for claim code entry
+      // Case B: Normal flow - need to verify child first
+      // orgSlug should be provided as query param: /parent/signup?org=org-slug
+      if (!orgSlug) {
+        setError('Organisation is required. Please use the link provided by your madrasah.')
+        setLoading(false)
+        return
+      }
       setLoading(false)
     }
-  }, [applicationToken, claimCode])
+  }, [applicationId, orgSlug])
 
   const fetchApplicationData = async () => {
     try {
-      const response = await fetch('/api/applications/validate-token', {
+      const response = await fetch('/api/applications/get-by-id', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ applicationToken })
+        body: JSON.stringify({ applicationId })
       })
 
       const data = await response.json()
@@ -105,8 +140,17 @@ function ParentSignupForm() {
       }
 
       setApplicationData(data)
-      // Pre-fill email from application
-      setFormData(prev => ({ ...prev, email: data.application.guardianEmail }))
+      // Pre-fill email and name from application
+      setFormData(prev => ({ 
+        ...prev, 
+        email: data.application.guardianEmail,
+        name: data.application.guardianName
+      }))
+      
+      // Fetch payment settings for this org (will use org slug from data)
+      await fetchPaymentSettings()
+      
+      setShowSignupForm(true) // Skip verification, show signup form directly
       setLoading(false)
     } catch (err) {
       setError('Failed to load application details')
@@ -114,31 +158,132 @@ function ParentSignupForm() {
     }
   }
 
-  const validateClaimCode = async (code: string) => {
-    if (!code || code.trim().length === 0) {
-      return false
+  const fetchPaymentSettings = async (orgId?: string) => {
+    try {
+      // Use orgSlug from URL or from application data
+      const slugToUse = applicationData?.org?.slug || orgSlug
+      if (!slugToUse) return
+
+      // Fetch from public endpoint
+      const response = await fetch(`/api/public/payment-methods?orgSlug=${slugToUse}`)
+      
+      if (response.ok) {
+        const settings = await response.json()
+        setPaymentSettings({
+          acceptsCard: settings.acceptsCard || false,
+          acceptsCash: settings.acceptsCash !== false, // Default true
+          acceptsBankTransfer: settings.acceptsBankTransfer !== false, // Default true
+          hasStripeConfigured: settings.hasStripeConfigured || false,
+          hasStripeConnect: settings.hasStripeConnect || false,
+          stripeEnabled: settings.stripeEnabled || false,
+          bankAccountName: settings.bankAccountName || null,
+          bankSortCode: settings.bankSortCode || null,
+          bankAccountNumber: settings.bankAccountNumber || null,
+          paymentInstructions: settings.paymentInstructions || null,
+          billingDay: settings.billingDay || 1
+        })
+      }
+    } catch (err) {
+      // Default to all payment methods if fetch fails
+      setPaymentSettings({
+        acceptsCard: false,
+        acceptsCash: true,
+        acceptsBankTransfer: true,
+        hasStripeConfigured: false,
+        hasStripeConnect: false,
+        stripeEnabled: false,
+        bankAccountName: null,
+        bankSortCode: null,
+        bankAccountNumber: null,
+        paymentInstructions: null,
+        billingDay: 1
+      })
+    }
+  }
+
+  const handleVerifyChild = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+
+    // Validation
+    if (!verifyFormData.childFirstName || !verifyFormData.childLastName || !verifyFormData.childDob) {
+      setError('Please fill in all child verification fields')
+      return
     }
 
+    if (!isValidName(verifyFormData.childFirstName.trim())) {
+      setError('Please enter a valid first name')
+      return
+    }
+
+    if (!isValidName(verifyFormData.childLastName.trim())) {
+      setError('Please enter a valid last name')
+      return
+    }
+
+    if (!isValidDateOfBirth(verifyFormData.childDob)) {
+      setError('Please enter a valid date of birth')
+      return
+    }
+
+    setSubmitting(true)
+
     try {
-      const response = await fetch('/api/claims/validate', {
+      if (!orgSlug) {
+        setError('Organisation is required. Please use the link provided by your madrasah.')
+        setSubmitting(false)
+        return
+      }
+
+      const response = await fetch('/api/public/verify-child', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ claimCode: code.trim() })
+        body: JSON.stringify({
+          childFirstName: verifyFormData.childFirstName.trim(),
+          childLastName: verifyFormData.childLastName.trim(),
+          childDob: verifyFormData.childDob,
+          orgSlug: orgSlug
+        })
       })
 
       const data = await response.json()
 
       if (!response.ok) {
-        setError(data.error || 'Invalid claim code')
-        return false
+        setError(data.error || 'Failed to verify child')
+        setSubmitting(false)
+        return
       }
 
-      setClaimData(data)
-      setError('')
-      return true
+      if (data.multipleMatches) {
+        // Multiple students found - let parent choose
+        setMultipleStudents(data.students)
+        setSelectedStudentId(null)
+        setSubmitting(false)
+        return
+      }
+
+      // Single match - proceed
+      setVerifiedStudent(data.student)
+      setSelectedStudentId(data.student.id)
+      
+      // Fetch payment settings
+      await fetchPaymentSettings()
+      
+      setShowSignupForm(true) // Hide verification, show signup form
+      setSubmitting(false)
     } catch (err) {
-      setError('Failed to validate claim code')
-      return false
+      setError('An error occurred during verification. Please try again.')
+      setSubmitting(false)
+    }
+  }
+
+  const handleSelectStudent = (studentId: string) => {
+    const student = multipleStudents.find(s => s.id === studentId)
+    if (student) {
+      setVerifiedStudent(student)
+      setSelectedStudentId(studentId)
+      setMultipleStudents([])
+      setShowSignupForm(true)
     }
   }
 
@@ -146,27 +291,89 @@ function ParentSignupForm() {
   useEffect(() => {
     const newCompleted = new Set<string>()
     
-    if (applicationToken && applicationData) {
+    if (applicationId && applicationData) {
       newCompleted.add('verify')
-    } else if (claimData) {
+    } else if (verifiedStudent && selectedStudentId) {
       newCompleted.add('verify')
     }
     
+    // Account step
     if (formData.email && isValidEmail(formData.email) && 
         formData.password && formData.password.length >= 8 &&
         formData.password === formData.confirmPassword) {
       newCompleted.add('account')
     }
     
+    // Personal info step
+    if (formData.firstName && formData.firstName.trim().length >= 1 && formData.lastName && formData.lastName.trim().length >= 1) {
+      newCompleted.add('personal')
+    }
+    
+    // Payment step (at least one method should be selected if available)
+    if (paymentSettings) {
+      const hasAvailableMethods = paymentSettings.acceptsCard || paymentSettings.acceptsCash || paymentSettings.acceptsBankTransfer
+      if (!hasAvailableMethods || formData.preferredPaymentMethod) {
+        newCompleted.add('payment')
+      }
+    }
+    
     setCompletedSteps(newCompleted)
-  }, [applicationToken, applicationData, claimData, formData])
+  }, [applicationId, applicationData, verifiedStudent, selectedStudentId, formData, paymentSettings])
+
+  const handleNextStep = () => {
+    if (currentStep === 'account') {
+      // Validate account step
+      if (!formData.email || !isValidEmail(formData.email)) {
+        setError('Please enter a valid email address')
+        return
+      }
+      if (!formData.password || formData.password.length < 8) {
+        setError('Password must be at least 8 characters')
+        return
+      }
+      if (formData.password !== formData.confirmPassword) {
+        setError('Passwords do not match')
+        return
+      }
+      setCurrentStep('personal')
+      setError('')
+    } else if (currentStep === 'personal') {
+      // Validate personal step
+      if (!formData.firstName || formData.firstName.trim().length < 1) {
+        setError('Please enter your first name')
+        return
+      }
+      if (!formData.lastName || formData.lastName.trim().length < 1) {
+        setError('Please enter your last name')
+        return
+      }
+      if (formData.phone && !isValidPhone(formData.phone)) {
+        setError('Please enter a valid phone number')
+        return
+      }
+      if (formData.postcode && !isValidUKPostcode(formData.postcode)) {
+        setError('Please enter a valid UK postcode')
+        return
+      }
+      setCurrentStep('payment')
+      setError('')
+    }
+  }
+
+  const handleBackStep = () => {
+    if (currentStep === 'payment') {
+      setCurrentStep('personal')
+    } else if (currentStep === 'personal') {
+      setCurrentStep('account')
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setSubmitting(true)
 
-    // Basic validation
+    // Final validation
     if (!formData.email || !isValidEmail(formData.email)) {
       setError('Please enter a valid email address')
       setSubmitting(false)
@@ -185,65 +392,85 @@ function ParentSignupForm() {
       return
     }
 
+    if (!formData.firstName || formData.firstName.trim().length < 1) {
+      setError('Please enter your first name')
+      setSubmitting(false)
+      return
+    }
+
+    if (!formData.lastName || formData.lastName.trim().length < 1) {
+      setError('Please enter your last name')
+      setSubmitting(false)
+      return
+    }
+
+    if (!formData.city || formData.city.trim().length < 2) {
+      setError('Please enter your city')
+      setSubmitting(false)
+      return
+    }
+
+    if (!formData.phone || !isValidPhone(formData.phone)) {
+      setError('Please enter a valid phone number')
+      setSubmitting(false)
+      return
+    }
+
+    if (formData.backupPhone && !isValidPhone(formData.backupPhone)) {
+      setError('Please enter a valid backup phone number')
+      setSubmitting(false)
+      return
+    }
+
+    if (formData.postcode && !isValidUKPostcode(formData.postcode)) {
+      setError('Please enter a valid UK postcode')
+      setSubmitting(false)
+      return
+    }
+
     try {
-      if (applicationToken) {
-        // Application token flow
-        const response = await fetch('/api/applications/claim', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            applicationToken,
-            email: formData.email.toLowerCase().trim(),
-            password: formData.password
-          })
-        })
-
-        const data = await response.json()
-
-        if (!response.ok) {
-          setError(data.error || 'Failed to create account')
-          setSubmitting(false)
-          return
-        }
-
-        setSuccess(true)
-      } else {
-        // Claim code flow
-        if (!formData.claimCode || formData.claimCode.trim().length === 0) {
-          setError('Please enter a claim code')
-          setSubmitting(false)
-          return
-        }
-
-        if (!claimData) {
-          // Validate claim code first
-          const isValid = await validateClaimCode(formData.claimCode)
-          if (!isValid) {
-            setSubmitting(false)
-            return
-          }
-        }
-
-        const response = await fetch('/api/claims/claim', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            claimCode: formData.claimCode.trim(),
-            email: formData.email.toLowerCase().trim(),
-            password: formData.password
-          })
-        })
-
-        const data = await response.json()
-
-        if (!response.ok) {
-          setError(data.error || 'Failed to create account')
-          setSubmitting(false)
-          return
-        }
-
-        setSuccess(true)
+      const signupData: any = {
+        email: formData.email.toLowerCase().trim(),
+        password: formData.password,
+        name: `${formData.firstName.trim()} ${formData.lastName.trim()}`.trim(),
+        title: formData.title || undefined,
+        phone: formData.phone || undefined,
+        backupPhone: formData.backupPhone || undefined,
+        address: formData.address || undefined,
+        city: formData.city.trim() || undefined,
+        postcode: formData.postcode || undefined,
+        relationshipToStudent: formData.relationshipToStudent || 'PARENT',
+        preferredPaymentMethod: formData.preferredPaymentMethod || undefined,
+        giftAidStatus: formData.giftAidStatus
       }
+
+      if (applicationId && applicationData) {
+        // Application flow - link to all students from application
+        signupData.applicationId = applicationId
+      } else if (selectedStudentId && verifiedStudent) {
+        // Normal flow - link to verified student
+        signupData.studentId = selectedStudentId
+      } else {
+        setError('Please verify your child first')
+        setSubmitting(false)
+        return
+      }
+
+      const response = await fetch('/api/auth/parent-signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(signupData)
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || 'Failed to create account')
+        setSubmitting(false)
+        return
+      }
+
+      setSuccess(true)
     } catch (err) {
       setError('An error occurred. Please try again.')
       setSubmitting(false)
@@ -259,23 +486,6 @@ function ParentSignupForm() {
           </a>
           <div className="flex items-center justify-center py-8">
             <Loader2 className="h-8 w-8 animate-spin text-neutral-400" />
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (error && !claimData && !applicationData && !claimCode && !applicationToken) {
-    return (
-      <div className="flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
-        <div className="flex w-[60vw] flex-col gap-6">
-          <a href="/" className="flex items-center gap-2 self-center">
-            <Image src="/logo.png" alt="Madrasah OS" width={128} height={32} className="h-8 w-auto" priority fetchPriority="high" />
-          </a>
-          <div className="text-center py-8">
-            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-neutral-900 mb-2">Error</h2>
-            <p className="text-sm text-neutral-600">{error}</p>
           </div>
         </div>
       </div>
@@ -304,149 +514,216 @@ function ParentSignupForm() {
     )
   }
 
-  // Determine page title and description
-  const pageTitle = applicationToken && applicationData
+  // Determine page title
+  const pageTitle = applicationId && applicationData
     ? `Create Your Parent Portal Account`
     : `Create Your Parent Portal Account`
   
-  const pageSubtitle = applicationToken && applicationData
+  const pageSubtitle = applicationId && applicationData
     ? `Your child's application has been accepted at ${applicationData.org.name}. Create your account to access the Parent Portal.`
-    : claimData
-    ? `You are claiming access to ${claimData.student.firstName} ${claimData.student.lastName} at ${claimData.org.name}.`
-    : `Enter your claim code to create your Parent Portal account.`
+    : verifiedStudent
+    ? `Verified: ${verifiedStudent.firstName} ${verifiedStudent.lastName}`
+    : `Verify your child's details to create your Parent Portal account.`
 
-  // Define onboarding steps
+  // Define onboarding steps - always show all steps, but disable later ones until verification
+  const canProceedToSignup = showSignupForm || (applicationId && applicationData);
+  
   const onboardingSteps = [
-    ...(applicationToken ? [] : [{
+    // Step 1: Verify Child (only if no applicationId and not yet verified)
+    ...((!applicationId) ? [{
       id: 'verify',
-      title: applicationToken ? 'Verify application' : 'Enter claim code',
-      description: applicationToken 
-        ? 'Verify your application details.'
-        : 'Enter the claim code provided by the madrasah.',
+      title: 'Verify Your Child',
+      description: 'Enter your child\'s details to verify they are enrolled.',
       completed: completedSteps.has('verify'),
       customContent: (
         <div className="mt-2 space-y-4" onClick={(e) => e.stopPropagation()}>
-          {applicationToken && applicationData ? (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground w-full sm:max-w-64 md:max-w-xs mb-4">
-                Please verify that the following information is correct.
-              </p>
+          <p className="text-sm text-muted-foreground w-full sm:max-w-64 md:max-w-xs mb-4">
+            Please enter your child's details to verify they are enrolled at the madrasah.
+          </p>
 
-              <div className="p-4 bg-neutral-50 border border-neutral-200 rounded-lg">
-                <div className="space-y-2">
-                  <div>
-                    <label className="text-xs font-medium text-neutral-600">Madrasah</label>
-                    <p className="text-sm font-medium text-neutral-900">
-                      {applicationData.org.name}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-neutral-600">Parent Name</label>
-                    <p className="text-sm font-medium text-neutral-900">
-                      {applicationData.application.guardianName}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-neutral-600">Children</label>
-                    <div className="space-y-1">
-                      {applicationData.application.children.map((child, idx) => (
-                        <p key={idx} className="text-sm font-medium text-neutral-900">
-                          {child.firstName} {child.lastName}
-                        </p>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
-                <CheckCircle className="h-4 w-4" />
-                <span>Application verified</span>
-              </div>
+          {error && (
+            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              {error}
             </div>
-          ) : (
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground w-full sm:max-w-64 md:max-w-xs mb-4">
-                Enter the claim code you received from the madrasah. This code links your account to your child's record.
+          )}
+
+          {/* Multiple students selection */}
+          {multipleStudents.length > 0 && (
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-neutral-700">
+                Multiple students found. Please select which one is yours:
               </p>
+              {multipleStudents.map((student) => (
+                <button
+                  key={student.id}
+                  type="button"
+                  onClick={() => handleSelectStudent(student.id)}
+                  className="w-full p-4 border border-neutral-200 rounded-lg hover:border-neutral-400 hover:bg-neutral-50 transition-colors text-left"
+                >
+                  <div className="font-medium text-neutral-900">
+                    {student.firstName} {student.lastName}
+                  </div>
+                  {student.dob && (
+                    <div className="text-sm text-neutral-600 mt-1">
+                      DOB: {new Date(student.dob).toLocaleDateString('en-GB')}
+                    </div>
+                  )}
+                  {student.classes.length > 0 && (
+                    <div className="text-sm text-neutral-600">
+                      Class: {student.classes.map(c => c.name).join(', ')}
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
 
-              {error && !claimData && (
-                <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                  {error}
-                </div>
-              )}
-
+          {/* Verify child form */}
+          {multipleStudents.length === 0 && (
+            <form onSubmit={handleVerifyChild} className="space-y-4">
               <div>
-                <label htmlFor="claimCode" className="block text-sm font-medium text-neutral-700 mb-1">
-                  Claim Code *
+                <label htmlFor="childFirstName" className="block text-sm font-medium text-neutral-700 mb-1">
+                  Child First Name *
                 </label>
                 <div className="relative">
-                  <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
                   <input
-                    id="claimCode"
-                    name="claimCode"
+                    id="childFirstName"
+                    name="childFirstName"
                     type="text"
                     required
-                    value={formData.claimCode}
+                    value={verifyFormData.childFirstName}
                     onChange={(e) => {
-                      const code = e.target.value.toUpperCase().trim()
-                      setFormData({ ...formData, claimCode: code })
+                      const value = e.target.value.charAt(0).toUpperCase() + e.target.value.slice(1)
+                      setVerifyFormData({ ...verifyFormData, childFirstName: value })
                       setError('')
-                      // Auto-validate when code is 10 characters
-                      if (code.length >= 8) {
-                        validateClaimCode(code)
-                      }
                     }}
-                    className="w-full pl-9 pr-3 h-10 text-sm rounded-md border border-neutral-200/70 bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors font-mono"
-                    placeholder="Enter claim code"
-                    maxLength={12}
+                    className="w-full pl-9 pr-3 h-10 text-sm rounded-md border border-neutral-200/70 bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
+                    placeholder="Enter first name"
                   />
                 </div>
-                <p className="mt-1 text-xs text-neutral-500">Enter the code from your claim sheet</p>
               </div>
 
-              {claimData && (
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <span className="text-sm font-medium text-green-900">Claim code verified</span>
-                  </div>
-                  <div className="space-y-1 text-sm text-green-800">
-                    <p><strong>Student:</strong> {claimData.student.firstName} {claimData.student.lastName}</p>
-                    <p><strong>Madrasah:</strong> {claimData.org.name}</p>
-                    {claimData.classes.length > 0 && (
-                      <p><strong>Class:</strong> {claimData.classes.map(c => c.name).join(', ')}</p>
-                    )}
-                  </div>
+              <div>
+                <label htmlFor="childLastName" className="block text-sm font-medium text-neutral-700 mb-1">
+                  Child Last Name *
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                  <input
+                    id="childLastName"
+                    name="childLastName"
+                    type="text"
+                    required
+                    value={verifyFormData.childLastName}
+                    onChange={(e) => {
+                      const value = e.target.value.charAt(0).toUpperCase() + e.target.value.slice(1)
+                      setVerifyFormData({ ...verifyFormData, childLastName: value })
+                      setError('')
+                    }}
+                    className="w-full pl-9 pr-3 h-10 text-sm rounded-md border border-neutral-200/70 bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
+                    placeholder="Enter last name"
+                  />
                 </div>
-              )}
+              </div>
+
+              <div>
+                <label htmlFor="childDob" className="block text-sm font-medium text-neutral-700 mb-1">
+                  Child Date of Birth *
+                </label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                  <input
+                    id="childDob"
+                    name="childDob"
+                    type="date"
+                    required
+                    value={verifyFormData.childDob}
+                    onChange={(e) => {
+                      setVerifyFormData({ ...verifyFormData, childDob: e.target.value })
+                      setError('')
+                    }}
+                    className="w-full pl-9 pr-3 h-10 text-sm rounded-md border border-neutral-200/70 bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full h-10 text-sm rounded-md bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin inline" />
+                    Verifying...
+                  </>
+                ) : (
+                  'Verify Child'
+                )}
+              </button>
+            </form>
+          )}
+
+          {/* Show verified student info */}
+          {verifiedStudent && selectedStudentId && (
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <span className="text-sm font-medium text-green-900">Child verified</span>
+              </div>
+              <div className="space-y-1 text-sm text-green-800">
+                <p><strong>Student:</strong> {verifiedStudent.firstName} {verifiedStudent.lastName}</p>
+                {verifiedStudent.classes.length > 0 && (
+                  <p><strong>Class:</strong> {verifiedStudent.classes.map(c => c.name).join(', ')}</p>
+                )}
+              </div>
             </div>
           )}
         </div>
       )
-    }]),
+    }] : []),
+    // Step 2: Account Details (always show, but disable if verification not passed)
     {
       id: 'account',
-      title: 'Create your account',
-      description: 'Set up your email and password to access your parent portal.',
+      title: 'Account Details',
+      description: 'Set up your email and password.',
       completed: completedSteps.has('account'),
       customContent: (
-        <div className="mt-2 space-y-4" onClick={(e) => e.stopPropagation()}>
-          {applicationToken && !applicationData && (
+        <div className={`mt-2 space-y-4 ${!canProceedToSignup ? 'opacity-50 pointer-events-none' : ''}`} onClick={(e) => e.stopPropagation()}>
+          {!canProceedToSignup && (
             <div className="mb-4 bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-lg text-sm">
-              Please verify your application first.
+              Please complete the "Verify Your Child" step first.
             </div>
           )}
-
-          {!applicationToken && !claimData && (
-            <div className="mb-4 bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-lg text-sm">
-              Please enter and verify your claim code first.
+          {applicationId && applicationData && (
+            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="space-y-2">
+                <div>
+                  <label className="text-xs font-medium text-blue-600">Madrasah</label>
+                  <p className="text-sm font-medium text-blue-900">
+                    {applicationData.org.name}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-blue-600">Parent Name</label>
+                  <p className="text-sm font-medium text-blue-900">
+                    {applicationData.application.guardianName}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-blue-600">Children</label>
+                  <div className="space-y-1">
+                    {applicationData.application.children.map((child, idx) => (
+                      <p key={idx} className="text-sm font-medium text-blue-900">
+                        {child.firstName} {child.lastName}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
-
-          <p className="text-sm text-muted-foreground w-full sm:max-w-64 md:max-w-xs mb-4">
-            Create your parent account to access your child's information.
-          </p>
 
           {error && (
             <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
@@ -470,10 +747,10 @@ function ParentSignupForm() {
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="w-full pl-9 pr-3 h-10 text-sm rounded-md border border-neutral-200/70 bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
                 placeholder="your.email@example.com"
-                disabled={!!applicationToken && !!applicationData}
+                disabled={!!applicationId && !!applicationData}
               />
             </div>
-            {applicationToken && applicationData && (
+            {applicationId && applicationData && (
               <p className="mt-1 text-xs text-neutral-500">This email is from your application</p>
             )}
           </div>
@@ -526,21 +803,509 @@ function ParentSignupForm() {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit}>
-            <button
-              type="submit"
-              disabled={submitting || (applicationToken && !applicationData) || (!applicationToken && !claimData)}
-              className="w-full h-10 text-sm rounded-md bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          <button
+            type="button"
+            onClick={handleNextStep}
+            disabled={!canProceedToSignup}
+            className="w-full h-10 text-sm rounded-md bg-neutral-900 text-white hover:bg-neutral-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Continue to Personal Information
+          </button>
+        </div>
+      )
+    },
+    // Step 3: Personal Information
+    {
+      id: 'personal',
+      title: 'Personal Information',
+      description: 'Tell us about yourself.',
+      completed: completedSteps.has('personal'),
+      customContent: (
+        <div className={`mt-2 space-y-4 ${!canProceedToSignup ? 'opacity-50 pointer-events-none' : ''}`} onClick={(e) => e.stopPropagation()}>
+          {!canProceedToSignup && (
+            <div className="mb-4 bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-lg text-sm">
+              Please complete the previous steps first.
+            </div>
+          )}
+          {error && (
+            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+
+          {/* Title */}
+          <div>
+            <label htmlFor="title" className="block text-sm font-medium text-neutral-700 mb-1">
+              Title
+            </label>
+            <select
+              id="title"
+              name="title"
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              className="w-full h-10 text-sm rounded-md border border-neutral-200/70 bg-transparent text-neutral-900 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors px-3"
             >
-              {submitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin inline" />
-                  Creating Account...
-                </>
-              ) : (
-                'Create Account'
-              )}
+              <option value="">None</option>
+              <option value="Mr">Mr</option>
+              <option value="Mrs">Mrs</option>
+              <option value="Miss">Miss</option>
+              <option value="Ms">Ms</option>
+              <option value="Dr">Dr</option>
+            </select>
+          </div>
+
+          {/* First Name and Last Name - Side by Side */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="firstName" className="block text-sm font-medium text-neutral-700 mb-1">
+                First Name *
+              </label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                <input
+                  id="firstName"
+                  name="firstName"
+                  type="text"
+                  required
+                  value={formData.firstName}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    setFormData({ ...formData, firstName: value.length > 0 ? value.charAt(0).toUpperCase() + value.slice(1) : value })
+                  }}
+                  className="w-full pl-9 pr-3 h-10 text-sm rounded-md border border-neutral-200/70 bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
+                  placeholder="First name"
+                />
+              </div>
+            </div>
+            <div>
+              <label htmlFor="lastName" className="block text-sm font-medium text-neutral-700 mb-1">
+                Last Name *
+              </label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                <input
+                  id="lastName"
+                  name="lastName"
+                  type="text"
+                  required
+                  value={formData.lastName}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    setFormData({ ...formData, lastName: value.length > 0 ? value.charAt(0).toUpperCase() + value.slice(1) : value })
+                  }}
+                  className="w-full pl-9 pr-3 h-10 text-sm rounded-md border border-neutral-200/70 bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
+                  placeholder="Last name"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Phone Number and Backup Phone - Side by Side */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="phone" className="block text-sm font-medium text-neutral-700 mb-1">
+                Phone Number *
+              </label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                <input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  required
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  className="w-full pl-9 pr-3 h-10 text-sm rounded-md border border-neutral-200/70 bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
+                  placeholder="07123456789"
+                />
+              </div>
+              <p className="mt-1 text-xs text-neutral-500">Primary contact</p>
+            </div>
+            <div>
+              <label htmlFor="backupPhone" className="block text-sm font-medium text-neutral-700 mb-1">
+                Backup Phone Number
+              </label>
+              <div className="relative">
+                <PhoneCall className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                <input
+                  id="backupPhone"
+                  name="backupPhone"
+                  type="tel"
+                  value={formData.backupPhone}
+                  onChange={(e) => setFormData({ ...formData, backupPhone: e.target.value })}
+                  className="w-full pl-9 pr-3 h-10 text-sm rounded-md border border-neutral-200/70 bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
+                  placeholder="07123456789"
+                />
+              </div>
+              <p className="mt-1 text-xs text-neutral-500">Alternative (optional)</p>
+            </div>
+          </div>
+
+          {/* Relationship to Student */}
+          <div>
+            <label htmlFor="relationshipToStudent" className="block text-sm font-medium text-neutral-700 mb-1">
+              Relationship to Student *
+            </label>
+            <select
+              id="relationshipToStudent"
+              name="relationshipToStudent"
+              required
+              value={formData.relationshipToStudent}
+              onChange={(e) => setFormData({ ...formData, relationshipToStudent: e.target.value })}
+              className="w-full h-10 text-sm rounded-md border border-neutral-200/70 bg-transparent text-neutral-900 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors px-3"
+            >
+              <option value="PARENT">Parent</option>
+              <option value="GUARDIAN">Guardian</option>
+              <option value="FATHER">Father</option>
+              <option value="MOTHER">Mother</option>
+              <option value="GRANDPARENT">Grandparent</option>
+              <option value="OTHER">Other</option>
+            </select>
+          </div>
+
+          {/* Address - One Line */}
+          <div>
+            <label htmlFor="address" className="block text-sm font-medium text-neutral-700 mb-1">
+              Address
+            </label>
+            <div className="relative">
+              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+              <input
+                id="address"
+                name="address"
+                type="text"
+                value={formData.address}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                className="w-full pl-9 pr-3 h-10 text-sm rounded-md border border-neutral-200/70 bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
+                placeholder="Enter your address"
+              />
+            </div>
+          </div>
+
+          {/* Postcode and City - Side by Side */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="postcode" className="block text-sm font-medium text-neutral-700 mb-1">
+                Postcode
+              </label>
+              <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                <input
+                  id="postcode"
+                  name="postcode"
+                  type="text"
+                  value={formData.postcode}
+                  onChange={(e) => setFormData({ ...formData, postcode: e.target.value.toUpperCase() })}
+                  className="w-full pl-9 pr-3 h-10 text-sm rounded-md border border-neutral-200/70 bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
+                  placeholder="SW1A 1AA"
+                />
+              </div>
+            </div>
+            <div>
+              <label htmlFor="city" className="block text-sm font-medium text-neutral-700 mb-1">
+                City *
+              </label>
+              <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                <input
+                  id="city"
+                  name="city"
+                  type="text"
+                  required
+                  value={formData.city}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    setFormData({ ...formData, city: value.length > 0 ? value.charAt(0).toUpperCase() + value.slice(1) : value })
+                  }}
+                  className="w-full pl-9 pr-3 h-10 text-sm rounded-md border border-neutral-200/70 bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
+                  placeholder="Enter your city"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleBackStep}
+              className="flex-1 h-10 text-sm rounded-md border border-neutral-200 bg-white text-neutral-900 hover:bg-neutral-50 transition-colors"
+            >
+              Back
             </button>
+            <button
+              type="button"
+              onClick={handleNextStep}
+              className="flex-1 h-10 text-sm rounded-md bg-neutral-900 text-white hover:bg-neutral-800 transition-colors"
+            >
+              Continue to Payment
+            </button>
+          </div>
+        </div>
+      )
+    },
+    // Step 4: Payment Setup
+    {
+      id: 'payment',
+      title: 'Payment Setup',
+      description: 'Select your preferred payment method.',
+      completed: completedSteps.has('payment'),
+      customContent: (
+        <div className={`mt-2 space-y-4 ${!canProceedToSignup ? 'opacity-50 pointer-events-none' : ''}`} onClick={(e) => e.stopPropagation()}>
+          {!canProceedToSignup && (
+            <div className="mb-4 bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-lg text-sm">
+              Please complete the previous steps first.
+            </div>
+          )}
+          {error && (
+            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+
+          {/* Payment Method */}
+          {paymentSettings && (paymentSettings.acceptsCard || paymentSettings.acceptsCash || paymentSettings.acceptsBankTransfer) && (
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-2">
+                Preferred Payment Method *
+              </label>
+              <p className="text-xs text-neutral-500 mb-3">
+                Select how you would like to pay fees. You can change this later in your account settings.
+              </p>
+              
+              {/* Billing Date Info */}
+              {paymentSettings.billingDay && (
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Calendar className="h-4 w-4 text-blue-600" />
+                    <span className="text-xs font-medium text-blue-900">Payment Date</span>
+                  </div>
+                  <p className="text-xs text-blue-800">
+                    Fees are due on the <strong>{paymentSettings.billingDay}{paymentSettings.billingDay === 1 ? 'st' : paymentSettings.billingDay === 2 ? 'nd' : paymentSettings.billingDay === 3 ? 'rd' : 'th'}</strong> of each month.
+                  </p>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                {paymentSettings.acceptsCard && (
+                  <label className="flex items-start gap-3 p-4 border border-neutral-200 rounded-lg cursor-pointer hover:bg-neutral-50 hover:border-neutral-300 transition-colors">
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="CARD"
+                      checked={formData.preferredPaymentMethod === 'CARD'}
+                      onChange={(e) => setFormData({ ...formData, preferredPaymentMethod: e.target.value })}
+                      className="w-4 h-4 mt-0.5"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <CreditCard className="h-4 w-4 text-blue-600" />
+                        <span className="text-sm font-medium text-neutral-900">Card Payment</span>
+                        {paymentSettings.hasStripeConnect && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-blue-50 text-blue-700 border border-blue-200">
+                            <Shield className="h-3 w-3" />
+                            Secure
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-neutral-600">
+                        Automatic payments via {paymentSettings.hasStripeConnect ? 'Stripe' : 'card'}. Fees are charged automatically on the {paymentSettings.billingDay}{paymentSettings.billingDay === 1 ? 'st' : paymentSettings.billingDay === 2 ? 'nd' : paymentSettings.billingDay === 3 ? 'rd' : 'th'} of each month.
+                      </p>
+                    </div>
+                  </label>
+                )}
+                {paymentSettings.acceptsBankTransfer && (
+                  <label className="flex items-start gap-3 p-4 border border-neutral-200 rounded-lg cursor-pointer hover:bg-neutral-50 hover:border-neutral-300 transition-colors">
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="BANK_TRANSFER"
+                      checked={formData.preferredPaymentMethod === 'BANK_TRANSFER'}
+                      onChange={(e) => setFormData({ ...formData, preferredPaymentMethod: e.target.value })}
+                      className="w-4 h-4 mt-0.5"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Building2 className="h-4 w-4 text-green-600" />
+                        <span className="text-sm font-medium text-neutral-900">Bank Transfer</span>
+                      </div>
+                      {paymentSettings.bankAccountName && paymentSettings.bankSortCode && paymentSettings.bankAccountNumber ? (
+                        <div className="space-y-2">
+                          <p className="text-xs text-neutral-600">
+                            Set up a standing order for automatic monthly payments.
+                          </p>
+                          <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                            <p className="text-xs font-medium text-green-900 mb-2">Standing Order Details:</p>
+                            <div className="space-y-1 text-xs text-green-800">
+                              <div className="flex justify-between">
+                                <span className="font-medium">Account Name:</span>
+                                <span>{paymentSettings.bankAccountName}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="font-medium">Sort Code:</span>
+                                <span className="font-mono">{paymentSettings.bankSortCode}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="font-medium">Account Number:</span>
+                                <span className="font-mono">{paymentSettings.bankAccountNumber}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="font-medium">Payment Date:</span>
+                                <span>The {paymentSettings.billingDay}{paymentSettings.billingDay === 1 ? 'st' : paymentSettings.billingDay === 2 ? 'nd' : paymentSettings.billingDay === 3 ? 'rd' : 'th'} of each month</span>
+                              </div>
+                            </div>
+                            <p className="text-xs text-green-700 mt-2 italic">
+                              Please set up this standing order with your bank to ensure timely payments.
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-neutral-600">
+                          Manual bank transfer. You will receive payment instructions via email.
+                        </p>
+                      )}
+                    </div>
+                  </label>
+                )}
+                {paymentSettings.acceptsCash && (
+                  <label className="flex items-start gap-3 p-4 border border-neutral-200 rounded-lg cursor-pointer hover:bg-neutral-50 hover:border-neutral-300 transition-colors">
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="CASH"
+                      checked={formData.preferredPaymentMethod === 'CASH'}
+                      onChange={(e) => setFormData({ ...formData, preferredPaymentMethod: e.target.value })}
+                      className="w-4 h-4 mt-0.5"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Coins className="h-4 w-4 text-amber-600" />
+                        <span className="text-sm font-medium text-neutral-900">Cash</span>
+                      </div>
+                      <p className="text-xs text-neutral-600">
+                        Pay in person at the madrasah office by the {paymentSettings.billingDay}{paymentSettings.billingDay === 1 ? 'st' : paymentSettings.billingDay === 2 ? 'nd' : paymentSettings.billingDay === 3 ? 'rd' : 'th'} of each month. Please bring exact change when possible.
+                      </p>
+                    </div>
+                  </label>
+                )}
+              </div>
+              {paymentSettings.paymentInstructions && (
+                <div className="mt-3 p-3 bg-neutral-50 border border-neutral-200 rounded-lg">
+                  <p className="text-xs font-medium text-neutral-700 mb-1">Additional Payment Instructions:</p>
+                  <p className="text-xs text-neutral-600 whitespace-pre-line">{paymentSettings.paymentInstructions}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleBackStep}
+              className="flex-1 h-10 text-sm rounded-md border border-neutral-200 bg-white text-neutral-900 hover:bg-neutral-50 transition-colors"
+            >
+              Back
+            </button>
+            <button
+              type="button"
+              onClick={handleNextStep}
+              className="flex-1 h-10 text-sm rounded-md bg-neutral-900 text-white hover:bg-neutral-800 transition-colors"
+            >
+              Continue to Gift Aid
+            </button>
+          </div>
+        </div>
+      )
+    },
+    // Step 5: Gift Aid Declaration
+    {
+      id: 'giftAid',
+      title: 'Gift Aid Declaration',
+      description: 'Help the madrasah claim Gift Aid on your donations.',
+      completed: completedSteps.has('giftAid'),
+      customContent: (
+        <div className={`mt-2 space-y-4 ${!canProceedToSignup ? 'opacity-50 pointer-events-none' : ''}`} onClick={(e) => e.stopPropagation()}>
+          {!canProceedToSignup && (
+            <div className="mb-4 bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-lg text-sm">
+              Please complete the previous steps first.
+            </div>
+          )}
+          {error && (
+            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">
+              Gift Aid Declaration *
+            </label>
+            <p className="text-xs text-neutral-500 mb-3">
+              Gift Aid allows the madrasah to claim an extra 25% from the government on your donations at no extra cost to you.
+            </p>
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 p-3 border border-neutral-200 rounded-lg cursor-pointer hover:bg-neutral-50">
+                <input
+                  type="radio"
+                  name="giftAid"
+                  value="NOT_DECLARED"
+                  checked={formData.giftAidStatus === 'NOT_DECLARED'}
+                  onChange={(e) => setFormData({ ...formData, giftAidStatus: e.target.value })}
+                  className="w-4 h-4"
+                />
+                <Gift className="h-4 w-4 text-neutral-400" />
+                <span className="text-sm">Not Declared</span>
+              </label>
+              <label className="flex items-center gap-2 p-3 border border-neutral-200 rounded-lg cursor-pointer hover:bg-neutral-50">
+                <input
+                  type="radio"
+                  name="giftAid"
+                  value="ELIGIBLE"
+                  checked={formData.giftAidStatus === 'ELIGIBLE'}
+                  onChange={(e) => setFormData({ ...formData, giftAidStatus: e.target.value })}
+                  className="w-4 h-4"
+                />
+                <Gift className="h-4 w-4 text-green-500" />
+                <span className="text-sm">Eligible for Gift Aid</span>
+              </label>
+              <label className="flex items-center gap-2 p-3 border border-neutral-200 rounded-lg cursor-pointer hover:bg-neutral-50">
+                <input
+                  type="radio"
+                  name="giftAid"
+                  value="NOT_ELIGIBLE"
+                  checked={formData.giftAidStatus === 'NOT_ELIGIBLE'}
+                  onChange={(e) => setFormData({ ...formData, giftAidStatus: e.target.value })}
+                  className="w-4 h-4"
+                />
+                <Gift className="h-4 w-4 text-neutral-400" />
+                <span className="text-sm">Not Eligible</span>
+              </label>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit}>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleBackStep}
+                className="flex-1 h-10 text-sm rounded-md border border-neutral-200 bg-white text-neutral-900 hover:bg-neutral-50 transition-colors"
+              >
+                Back
+              </button>
+              <button
+                type="submit"
+                disabled={submitting || (!applicationId && !selectedStudentId)}
+                className="flex-1 h-10 text-sm rounded-md bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin inline" />
+                    Creating...
+                  </>
+                ) : (
+                  'Create Account'
+                )}
+              </button>
+            </div>
           </form>
         </div>
       )
@@ -560,10 +1325,17 @@ function ParentSignupForm() {
           <p className="text-sm text-neutral-600 mt-1">{pageSubtitle}</p>
         </div>
 
-        <Onboarding01
-          steps={onboardingSteps}
-          title="Create your parent account"
-        />
+        {onboardingSteps.length > 0 ? (
+          <Onboarding01
+            steps={onboardingSteps}
+            title="Create your parent account"
+          />
+        ) : (
+          <div className="text-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-neutral-400 mx-auto mb-4" />
+            <p className="text-sm text-neutral-600">Loading...</p>
+          </div>
+        )}
 
         <p className="text-xs text-center text-neutral-500">
           Already have an account?{' '}

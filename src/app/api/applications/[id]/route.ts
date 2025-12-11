@@ -7,7 +7,6 @@ import { prisma } from '@/lib/prisma'
 import { sendApplicationAcceptanceEmail } from '@/lib/mail'
 import { logger } from '@/lib/logger'
 import crypto from 'crypto'
-import { generateUniqueClaimCode, generateClaimCodeExpiration } from '@/lib/claim-codes'
 
 // PATCH /api/applications/[id] - Update application status
 export async function PATCH(
@@ -80,19 +79,13 @@ export async function PATCH(
     let emailSent = false
     if (status === 'ACCEPTED') {
       try {
-        // Generate acceptance token for application
-        const acceptanceToken = crypto.randomBytes(32).toString('hex')
-        const acceptanceTokenExpiresAt = new Date()
-        acceptanceTokenExpiresAt.setDate(acceptanceTokenExpiresAt.getDate() + 30) // 30 days
-
         // Use transaction to ensure all-or-nothing student creation
         const result = await prisma.$transaction(async (tx) => {
-          // Update application with acceptance token
+          // Update application with applicationIdForSignup (simple reference)
           await tx.application.update({
             where: { id: application.id },
             data: {
-              acceptanceToken,
-              acceptanceTokenExpiresAt
+              applicationIdForSignup: application.id // Simple reference to application ID
             }
           })
 
@@ -105,10 +98,6 @@ export async function PATCH(
 
           // Create student records for each child
           for (const child of application.ApplicationChild) {
-            // Generate claim code for accepted application
-            const claimCode = await generateUniqueClaimCode(tx)
-            const claimCodeExpiresAt = generateClaimCodeExpiration(90) // 90 days
-
             const student = await tx.student.create({
               data: {
                 id: crypto.randomUUID(),
@@ -116,9 +105,7 @@ export async function PATCH(
                 firstName: child.firstName.trim(),
                 lastName: child.lastName.trim(),
                 dob: child.dob ? new Date(child.dob) : undefined,
-                // No primaryParentId - will be set when parent claims
-                claimCode,
-                claimCodeExpiresAt,
+                // No primaryParentId - will be set when parent signs up
                 claimStatus: 'NOT_CLAIMED', // Will be claimed when parent signs up
                 updatedAt: new Date()
               }
@@ -164,8 +151,8 @@ export async function PATCH(
           try {
             const baseUrl = process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'https://app.madrasah.io'
             const cleanBaseUrl = baseUrl.trim().replace(/\/+$/, '')
-            // Use application acceptance token
-            const signupUrl = `${cleanBaseUrl}/parent/signup?applicationToken=${acceptanceToken}`
+            // Use application ID for signup
+            const signupUrl = `${cleanBaseUrl}/parent/signup?applicationId=${application.id}`
 
             logger.info('Sending application acceptance email', {
               to: application.guardianEmail,

@@ -75,8 +75,6 @@ interface StudentDetailsData {
     claimedAt?: string | null
   }>
   claimStatus?: 'NOT_CLAIMED' | 'PENDING_VERIFICATION' | 'CLAIMED'
-  claimCode?: string | null
-  claimCodeExpiresAt?: string | null
   claimedBy?: {
     id: string
     name: string

@@ -52,16 +52,6 @@ interface Student {
   attendanceRate: number
   lastAttendance: Date
   claimStatus?: 'NOT_CLAIMED' | 'PENDING_VERIFICATION' | 'CLAIMED'
-  claimCode?: string | null
-  parentLinks?: Array<{
-    id: string
-    parent: {
-      id: string
-      name: string
-      email: string
-    }
-    claimedAt: Date | null
-  }>
 }
 
 interface Class {

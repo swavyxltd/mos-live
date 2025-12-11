@@ -4,9 +4,9 @@ import { getActiveOrg } from '@/lib/org'
 import { requireRole } from '@/lib/roles'
 import { prisma } from '@/lib/prisma'
 import { Page } from '@/components/shell/page'
-import { ClaimStatusDashboard } from '@/components/claim-status-dashboard'
+import { ParentOnboardingDashboard } from '@/components/parent-onboarding-dashboard'
 
-export default async function ClaimStatusPage() {
+export default async function ParentOnboardingPage() {
   const session = await getServerSession(authOptions)
   
   if (!session?.user?.id) {
@@ -21,7 +21,7 @@ export default async function ClaimStatusPage() {
   // Check role - only ADMIN and OWNER can access
   const userRole = await requireRole(['ADMIN', 'OWNER'])({ 
     headers: new Headers(),
-    nextUrl: { pathname: '/parents/claim-status' }
+    nextUrl: { pathname: '/admin/parents/onboarding' }
   } as any)
 
   if (userRole instanceof Response) {
@@ -38,14 +38,9 @@ export default async function ClaimStatusPage() {
       StudentClass: {
         include: {
           Class: {
-            include: {
-              User: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true
-                }
-              }
+            select: {
+              id: true,
+              name: true
             }
           }
         }
@@ -55,7 +50,8 @@ export default async function ClaimStatusPage() {
           id: true,
           name: true,
           email: true,
-          phone: true
+          phone: true,
+          emailVerified: true
         }
       },
       ParentStudentLink: {
@@ -65,7 +61,8 @@ export default async function ClaimStatusPage() {
               id: true,
               name: true,
               email: true,
-              phone: true
+              phone: true,
+              emailVerified: true
             }
           }
         }
@@ -100,23 +97,17 @@ export default async function ClaimStatusPage() {
     id: student.id,
     firstName: student.firstName,
     lastName: student.lastName,
-    claimCode: student.claimCode,
     claimStatus: student.claimStatus,
-    claimCodeExpiresAt: student.claimCodeExpiresAt,
     classes: student.StudentClass.map(sc => ({
       id: sc.Class.id,
-      name: sc.Class.name,
-      teacher: sc.Class.User ? {
-        id: sc.Class.User.id,
-        name: sc.Class.User.name || 'Unknown',
-        email: sc.Class.User.email || ''
-      } : null
+      name: sc.Class.name
     })),
     claimedBy: student.ClaimedByParent ? {
       id: student.ClaimedByParent.id,
       name: student.ClaimedByParent.name || 'Unknown',
       email: student.ClaimedByParent.email,
-      phone: student.ClaimedByParent.phone
+      phone: student.ClaimedByParent.phone,
+      emailVerified: !!student.ClaimedByParent.emailVerified
     } : null,
     parentLinks: student.ParentStudentLink.map(link => ({
       id: link.id,
@@ -124,7 +115,8 @@ export default async function ClaimStatusPage() {
         id: link.User.id,
         name: link.User.name || 'Unknown',
         email: link.User.email,
-        phone: link.User.phone
+        phone: link.User.phone,
+        emailVerified: !!link.User.emailVerified
       },
       claimedAt: link.claimedAt
     }))
@@ -135,13 +127,13 @@ export default async function ClaimStatusPage() {
       user={session.user}
       org={org}
       userRole="ADMIN"
-      title="Parent Claim Status"
+      title="Parent Onboarding Status"
       breadcrumbs={[
         { label: 'Dashboard', href: '/dashboard' },
-        { label: 'Parent Claim Status' }
+        { label: 'Parent Onboarding' }
       ]}
     >
-      <ClaimStatusDashboard 
+      <ParentOnboardingDashboard 
         students={transformedStudents}
         classes={classes}
         stats={stats}

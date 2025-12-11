@@ -43,15 +43,13 @@ model Application {
   reviewedById             String?
   createdAt                DateTime           @default(now())
   updatedAt                DateTime
-  // Application acceptance token for parent signup
-  acceptanceToken          String?            @unique
-  acceptanceTokenExpiresAt DateTime?
-  acceptanceTokenUsedAt    DateTime?
+  // Application ID used for parent signup (simple reference)
+  applicationIdForSignup String?
   Org                      Org                @relation(fields: [orgId], references: [id], onDelete: Cascade)
   User                     User?              @relation(fields: [reviewedById], references: [id])
   ApplicationChild         ApplicationChild[]
 
-  @@index([acceptanceToken])
+  @@index([applicationIdForSignup])
   @@index([status])
 }
 
@@ -531,11 +529,9 @@ model Student {
   archivedAt           DateTime?
   createdAt            DateTime               @default(now())
   updatedAt            DateTime
-  // Parent Claim System fields
-  claimCode            String?                @unique
-  claimCodeExpiresAt   DateTime?
-  claimedByParentId    String?
+  // Simple parent claim status
   claimStatus          String                 @default("NOT_CLAIMED") // NOT_CLAIMED, PENDING_VERIFICATION, CLAIMED
+  claimedByParentId    String?
   Attendance           Attendance[]
   Event                Event[]
   Invoice              Invoice[]
@@ -548,7 +544,6 @@ model Student {
   StudentClass         StudentClass[]
   ParentStudentLink    ParentStudentLink[]
 
-  @@index([claimCode])
   @@index([claimStatus])
   @@index([claimedByParentId])
 }

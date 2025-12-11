@@ -405,8 +405,6 @@ async function handleGET(
       
       // Claim status
       claimStatus: student.claimStatus || 'NOT_CLAIMED',
-      claimCode: student.claimCode,
-      claimCodeExpiresAt: student.claimCodeExpiresAt ? student.claimCodeExpiresAt.toISOString() : null,
       claimedBy: student.ClaimedByParent ? {
         id: student.ClaimedByParent.id,
         name: student.ClaimedByParent.name || '',

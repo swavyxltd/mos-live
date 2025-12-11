@@ -7,7 +7,6 @@ import { checkPaymentMethod } from '@/lib/payment-check'
 import { logger } from '@/lib/logger'
 import { sanitizeText, isValidEmail, isValidEmailStrict, isValidName, MAX_STRING_LENGTHS } from '@/lib/input-validation'
 import { withRateLimit } from '@/lib/api-middleware'
-import { generateUniqueClaimCode, generateClaimCodeExpiration } from '@/lib/claim-codes'
 import crypto from 'crypto'
 
 async function handlePOST(request: NextRequest) {
@@ -112,10 +111,6 @@ async function handlePOST(request: NextRequest) {
     const result = await prisma.$transaction(async (tx) => {
       // Generate student ID
       const studentId = crypto.randomUUID()
-      
-      // Generate claim code
-      const claimCode = await generateUniqueClaimCode(tx)
-      const claimCodeExpiresAt = generateClaimCodeExpiration(90) // 90 days
 
       // Create student
       const student = await tx.student.create({
@@ -125,8 +120,6 @@ async function handlePOST(request: NextRequest) {
           firstName: sanitizedFirstName,
           lastName: sanitizedLastName,
           isArchived: status === 'ARCHIVED',
-          claimCode,
-          claimCodeExpiresAt,
           claimStatus: 'NOT_CLAIMED',
           updatedAt: new Date()
         }

@@ -8,7 +8,6 @@ import { sendParentOnboardingEmail } from '@/lib/mail'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
 import { isValidName, isValidEmailStrict, isValidPhone } from '@/lib/input-validation'
-import { generateUniqueClaimCode, generateClaimCodeExpiration } from '@/lib/claim-codes'
 
 interface StudentData {
   firstName: string
@@ -277,10 +276,6 @@ async function handlePOST(request: NextRequest) {
               }
             }
 
-            // Generate claim code
-            const claimCode = await generateUniqueClaimCode(tx)
-            const claimCodeExpiresAt = generateClaimCodeExpiration(90) // 90 days
-
             // Create student (only firstName and lastName, matching single add modal)
             const student = await tx.student.create({
               data: {
@@ -289,8 +284,6 @@ async function handlePOST(request: NextRequest) {
                 firstName: studentData.firstName.trim(),
                 lastName: studentData.lastName.trim(),
                 primaryParentId: parentUser.id,
-                claimCode,
-                claimCodeExpiresAt,
                 claimStatus: 'NOT_CLAIMED',
                 updatedAt: new Date()
               }

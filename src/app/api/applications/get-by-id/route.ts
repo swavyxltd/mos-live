@@ -6,23 +6,24 @@ import { withRateLimit } from '@/lib/api-middleware'
 async function handlePOST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { applicationToken } = body
+    const { applicationId } = body
 
-    if (!applicationToken) {
+    if (!applicationId) {
       return NextResponse.json(
-        { error: 'Application token is required' },
+        { error: 'Application ID is required' },
         { status: 400 }
       )
     }
 
-    // Find application by acceptance token
+    // Find application
     const application = await prisma.application.findUnique({
-      where: { acceptanceToken: applicationToken },
+      where: { id: applicationId },
       include: {
         Org: {
           select: {
             id: true,
-            name: true
+            name: true,
+            slug: true
           }
         },
         ApplicationChild: true
@@ -31,24 +32,8 @@ async function handlePOST(request: NextRequest) {
 
     if (!application) {
       return NextResponse.json(
-        { error: 'Invalid application token' },
+        { error: 'Application not found' },
         { status: 404 }
-      )
-    }
-
-    // Check if token has expired
-    if (application.acceptanceTokenExpiresAt && new Date() > application.acceptanceTokenExpiresAt) {
-      return NextResponse.json(
-        { error: 'This application token has expired. Please contact the madrasah for assistance.' },
-        { status: 400 }
-      )
-    }
-
-    // Check if token has already been used
-    if (application.acceptanceTokenUsedAt) {
-      return NextResponse.json(
-        { error: 'This application token has already been used.' },
-        { status: 400 }
       )
     }
 
@@ -81,7 +66,7 @@ async function handlePOST(request: NextRequest) {
       }
     })
 
-    // Return application info (safe data only)
+    // Return application info
     return NextResponse.json({
       success: true,
       application: {
@@ -91,18 +76,18 @@ async function handlePOST(request: NextRequest) {
         children: application.ApplicationChild.map(child => ({
           firstName: child.firstName,
           lastName: child.lastName,
-          dob: child.dob
+          dob: child.dob?.toISOString() || null
         }))
       },
       org: {
         id: application.Org.id,
-        name: application.Org.name
+        name: application.Org.name,
+        slug: application.Org.slug
       },
       students: students.map(student => ({
         id: student.id,
         firstName: student.firstName,
         lastName: student.lastName,
-        claimCode: student.claimCode,
         classes: student.StudentClass.map(sc => ({
           id: sc.Class.id,
           name: sc.Class.name
@@ -110,9 +95,9 @@ async function handlePOST(request: NextRequest) {
       }))
     })
   } catch (error: any) {
-    logger.error('Error validating application token', error)
+    logger.error('Error fetching application', error)
     return NextResponse.json(
-      { error: 'Failed to validate application token' },
+      { error: 'Failed to fetch application' },
       { status: 500 }
     )
   }

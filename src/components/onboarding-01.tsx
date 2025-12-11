@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   IconChevronRight,
   IconCircleCheckFilled,
@@ -160,7 +160,9 @@ export function Onboarding01({
     }
   }, [propSteps]);
   
+  // Start with the first step open by default
   const [openStepId, setOpenStepId] = useState<string | null>(() => {
+    // Open the first incomplete step, or the first step if all are completed
     const firstIncomplete = steps.find((s) => !s.completed);
     return firstIncomplete?.id ?? steps[0]?.id ?? null;
   });
@@ -170,6 +172,7 @@ export function Onboarding01({
   const remainingCount = currentSteps.length - completedCount;
 
   const handleStepClick = (stepId: string) => {
+    // If clicking the already open step, close it. Otherwise, open the clicked step (closing any other open step)
     setOpenStepId(openStepId === stepId ? null : stepId);
   };
 
@@ -252,6 +255,7 @@ export function Onboarding01({
 
           <div className="space-y-0">
             {currentSteps.map((step, index) => {
+              // Only the step matching openStepId should be open (accordion behavior)
               const isOpen = openStepId === step.id;
               const isFirst = index === 0;
               const prevStep = currentSteps[index - 1];
