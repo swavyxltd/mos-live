@@ -40,7 +40,8 @@ import {
   Sun,
   Receipt,
   Target,
-  UserPlus
+  UserPlus,
+  CheckCircle2
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -88,6 +89,7 @@ const ownerNavigation = [
   { name: 'Users', href: '/owner/users', icon: Users },
   { name: 'Students', href: '/owner/students', icon: GraduationCap },
   { name: 'System Health', href: '/owner/system-health', icon: Activity },
+  { name: 'Service Status', href: '/owner/service-status', icon: CheckCircle2 },
   { name: 'Dunning', href: '/owner/dunning', icon: AlertTriangle },
   { name: 'Support', href: '/owner/support', icon: HeadphonesIcon },
   { name: 'Settings', href: '/owner/settings', icon: Settings },
