@@ -529,28 +529,21 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
                   onClick={() => handleViewStudent(student)}
                 >
                   <TableCell>
-                    <div className="flex items-center space-x-3">
-                      <div className={`h-10 w-10 rounded-full flex items-center justify-center ${getAttendanceBgColor(student.attendanceRate)} hidden md:flex`}>
-                        <span className="text-sm font-medium text-gray-700">
-                          {student.firstName.charAt(0)}{student.lastName.charAt(0)}
-                        </span>
-                      </div>
-                      <div>
-                        <div className="font-medium flex items-center gap-2">
-                          {student.firstName} {student.lastName}
-                          {student.isArchived && (
-                            <Badge variant="secondary" className="text-xs">
-                              <Archive className="h-3 w-3 mr-1" />
-                              Archived
-                            </Badge>
-                          )}
-                        </div>
-                        {student.isArchived && student.archivedAt && (
-                          <div className="text-sm text-gray-500">
-                            Archived on {new Date(student.archivedAt).toLocaleDateString()}
-                          </div>
+                    <div>
+                      <div className="font-medium flex items-center gap-2">
+                        {student.firstName} {student.lastName}
+                        {student.isArchived && (
+                          <Badge variant="secondary" className="text-xs">
+                            <Archive className="h-3 w-3 mr-1" />
+                            Archived
+                          </Badge>
                         )}
                       </div>
+                      {student.isArchived && student.archivedAt && (
+                        <div className="text-sm text-gray-500">
+                          Archived on {new Date(student.archivedAt).toLocaleDateString()}
+                        </div>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell>
