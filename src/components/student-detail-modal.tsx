@@ -195,17 +195,28 @@ export function StudentDetailModal({
   useEffect(() => {
     const idToFetch = studentId || legacyStudent?.id
     if (isOpen && idToFetch) {
+      // Set loading immediately for instant feedback
+      setLoading(true)
+      setStudentData(null)
+      // Fetch data asynchronously
       fetchStudentDetails(idToFetch)
     } else if (isOpen) {
+      setStudentData(null)
+      setLoading(false)
+    } else {
+      // Reset when modal closes
       setStudentData(null)
       setLoading(false)
     }
   }, [isOpen, studentId, legacyStudent?.id])
 
   const fetchStudentDetails = async (id: string) => {
-    if (!id) return
+    if (!id) {
+      setLoading(false)
+      return
+    }
     
-    setLoading(true)
+    // Loading is already set to true in useEffect
     try {
       const response = await fetch(`/api/students/${id}/details`)
       if (response.ok) {
