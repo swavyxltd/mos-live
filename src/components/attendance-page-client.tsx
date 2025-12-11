@@ -86,7 +86,7 @@ export function AttendancePageClient({ attendanceData }: AttendancePageClientPro
       overallAttendance: student.attendancePercentage || 0,
       weeklyAttendance: student.weeklyAttendance || [],
       recentTrend: (student.attendancePercentage || 0) >= 95 ? 'up' : 
-                  (student.attendancePercentage || 0) < 86 ? 'down' : 'stable'
+                  (student.attendancePercentage || 0) < 90 ? 'down' : 'stable'
     }
 
     setSelectedStudent(studentDetail)

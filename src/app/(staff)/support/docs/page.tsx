@@ -817,6 +817,34 @@ Attendance tracking is essential for monitoring student engagement and academic 
 - **Save Changes**: Ensure all changes are saved
 - **Print Report**: Generate attendance report
 
+## Attendance Rating System
+
+### Rating Thresholds
+The system uses standardized attendance ratings across all features:
+
+- **95% and above = Excellent** (Green)
+  - Outstanding attendance performance
+  - Students consistently present and engaged
+  
+- **90% - 94% = Good** (Yellow)
+  - Good attendance with minor absences
+  - Generally reliable attendance pattern
+  
+- **85% - 89% = Poor** (Orange)
+  - Below target attendance rate
+  - Requires attention and intervention
+  
+- **Below 84% = Very Poor** (Red)
+  - Significantly below target
+  - Immediate intervention required
+
+These ratings are used consistently throughout the system in:
+- Student lists and profiles
+- Class attendance overviews
+- Dashboard statistics
+- Reports and analytics
+- Parent notifications
+
 ## Attendance Features
 
 ### Real-time Tracking

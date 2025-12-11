@@ -49,6 +49,7 @@ import {
   Zap
 } from 'lucide-react'
 import type { DashboardStats as DashboardStatsType } from '@/lib/dashboard-stats'
+import { getAttendanceRating, getAttendanceStatusColor } from '@/lib/attendance-ratings'
 
 interface DashboardStats {
   totalStudents: number
@@ -872,30 +873,41 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {topPerformingClasses.map((classItem, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-medium">{classItem.name}</TableCell>
-                      <TableCell className="hidden sm:table-cell">{classItem.teacher}</TableCell>
-                      <TableCell className="hidden sm:table-cell">{classItem.students}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div className="w-16 bg-gray-200 rounded-full h-2">
-                            <div 
-                              className="bg-green-500 h-2 rounded-full" 
-                              style={{ width: `${classItem.attendance}%` }}
-                            />
+                  {topPerformingClasses.map((classItem, index) => {
+                    const attendanceRating = getAttendanceRating(classItem.attendance)
+                    const statusColors = getAttendanceStatusColor(classItem.attendance)
+                    const RatingIcon = attendanceRating.icon as React.ComponentType<{ className?: string }>
+                    
+                    return (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">{classItem.name}</TableCell>
+                        <TableCell className="hidden sm:table-cell">{classItem.teacher}</TableCell>
+                        <TableCell className="hidden sm:table-cell">{classItem.students}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <div className="w-16 bg-gray-200 rounded-full h-2">
+                              <div 
+                                className={`h-2 rounded-full ${
+                                  classItem.attendance >= 95 ? 'bg-green-500' :
+                                  classItem.attendance >= 90 ? 'bg-yellow-500' :
+                                  classItem.attendance >= 85 ? 'bg-orange-500' :
+                                  'bg-red-500'
+                                }`}
+                                style={{ width: `${classItem.attendance}%` }}
+                              />
+                            </div>
+                            <span className="text-sm font-medium">{classItem.attendance}%</span>
                           </div>
-                          <span className="text-sm font-medium">{classItem.attendance}%</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="bg-green-100 text-green-800">
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          Excellent
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className={`${statusColors.bg} ${statusColors.text} ${statusColors.border}`}>
+                            <RatingIcon className="h-3 w-3 mr-1" />
+                            {attendanceRating.text}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
                   </TableBody>
                 </Table>
               </div>

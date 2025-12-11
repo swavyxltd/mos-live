@@ -116,14 +116,16 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
 
   const getAttendanceColor = (rate: number) => {
     if (rate >= 95) return 'text-green-600'
-    if (rate >= 86) return 'text-yellow-600'
+    if (rate >= 90) return 'text-yellow-600'
+    if (rate >= 85) return 'text-orange-600'
     return 'text-red-600'
   }
 
   const getAttendanceBgColor = (rate: number) => {
     if (rate >= 95) return 'bg-green-100'    // 🟢 Green: 95%+ (Excellent)
-    if (rate >= 86) return 'bg-yellow-100'   // 🟡 Yellow: 86-94% (Good)
-    return 'bg-red-100'                      // 🔴 Red: below 86% (Needs Improvement)
+    if (rate >= 90) return 'bg-yellow-100'   // 🟡 Yellow: 90-94% (Good)
+    if (rate >= 85) return 'bg-orange-100'   // 🟠 Orange: 85-89% (Poor)
+    return 'bg-red-100'                      // 🔴 Red: below 84% (Very Poor)
   }
 
   const getAgeFromDate = (dateOfBirth: Date) => {
@@ -358,10 +360,13 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
           if (attendance < 95) return false
           break
         case 'good':
-          if (attendance < 86 || attendance >= 95) return false
+          if (attendance < 90 || attendance >= 95) return false
           break
         case 'poor':
-          if (attendance >= 86) return false
+          if (attendance < 85 || attendance >= 90) return false
+          break
+        case 'very-poor':
+          if (attendance >= 85) return false
           break
       }
     }
@@ -483,7 +488,8 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
                         <div 
                           className={`h-2 rounded-full ${
                             student.attendanceRate >= 95 ? 'bg-green-500' :
-                            student.attendanceRate >= 86 ? 'bg-yellow-500' :
+                            student.attendanceRate >= 90 ? 'bg-yellow-500' :
+                            student.attendanceRate >= 85 ? 'bg-orange-500' :
                             'bg-red-500'
                           }`}
                           style={{ width: `${student.attendanceRate}%` }}
@@ -492,8 +498,10 @@ export function StudentsList({ students, filters, onAddStudent, onStudentArchive
                       <span className={`text-sm font-medium ${getAttendanceColor(student.attendanceRate)}`}>
                         {student.attendanceRate}%
                       </span>
-                      {student.attendanceRate < 86 && (
-                        <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                      {student.attendanceRate < 90 && (
+                        <AlertTriangle className={`h-4 w-4 ${
+                          student.attendanceRate >= 85 ? 'text-orange-500' : 'text-red-500'
+                        }`} />
                       )}
                     </div>
                   </TableCell>

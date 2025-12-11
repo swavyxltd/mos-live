@@ -310,7 +310,12 @@ export default async function ParentDashboardPage() {
             title="Attendance Rate"
             value={`${attendanceRate}%`}
             change={{ value: attendanceRate >= 95 ? "+5%" : "0%", type: attendanceRate >= 95 ? "positive" : "neutral" }}
-            description={attendanceRate >= 95 ? "Excellent attendance" : attendanceRate >= 86 ? "Good attendance" : "Needs improvement"}
+            description={
+              attendanceRate >= 95 ? "Excellent attendance" : 
+              attendanceRate >= 90 ? "Good attendance" : 
+              attendanceRate >= 85 ? "Poor attendance" : 
+              "Very poor attendance"
+            }
           />
           <StatCard
             title="Payment Status"
