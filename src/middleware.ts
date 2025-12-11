@@ -147,19 +147,22 @@ export async function middleware(request: NextRequest) {
     }
   }
   
-  // Check if user is accessing a portal they shouldn't have access to
-  // Use token.isSuperAdmin directly instead of roleHints.isOwner
-  if (pathname.startsWith('/owner') && !token.isSuperAdmin) {
-    // Redirect to their correct portal
-    if (roleHints?.orgAdminOf && roleHints.orgAdminOf.length > 0) {
-      return NextResponse.redirect(new URL('/dashboard', request.url))
-    } else if (roleHints?.orgStaffOf && roleHints.orgStaffOf.length > 0) {
-      return NextResponse.redirect(new URL('/dashboard', request.url))
-    } else if (roleHints?.isParent) {
-      return NextResponse.redirect(new URL('/parent/dashboard', request.url))
-    } else {
-      return NextResponse.redirect(new URL('/auth/signin', request.url))
+  // STRICT: Only allow super admins to access /owner routes
+  // Use token.isSuperAdmin directly - this is the source of truth
+  if (pathname.startsWith('/owner')) {
+    if (!token.isSuperAdmin) {
+      // Not a super admin - redirect to their correct portal
+      if (roleHints?.isParent) {
+        return NextResponse.redirect(new URL('/parent/dashboard', request.url))
+      } else if (roleHints?.orgAdminOf && roleHints.orgAdminOf.length > 0) {
+        return NextResponse.redirect(new URL('/dashboard', request.url))
+      } else if (roleHints?.orgStaffOf && roleHints.orgStaffOf.length > 0) {
+        return NextResponse.redirect(new URL('/dashboard', request.url))
+      } else {
+        return NextResponse.redirect(new URL('/auth/signin', request.url))
+      }
     }
+    // Super admin accessing /owner routes - allow through, no redirect needed
   }
   
   // Note: /staff routes (like /staff, /staff/[id], etc.) are handled by the (staff) layout

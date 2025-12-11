@@ -36,9 +36,9 @@ export default async function OwnerLayout({
     }
   }
   
-  const org = await getActiveOrg()
   // Owners don't need an org - they can access the portal to create/manage organisations
-  // org is optional for owners
+  // org is optional for owners - pass userId to avoid any issues
+  const org = await getActiveOrg(session.user.id)
   
   return (
     <Page
