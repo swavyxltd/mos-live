@@ -38,8 +38,6 @@ import {
   Plus,
   ChevronDown,
   Send,
-  Eye,
-  EyeOff
 } from 'lucide-react'
 import { getAttendanceRating } from '@/lib/attendance-ratings'
 import { PhoneLink } from './phone-link'
@@ -178,7 +176,6 @@ export function StudentDetailModal({
   const [isArchiving, setIsArchiving] = useState(false)
   const [newNote, setNewNote] = useState('')
   const [isSavingNote, setIsSavingNote] = useState(false)
-  const [showContactInfo, setShowContactInfo] = useState<Record<string, boolean>>({})
   const [isMessageModalOpen, setIsMessageModalOpen] = useState(false)
   const [selectedParentId, setSelectedParentId] = useState<string | null>(null)
 
@@ -636,93 +633,72 @@ export function StudentDetailModal({
                           <div className="space-y-4">
                             {studentData.parents.map((parent, idx) => (
                               <div key={parent.id || idx} className={idx > 0 ? 'pt-4 border-t border-[var(--border)]' : ''}>
-                                <div className="flex items-center justify-between mb-3">
-                                  <div className="flex items-center gap-2">
-                                    {parent.isPrimary && (
-                                      <Badge variant="outline" className="text-xs">Primary</Badge>
-                                    )}
-                                    <h4 className="text-sm font-semibold text-[var(--foreground)]">{parent.name}</h4>
-                                  </div>
+                                <div className="flex items-center gap-2 mb-3">
+                                  {parent.isPrimary && (
+                                    <Badge variant="outline" className="text-xs">Primary</Badge>
+                                  )}
+                                  <h4 className="text-sm font-semibold text-[var(--foreground)]">{parent.name}</h4>
+                                </div>
+                                <div className="space-y-3">
+                                  {parent.email && (
+                                    <div>
+                                      <label className="text-xs text-[var(--muted-foreground)]">Email</label>
+                                      <p className="text-sm text-[var(--foreground)] flex items-center gap-2">
+                                        <Mail className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
+                                        <a 
+                                          href={`mailto:${parent.email}`}
+                                          className="text-blue-600 hover:underline truncate"
+                                        >
+                                          {parent.email}
+                                        </a>
+                                      </p>
+                                    </div>
+                                  )}
+                                  {(parent.phone || parent.backupPhone) && (
+                                    <div>
+                                      <label className="text-xs text-[var(--muted-foreground)] mb-2 block">Phone</label>
+                                      <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                          <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                                            <Phone className="h-4 w-4 mr-2" />
+                                            Call
+                                            <ChevronDown className="h-4 w-4 ml-2" />
+                                          </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent>
+                                          {parent.phone && (
+                                            <DropdownMenuItem asChild>
+                                              <a href={`tel:${parent.phone}`} className="flex items-center w-full">
+                                                <Phone className="h-4 w-4 mr-2" />
+                                                {parent.phone}
+                                              </a>
+                                            </DropdownMenuItem>
+                                          )}
+                                          {parent.backupPhone && (
+                                            <DropdownMenuItem asChild>
+                                              <a href={`tel:${parent.backupPhone}`} className="flex items-center w-full">
+                                                <Phone className="h-4 w-4 mr-2" />
+                                                {parent.backupPhone} (Backup)
+                                              </a>
+                                            </DropdownMenuItem>
+                                          )}
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
+                                    </div>
+                                  )}
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => setShowContactInfo(prev => ({ ...prev, [parent.id || idx]: !prev[parent.id || idx] }))}
+                                    onClick={() => {
+                                      setSelectedParentId(parent.id)
+                                      setIsMessageModalOpen(true)
+                                    }}
+                                    className="w-full sm:w-auto"
                                   >
-                                    {showContactInfo[parent.id || idx] ? (
-                                      <>
-                                        <EyeOff className="h-4 w-4 mr-2" />
-                                        Hide Contact
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Eye className="h-4 w-4 mr-2" />
-                                        Show Contact
-                                      </>
-                                    )}
+                                    <Send className="h-4 w-4 mr-2" />
+                                    Send Message
                                   </Button>
                                 </div>
-                                {showContactInfo[parent.id || idx] && (
-                                  <div className="space-y-3 mt-3">
-                                    {parent.email && (
-                                      <div>
-                                        <label className="text-xs text-[var(--muted-foreground)]">Email</label>
-                                        <p className="text-sm text-[var(--foreground)] flex items-center gap-2">
-                                          <Mail className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
-                                          <a 
-                                            href={`mailto:${parent.email}`}
-                                            className="text-blue-600 hover:underline truncate"
-                                          >
-                                            {parent.email}
-                                          </a>
-                                        </p>
-                                      </div>
-                                    )}
-                                    {(parent.phone || parent.backupPhone) && (
-                                      <div>
-                                        <label className="text-xs text-[var(--muted-foreground)] mb-2 block">Phone</label>
-                                        <DropdownMenu>
-                                          <DropdownMenuTrigger asChild>
-                                            <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                                              <Phone className="h-4 w-4 mr-2" />
-                                              Call
-                                              <ChevronDown className="h-4 w-4 ml-2" />
-                                            </Button>
-                                          </DropdownMenuTrigger>
-                                          <DropdownMenuContent>
-                                            {parent.phone && (
-                                              <DropdownMenuItem asChild>
-                                                <a href={`tel:${parent.phone}`} className="flex items-center w-full">
-                                                  <Phone className="h-4 w-4 mr-2" />
-                                                  {parent.phone}
-                                                </a>
-                                              </DropdownMenuItem>
-                                            )}
-                                            {parent.backupPhone && (
-                                              <DropdownMenuItem asChild>
-                                                <a href={`tel:${parent.backupPhone}`} className="flex items-center w-full">
-                                                  <Phone className="h-4 w-4 mr-2" />
-                                                  {parent.backupPhone} (Backup)
-                                                </a>
-                                              </DropdownMenuItem>
-                                            )}
-                                          </DropdownMenuContent>
-                                        </DropdownMenu>
-                                      </div>
-                                    )}
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => {
-                                        setSelectedParentId(parent.id)
-                                        setIsMessageModalOpen(true)
-                                      }}
-                                      className="w-full sm:w-auto"
-                                    >
-                                      <Send className="h-4 w-4 mr-2" />
-                                      Send Message
-                                    </Button>
-                                  </div>
-                                )}
                               </div>
                             ))}
                           </div>

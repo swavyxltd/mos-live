@@ -46,14 +46,12 @@ async function handleGET(
       return NextResponse.json({ error: 'Student ID is required' }, { status: 400 })
     }
 
-    // Get orgId from student if not already set (for super admins)
-    if (!orgId && student) {
-      orgId = student.orgId
+    // If user is a parent, verify they own this student (check before fetching student)
+    let userRole: string | null = null
+    if (!session.user.isSuperAdmin && orgId) {
+      const { getUserRoleInOrg } = await import('@/lib/org')
+      userRole = await getUserRoleInOrg(session.user.id, orgId)
     }
-
-    // If user is a parent, verify they own this student
-    const { getUserRoleInOrg } = await import('@/lib/org')
-    const userRole = orgId ? await getUserRoleInOrg(session.user.id, orgId) : null
 
     // Fetch student with all relations in one efficient query
     // For super admins, don't filter by orgId (they can see all students)
@@ -90,11 +88,11 @@ async function handleGET(
             }
           }
         },
-        // Recent attendance records (last 14 days, limit to 20)
+        // Recent attendance records (last 7 days, limit to 10 for faster loading)
         Attendance: {
           where: {
             date: {
-              gte: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000) // Last 14 days
+              gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // Last 7 days
             }
           },
           include: {
@@ -108,13 +106,13 @@ async function handleGET(
           orderBy: {
             date: 'desc'
           },
-          take: 20
+          take: 10
         },
-        // Payment records (last 6 months, limit to 20)
+        // Payment records (last 3 months, limit to 10 for faster loading)
         MonthlyPaymentRecord: {
           where: {
             createdAt: {
-              gte: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000) // Last 6 months
+              gte: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) // Last 3 months
             }
           },
           include: {
@@ -128,9 +126,9 @@ async function handleGET(
           orderBy: {
             month: 'desc'
           },
-          take: 20
+          take: 10
         },
-        // Progress notes (limit to 20)
+        // Progress notes (limit to 10 for faster loading)
         ProgressLog: {
           include: {
             User: {
@@ -144,25 +142,30 @@ async function handleGET(
           orderBy: {
             createdAt: 'desc'
           },
-          take: 20
+          take: 10
         },
-        // Invoices (last 6 months, limit to 20)
+        // Invoices (last 3 months, limit to 10 for faster loading)
         Invoice: {
           where: {
             createdAt: {
-              gte: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000)
+              gte: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
             }
           },
           orderBy: {
             createdAt: 'desc'
           },
-          take: 20
+          take: 10
         }
       }
     })
 
     if (!student) {
       return NextResponse.json({ error: 'Student not found' }, { status: 404 })
+    }
+
+    // Get orgId from student if not already set (for super admins)
+    if (!orgId) {
+      orgId = student.orgId
     }
 
     // Verify parent access (only if userRole is set and they're a parent)
@@ -178,48 +181,30 @@ async function handleGET(
       ? Math.floor((new Date().getTime() - new Date(student.dob).getTime()) / (1000 * 60 * 60 * 24 * 365.25))
       : 0
 
-    // Calculate attendance stats - use count queries for better performance
+    // Calculate attendance stats and fees in parallel - use single aggregation queries
     const finalOrgId = orgId || student.orgId
-    const [presentCount, absentCount, lateCount, totalCount] = await Promise.all([
-      prisma.attendance.count({
-        where: {
-          studentId: id,
-          orgId: finalOrgId,
-          status: 'PRESENT'
-        }
-      }),
-      prisma.attendance.count({
-        where: {
-          studentId: id,
-          orgId: finalOrgId,
-          status: 'ABSENT'
-        }
-      }),
-      prisma.attendance.count({
-        where: {
-          studentId: id,
-          orgId: finalOrgId,
-          status: 'LATE'
-        }
-      }),
-      prisma.attendance.count({
-        where: {
-          studentId: id,
-          orgId: finalOrgId
-        }
-      })
-    ])
-    
-    const presentAndLateCount = presentCount + lateCount
-    const attendanceRate = totalCount > 0
-      ? Math.round((presentAndLateCount / totalCount) * 100)
-      : 0
-
-    // Calculate fees stats - use aggregation for better performance
     const currentYear = new Date().getFullYear()
     const yearStart = new Date(currentYear, 0, 1)
     
-    const [totalPaidThisYearResult, currentBalanceResult] = await Promise.all([
+    // Run all stats queries in parallel for better performance
+    const [
+      attendanceStats,
+      totalPaidThisYearResult,
+      currentBalanceResult,
+      activityLog
+    ] = await Promise.all([
+      // Get attendance counts using groupBy for better performance
+      prisma.attendance.groupBy({
+        by: ['status'],
+        where: {
+          studentId: id,
+          orgId: finalOrgId
+        },
+        _count: {
+          status: true
+        }
+      }),
+      // Fees paid this year
       prisma.monthlyPaymentRecord.aggregate({
         where: {
           studentId: id,
@@ -231,6 +216,7 @@ async function handleGET(
           amountP: true
         }
       }),
+      // Current balance
       prisma.monthlyPaymentRecord.aggregate({
         where: {
           studentId: id,
@@ -240,33 +226,43 @@ async function handleGET(
         _sum: {
           amountP: true
         }
+      }),
+      // Activity log
+      prisma.auditLog.findMany({
+        where: {
+          orgId: finalOrgId,
+          targetType: 'STUDENT',
+          targetId: id
+        },
+        include: {
+          User: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        },
+        take: 10
       })
     ])
     
+    // Process attendance stats from groupBy result
+    const presentCount = attendanceStats.find(s => s.status === 'PRESENT')?._count.status || 0
+    const absentCount = attendanceStats.find(s => s.status === 'ABSENT')?._count.status || 0
+    const lateCount = attendanceStats.find(s => s.status === 'LATE')?._count.status || 0
+    const totalCount = presentCount + absentCount + lateCount
+    
+    const presentAndLateCount = presentCount + lateCount
+    const attendanceRate = totalCount > 0
+      ? Math.round((presentAndLateCount / totalCount) * 100)
+      : 0
+    
     const totalPaidThisYear = totalPaidThisYearResult._sum.amountP || 0
     const currentBalance = currentBalanceResult._sum.amountP || 0
-
-    // Get activity log (recent audit logs for this student) - limit to 10
-    const activityLog = await prisma.auditLog.findMany({
-      where: {
-        orgId: orgId || student.orgId,
-        targetType: 'STUDENT',
-        targetId: id
-      },
-      include: {
-        User: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
-      },
-      take: 10
-    })
 
     // Get all parents (if there are multiple ways to link parents, expand this)
     const parents = []
