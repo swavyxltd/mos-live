@@ -17,22 +17,6 @@ interface QuickAddMenuProps {
 }
 
 export function QuickAddMenu({ onAddStudent, onAddTeacher, onAddClass }: QuickAddMenuProps) {
-  const [mounted, setMounted] = React.useState(false)
-
-  React.useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  // Render a placeholder on the server to avoid hydration mismatch
-  if (!mounted) {
-    return (
-      <Button variant="outline" size="sm" className="hover:bg-gray-50" disabled>
-        <Plus className="h-4 w-4 mr-2" />
-        Quick Add
-      </Button>
-    )
-  }
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

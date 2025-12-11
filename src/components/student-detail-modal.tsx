@@ -19,6 +19,7 @@ import {
   GraduationCap,
   UserCheck,
   Archive,
+  ArchiveRestore,
   Edit,
   Calendar,
   DollarSign,
@@ -166,6 +167,7 @@ export function StudentDetailModal({
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
   const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false)
+  const [isUnarchiveDialogOpen, setIsUnarchiveDialogOpen] = useState(false)
   const [isArchiving, setIsArchiving] = useState(false)
   const [newNote, setNewNote] = useState('')
   const [isSavingNote, setIsSavingNote] = useState(false)
@@ -195,17 +197,28 @@ export function StudentDetailModal({
   useEffect(() => {
     const idToFetch = studentId || legacyStudent?.id
     if (isOpen && idToFetch) {
+      // Set loading immediately for instant feedback
+      setLoading(true)
+      setStudentData(null)
+      // Fetch data asynchronously
       fetchStudentDetails(idToFetch)
     } else if (isOpen) {
+      setStudentData(null)
+      setLoading(false)
+    } else {
+      // Reset when modal closes
       setStudentData(null)
       setLoading(false)
     }
   }, [isOpen, studentId, legacyStudent?.id])
 
   const fetchStudentDetails = async (id: string) => {
-    if (!id) return
+    if (!id) {
+      setLoading(false)
+      return
+    }
     
-    setLoading(true)
+    // Loading is already set to true in useEffect
     try {
       const response = await fetch(`/api/students/${id}/details`)
       if (response.ok) {
@@ -308,15 +321,56 @@ export function StudentDetailModal({
         }),
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        throw new Error('Failed to archive student')
+        const errorMessage = data.error || data.details || 'Failed to archive student'
+        throw new Error(errorMessage)
       }
 
       onArchive(studentData.id, true)
       toast.success('Student archived successfully')
       setIsArchiveDialogOpen(false)
-    } catch (error) {
-      toast.error('Failed to archive student')
+      // Refresh student data
+      await fetchStudentDetails(studentData.id)
+    } catch (error: any) {
+      console.error('Archive error:', error)
+      toast.error(error.message || 'Failed to archive student')
+    } finally {
+      setIsArchiving(false)
+    }
+  }
+
+  const handleConfirmUnarchive = async () => {
+    if (!studentData || !onArchive) return
+    
+    setIsArchiving(true)
+    try {
+      const response = await fetch(`/api/students/${studentData.id}/archive`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          isArchived: false
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        const errorMessage = data.error || data.details || 'Failed to unarchive student'
+        throw new Error(errorMessage)
+      }
+
+      onArchive(studentData.id, false)
+      toast.success('Student unarchived successfully')
+      setIsUnarchiveDialogOpen(false)
+      // Refresh student data
+      await fetchStudentDetails(studentData.id)
+    } catch (error: any) {
+      console.error('Unarchive error:', error)
+      toast.error(error.message || 'Failed to unarchive student')
     } finally {
       setIsArchiving(false)
     }
@@ -477,15 +531,28 @@ export function StudentDetailModal({
                       Edit
                     </Button>
                   )}
-                  {onArchive && !studentData.isArchived && (
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => setIsArchiveDialogOpen(true)}
-                    >
-                      <Archive className="h-4 w-4 mr-2" />
-                      <span className="hidden sm:inline">Archive</span>
-                    </Button>
+                  {onArchive && (
+                    <>
+                      {!studentData.isArchived ? (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => setIsArchiveDialogOpen(true)}
+                        >
+                          <Archive className="h-4 w-4 mr-2" />
+                          <span className="hidden sm:inline">Archive</span>
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setIsUnarchiveDialogOpen(true)}
+                        >
+                          <ArchiveRestore className="h-4 w-4 mr-2" />
+                          <span className="hidden sm:inline">Unarchive</span>
+                        </Button>
+                      )}
+                    </>
                   )}
                   <button
                     onClick={onClose}
@@ -629,76 +696,71 @@ export function StudentDetailModal({
                                   <h4 className="text-sm font-semibold text-[var(--foreground)]">{parent.name}</h4>
                                 </div>
                                 <div className="space-y-3">
-                                  {parent.email && (
-                                    <div>
-                                      <label className="text-xs text-[var(--muted-foreground)]">Email</label>
-                                      <p className="text-sm text-[var(--foreground)] flex items-center gap-2">
-                                        <Mail className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
-                                        <a 
-                                          href={`mailto:${parent.email}`}
-                                          className="hover:underline truncate"
-                                        >
-                                          {parent.email}
-                                        </a>
-                                      </p>
-                                    </div>
-                                  )}
-                                  {parent.phone && (
-                                    <div>
-                                      <label className="text-xs text-[var(--muted-foreground)]">Phone</label>
-                                      <div className="flex items-center gap-2">
+                                  <div>
+                                    <label className="text-xs text-[var(--muted-foreground)] mb-2 block">Contact Information</label>
+                                    <div className="flex flex-wrap items-center gap-4">
+                                      {parent.email && (
+                                        <p className="text-sm text-[var(--foreground)] flex items-center gap-2">
+                                          <Mail className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
+                                          <a 
+                                            href={`mailto:${parent.email}`}
+                                            className="hover:underline truncate"
+                                          >
+                                            {parent.email}
+                                          </a>
+                                        </p>
+                                      )}
+                                      {parent.phone && (
                                         <p className="text-sm text-[var(--foreground)] flex items-center gap-2">
                                           <Phone className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
                                           {parent.phone}
                                         </p>
-                                        <Button 
-                                          variant="outline" 
-                                          size="sm" 
-                                          asChild
-                                          className="ml-2"
-                                        >
-                                          <a href={`tel:${parent.phone}`}>
-                                            <Phone className="h-4 w-4 mr-2" />
-                                            Call
-                                          </a>
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  )}
-                                  {parent.backupPhone && (
-                                    <div>
-                                      <label className="text-xs text-[var(--muted-foreground)]">Backup Phone</label>
-                                      <div className="flex items-center gap-2">
+                                      )}
+                                      {parent.backupPhone && (
                                         <p className="text-sm text-[var(--foreground)] flex items-center gap-2">
                                           <Phone className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
-                                          {parent.backupPhone}
+                                          {parent.backupPhone} (Backup)
                                         </p>
-                                        <Button 
-                                          variant="outline" 
-                                          size="sm" 
-                                          asChild
-                                          className="ml-2"
-                                        >
-                                          <a href={`tel:${parent.backupPhone}`}>
-                                            <Phone className="h-4 w-4 mr-2" />
-                                            Call
-                                          </a>
-                                        </Button>
-                                      </div>
+                                      )}
                                     </div>
-                                  )}
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => {
-                                      setSelectedParentId(parent.id)
-                                      setIsMessageModalOpen(true)
-                                    }}
-                                    className="w-full sm:w-auto"
-                                  >
-                                    <Send className="h-4 w-4 mr-2" />
-                                    Send Message
-                                  </Button>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {parent.phone && (
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        asChild
+                                      >
+                                        <a href={`tel:${parent.phone}`}>
+                                          <Phone className="h-4 w-4 mr-2" />
+                                          Call
+                                        </a>
+                                      </Button>
+                                    )}
+                                    {parent.backupPhone && !parent.phone && (
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        asChild
+                                      >
+                                        <a href={`tel:${parent.backupPhone}`}>
+                                          <Phone className="h-4 w-4 mr-2" />
+                                          Call Backup
+                                        </a>
+                                      </Button>
+                                    )}
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        setSelectedParentId(parent.id)
+                                        setIsMessageModalOpen(true)
+                                      }}
+                                    >
+                                      <Send className="h-4 w-4 mr-2" />
+                                      Send Message
+                                    </Button>
+                                  </div>
                                 </div>
                               </div>
                             ))}
@@ -975,6 +1037,19 @@ export function StudentDetailModal({
         confirmText="Archive Student"
         cancelText="Cancel"
         variant="destructive"
+        isLoading={isArchiving}
+      />
+
+      {/* Unarchive Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={isUnarchiveDialogOpen}
+        onClose={() => setIsUnarchiveDialogOpen(false)}
+        onConfirm={handleConfirmUnarchive}
+        title="Unarchive Student"
+        message={`Are you sure you want to unarchive ${studentData?.name}? This will restore their account and make them active again.`}
+        confirmText="Unarchive Student"
+        cancelText="Cancel"
+        variant="default"
         isLoading={isArchiving}
       />
 

@@ -124,11 +124,11 @@ export function FeesPageClient({ classes, summary }: FeesPageClientProps) {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--foreground)]">Fees Overview</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Manage fees for all classes in your madrasah. Fees are set when creating classes.
-          </p>
+      <div>
+        <h1 className="text-2xl font-bold text-[var(--foreground)]">Fees Overview</h1>
+        <p className="mt-1 text-sm text-gray-500">
+          Manage fees for all classes in your madrasah. Fees are set when creating classes.
+        </p>
         </div>
         <div className="flex items-center gap-2">
           <Calendar className="h-4 w-4 text-gray-500" />

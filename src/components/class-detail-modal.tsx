@@ -522,9 +522,9 @@ export function ClassDetailModal({ classId, isOpen, onClose, onClassUpdate }: Cl
                             <div className="flex flex-col sm:flex-row gap-2 pt-3 border-t border-[var(--border)]">
                               <Link href={`/messages?classId=${classData.id}`} className="flex-1">
                                 <Button variant="outline" size="sm" className="w-full">
-                                  <Mail className="h-4 w-4 mr-2" />
-                                  Send Email
-                                </Button>
+                                <Mail className="h-4 w-4 mr-2" />
+                                Send Email
+                              </Button>
                               </Link>
                               {classData.teacher.id && (
                                 <Button 
@@ -539,8 +539,8 @@ export function ClassDetailModal({ classId, isOpen, onClose, onClassUpdate }: Cl
                                   ) : (
                                     <User className="h-4 w-4 mr-2" />
                                   )}
-                                  View Profile
-                                </Button>
+                                    View Profile
+                                  </Button>
                               )}
                             </div>
                           </div>

@@ -879,33 +879,33 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
                     const RatingIcon = attendanceRating.icon as React.ComponentType<{ className?: string }>
                     
                     return (
-                      <TableRow key={index}>
-                        <TableCell className="font-medium">{classItem.name}</TableCell>
+                    <TableRow key={index}>
+                      <TableCell className="font-medium">{classItem.name}</TableCell>
                         <TableCell className="hidden sm:table-cell">{classItem.teacher}</TableCell>
                         <TableCell className="hidden sm:table-cell">{classItem.students}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <div className="w-16 bg-gray-200 rounded-full h-2">
-                              <div 
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="w-16 bg-gray-200 rounded-full h-2">
+                            <div 
                                 className={`h-2 rounded-full ${
                                   classItem.attendance >= 95 ? 'bg-green-500' :
                                   classItem.attendance >= 90 ? 'bg-yellow-500' :
                                   classItem.attendance >= 85 ? 'bg-orange-500' :
                                   'bg-red-500'
                                 }`}
-                                style={{ width: `${classItem.attendance}%` }}
-                              />
-                            </div>
-                            <span className="text-sm font-medium">{classItem.attendance}%</span>
+                              style={{ width: `${classItem.attendance}%` }}
+                            />
                           </div>
-                        </TableCell>
-                        <TableCell>
+                          <span className="text-sm font-medium">{classItem.attendance}%</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
                           <Badge variant="secondary" className={`${statusColors.bg} ${statusColors.text} ${statusColors.border}`}>
                             <RatingIcon className="h-3 w-3 mr-1" />
                             {attendanceRating.text}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
                     )
                   })}
                   </TableBody>

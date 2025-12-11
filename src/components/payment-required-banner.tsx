@@ -42,12 +42,12 @@ export function PaymentRequiredBanner() {
         }
       } catch (error) {
         // If API fails, check sessionStorage as fallback
-        const storedStatus = sessionStorage.getItem('hasPaymentMethod')
-        if (storedStatus !== null) {
-          setHasPaymentMethod(storedStatus === 'true')
-        } else {
+    const storedStatus = sessionStorage.getItem('hasPaymentMethod')
+    if (storedStatus !== null) {
+      setHasPaymentMethod(storedStatus === 'true')
+    } else {
           // Default to true if we can't determine (be permissive)
-          setHasPaymentMethod(true)
+      setHasPaymentMethod(true)
         }
       }
     }
