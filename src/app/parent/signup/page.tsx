@@ -1066,9 +1066,30 @@ function ParentSignupForm() {
             <label className="block text-sm font-medium text-neutral-700 mb-2">
               Gift Aid Declaration *
             </label>
-            <p className="text-xs text-neutral-500 mb-3">
+            <p className="text-xs text-neutral-500 mb-4">
               Gift Aid allows the madrasah to claim an extra 25% from the government on your donations at no extra cost to you.
             </p>
+            
+            {/* Full Gift Aid Declaration Statement */}
+            <div className="mb-4 p-4 bg-neutral-50 border border-neutral-200 rounded-lg">
+              <h4 className="text-sm font-semibold text-neutral-900 mb-3">Gift Aid Declaration Statement</h4>
+              <div className="space-y-2 text-xs text-neutral-700 leading-relaxed">
+                <p className="mb-3">
+                  I want the madrasah to reclaim tax on all qualifying payments I have made since 6 April 2024 and all future payments I make from the date of this declaration until I notify you otherwise.
+                </p>
+                <p className="font-medium mb-2">I understand that:</p>
+                <ul className="list-disc list-inside space-y-1 ml-2">
+                  <li>I must pay an amount of Income Tax and/or Capital Gains Tax for each tax year (6 April to 5 April) that is at least equal to the amount of Gift Aid that all charities and Community Amateur Sports Clubs (CASCs) will reclaim on my donations for that tax year.</li>
+                  <li>I understand the madrasah will reclaim 25% of the value of my payments from HMRC.</li>
+                  <li>If I pay less Income Tax and/or Capital Gains Tax than the amount of Gift Aid claimed on all my donations in that tax year, it is my responsibility to pay any difference.</li>
+                  <li>Please notify the madrasah if you want to cancel this declaration, change your name or home address, or if you no longer pay sufficient tax on your income and/or capital gains.</li>
+                </ul>
+                <p className="mt-3 font-medium">
+                  I confirm that I am a UK taxpayer and that the information I have provided is correct.
+                </p>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <label className="flex items-center gap-2 p-3 border border-neutral-200 rounded-lg cursor-pointer hover:bg-neutral-50">
                 <input
