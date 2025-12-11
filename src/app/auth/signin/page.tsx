@@ -14,12 +14,19 @@ function SignInPageContent() {
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
   const sessionCheckedRef = useRef(false)
+  const hasInitializedRef = useRef(false)
+  
+  // Get URL params once and memoize
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
   const resetSuccess = searchParams.get('reset') === 'success'
   const signupSuccess = searchParams.get('signup') === 'success'
 
-  // Handle success messages (only once on mount)
+  // Initialize success messages only once
   useEffect(() => {
+    if (hasInitializedRef.current) return
+    hasInitializedRef.current = true
+    
+    // Handle success messages
     if (resetSuccess) {
       setSuccessMessage('Password reset successful! Please sign in with your new password.')
     }
@@ -28,21 +35,31 @@ function SignInPageContent() {
     }
   }, []) // Empty deps - only run once on mount
 
-  // Check session only once on mount
+  // Check session separately with a delay to avoid race conditions in production
   useEffect(() => {
     if (sessionCheckedRef.current) return
     sessionCheckedRef.current = true
     
-    // Check if already signed in
-    getSession().then((session) => {
-      if ((session?.user as any)?.roleHints) {
-        const redirectUrl = getPostLoginRedirect((session.user as any).roleHints)
-        // Use replace to prevent back button issues
-        window.location.replace(redirectUrl)
-      }
-    }).catch((err) => {
-      console.error('Error checking session:', err)
-    })
+    // Add a small delay to ensure page is fully loaded and cookies are available
+    const timeoutId = setTimeout(() => {
+      getSession().then((session) => {
+        // Only redirect if we have a valid session with roleHints
+        if (session?.user && (session.user as any)?.roleHints) {
+          try {
+            const redirectUrl = getPostLoginRedirect((session.user as any).roleHints)
+            // Use replace to prevent back button issues
+            window.location.replace(redirectUrl)
+          } catch (err) {
+            console.error('Error getting redirect URL:', err)
+          }
+        }
+      }).catch((err) => {
+        // Silently fail - user is not logged in, which is expected on signin page
+        console.error('Session check error:', err)
+      })
+    }, 100) // Small delay to ensure cookies are available in production
+    
+    return () => clearTimeout(timeoutId)
   }, []) // Empty deps - only run once on mount
 
   const handleCredentialsSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
