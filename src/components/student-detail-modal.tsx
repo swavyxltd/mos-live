@@ -8,6 +8,12 @@ import { Button } from '@/components/ui/button'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { 
   X,
   User,
@@ -29,13 +35,18 @@ import {
   Clock,
   ExternalLink,
   Loader2,
-  Plus
+  Plus,
+  ChevronDown,
+  Send,
+  Eye,
+  EyeOff
 } from 'lucide-react'
 import { getAttendanceRating } from '@/lib/attendance-ratings'
 import { PhoneLink } from './phone-link'
 import { useStaffPermissions } from '@/lib/staff-permissions'
 import { toast } from 'sonner'
 import { formatDate } from '@/lib/utils'
+import { SendMessageModal } from './send-message-modal'
 
 // Comprehensive student data interface
 interface StudentDetailsData {
@@ -162,11 +173,14 @@ export function StudentDetailModal({
   const router = useRouter()
   const [studentData, setStudentData] = useState<StudentDetailsData | null>(null)
   const [loading, setLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState('attendance')
+  const [activeTab, setActiveTab] = useState('overview')
   const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false)
   const [isArchiving, setIsArchiving] = useState(false)
   const [newNote, setNewNote] = useState('')
   const [isSavingNote, setIsSavingNote] = useState(false)
+  const [showContactInfo, setShowContactInfo] = useState<Record<string, boolean>>({})
+  const [isMessageModalOpen, setIsMessageModalOpen] = useState(false)
+  const [selectedParentId, setSelectedParentId] = useState<string | null>(null)
 
   // Get user permissions
   const staffSubrole = (session?.user?.staffSubrole || 'TEACHER') as any
@@ -246,7 +260,7 @@ export function StudentDetailModal({
         toast.success('Note added successfully')
         setNewNote('')
         // Refresh student data
-        await fetchStudentDetails()
+        await fetchStudentDetails(studentData.id)
       } else {
         toast.error('Failed to add note')
       }
@@ -255,6 +269,37 @@ export function StudentDetailModal({
       toast.error('Failed to add note')
     } finally {
       setIsSavingNote(false)
+    }
+  }
+
+  const handleSendMessage = async (data: any) => {
+    try {
+      const response = await fetch('/api/messages/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          title: data.title,
+          body: data.message,
+          audience: data.audience.toUpperCase(),
+          channel: 'EMAIL',
+          classIds: data.classId ? [data.classId] : undefined,
+          parentId: data.parentId,
+          saveOnly: false
+        })
+      })
+
+      if (response.ok) {
+        toast.success('Message sent successfully')
+        setIsMessageModalOpen(false)
+        setSelectedParentId(null)
+      } else {
+        toast.error('Failed to send message')
+      }
+    } catch (error) {
+      console.error('Failed to send message', error)
+      toast.error('Failed to send message')
     }
   }
 
@@ -462,174 +507,232 @@ export function StudentDetailModal({
               </div>
             </div>
 
-            {/* Content - Two Column Layout */}
+            {/* Content - Fully Tabbed Interface */}
             <div className="p-4 sm:p-6 overflow-y-auto flex-1">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Left Column - Student Info & Parents */}
-                <div className="lg:col-span-1 space-y-4">
-                  {/* Core Student Information */}
-                  <div className="border border-[var(--border)] rounded-lg p-4">
-                    <h3 className="text-sm font-semibold text-[var(--foreground)] mb-3 flex items-center gap-2">
-                      <User className="h-4 w-4 text-[var(--muted-foreground)]" />
-                      Student Information
-                    </h3>
-                    <div className="space-y-3">
-                      <div>
-                        <label className="text-xs text-[var(--muted-foreground)]">Date of Birth</label>
-                        <p className="text-sm text-[var(--foreground)]">
-                          {studentData.dateOfBirth ? formatDate(studentData.dateOfBirth) : 'Not provided'}
-                        </p>
-                      </div>
-                      <div>
-                        <label className="text-xs text-[var(--muted-foreground)]">Classes</label>
-                        <div className="space-y-1">
-                          {studentData.classes.length > 0 ? (
-                            studentData.classes.map((cls, idx) => (
-                              <p key={idx} className="text-sm text-[var(--foreground)] flex items-center gap-2">
-                                <GraduationCap className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
-                                {cls.name}
-                                {cls.teacher && (
-                                  <span className="text-xs text-[var(--muted-foreground)]">
-                                    • {cls.teacher.name}
-                                  </span>
-                                )}
-                              </p>
-                            ))
-                          ) : (
-                            <p className="text-sm text-[var(--muted-foreground)]">Not enrolled in any classes</p>
-                          )}
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-xs text-[var(--muted-foreground)]">Enrollment Date</label>
-                        <p className="text-sm text-[var(--foreground)]">{formatDate(studentData.enrollmentDate)}</p>
-                      </div>
-                      <div>
-                        <label className="text-xs text-[var(--muted-foreground)]">Student ID</label>
-                        <p className="text-sm font-mono text-[var(--foreground)]">{studentData.studentId.slice(0, 8)}...</p>
-                      </div>
-                      <div>
-                        <label className="text-xs text-[var(--muted-foreground)]">Status</label>
-                        <div className="text-sm text-[var(--foreground)]">
-                          <Badge
-                            variant="outline"
-                            className={
-                              studentData.isArchived
-                                ? 'bg-red-100 text-red-800 border border-red-200'
-                                : 'bg-[#e8f5e9] text-[#1b5e20] border border-[#c8e6c9]'
-                            }
-                          >
-                            {studentData.isArchived ? 'ARCHIVED' : studentData.status}
-                          </Badge>
-                        </div>
-                      </div>
-                      {(studentData.allergies || studentData.medicalNotes) && (
-                        <div className="pt-3 border-t border-[var(--border)]">
-                          <label className="text-xs text-[var(--muted-foreground)] flex items-center gap-1 mb-2">
-                            <Heart className="h-3.5 w-3.5" />
-                            Medical Information
-                          </label>
-                          {studentData.allergies && (
-                            <p className="text-sm text-[var(--foreground)] flex items-center gap-1 mb-1">
-                              {studentData.allergies !== 'None' ? (
-                                <AlertTriangle className="h-3.5 w-3.5 text-red-500" />
-                              ) : (
-                                <CheckCircle className="h-3.5 w-3.5 text-green-500" />
-                              )}
-                              <span>Allergies: {studentData.allergies}</span>
-                            </p>
-                          )}
-                          {studentData.medicalNotes && (
-                            <p className="text-sm text-[var(--foreground)]">{studentData.medicalNotes}</p>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-6">
+                  <TabsTrigger value="overview" className="text-xs sm:text-sm">
+                    <User className="h-4 w-4 mr-1.5 sm:mr-2" />
+                    <span className="hidden sm:inline">Overview</span>
+                    <span className="sm:hidden">Info</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="parents" className="text-xs sm:text-sm">
+                    <UserCheck className="h-4 w-4 mr-1.5 sm:mr-2" />
+                    <span className="hidden sm:inline">Parents</span>
+                    <span className="sm:hidden">Parents</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="attendance" className="text-xs sm:text-sm">
+                    <Calendar className="h-4 w-4 mr-1.5 sm:mr-2" />
+                    <span className="hidden sm:inline">Attendance</span>
+                    <span className="sm:hidden">Att.</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="fees" className="text-xs sm:text-sm">
+                    <DollarSign className="h-4 w-4 mr-1.5 sm:mr-2" />
+                    <span className="hidden sm:inline">Fees</span>
+                    <span className="sm:hidden">Fees</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="notes" className="text-xs sm:text-sm">
+                    <FileText className="h-4 w-4 mr-1.5 sm:mr-2" />
+                    <span className="hidden sm:inline">Notes</span>
+                    <span className="sm:hidden">Notes</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="activity" className="text-xs sm:text-sm">
+                    <Activity className="h-4 w-4 mr-1.5 sm:mr-2" />
+                    <span className="hidden sm:inline">Activity</span>
+                    <span className="sm:hidden">Act.</span>
+                  </TabsTrigger>
+                </TabsList>
 
-                  {/* Parent/Guardian Information */}
-                  {studentData.parents.length > 0 && (
-                    <div className="border border-[var(--border)] rounded-lg p-4">
-                      <h3 className="text-sm font-semibold text-[var(--foreground)] mb-3 flex items-center gap-2">
-                        <UserCheck className="h-4 w-4 text-[var(--muted-foreground)]" />
-                        Parent/Guardian
-                      </h3>
-                      <div className="space-y-4">
-                        {studentData.parents.map((parent, idx) => (
-                          <div key={idx} className={idx > 0 ? 'pt-4 border-t border-[var(--border)]' : ''}>
-                            {parent.isPrimary && (
-                              <Badge variant="outline" className="mb-2 text-xs">Primary</Badge>
-                            )}
-                            <div className="space-y-2">
-                              <div>
-                                <label className="text-xs text-[var(--muted-foreground)]">Name</label>
-                                <p className="text-sm text-[var(--foreground)]">{parent.name}</p>
-                              </div>
-                              {parent.email && (
-                                <div>
-                                  <label className="text-xs text-[var(--muted-foreground)]">Email</label>
-                                  <p className="text-sm text-[var(--foreground)] flex items-center gap-2">
-                                    <Mail className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
-                                    <a 
-                                      href={`mailto:${parent.email}`}
-                                      className="text-blue-600 hover:underline truncate"
-                                    >
-                                      {parent.email}
-                                    </a>
+                    {/* Overview Tab */}
+                    <TabsContent value="overview" className="mt-4">
+                      <div className="border border-[var(--border)] rounded-lg p-4">
+                        <h3 className="text-sm font-semibold text-[var(--foreground)] mb-4 flex items-center gap-2">
+                          <User className="h-4 w-4 text-[var(--muted-foreground)]" />
+                          Student Information
+                        </h3>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="text-xs text-[var(--muted-foreground)]">Date of Birth</label>
+                            <p className="text-sm text-[var(--foreground)]">
+                              {studentData.dateOfBirth ? formatDate(studentData.dateOfBirth) : 'Not provided'}
+                            </p>
+                          </div>
+                          <div>
+                            <label className="text-xs text-[var(--muted-foreground)]">Classes</label>
+                            <div className="space-y-1">
+                              {studentData.classes.length > 0 ? (
+                                studentData.classes.map((cls, idx) => (
+                                  <p key={idx} className="text-sm text-[var(--foreground)] flex items-center gap-2">
+                                    <GraduationCap className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
+                                    {cls.name}
+                                    {cls.teacher && (
+                                      <span className="text-xs text-[var(--muted-foreground)]">
+                                        • {cls.teacher.name}
+                                      </span>
+                                    )}
                                   </p>
-                                </div>
-                              )}
-                              {parent.phone && (
-                                <div>
-                                  <label className="text-xs text-[var(--muted-foreground)]">Phone</label>
-                                  <p className="text-sm text-[var(--foreground)] flex items-center gap-2">
-                                    <Phone className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
-                                    <PhoneLink phone={parent.phone} />
-                                  </p>
-                                </div>
-                              )}
-                              {parent.backupPhone && (
-                                <div>
-                                  <label className="text-xs text-[var(--muted-foreground)]">Backup Phone</label>
-                                  <p className="text-sm text-[var(--foreground)] flex items-center gap-2">
-                                    <Phone className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
-                                    <PhoneLink phone={parent.backupPhone} />
-                                  </p>
-                                </div>
+                                ))
+                              ) : (
+                                <p className="text-sm text-[var(--muted-foreground)]">Not enrolled in any classes</p>
                               )}
                             </div>
                           </div>
-                        ))}
+                          <div>
+                            <label className="text-xs text-[var(--muted-foreground)]">Enrollment Date</label>
+                            <p className="text-sm text-[var(--foreground)]">{formatDate(studentData.enrollmentDate)}</p>
+                          </div>
+                          <div>
+                            <label className="text-xs text-[var(--muted-foreground)]">Student ID</label>
+                            <p className="text-sm font-mono text-[var(--foreground)]">{studentData.studentId.slice(0, 8)}...</p>
+                          </div>
+                          <div>
+                            <label className="text-xs text-[var(--muted-foreground)]">Status</label>
+                            <div className="text-sm text-[var(--foreground)]">
+                              <Badge
+                                variant="outline"
+                                className={
+                                  studentData.isArchived
+                                    ? 'bg-red-100 text-red-800 border border-red-200'
+                                    : 'bg-[#e8f5e9] text-[#1b5e20] border border-[#c8e6c9]'
+                                }
+                              >
+                                {studentData.isArchived ? 'ARCHIVED' : studentData.status}
+                              </Badge>
+                            </div>
+                          </div>
+                          {(studentData.allergies || studentData.medicalNotes) && (
+                            <div className="pt-3 border-t border-[var(--border)]">
+                              <label className="text-xs text-[var(--muted-foreground)] flex items-center gap-1 mb-2">
+                                <Heart className="h-3.5 w-3.5" />
+                                Medical Information
+                              </label>
+                              {studentData.allergies && (
+                                <p className="text-sm text-[var(--foreground)] flex items-center gap-1 mb-1">
+                                  {studentData.allergies !== 'None' ? (
+                                    <AlertTriangle className="h-3.5 w-3.5 text-red-500" />
+                                  ) : (
+                                    <CheckCircle className="h-3.5 w-3.5 text-green-500" />
+                                  )}
+                                  <span>Allergies: {studentData.allergies}</span>
+                                </p>
+                              )}
+                              {studentData.medicalNotes && (
+                                <p className="text-sm text-[var(--foreground)]">{studentData.medicalNotes}</p>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
+                    </TabsContent>
 
-                {/* Right Column - Tabbed Interface */}
-                <div className="lg:col-span-2">
-                  <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-4">
-                      <TabsTrigger value="attendance" className="text-xs sm:text-sm">
-                        <Calendar className="h-4 w-4 mr-1.5 sm:mr-2" />
-                        <span className="hidden sm:inline">Attendance</span>
-                        <span className="sm:hidden">Att.</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="fees" className="text-xs sm:text-sm">
-                        <DollarSign className="h-4 w-4 mr-1.5 sm:mr-2" />
-                        <span className="hidden sm:inline">Fees</span>
-                        <span className="sm:hidden">Fees</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="notes" className="text-xs sm:text-sm">
-                        <FileText className="h-4 w-4 mr-1.5 sm:mr-2" />
-                        <span className="hidden sm:inline">Notes</span>
-                        <span className="sm:hidden">Notes</span>
-                      </TabsTrigger>
-                      <TabsTrigger value="activity" className="text-xs sm:text-sm">
-                        <Activity className="h-4 w-4 mr-1.5 sm:mr-2" />
-                        <span className="hidden sm:inline">Activity</span>
-                        <span className="sm:hidden">Act.</span>
-                      </TabsTrigger>
-                    </TabsList>
+                    {/* Parents Tab */}
+                    <TabsContent value="parents" className="mt-4">
+                      <div className="border border-[var(--border)] rounded-lg p-4">
+                        <h3 className="text-sm font-semibold text-[var(--foreground)] mb-4 flex items-center gap-2">
+                          <UserCheck className="h-4 w-4 text-[var(--muted-foreground)]" />
+                          Parent/Guardian Information
+                        </h3>
+                        {studentData.parents.length > 0 ? (
+                          <div className="space-y-4">
+                            {studentData.parents.map((parent, idx) => (
+                              <div key={parent.id || idx} className={idx > 0 ? 'pt-4 border-t border-[var(--border)]' : ''}>
+                                <div className="flex items-center justify-between mb-3">
+                                  <div className="flex items-center gap-2">
+                                    {parent.isPrimary && (
+                                      <Badge variant="outline" className="text-xs">Primary</Badge>
+                                    )}
+                                    <h4 className="text-sm font-semibold text-[var(--foreground)]">{parent.name}</h4>
+                                  </div>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setShowContactInfo(prev => ({ ...prev, [parent.id || idx]: !prev[parent.id || idx] }))}
+                                  >
+                                    {showContactInfo[parent.id || idx] ? (
+                                      <>
+                                        <EyeOff className="h-4 w-4 mr-2" />
+                                        Hide Contact
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Eye className="h-4 w-4 mr-2" />
+                                        Show Contact
+                                      </>
+                                    )}
+                                  </Button>
+                                </div>
+                                {showContactInfo[parent.id || idx] && (
+                                  <div className="space-y-3 mt-3">
+                                    {parent.email && (
+                                      <div>
+                                        <label className="text-xs text-[var(--muted-foreground)]">Email</label>
+                                        <p className="text-sm text-[var(--foreground)] flex items-center gap-2">
+                                          <Mail className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
+                                          <a 
+                                            href={`mailto:${parent.email}`}
+                                            className="text-blue-600 hover:underline truncate"
+                                          >
+                                            {parent.email}
+                                          </a>
+                                        </p>
+                                      </div>
+                                    )}
+                                    {(parent.phone || parent.backupPhone) && (
+                                      <div>
+                                        <label className="text-xs text-[var(--muted-foreground)] mb-2 block">Phone</label>
+                                        <DropdownMenu>
+                                          <DropdownMenuTrigger asChild>
+                                            <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                                              <Phone className="h-4 w-4 mr-2" />
+                                              Call
+                                              <ChevronDown className="h-4 w-4 ml-2" />
+                                            </Button>
+                                          </DropdownMenuTrigger>
+                                          <DropdownMenuContent>
+                                            {parent.phone && (
+                                              <DropdownMenuItem asChild>
+                                                <a href={`tel:${parent.phone}`} className="flex items-center w-full">
+                                                  <Phone className="h-4 w-4 mr-2" />
+                                                  {parent.phone}
+                                                </a>
+                                              </DropdownMenuItem>
+                                            )}
+                                            {parent.backupPhone && (
+                                              <DropdownMenuItem asChild>
+                                                <a href={`tel:${parent.backupPhone}`} className="flex items-center w-full">
+                                                  <Phone className="h-4 w-4 mr-2" />
+                                                  {parent.backupPhone} (Backup)
+                                                </a>
+                                              </DropdownMenuItem>
+                                            )}
+                                          </DropdownMenuContent>
+                                        </DropdownMenu>
+                                      </div>
+                                    )}
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        setSelectedParentId(parent.id)
+                                        setIsMessageModalOpen(true)
+                                      }}
+                                      className="w-full sm:w-auto"
+                                    >
+                                      <Send className="h-4 w-4 mr-2" />
+                                      Send Message
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-[var(--muted-foreground)] text-center py-4">
+                            No parent/guardian information available
+                          </p>
+                        )}
+                      </div>
+                    </TabsContent>
 
                     {/* Attendance Tab */}
                     <TabsContent value="attendance" className="mt-4">
@@ -861,8 +964,6 @@ export function StudentDetailModal({
                       </div>
                     </TabsContent>
                   </Tabs>
-                </div>
-              </div>
             </div>
 
             {/* Footer Actions */}
@@ -893,11 +994,22 @@ export function StudentDetailModal({
         onClose={() => setIsArchiveDialogOpen(false)}
         onConfirm={handleConfirmArchive}
         title="Archive Student"
-        message={`Are you sure you want to archive ${studentData.name}? This will disable their account and remove them from active students.`}
+        message={`Are you sure you want to archive ${studentData?.name}? This will disable their account and remove them from active students.`}
         confirmText="Archive Student"
         cancelText="Cancel"
         variant="destructive"
         isLoading={isArchiving}
+      />
+
+      {/* Send Message Modal */}
+      <SendMessageModal
+        isOpen={isMessageModalOpen}
+        onClose={() => {
+          setIsMessageModalOpen(false)
+          setSelectedParentId(null)
+        }}
+        onSend={handleSendMessage}
+        initialParentId={selectedParentId}
       />
     </>
   )

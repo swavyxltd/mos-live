@@ -17,6 +17,7 @@ interface SendMessageModalProps {
   onSend: (data: MessageData) => Promise<void>
   onMessageSent?: () => void // Callback to refresh messages list
   initialClassId?: string | null // Pre-select a class when opening
+  initialParentId?: string | null // Pre-select a parent when opening
 }
 
 interface MessageData {
@@ -38,7 +39,7 @@ interface Parent {
   email: string
 }
 
-export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent, initialClassId }: SendMessageModalProps) {
+export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent, initialClassId, initialParentId }: SendMessageModalProps) {
   const [formData, setFormData] = useState({
     title: '',
     message: '',
@@ -59,15 +60,24 @@ export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent, initi
     if (isOpen) {
       fetchClasses()
       fetchParents()
-      // If initialClassId is provided, set it and change audience to 'class'
-      if (initialClassId) {
+      // If initialParentId is provided, set it and change audience to 'individual'
+      if (initialParentId) {
+        setFormData(prev => ({
+          ...prev,
+          audience: 'individual',
+          parentId: initialParentId,
+          classId: ''
+        }))
+      } else if (initialClassId) {
+        // If initialClassId is provided, set it and change audience to 'class'
         setFormData(prev => ({
           ...prev,
           audience: 'class',
-          classId: initialClassId
+          classId: initialClassId,
+          parentId: ''
         }))
       } else {
-        // Reset form when opening without initialClassId
+        // Reset form when opening without initial values
         setFormData({
           title: '',
           message: '',
@@ -78,7 +88,7 @@ export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent, initi
         })
       }
     }
-  }, [isOpen, initialClassId])
+  }, [isOpen, initialClassId, initialParentId])
 
   const fetchClasses = async () => {
     setLoadingClasses(true)
