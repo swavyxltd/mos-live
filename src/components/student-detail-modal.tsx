@@ -629,76 +629,71 @@ export function StudentDetailModal({
                                   <h4 className="text-sm font-semibold text-[var(--foreground)]">{parent.name}</h4>
                                 </div>
                                 <div className="space-y-3">
-                                  {parent.email && (
-                                    <div>
-                                      <label className="text-xs text-[var(--muted-foreground)]">Email</label>
-                                      <p className="text-sm text-[var(--foreground)] flex items-center gap-2">
-                                        <Mail className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
-                                        <a 
-                                          href={`mailto:${parent.email}`}
-                                          className="hover:underline truncate"
-                                        >
-                                          {parent.email}
-                                        </a>
-                                      </p>
-                                    </div>
-                                  )}
-                                  {parent.phone && (
-                                    <div>
-                                      <label className="text-xs text-[var(--muted-foreground)]">Phone</label>
-                                      <div className="flex items-center gap-2">
+                                  <div>
+                                    <label className="text-xs text-[var(--muted-foreground)] mb-2 block">Contact Information</label>
+                                    <div className="flex flex-wrap items-center gap-4">
+                                      {parent.email && (
+                                        <p className="text-sm text-[var(--foreground)] flex items-center gap-2">
+                                          <Mail className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
+                                          <a 
+                                            href={`mailto:${parent.email}`}
+                                            className="hover:underline truncate"
+                                          >
+                                            {parent.email}
+                                          </a>
+                                        </p>
+                                      )}
+                                      {parent.phone && (
                                         <p className="text-sm text-[var(--foreground)] flex items-center gap-2">
                                           <Phone className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
                                           {parent.phone}
                                         </p>
-                                        <Button 
-                                          variant="outline" 
-                                          size="sm" 
-                                          asChild
-                                          className="ml-2"
-                                        >
-                                          <a href={`tel:${parent.phone}`}>
-                                            <Phone className="h-4 w-4 mr-2" />
-                                            Call
-                                          </a>
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  )}
-                                  {parent.backupPhone && (
-                                    <div>
-                                      <label className="text-xs text-[var(--muted-foreground)]">Backup Phone</label>
-                                      <div className="flex items-center gap-2">
+                                      )}
+                                      {parent.backupPhone && (
                                         <p className="text-sm text-[var(--foreground)] flex items-center gap-2">
                                           <Phone className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
-                                          {parent.backupPhone}
+                                          {parent.backupPhone} (Backup)
                                         </p>
-                                        <Button 
-                                          variant="outline" 
-                                          size="sm" 
-                                          asChild
-                                          className="ml-2"
-                                        >
-                                          <a href={`tel:${parent.backupPhone}`}>
-                                            <Phone className="h-4 w-4 mr-2" />
-                                            Call
-                                          </a>
-                                        </Button>
-                                      </div>
+                                      )}
                                     </div>
-                                  )}
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => {
-                                      setSelectedParentId(parent.id)
-                                      setIsMessageModalOpen(true)
-                                    }}
-                                    className="w-full sm:w-auto"
-                                  >
-                                    <Send className="h-4 w-4 mr-2" />
-                                    Send Message
-                                  </Button>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {parent.phone && (
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        asChild
+                                      >
+                                        <a href={`tel:${parent.phone}`}>
+                                          <Phone className="h-4 w-4 mr-2" />
+                                          Call
+                                        </a>
+                                      </Button>
+                                    )}
+                                    {parent.backupPhone && !parent.phone && (
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        asChild
+                                      >
+                                        <a href={`tel:${parent.backupPhone}`}>
+                                          <Phone className="h-4 w-4 mr-2" />
+                                          Call Backup
+                                        </a>
+                                      </Button>
+                                    )}
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        setSelectedParentId(parent.id)
+                                        setIsMessageModalOpen(true)
+                                      }}
+                                    >
+                                      <Send className="h-4 w-4 mr-2" />
+                                      Send Message
+                                    </Button>
+                                  </div>
                                 </div>
                               </div>
                             ))}
