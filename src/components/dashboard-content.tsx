@@ -137,10 +137,16 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
       fetchTodaysTasks()
     }, 30000) // 30 seconds
     
+    // Auto-refresh activity every 60 seconds to catch new activity
+    const activityInterval = setInterval(() => {
+      fetchRecentActivity()
+    }, 60000) // 60 seconds
+    
     // Also listen for page visibility changes to refresh when user returns
     const handleVisibilityChange = () => {
       if (!document.hidden) {
         fetchTodaysTasks()
+        fetchRecentActivity()
       }
     }
     
@@ -149,6 +155,7 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
     return () => {
       window.removeEventListener('refresh-dashboard', handleRefresh)
       clearInterval(tasksInterval)
+      clearInterval(activityInterval)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [initialStats])
@@ -487,7 +494,7 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
             icon={<Users className="h-4 w-4" />}
           />
         </Link>
-        <Link href="/invoices" className="block">
+        <Link href="/finances" className="block">
           <StatCard
             title="Monthly Revenue"
             value={`£${monthlyRevenue.toLocaleString()}`}
@@ -521,7 +528,7 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
             icon={<FileText className="h-4 w-4" />}
           />
         </Link>
-        <Link href="/invoices" className="block">
+        <Link href="/payments?status=overdue" className="block">
           <StatCard
             title="Overdue Payments"
             value={overduePayments}
@@ -604,20 +611,20 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
 
                   return (
                     <div key={task.id}>
-                      <div className="flex items-center gap-2 p-4 hover:bg-[var(--accent)] transition-colors">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 p-4 hover:bg-[var(--accent)] transition-colors">
                         <Link
                           href={task.link}
-                          className="flex items-center justify-between gap-4 flex-1 min-w-0"
+                          className="flex items-center justify-between gap-4 flex-1 min-w-0 w-full sm:w-auto"
                         >
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div className="flex items-center gap-3 flex-1 min-w-0 w-full sm:w-auto">
                             <div className="w-10 h-10 bg-[var(--muted)] rounded-lg flex items-center justify-center flex-shrink-0">
                               <IconComponent className="h-5 w-5 text-[var(--foreground)]" />
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <h3 className="text-sm font-semibold text-[var(--foreground)] mb-1">
+                            <div className="flex-1 min-w-0 w-full sm:w-auto">
+                              <h3 className="text-sm font-semibold text-[var(--foreground)] mb-1 break-words">
                                 {task.title}
                               </h3>
-                              <p className="text-sm text-[var(--muted-foreground)]">
+                              <p className="text-sm text-[var(--muted-foreground)] break-words">
                                 {task.description}
                               </p>
                             </div>
@@ -637,7 +644,7 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
                             <Button
                               variant="outline"
                               size="sm"
-                              className="flex-shrink-0 h-8 px-3 text-xs"
+                              className="flex-shrink-0 h-8 px-3 text-xs w-full sm:w-auto"
                               onClick={(e) => {
                                 e.preventDefault()
                                 e.stopPropagation()
@@ -858,8 +865,8 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
                 <TableHeader>
                   <TableRow>
                     <TableHead>Class</TableHead>
-                    <TableHead>Teacher</TableHead>
-                    <TableHead>Students</TableHead>
+                    <TableHead className="hidden sm:table-cell">Teacher</TableHead>
+                    <TableHead className="hidden sm:table-cell">Students</TableHead>
                     <TableHead>Attendance</TableHead>
                     <TableHead>Status</TableHead>
                   </TableRow>
@@ -868,8 +875,8 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
                   {topPerformingClasses.map((classItem, index) => (
                     <TableRow key={index}>
                       <TableCell className="font-medium">{classItem.name}</TableCell>
-                      <TableCell>{classItem.teacher}</TableCell>
-                      <TableCell>{classItem.students}</TableCell>
+                      <TableCell className="hidden sm:table-cell">{classItem.teacher}</TableCell>
+                      <TableCell className="hidden sm:table-cell">{classItem.students}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <div className="w-16 bg-gray-200 rounded-full h-2">

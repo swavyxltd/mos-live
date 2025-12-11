@@ -25,7 +25,7 @@ export function QuickAddMenu({ onAddStudent, onAddTeacher, onAddClass }: QuickAd
           Quick Add
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56 bg-white border border-gray-200 shadow-lg rounded-md">
+      <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)] sm:w-56 bg-white border border-gray-200 shadow-lg rounded-md">
         <DropdownMenuItem onClick={onAddStudent}>
           <UserPlus className="mr-2 h-4 w-4" />
           <span>Add Student</span>
