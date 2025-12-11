@@ -320,14 +320,20 @@ export function StudentDetailModal({
       })
 
       if (!response.ok) {
-        throw new Error('Failed to archive student')
+        const errorData = await response.json().catch(() => ({}))
+        const errorMessage = errorData.error || errorData.details || 'Failed to archive student'
+        throw new Error(errorMessage)
       }
 
+      const updatedStudent = await response.json()
       onArchive(studentData.id, true)
       toast.success('Student archived successfully')
       setIsArchiveDialogOpen(false)
-    } catch (error) {
-      toast.error('Failed to archive student')
+      // Refresh student data
+      await fetchStudentDetails(studentData.id)
+    } catch (error: any) {
+      console.error('Archive error:', error)
+      toast.error(error.message || 'Failed to archive student')
     } finally {
       setIsArchiving(false)
     }

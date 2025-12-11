@@ -26,6 +26,18 @@ async function handlePOST(
     }
     const { isArchived } = await request.json()
     
+    // First check if student exists
+    const existingStudent = await prisma.student.findFirst({
+      where: {
+        id,
+        orgId
+      }
+    })
+    
+    if (!existingStudent) {
+      return NextResponse.json({ error: 'Student not found' }, { status: 404 })
+    }
+    
     const archivedAt = isArchived ? new Date() : null
     
     // Update student
