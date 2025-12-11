@@ -211,6 +211,15 @@ export function StudentDetailModal({
       const response = await fetch(`/api/students/${id}/details`)
       if (response.ok) {
         const data = await response.json()
+        // Ensure fees data exists
+        if (!data.fees) {
+          data.fees = {
+            currentBalance: 0,
+            totalPaidThisYear: 0,
+            paymentRecords: [],
+            invoices: []
+          }
+        }
         setStudentData(data)
       } else {
         toast.error('Failed to load student details')
