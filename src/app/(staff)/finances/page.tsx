@@ -5,6 +5,9 @@ import { authOptions } from '@/lib/auth'
 import { getActiveOrg } from '@/lib/org'
 import { prisma } from '@/lib/prisma'
 
+// This page uses dynamic functions (getServerSession, cookies) so it must be dynamic
+export const dynamic = 'force-dynamic'
+
 async function getInitialFinanceStats(): Promise<FinanceStats | null> {
   const [stats, session] = await Promise.all([
     getDashboardStats(),

@@ -7,6 +7,9 @@ import { getActiveOrg, getUserRoleInOrg } from '@/lib/org'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 
+// This page uses dynamic functions (getServerSession, cookies) so it must be dynamic
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'Dashboard | Madrasah OS',
   description: 'Staff dashboard overview',

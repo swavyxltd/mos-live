@@ -3,7 +3,12 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   serverExternalPackages: ['@prisma/client'],
   images: {
-    domains: ['avatars.githubusercontent.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'avatars.githubusercontent.com',
+      },
+    ],
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
@@ -15,10 +20,6 @@ const nextConfig: NextConfig = {
   // TODO: Fix TypeScript errors and remove ignoreBuildErrors before production
   typescript: {
     ignoreBuildErrors: true,
-  },
-  // TODO: Fix ESLint errors and remove ignoreDuringBuilds before production
-  eslint: {
-    ignoreDuringBuilds: true,
   },
   env: {
     CUSTOM_KEY: process.env.CUSTOM_KEY,

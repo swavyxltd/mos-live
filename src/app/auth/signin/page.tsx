@@ -13,16 +13,31 @@ function SignInPageContent() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
+  const [hasCheckedSession, setHasCheckedSession] = useState(false)
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
   const resetSuccess = searchParams.get('reset') === 'success'
   const signupSuccess = searchParams.get('signup') === 'success'
 
   useEffect(() => {
+    // Only check session once on mount
+    if (hasCheckedSession) return
+    
+    let isMounted = true
+    
     // Check if already signed in
     getSession().then((session) => {
+      if (!isMounted) return
+      setHasCheckedSession(true)
       if ((session?.user as any)?.roleHints) {
         const redirectUrl = getPostLoginRedirect((session.user as any).roleHints)
-        window.location.href = redirectUrl
+        // Use replace instead of href to prevent back button issues and infinite loops
+        window.location.replace(redirectUrl)
+        return
+      }
+    }).catch((err) => {
+      console.error('Error checking session:', err)
+      if (isMounted) {
+        setHasCheckedSession(true)
       }
     })
 
@@ -39,7 +54,11 @@ function SignInPageContent() {
       // Clear the query parameter
       window.history.replaceState({}, '', '/auth/signin')
     }
-  }, [callbackUrl, resetSuccess, signupSuccess])
+    
+    return () => {
+      isMounted = false
+    }
+  }, [hasCheckedSession, resetSuccess, signupSuccess])
 
   const handleCredentialsSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
