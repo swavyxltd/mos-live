@@ -174,8 +174,9 @@ export function PaymentMethodsTab() {
           acceptsCard: settings.acceptsCard,
           acceptsCash: settings.acceptsCash,
           acceptsBankTransfer: settings.acceptsBankTransfer,
-          cashPaymentEnabled: settings.cashPaymentEnabled,
-          bankTransferEnabled: settings.bankTransferEnabled
+          // Keep both field sets in sync
+          cashPaymentEnabled: settings.acceptsCash,
+          bankTransferEnabled: settings.acceptsBankTransfer
         })
       })
 
@@ -487,7 +488,7 @@ export function PaymentMethodsTab() {
               </div>
               <div className="shrink-0">
                 <Switch
-                  checked={settings.acceptsBankTransfer ?? settings.bankTransferEnabled}
+                  checked={settings.acceptsBankTransfer ?? settings.bankTransferEnabled ?? false}
                   onCheckedChange={(checked) => {
                     handleSettingChange('acceptsBankTransfer', checked)
                     handleSettingChange('bankTransferEnabled', checked)

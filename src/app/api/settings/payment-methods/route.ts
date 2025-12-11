@@ -22,11 +22,12 @@ async function handleGET() {
     }
 
     // Return payment method settings (without sensitive keys)
+    // Return actual saved values, defaulting to false if null
     return NextResponse.json({
       stripeEnabled: org.stripeEnabled,
       autoPaymentEnabled: org.autoPaymentEnabled,
-      cashPaymentEnabled: org.cashPaymentEnabled,
-      bankTransferEnabled: org.bankTransferEnabled,
+      cashPaymentEnabled: org.cashPaymentEnabled ?? false,
+      bankTransferEnabled: org.bankTransferEnabled ?? false,
       acceptsCard: org.acceptsCard ?? false,
       acceptsCash: org.acceptsCash ?? false,
       acceptsBankTransfer: org.acceptsBankTransfer ?? false,
@@ -99,16 +100,19 @@ async function handlePUT(request: NextRequest) {
       )
     }
 
-    // Validate that at least one payment method is enabled
-    const cardEnabled = acceptsCard ?? false
-    const cashEnabled = acceptsCash ?? true
-    const bankEnabled = acceptsBankTransfer ?? true
-    
-    if (!cardEnabled && !cashEnabled && !bankEnabled) {
-      return NextResponse.json(
-        { error: 'At least one payment method must be enabled' },
-        { status: 400 }
-      )
+    // Validate that at least one payment method is enabled (only if payment methods are being updated)
+    if (acceptsCard !== undefined || acceptsCash !== undefined || acceptsBankTransfer !== undefined) {
+      // Get current values for fields not being updated
+      const currentCard = acceptsCard !== undefined ? acceptsCard : (org.acceptsCard ?? false)
+      const currentCash = acceptsCash !== undefined ? acceptsCash : (org.acceptsCash ?? false)
+      const currentBank = acceptsBankTransfer !== undefined ? acceptsBankTransfer : (org.acceptsBankTransfer ?? false)
+      
+      if (!currentCard && !currentCash && !currentBank) {
+        return NextResponse.json(
+          { error: 'At least one payment method must be enabled' },
+          { status: 400 }
+        )
+      }
     }
 
     // Validate card payment requires Stripe Connect
@@ -127,27 +131,73 @@ async function handlePUT(request: NextRequest) {
       )
     }
 
+    // Build update data object, only including fields that are explicitly provided
+    const updateData: any = {
+      updatedAt: new Date()
+    }
+
+    // Only update fields that are explicitly provided in the request
+    if (stripeEnabled !== undefined) {
+      updateData.stripeEnabled = stripeEnabled
+      if (stripeEnabled) {
+        updateData.stripePublishableKey = stripePublishableKey || null
+        updateData.stripeSecretKey = stripeSecretKey || null
+        updateData.stripeWebhookSecret = stripeWebhookSecret || null
+      } else {
+        updateData.stripePublishableKey = null
+        updateData.stripeSecretKey = null
+        updateData.stripeWebhookSecret = null
+      }
+    }
+
+    if (autoPaymentEnabled !== undefined) {
+      updateData.autoPaymentEnabled = autoPaymentEnabled
+    }
+
+    if (cashPaymentEnabled !== undefined) {
+      updateData.cashPaymentEnabled = cashPaymentEnabled
+    }
+
+    if (bankTransferEnabled !== undefined) {
+      updateData.bankTransferEnabled = bankTransferEnabled
+    }
+
+    if (acceptsCard !== undefined) {
+      updateData.acceptsCard = acceptsCard
+    }
+
+    if (acceptsCash !== undefined) {
+      updateData.acceptsCash = acceptsCash
+    }
+
+    if (acceptsBankTransfer !== undefined) {
+      updateData.acceptsBankTransfer = acceptsBankTransfer
+    }
+
+    if (billingDay !== undefined) {
+      updateData.billingDay = billingDay !== null ? billingDay : null
+    }
+
+    if (paymentInstructions !== undefined) {
+      updateData.paymentInstructions = paymentInstructions || null
+    }
+
+    if (bankAccountName !== undefined) {
+      updateData.bankAccountName = bankAccountName || null
+    }
+
+    if (bankSortCode !== undefined) {
+      updateData.bankSortCode = bankSortCode || null
+    }
+
+    if (bankAccountNumber !== undefined) {
+      updateData.bankAccountNumber = bankAccountNumber || null
+    }
+
     // Update organisation payment settings
     const updatedOrg = await prisma.org.update({
       where: { id: org.id },
-      data: {
-        stripeEnabled,
-        stripePublishableKey: stripeEnabled ? stripePublishableKey : null,
-        stripeSecretKey: stripeEnabled ? stripeSecretKey : null,
-        stripeWebhookSecret: stripeEnabled ? stripeWebhookSecret : null,
-        autoPaymentEnabled,
-        cashPaymentEnabled,
-        bankTransferEnabled,
-        acceptsCard: acceptsCard ?? false,
-        acceptsCash: acceptsCash ?? true,
-        acceptsBankTransfer: acceptsBankTransfer ?? true,
-        billingDay: billingDay !== undefined ? billingDay : null,
-        paymentInstructions,
-        bankAccountName: bankAccountName || null,
-        bankSortCode: bankSortCode || null,
-        bankAccountNumber: bankAccountNumber || null,
-        updatedAt: new Date()
-      }
+      data: updateData
     })
 
     return NextResponse.json({
@@ -155,11 +205,11 @@ async function handlePUT(request: NextRequest) {
       settings: {
         stripeEnabled: updatedOrg.stripeEnabled,
         autoPaymentEnabled: updatedOrg.autoPaymentEnabled,
-        cashPaymentEnabled: updatedOrg.cashPaymentEnabled,
-        bankTransferEnabled: updatedOrg.bankTransferEnabled,
+        cashPaymentEnabled: updatedOrg.cashPaymentEnabled ?? false,
+        bankTransferEnabled: updatedOrg.bankTransferEnabled ?? false,
         acceptsCard: updatedOrg.acceptsCard ?? false,
-        acceptsCash: updatedOrg.acceptsCash ?? true,
-        acceptsBankTransfer: updatedOrg.acceptsBankTransfer ?? true,
+        acceptsCash: updatedOrg.acceptsCash ?? false,
+        acceptsBankTransfer: updatedOrg.acceptsBankTransfer ?? false,
         billingDay: updatedOrg.billingDay ?? updatedOrg.feeDueDay ?? 1,
         paymentInstructions: updatedOrg.paymentInstructions,
         bankAccountName: updatedOrg.bankAccountName,

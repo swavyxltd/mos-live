@@ -39,8 +39,11 @@ export default function ParentInvoicesPage() {
   // Ensure fees is always an array
   const safeFees = Array.isArray(fees) ? fees : []
   const [paymentSettings, setPaymentSettings] = useState({
-    cashPaymentEnabled: true,
-    bankTransferEnabled: true,
+    acceptsCard: false,
+    acceptsCash: false,
+    acceptsBankTransfer: false,
+    cashPaymentEnabled: false,
+    bankTransferEnabled: false,
     paymentInstructions: '',
     bankAccountName: null as string | null,
     bankSortCode: null as string | null,
@@ -57,9 +60,10 @@ export default function ParentInvoicesPage() {
         setPaymentSettings(settings)
         
         // Auto-select if only one method is available
+        // Use acceptsCash/acceptsBankTransfer as primary, fallback to cashPaymentEnabled/bankTransferEnabled
         const availableMethods = []
-        if (settings.cashPaymentEnabled) availableMethods.push('CASH')
-        if (settings.bankTransferEnabled) availableMethods.push('BANK_TRANSFER')
+        if (settings.acceptsCash || settings.cashPaymentEnabled) availableMethods.push('CASH')
+        if (settings.acceptsBankTransfer || settings.bankTransferEnabled) availableMethods.push('BANK_TRANSFER')
         
         // Also fetch parent's payment preferences
         const paymentResponse = await fetch('/api/settings/payment')
@@ -616,7 +620,9 @@ export default function ParentInvoicesPage() {
         {/* Payment Methods Tab */}
         <TabsContent value="settings" className="space-y-6">
           {/* Payment Method Preference */}
-          {(paymentSettings.cashPaymentEnabled || paymentSettings.bankTransferEnabled) && (
+          {((paymentSettings.acceptsCash || paymentSettings.cashPaymentEnabled) || 
+            (paymentSettings.acceptsBankTransfer || paymentSettings.bankTransferEnabled) ||
+            paymentSettings.acceptsCard) && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
@@ -630,7 +636,7 @@ export default function ParentInvoicesPage() {
                 </p>
                 <div>
                   {/* Cash Payment Toggle */}
-                  {paymentSettings.cashPaymentEnabled && (
+                  {(paymentSettings.acceptsCash || paymentSettings.cashPaymentEnabled) && (
                     <div>
                       <div className="flex items-center justify-between p-4">
                       <div className="flex items-center space-x-3">
@@ -649,21 +655,21 @@ export default function ParentInvoicesPage() {
                         onCheckedChange={(checked) => {
                           if (checked) {
                             handlePaymentMethodChange('CASH')
-                          } else if (paymentSettings.bankTransferEnabled) {
+                          } else if (paymentSettings.acceptsBankTransfer || paymentSettings.bankTransferEnabled) {
                             // If unchecking cash and bank is available, switch to bank
                             handlePaymentMethodChange('BANK_TRANSFER')
                           }
                         }}
-                        disabled={!paymentSettings.bankTransferEnabled && preferredPaymentMethod === 'CASH'}
+                        disabled={!(paymentSettings.acceptsBankTransfer || paymentSettings.bankTransferEnabled) && preferredPaymentMethod === 'CASH'}
                       />
                       </div>
                     </div>
                   )}
 
                   {/* Bank Transfer Toggle */}
-                  {paymentSettings.bankTransferEnabled && (
+                  {(paymentSettings.acceptsBankTransfer || paymentSettings.bankTransferEnabled) && (
                     <div>
-                      {paymentSettings.cashPaymentEnabled && (
+                      {(paymentSettings.acceptsCash || paymentSettings.cashPaymentEnabled) && (
                         <div className="border-b border-[var(--border)]" />
                       )}
                       <div className="flex items-center justify-between p-4">
@@ -683,12 +689,12 @@ export default function ParentInvoicesPage() {
                         onCheckedChange={(checked) => {
                           if (checked) {
                             handlePaymentMethodChange('BANK_TRANSFER')
-                          } else if (paymentSettings.cashPaymentEnabled) {
+                          } else if (paymentSettings.acceptsCash || paymentSettings.cashPaymentEnabled) {
                             // If unchecking bank and cash is available, switch to cash
                             handlePaymentMethodChange('CASH')
                           }
                         }}
-                        disabled={!paymentSettings.cashPaymentEnabled && preferredPaymentMethod === 'BANK_TRANSFER'}
+                        disabled={!(paymentSettings.acceptsCash || paymentSettings.cashPaymentEnabled) && preferredPaymentMethod === 'BANK_TRANSFER'}
                       />
                       </div>
                     </div>
@@ -696,7 +702,7 @@ export default function ParentInvoicesPage() {
                 </div>
                 
                 {/* Validation Message */}
-                {!preferredPaymentMethod && (paymentSettings.cashPaymentEnabled && paymentSettings.bankTransferEnabled) && (
+                {!preferredPaymentMethod && ((paymentSettings.acceptsCash || paymentSettings.cashPaymentEnabled) && (paymentSettings.acceptsBankTransfer || paymentSettings.bankTransferEnabled)) && (
                   <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                     <p className="text-sm text-yellow-800">
                       <AlertTriangle className="h-4 w-4 inline mr-2" />
@@ -719,7 +725,7 @@ export default function ParentInvoicesPage() {
           )}
 
           {/* Bank Transfer Details */}
-          {preferredPaymentMethod === 'BANK_TRANSFER' && paymentSettings.bankTransferEnabled && (
+          {preferredPaymentMethod === 'BANK_TRANSFER' && (paymentSettings.acceptsBankTransfer || paymentSettings.bankTransferEnabled) && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
