@@ -29,9 +29,19 @@ export function SetupGuide() {
   const [copiedLink, setCopiedLink] = useState(false)
   const router = useRouter()
 
+  // Check if setup guide was permanently dismissed
+  useEffect(() => {
+    const dismissedPermanently = localStorage.getItem('setup-guide-dismissed')
+    if (dismissedPermanently === 'true') {
+      setDismissed(true)
+    }
+  }, [])
+
   const fetchSetupStatus = async () => {
     try {
-      const response = await fetch('/api/dashboard/setup-status')
+      const response = await fetch('/api/dashboard/setup-status', {
+        cache: 'no-store'
+      })
       if (response.ok) {
         const data = await response.json()
         setSetupStatus(data)
@@ -45,9 +55,19 @@ export function SetupGuide() {
 
   useEffect(() => {
     fetchSetupStatus()
-    // Refresh every 30 seconds to check for updates
-    const interval = setInterval(fetchSetupStatus, 30000)
-    return () => clearInterval(interval)
+    // Refresh every 5 seconds to check for updates (more frequent)
+    const interval = setInterval(fetchSetupStatus, 5000)
+    
+    // Also refresh when window gains focus (user returns from settings page)
+    const handleFocus = () => {
+      fetchSetupStatus()
+    }
+    window.addEventListener('focus', handleFocus)
+    
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('focus', handleFocus)
+    }
   }, [])
 
   const handleCopyLink = async () => {
@@ -63,13 +83,51 @@ export function SetupGuide() {
     }
   }
 
-  // Don't show if all steps are completed or dismissed
-  if (loading || !setupStatus) {
+  const handleDismissPermanently = () => {
+    localStorage.setItem('setup-guide-dismissed', 'true')
+    setDismissed(true)
+  }
+
+  // Don't show if dismissed
+  if (loading || !setupStatus || dismissed) {
     return null
   }
 
-  if (dismissed || setupStatus.completionPercentage === 100) {
-    return null
+  // Show completion message when all steps are done
+  if (setupStatus.completionPercentage === 100) {
+    return (
+      <Card className="mb-6 border-2 border-green-200 bg-green-50">
+        <CardHeader className="pb-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <CheckCircle2 className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg font-semibold text-green-900">
+                    You are ready to run your madrasah!
+                  </CardTitle>
+                  <p className="text-sm text-green-700 mt-1">
+                    All setup steps are complete. Your madrasah is ready to go.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-end">
+            <Button
+              onClick={handleDismissPermanently}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              Done
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
   const setupSteps = [

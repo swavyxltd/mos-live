@@ -36,9 +36,9 @@ async function handleGET(request: NextRequest) {
     // 1. Check payment methods for parents
     // At least one payment method should be enabled
     const hasPaymentMethods = 
-      (org.acceptsCard && (org.stripeConnectAccountId || org.stripePublishableKey)) ||
-      org.acceptsCash ||
-      org.acceptsBankTransfer
+      (org.acceptsCard === true && (org.stripeConnectAccountId || org.stripePublishableKey)) ||
+      org.acceptsCash === true ||
+      org.acceptsBankTransfer === true
     setupStatus.paymentMethodsConfigured = hasPaymentMethods
 
     // 2. Check if staff exists (excluding the current user if they're the only one)
@@ -103,4 +103,6 @@ async function handleGET(request: NextRequest) {
 }
 
 export const GET = withRateLimit(handleGET)
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
