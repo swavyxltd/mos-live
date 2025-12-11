@@ -48,7 +48,9 @@ async function handleGET(
         id,
         orgId: org.id
       },
-      include: {
+      select: {
+        id: true,
+        createdAt: true,
         StudentClass: {
           include: {
             Class: {
@@ -126,9 +128,14 @@ async function handleGET(
       time: record.time || undefined
     }))
 
+    // Get enrollment date - use student creation date as enrollment date
+    // (StudentClass doesn't have createdAt, so we use Student.createdAt)
+    const enrollmentDate = student.createdAt
+
     return NextResponse.json({
       attendance: attendanceData,
-      scheduledDays: classSchedules // Return the scheduled days
+      scheduledDays: classSchedules, // Return the scheduled days
+      enrollmentDate: enrollmentDate.toISOString() // Return enrollment date
     })
   } catch (error: any) {
     logger.error('Error fetching student attendance', error)
