@@ -8,5 +8,5 @@ interface TeacherRedirectProps {
 
 export default async function TeacherRedirect({ params }: TeacherRedirectProps) {
   const { id } = await params
-  redirect(`/staff/${id}`)
+  redirect(`/staff/${id}/edit`)
 }

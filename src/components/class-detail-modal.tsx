@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import { EditClassModal } from '@/components/edit-class-modal'
+import { StaffDetailModal } from '@/components/staff-detail-modal'
 import { 
   BookOpen, 
   Users, 
@@ -65,6 +66,9 @@ export function ClassDetailModal({ classId, isOpen, onClose, onClassUpdate }: Cl
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isStaffModalOpen, setIsStaffModalOpen] = useState(false)
+  const [staffData, setStaffData] = useState<any>(null)
+  const [loadingStaff, setLoadingStaff] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -187,6 +191,66 @@ export function ClassDetailModal({ classId, isOpen, onClose, onClassUpdate }: Cl
       toast.error('Failed to archive class')
     } finally {
       setIsDeleting(false)
+    }
+  }
+
+  const fetchStaffData = async (userId: string) => {
+    setLoadingStaff(true)
+    try {
+      // Fetch staff membership data
+      const response = await fetch(`/api/staff?userId=${userId}`)
+      if (response.ok) {
+        const data = await response.json()
+        const membership = data.membership
+        
+        if (membership && membership.user) {
+          // Fetch all classes and filter by teacherId
+          const classesResponse = await fetch('/api/classes')
+          let classes: any[] = []
+          if (classesResponse.ok) {
+            const allClasses = await classesResponse.json()
+            // Filter classes for this teacher
+            classes = allClasses.filter((cls: any) => cls.teacherId === userId || cls.User?.id === userId)
+          }
+          
+          const totalStudents = classes.reduce((sum, cls) => sum + (cls._count?.StudentClass || 0), 0)
+          
+          setStaffData({
+            id: membership.user.id,
+            name: membership.user.name || membership.user.email || 'Unknown',
+            email: membership.user.email || '',
+            phone: membership.user.phone || '',
+            username: membership.user.email?.split('@')[0] || '',
+            isActive: !membership.user.isArchived,
+            createdAt: membership.user.createdAt ? new Date(membership.user.createdAt) : new Date(),
+            updatedAt: membership.user.updatedAt ? new Date(membership.user.updatedAt) : new Date(),
+            classes: classes.map((cls: any) => ({
+              id: cls.id,
+              name: cls.name,
+              students: cls._count?.StudentClass || 0
+            })),
+            _count: {
+              classes: classes.length
+            }
+          })
+          setIsStaffModalOpen(true)
+        } else {
+          toast.error('Staff member not found')
+        }
+      } else {
+        toast.error('Failed to load staff details')
+      }
+    } catch (error) {
+      console.error('Failed to fetch staff data', error)
+      toast.error('Failed to load staff details')
+    } finally {
+      setLoadingStaff(false)
+    }
+  }
+
+  const handleViewProfile = () => {
+    if (classData?.teacher?.id) {
+      fetchStaffData(classData.teacher.id)
     }
   }
 
@@ -463,12 +527,20 @@ export function ClassDetailModal({ classId, isOpen, onClose, onClassUpdate }: Cl
                                 </Button>
                               </Link>
                               {classData.teacher.id && (
-                                <Link href={`/staff/${classData.teacher.id}`} className="flex-1">
-                                  <Button variant="outline" size="sm" className="w-full">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="flex-1 w-full"
+                                  onClick={handleViewProfile}
+                                  disabled={loadingStaff}
+                                >
+                                  {loadingStaff ? (
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  ) : (
                                     <User className="h-4 w-4 mr-2" />
-                                    View Profile
-                                  </Button>
-                                </Link>
+                                  )}
+                                  View Profile
+                                </Button>
                               )}
                             </div>
                           </div>
@@ -540,6 +612,20 @@ export function ClassDetailModal({ classId, isOpen, onClose, onClassUpdate }: Cl
         cancelText="Cancel"
         variant="destructive"
         isLoading={isDeleting}
+      />
+
+      {/* Staff Detail Modal */}
+      <StaffDetailModal
+        staff={staffData}
+        isOpen={isStaffModalOpen}
+        onClose={() => {
+          setIsStaffModalOpen(false)
+          setStaffData(null)
+        }}
+        onEdit={(staffId) => {
+          setIsStaffModalOpen(false)
+          router.push(`/staff/${staffId}/edit`)
+        }}
       />
     </>
   )

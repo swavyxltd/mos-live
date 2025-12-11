@@ -18,12 +18,12 @@ export function EditTeacherForm({ teacherId, initialData }: EditTeacherFormProps
     // In production, you would use prisma.staff.update()
     await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API call
     
-    // Redirect back to staff details page
-    router.push(`/staff/${teacherId}`)
+    // Redirect back to staff list page
+    router.push('/staff')
   }
 
   const handleCancel = () => {
-    router.push(`/staff/${teacherId}`)
+    router.push('/staff')
   }
 
   return (

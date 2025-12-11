@@ -98,10 +98,10 @@ export default async function EditStaffPage({ params }: EditStaffPageProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Link href={`/staff/${id}`}>
+        <Link href="/staff">
           <button className="flex items-center gap-2 text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors">
             <ArrowLeft className="h-4 w-4" />
-            Back to Staff Details
+            Back to Staff
           </button>
         </Link>
       </div>

@@ -308,7 +308,7 @@ async function handleGET(request: NextRequest) {
           subtitle: staffInfo.length > 0 
             ? `${membership.role} • ${staffInfo.join(' • ')}`
             : `Role: ${membership.role}`,
-          url: `/staff/${membership.User.id}`,
+          url: `/staff/${membership.User.id}/edit`,
           icon: 'UserCheck',
         })
       })
