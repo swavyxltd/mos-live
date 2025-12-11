@@ -3,7 +3,7 @@
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useState, useEffect, Suspense } from 'react'
 import Image from 'next/image'
-import { Mail, Lock, User, Calendar, AlertCircle, Loader2, CheckCircle, Phone, MapPin, CreditCard, Gift, Building2, Coins, Shield, PhoneCall, Globe, MessageSquare } from 'lucide-react'
+import { Mail, Lock, User, Calendar, AlertCircle, Loader2, CheckCircle, Phone, MapPin, CreditCard, Gift, Building2, Coins, Shield, PhoneCall, Globe, MessageSquare, Info } from 'lucide-react'
 import { isValidEmail, isValidDateOfBirth, isValidName, isValidPhone, isValidUKPostcode } from '@/lib/input-validation'
 import { Onboarding01 } from '@/components/onboarding-01'
 import { formatDate } from '@/lib/utils'
@@ -987,12 +987,15 @@ function ParentSignupForm() {
                           <p className="text-xs text-neutral-600">
                             Set up a standing order for automatic monthly payments.
                           </p>
-                          <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                            <p className="text-xs font-medium text-green-900 mb-2">Standing Order Details:</p>
-                            <div className="space-y-1 text-xs text-green-800">
+                          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div className="flex items-center space-x-2 mb-3">
+                              <Info className="h-4 w-4 text-blue-600" />
+                              <p className="text-xs font-medium text-blue-900">Standing Order Details</p>
+                            </div>
+                            <div className="space-y-2 text-xs text-blue-800 mb-3">
                               <div className="flex justify-between">
                                 <span className="font-medium">Account Name:</span>
-                                <span>{paymentSettings.bankAccountName}</span>
+                                <span className="font-mono">{paymentSettings.bankAccountName}</span>
                               </div>
                               <div className="flex justify-between">
                                 <span className="font-medium">Sort Code:</span>
@@ -1007,9 +1010,13 @@ function ParentSignupForm() {
                                 <span>The {paymentSettings.billingDay}{paymentSettings.billingDay === 1 ? 'st' : paymentSettings.billingDay === 2 ? 'nd' : paymentSettings.billingDay === 3 ? 'rd' : 'th'} of each month</span>
                               </div>
                             </div>
-                            <p className="text-xs text-green-700 mt-2 italic">
-                              Please set up this standing order with your bank to ensure timely payments.
-                            </p>
+                            <div className="mt-3 p-2 bg-white border border-blue-200 rounded">
+                              <p className="text-xs font-medium text-blue-900 mb-1">How to set up:</p>
+                              <p className="text-xs text-blue-800">
+                                Set up a standing order through your online banking or mobile banking app using the details above. 
+                                Once set up, payments will be made automatically each month—no need to remember to pay manually!
+                              </p>
+                            </div>
                           </div>
                         </div>
                       ) : (

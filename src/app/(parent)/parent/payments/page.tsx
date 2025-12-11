@@ -24,7 +24,8 @@ import {
   AlertTriangle,
   Calendar,
   Building2,
-  Banknote
+  Banknote,
+  Info
 } from 'lucide-react'
 import { PaymentModal } from '@/components/payment-modal'
 import { TableSkeleton, Skeleton, StatCardSkeleton } from '@/components/loading/skeleton'
@@ -750,14 +751,26 @@ export default function ParentInvoicesPage() {
                         <p className="text-sm font-medium text-gray-900 mt-1">{paymentSettings.bankAccountNumber || 'N/A'}</p>
                       </div>
                     </div>
-                    <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <HelpCircle className="h-4 w-4 text-gray-600" />
-                        <span className="text-sm font-medium text-gray-900">Setting up a Standing Order</span>
+                    <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-center space-x-2 mb-3">
+                        <Info className="h-4 w-4 text-blue-600" />
+                        <span className="text-sm font-medium text-blue-900">Setting up a Standing Order</span>
                       </div>
-                      <p className="text-sm text-gray-700">
+                      <p className="text-sm text-blue-800 mb-2">
                         A standing order is an automatic payment that sends money from your bank account to the school each month. 
-                        You can set this up through your online banking using the details above. Once set up, payments will be made automatically each month on the due date.
+                        You can set this up through your online banking or mobile banking app using the account details above.
+                      </p>
+                      <div className="mt-3 p-3 bg-white border border-blue-200 rounded">
+                        <p className="text-sm font-medium text-blue-900 mb-1">Payment Schedule:</p>
+                        <p className="text-sm text-blue-800">
+                          <strong>Payment Date:</strong> The {paymentSettings.billingDay || 1}{paymentSettings.billingDay === 1 ? 'st' : paymentSettings.billingDay === 2 ? 'nd' : paymentSettings.billingDay === 3 ? 'rd' : 'th'} of each month
+                        </p>
+                        <p className="text-sm text-blue-800 mt-1">
+                          <strong>Amount:</strong> Your monthly fee amount (as shown in your invoices)
+                        </p>
+                      </div>
+                      <p className="text-sm text-blue-800 mt-3 font-medium">
+                        Once set up, payments will be made automatically each month—no need to remember to pay manually!
                       </p>
                     </div>
                   </>

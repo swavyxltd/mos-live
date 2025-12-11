@@ -91,24 +91,25 @@ export function PaymentMethodsTab() {
       const response = await fetch('/api/settings/payment-methods', {
         cache: 'no-store',
         headers: {
-          'Cache-Control': 'no-cache'
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
         }
       })
       if (response.ok) {
         const data = await response.json()
-        // Ensure both field sets are in sync - use the accepts* fields as source of truth
-        const acceptsCash = data.acceptsCash ?? data.cashPaymentEnabled ?? false
-        const acceptsBankTransfer = data.acceptsBankTransfer ?? data.bankTransferEnabled ?? false
-        const acceptsCard = data.acceptsCard ?? false
+        
+        // Read actual boolean values from database - use accepts* as primary, fallback to *Enabled
+        const cashEnabled = data.acceptsCash === true || data.cashPaymentEnabled === true
+        const bankEnabled = data.acceptsBankTransfer === true || data.bankTransferEnabled === true
+        const cardEnabled = data.acceptsCard === true
         
         setSettings({
           ...data,
-          acceptsCard,
-          acceptsCash,
-          acceptsBankTransfer,
-          // Keep both field sets in sync
-          cashPaymentEnabled: acceptsCash,
-          bankTransferEnabled: acceptsBankTransfer,
+          acceptsCard: cardEnabled,
+          acceptsCash: cashEnabled,
+          acceptsBankTransfer: bankEnabled,
+          cashPaymentEnabled: cashEnabled,
+          bankTransferEnabled: bankEnabled,
           paymentInstructions: data.paymentInstructions || '',
           bankAccountName: data.bankAccountName || null,
           bankSortCode: data.bankSortCode || null,
@@ -176,24 +177,76 @@ export function PaymentMethodsTab() {
       return
     }
 
+    // Get current state values - ensure they're proper booleans
+    const cashValue = settings.cashPaymentEnabled === true || settings.acceptsCash === true
+    const bankValue = settings.bankTransferEnabled === true || settings.acceptsBankTransfer === true
+    const cardValue = settings.acceptsCard === true
+
+    // Validate: If bank transfer is enabled, bank details must be provided
+    if (bankValue) {
+      if (!settings.bankAccountName || !settings.bankAccountName.trim()) {
+        toast.error('Account Name is required when Bank Transfer is enabled')
+        setIsEditingBankDetails(true)
+        return
+      }
+      if (!settings.bankSortCode || !settings.bankSortCode.trim()) {
+        toast.error('Sort Code is required when Bank Transfer is enabled')
+        setIsEditingBankDetails(true)
+        return
+      }
+      if (!settings.bankAccountNumber || !settings.bankAccountNumber.trim()) {
+        toast.error('Account Number is required when Bank Transfer is enabled')
+        setIsEditingBankDetails(true)
+        return
+      }
+    }
+
     setSavingPaymentMethods(true)
     try {
       const response = await fetch('/api/settings/payment-methods', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          acceptsCard: Boolean(settings.acceptsCard),
-          acceptsCash: Boolean(settings.acceptsCash),
-          acceptsBankTransfer: Boolean(settings.acceptsBankTransfer),
-          // Keep both field sets in sync
-          cashPaymentEnabled: Boolean(settings.cashPaymentEnabled),
-          bankTransferEnabled: Boolean(settings.bankTransferEnabled)
+          acceptsCard: cardValue,
+          acceptsCash: cashValue,
+          acceptsBankTransfer: bankValue,
+          cashPaymentEnabled: cashValue,
+          bankTransferEnabled: bankValue,
+          // Include bank details if bank transfer is enabled
+          ...(bankValue && {
+            bankAccountName: settings.bankAccountName?.trim() || null,
+            bankSortCode: settings.bankSortCode?.trim() || null,
+            bankAccountNumber: settings.bankAccountNumber?.trim() || null
+          })
         })
       })
 
       if (response.ok) {
+        const result = await response.json()
+        
+        if (result.settings) {
+          // Update state immediately from response
+          const savedCash = result.settings.acceptsCash === true || result.settings.cashPaymentEnabled === true
+          const savedBank = result.settings.acceptsBankTransfer === true || result.settings.bankTransferEnabled === true
+          const savedCard = result.settings.acceptsCard === true
+          
+          setSettings(prev => ({
+            ...prev,
+            acceptsCard: savedCard,
+            acceptsCash: savedCash,
+            acceptsBankTransfer: savedBank,
+            cashPaymentEnabled: savedCash,
+            bankTransferEnabled: savedBank,
+            bankAccountName: result.settings.bankAccountName || prev.bankAccountName,
+            bankSortCode: result.settings.bankSortCode || prev.bankSortCode,
+            bankAccountNumber: result.settings.bankAccountNumber || prev.bankAccountNumber
+          }))
+        }
+        
         toast.success('Payment methods saved successfully')
-        // Re-fetch to ensure state is in sync with database
+        setIsEditingBankDetails(false)
+        
+        // Re-fetch to ensure complete sync
         await fetchPaymentSettings()
       } else {
         const error = await response.json()
@@ -283,6 +336,20 @@ export function PaymentMethodsTab() {
     setIsEditingBankDetails(true)
   }
 
+  // Auto-enable edit mode when bank transfer is enabled but details are missing
+  useEffect(() => {
+    const canEdit = hasPermission('access_settings')
+    const bankEnabled = settings.bankTransferEnabled === true || settings.acceptsBankTransfer === true
+    if (bankEnabled && !isEditingBankDetails && canEdit) {
+      const hasAllDetails = settings.bankAccountName?.trim() && 
+                           settings.bankSortCode?.trim() && 
+                           settings.bankAccountNumber?.trim()
+      if (!hasAllDetails) {
+        setIsEditingBankDetails(true)
+      }
+    }
+  }, [settings.bankTransferEnabled, settings.acceptsBankTransfer, settings.bankAccountName, settings.bankSortCode, settings.bankAccountNumber, isEditingBankDetails])
+
   const handleCancelEditBankDetails = () => {
     setSettings(prev => ({
       ...prev,
@@ -299,16 +366,29 @@ export function PaymentMethodsTab() {
       return
     }
 
+    // Validate required fields
+    if (!settings.bankAccountName || !settings.bankAccountName.trim()) {
+      toast.error('Account Name is required')
+      return
+    }
+    if (!settings.bankSortCode || !settings.bankSortCode.trim()) {
+      toast.error('Sort Code is required')
+      return
+    }
+    if (!settings.bankAccountNumber || !settings.bankAccountNumber.trim()) {
+      toast.error('Account Number is required')
+      return
+    }
+
     setSaving(true)
     try {
       const response = await fetch('/api/settings/payment-methods', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...settings,
-          bankAccountName: settings.bankAccountName,
-          bankSortCode: settings.bankSortCode,
-          bankAccountNumber: settings.bankAccountNumber
+          bankAccountName: settings.bankAccountName.trim(),
+          bankSortCode: settings.bankSortCode.trim(),
+          bankAccountNumber: settings.bankAccountNumber.trim()
         })
       })
 
@@ -394,6 +474,11 @@ export function PaymentMethodsTab() {
     )
   }
 
+  // Get current toggle values - prioritize cashPaymentEnabled/bankTransferEnabled
+  const cashEnabled = settings.cashPaymentEnabled === true
+  const bankEnabled = settings.bankTransferEnabled === true
+  const cardEnabled = settings.acceptsCard === true
+
   return (
     <div className="space-y-6">
       {/* Payment Method Overview */}
@@ -477,8 +562,13 @@ export function PaymentMethodsTab() {
                 </div>
                 <div className="shrink-0">
                   <Switch
-                    checked={settings.acceptsCard}
-                    onCheckedChange={(checked) => handleSettingChange('acceptsCard', checked)}
+                    checked={cardEnabled}
+                    onCheckedChange={(checked) => {
+                      setSettings(prev => ({
+                        ...prev,
+                        acceptsCard: checked
+                      }))
+                    }}
                     disabled={!hasPermission('access_settings')}
                   />
                 </div>
@@ -500,18 +590,135 @@ export function PaymentMethodsTab() {
               </div>
               <div className="shrink-0">
                 <Switch
-                  checked={settings.bankTransferEnabled ?? settings.acceptsBankTransfer ?? false}
+                  checked={bankEnabled}
                   onCheckedChange={(checked) => {
-                    handleSettingChange('acceptsBankTransfer', checked)
-                    handleSettingChange('bankTransferEnabled', checked)
+                    setSettings(prev => ({
+                      ...prev,
+                      acceptsBankTransfer: checked,
+                      bankTransferEnabled: checked
+                    }))
                   }}
                   disabled={!hasPermission('access_settings')}
                 />
               </div>
             </div>
-            <p className="text-sm text-[var(--muted-foreground)] ml-[52px]">
+            <p className="text-sm text-[var(--muted-foreground)] ml-[52px] mb-4">
               Parents can transfer money directly to your bank account
             </p>
+
+            {/* Bank Transfer Details - Show when enabled */}
+            {bankEnabled && (
+              <div className="mt-4 pt-4 border-t border-[var(--border)]">
+                <div className="mb-3">
+                  <p className="text-sm font-medium text-gray-900 mb-1">
+                    Bank Account Details <span className="text-red-500">* Required</span>
+                  </p>
+                  <p className="text-xs text-[var(--muted-foreground)]">
+                    Provide your bank account details for parents to make direct transfers
+                  </p>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="bankAccountName" className="text-sm">
+                      Account Name <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="bankAccountName"
+                      placeholder="e.g., Masjid Falah"
+                      value={settings.bankAccountName || ''}
+                      onChange={(e) => handleSettingChange('bankAccountName', e.target.value)}
+                      disabled={!isEditingBankDetails || !hasPermission('access_settings')}
+                      className="mt-1"
+                      required
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="bankSortCode" className="text-sm">
+                        Sort Code <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="bankSortCode"
+                        placeholder="e.g., 12-34-56"
+                        value={settings.bankSortCode || ''}
+                        onChange={(e) => handleSettingChange('bankSortCode', e.target.value)}
+                        disabled={!isEditingBankDetails || !hasPermission('access_settings')}
+                        className="mt-1"
+                        maxLength={8}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="bankAccountNumber" className="text-sm">
+                        Account Number <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="bankAccountNumber"
+                        placeholder="e.g., 12345678"
+                        value={settings.bankAccountNumber || ''}
+                        onChange={(e) => handleSettingChange('bankAccountNumber', e.target.value)}
+                        disabled={!isEditingBankDetails || !hasPermission('access_settings')}
+                        className="mt-1"
+                        maxLength={10}
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  {hasPermission('access_settings') && (
+                    <div className="flex justify-end gap-2 pt-2">
+                      {isEditingBankDetails ? (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleCancelEditBankDetails}
+                            disabled={saving}
+                            className="flex items-center gap-2"
+                          >
+                            <X className="h-4 w-4" />
+                            Cancel
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={handleSaveBankDetails}
+                            disabled={saving}
+                            className="flex items-center gap-2"
+                          >
+                            {saving ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Saving...
+                              </>
+                            ) : (
+                              <>
+                                <Save className="h-4 w-4" />
+                                Save Details
+                              </>
+                            )}
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleEditBankDetails}
+                          className="flex items-center gap-2"
+                        >
+                          <Edit className="h-4 w-4" />
+                          Edit
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                  
+                  <p className="text-xs text-[var(--muted-foreground)] mt-3">
+                    Parents can set up a standing order through their online banking using these details—once set up, payments will be made automatically each month on the {settings.billingDay}{settings.billingDay === 1 ? 'st' : settings.billingDay === 2 ? 'nd' : settings.billingDay === 3 ? 'rd' : 'th'} of each month.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Cash Payments */}
@@ -525,10 +732,13 @@ export function PaymentMethodsTab() {
               </div>
               <div className="shrink-0">
                 <Switch
-                  checked={settings.cashPaymentEnabled ?? settings.acceptsCash ?? false}
+                  checked={cashEnabled}
                   onCheckedChange={(checked) => {
-                    handleSettingChange('acceptsCash', checked)
-                    handleSettingChange('cashPaymentEnabled', checked)
+                    setSettings(prev => ({
+                      ...prev,
+                      acceptsCash: checked,
+                      cashPaymentEnabled: checked
+                    }))
                   }}
                   disabled={!hasPermission('access_settings')}
                 />
@@ -565,116 +775,6 @@ export function PaymentMethodsTab() {
         </CardContent>
       </Card>
 
-      {/* Bank Transfer Details */}
-      {settings.bankTransferEnabled && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <CardTitle className="flex items-center space-x-2">
-                  <Building2 className="h-5 w-5" />
-                  <span>Bank Transfer Details</span>
-                </CardTitle>
-                <CardDescription>
-                  Provide your bank account details for parents to make direct transfers. These will be shown to parents who choose bank transfer.
-                </CardDescription>
-              </div>
-              {hasPermission('access_settings') && (
-                <div className="flex items-center gap-2">
-                  {!isEditingBankDetails ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleEditBankDetails}
-                      className="flex items-center gap-2"
-                    >
-                      <Edit className="h-4 w-4" />
-                      Edit
-                    </Button>
-                  ) : (
-                    <>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleCancelEditBankDetails}
-                        disabled={saving}
-                        className="flex items-center gap-2"
-                      >
-                        <X className="h-4 w-4" />
-                        Cancel
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={handleSaveBankDetails}
-                        disabled={saving}
-                        className="flex items-center gap-2"
-                      >
-                        {saving ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            Saving...
-                          </>
-                        ) : (
-                          <>
-                            <Save className="h-4 w-4" />
-                            Save
-                          </>
-                        )}
-                      </Button>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="bankAccountName">Account Name</Label>
-              <Input
-                id="bankAccountName"
-                placeholder="e.g., Masjid Falah"
-                value={settings.bankAccountName || ''}
-                onChange={(e) => handleSettingChange('bankAccountName', e.target.value)}
-                disabled={!isEditingBankDetails || !hasPermission('access_settings')}
-              />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="bankSortCode">Sort Code</Label>
-                <Input
-                  id="bankSortCode"
-                  placeholder="e.g., 12-34-56"
-                  value={settings.bankSortCode || ''}
-                  onChange={(e) => handleSettingChange('bankSortCode', e.target.value)}
-                  disabled={!isEditingBankDetails || !hasPermission('access_settings')}
-                  maxLength={8}
-                />
-              </div>
-              <div>
-                <Label htmlFor="bankAccountNumber">Account Number</Label>
-                <Input
-                  id="bankAccountNumber"
-                  placeholder="e.g., 12345678"
-                  value={settings.bankAccountNumber || ''}
-                  onChange={(e) => handleSettingChange('bankAccountNumber', e.target.value)}
-                  disabled={!isEditingBankDetails || !hasPermission('access_settings')}
-                  maxLength={10}
-                />
-              </div>
-            </div>
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <div className="flex items-center space-x-2 mb-2">
-                <Info className="h-4 w-4 text-gray-600" />
-                <span className="text-sm font-medium text-gray-900">Standing Order Instructions</span>
-              </div>
-              <p className="text-sm text-gray-700">
-                A standing order is an automatic payment that sends money from the parent's bank account to the school each month. 
-                Parents can set this up through their online banking using the details above. Once set up, payments will be made automatically each month on the due date.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Billing Day */}
       <Card>
@@ -811,4 +911,3 @@ export function PaymentMethodsTab() {
     </div>
   )
 }
-

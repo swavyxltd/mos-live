@@ -152,19 +152,19 @@ async function handlePOST(request: NextRequest) {
       let token: string | null = null
       if (sanitizedParentEmail) {
         token = crypto.randomBytes(32).toString('hex')
-        const expiresAt = new Date()
-        expiresAt.setDate(expiresAt.getDate() + 7) // 7 days expiry
+      const expiresAt = new Date()
+      expiresAt.setDate(expiresAt.getDate() + 7) // 7 days expiry
 
         invitation = await tx.parentInvitation.create({
-          data: {
-            id: crypto.randomUUID(),
-            orgId,
-            studentId: student.id,
-            parentEmail: sanitizedParentEmail,
-            token,
-            expiresAt
-          }
-        })
+        data: {
+          id: crypto.randomUUID(),
+          orgId,
+          studentId: student.id,
+          parentEmail: sanitizedParentEmail,
+          token,
+          expiresAt
+        }
+      })
       }
 
       // Get parent's preferred payment method if parent exists
@@ -202,19 +202,19 @@ async function handlePOST(request: NextRequest) {
 
     // Send onboarding email only if email is provided
     if (sanitizedParentEmail && result.token) {
-      const baseUrl = process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'https://app.madrasah.io'
-      const setupUrl = `${baseUrl.replace(/\/$/, '')}/auth/parent-setup?token=${result.token}`
+    const baseUrl = process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'https://app.madrasah.io'
+    const setupUrl = `${baseUrl.replace(/\/$/, '')}/auth/parent-setup?token=${result.token}`
 
-      try {
-        await sendParentOnboardingEmail({
-          to: sanitizedParentEmail,
-          orgName: org.name,
-          studentName: `${sanitizedFirstName} ${sanitizedLastName}`,
-          setupUrl
-        })
-      } catch (emailError) {
-        logger.error('Failed to send parent onboarding email', emailError)
-        // Don't fail the request if email fails, but log it
+    try {
+      await sendParentOnboardingEmail({
+        to: sanitizedParentEmail,
+        orgName: org.name,
+        studentName: `${sanitizedFirstName} ${sanitizedLastName}`,
+        setupUrl
+      })
+    } catch (emailError) {
+      logger.error('Failed to send parent onboarding email', emailError)
+      // Don't fail the request if email fails, but log it
       }
     }
 

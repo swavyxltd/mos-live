@@ -21,16 +21,15 @@ async function handleGET() {
       return NextResponse.json({ error: 'Organisation not found' }, { status: 404 })
     }
 
-    // Return payment method settings (without sensitive keys)
-    // Explicitly convert to boolean to handle any null values (shouldn't happen with Prisma defaults, but safe to handle)
+    // Return payment method settings - always return actual database values as booleans
     return NextResponse.json({
-      stripeEnabled: org.stripeEnabled ?? false,
-      autoPaymentEnabled: org.autoPaymentEnabled ?? true,
-      cashPaymentEnabled: org.cashPaymentEnabled ?? false,
-      bankTransferEnabled: org.bankTransferEnabled ?? false,
-      acceptsCard: org.acceptsCard ?? false,
-      acceptsCash: org.acceptsCash ?? false,
-      acceptsBankTransfer: org.acceptsBankTransfer ?? false,
+      stripeEnabled: Boolean(org.stripeEnabled),
+      autoPaymentEnabled: Boolean(org.autoPaymentEnabled),
+      cashPaymentEnabled: Boolean(org.cashPaymentEnabled),
+      bankTransferEnabled: Boolean(org.bankTransferEnabled),
+      acceptsCard: Boolean(org.acceptsCard),
+      acceptsCash: Boolean(org.acceptsCash),
+      acceptsBankTransfer: Boolean(org.acceptsBankTransfer),
       billingDay: org.billingDay ?? org.feeDueDay ?? 1,
       stripeConnectAccountId: org.stripeConnectAccountId,
       hasStripeConnect: !!org.stripeConnectAccountId,
@@ -66,10 +65,6 @@ async function handlePUT(request: NextRequest) {
       return NextResponse.json({ error: 'Organisation not found' }, { status: 404 })
     }
 
-    // IMPORTANT: billingDay can ONLY be updated through this endpoint
-    // This is the single source of truth for billing day settings
-    // Other endpoints (e.g., /api/settings/organisation) explicitly ignore billingDay
-
     const body = await request.json()
     const {
       stripeEnabled,
@@ -89,11 +84,15 @@ async function handlePUT(request: NextRequest) {
       bankAccountNumber
     } = body
 
-    // Ensure billingDay can only be set through this endpoint (payment methods settings)
-    // This prevents it from being updated elsewhere
+    // Helper to convert any value to proper boolean
+    const toBoolean = (value: any): boolean => {
+      if (value === true || value === 'true' || value === 1 || value === '1') return true
+      if (value === false || value === 'false' || value === 0 || value === '0') return false
+      return Boolean(value)
+    }
 
     // Validate billing day (1-28)
-    if (billingDay !== undefined && (billingDay < 1 || billingDay > 28)) {
+    if (billingDay !== undefined && billingDay !== null && (billingDay < 1 || billingDay > 28)) {
       return NextResponse.json(
         { error: 'Billing day must be between 1 and 28' },
         { status: 400 }
@@ -101,13 +100,20 @@ async function handlePUT(request: NextRequest) {
     }
 
     // Validate that at least one payment method is enabled (only if payment methods are being updated)
-    if (acceptsCard !== undefined || acceptsCash !== undefined || acceptsBankTransfer !== undefined) {
-      // Get current values for fields not being updated
-      const currentCard = acceptsCard !== undefined ? acceptsCard : (org.acceptsCard ?? false)
-      const currentCash = acceptsCash !== undefined ? acceptsCash : (org.acceptsCash ?? false)
-      const currentBank = acceptsBankTransfer !== undefined ? acceptsBankTransfer : (org.acceptsBankTransfer ?? false)
+    const isUpdatingPaymentMethods = acceptsCard !== undefined || acceptsCash !== undefined || acceptsBankTransfer !== undefined || 
+                                     cashPaymentEnabled !== undefined || bankTransferEnabled !== undefined
+    
+    if (isUpdatingPaymentMethods) {
+      // Get final values after update
+      const finalCard = acceptsCard !== undefined ? toBoolean(acceptsCard) : Boolean(org.acceptsCard)
+      const finalCash = acceptsCash !== undefined ? toBoolean(acceptsCash) : 
+                       (cashPaymentEnabled !== undefined ? toBoolean(cashPaymentEnabled) : 
+                       Boolean(org.acceptsCash || org.cashPaymentEnabled))
+      const finalBank = acceptsBankTransfer !== undefined ? toBoolean(acceptsBankTransfer) : 
+                       (bankTransferEnabled !== undefined ? toBoolean(bankTransferEnabled) : 
+                       Boolean(org.acceptsBankTransfer || org.bankTransferEnabled))
       
-      if (!currentCard && !currentCash && !currentBank) {
+      if (!finalCard && !finalCash && !finalBank) {
         return NextResponse.json(
           { error: 'At least one payment method must be enabled' },
           { status: 400 }
@@ -116,7 +122,7 @@ async function handlePUT(request: NextRequest) {
     }
 
     // Validate card payment requires Stripe Connect
-    if (acceptsCard && !org.stripeConnectAccountId) {
+    if (acceptsCard !== undefined && toBoolean(acceptsCard) && !org.stripeConnectAccountId) {
       return NextResponse.json(
         { error: 'Stripe Connect account must be connected to enable card payments' },
         { status: 400 }
@@ -131,15 +137,15 @@ async function handlePUT(request: NextRequest) {
       )
     }
 
-    // Build update data object, only including fields that are explicitly provided
+    // Build update data object - ALWAYS update both field sets when provided
     const updateData: any = {
       updatedAt: new Date()
     }
 
-    // Only update fields that are explicitly provided in the request
+    // Stripe settings
     if (stripeEnabled !== undefined) {
-      updateData.stripeEnabled = stripeEnabled
-      if (stripeEnabled) {
+      updateData.stripeEnabled = toBoolean(stripeEnabled)
+      if (updateData.stripeEnabled) {
         updateData.stripePublishableKey = stripePublishableKey || null
         updateData.stripeSecretKey = stripeSecretKey || null
         updateData.stripeWebhookSecret = stripeWebhookSecret || null
@@ -151,27 +157,24 @@ async function handlePUT(request: NextRequest) {
     }
 
     if (autoPaymentEnabled !== undefined) {
-      updateData.autoPaymentEnabled = autoPaymentEnabled
+      updateData.autoPaymentEnabled = toBoolean(autoPaymentEnabled)
     }
 
-    if (cashPaymentEnabled !== undefined) {
-      updateData.cashPaymentEnabled = cashPaymentEnabled
+    // Payment method fields - ALWAYS update both field sets together
+    if (cashPaymentEnabled !== undefined || acceptsCash !== undefined) {
+      const cashValue = acceptsCash !== undefined ? toBoolean(acceptsCash) : toBoolean(cashPaymentEnabled)
+      updateData.cashPaymentEnabled = cashValue
+      updateData.acceptsCash = cashValue
     }
 
-    if (bankTransferEnabled !== undefined) {
-      updateData.bankTransferEnabled = bankTransferEnabled
+    if (bankTransferEnabled !== undefined || acceptsBankTransfer !== undefined) {
+      const bankValue = acceptsBankTransfer !== undefined ? toBoolean(acceptsBankTransfer) : toBoolean(bankTransferEnabled)
+      updateData.bankTransferEnabled = bankValue
+      updateData.acceptsBankTransfer = bankValue
     }
 
     if (acceptsCard !== undefined) {
-      updateData.acceptsCard = acceptsCard
-    }
-
-    if (acceptsCash !== undefined) {
-      updateData.acceptsCash = acceptsCash
-    }
-
-    if (acceptsBankTransfer !== undefined) {
-      updateData.acceptsBankTransfer = acceptsBankTransfer
+      updateData.acceptsCard = toBoolean(acceptsCard)
     }
 
     if (billingDay !== undefined) {
@@ -200,16 +203,17 @@ async function handlePUT(request: NextRequest) {
       data: updateData
     })
 
+    // Return updated settings with explicit boolean conversion
     return NextResponse.json({
       success: true,
       settings: {
-        stripeEnabled: updatedOrg.stripeEnabled,
-        autoPaymentEnabled: updatedOrg.autoPaymentEnabled,
-        cashPaymentEnabled: updatedOrg.cashPaymentEnabled,
-        bankTransferEnabled: updatedOrg.bankTransferEnabled,
-        acceptsCard: updatedOrg.acceptsCard,
-        acceptsCash: updatedOrg.acceptsCash,
-        acceptsBankTransfer: updatedOrg.acceptsBankTransfer,
+        stripeEnabled: Boolean(updatedOrg.stripeEnabled),
+        autoPaymentEnabled: Boolean(updatedOrg.autoPaymentEnabled),
+        cashPaymentEnabled: Boolean(updatedOrg.cashPaymentEnabled),
+        bankTransferEnabled: Boolean(updatedOrg.bankTransferEnabled),
+        acceptsCard: Boolean(updatedOrg.acceptsCard),
+        acceptsCash: Boolean(updatedOrg.acceptsCash),
+        acceptsBankTransfer: Boolean(updatedOrg.acceptsBankTransfer),
         billingDay: updatedOrg.billingDay ?? updatedOrg.feeDueDay ?? 1,
         paymentInstructions: updatedOrg.paymentInstructions,
         bankAccountName: updatedOrg.bankAccountName,
