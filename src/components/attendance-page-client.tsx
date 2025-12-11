@@ -42,25 +42,21 @@ export function AttendancePageClient({ attendanceData }: AttendancePageClientPro
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null)
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false)
   const [currentWeek, setCurrentWeek] = useState(new Date())
+  const [filterType, setFilterType] = useState<'week' | 'month' | 'year'>('week')
+  const [dateRange, setDateRange] = useState<{ start: Date; end: Date } | null>(null)
   const [filteredData, setFilteredData] = useState(attendanceData || [])
 
-  // Filter data by week
+  // Filter data based on selected filter type and date range
   useEffect(() => {
-    const weekStart = new Date(currentWeek)
-    weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1) // Monday
-    weekStart.setHours(0, 0, 0, 0)
-    
-    const weekEnd = new Date(weekStart)
-    weekEnd.setDate(weekEnd.getDate() + 6) // Sunday
-    weekEnd.setHours(23, 59, 59, 999)
+    if (!dateRange) return
     
     const filtered = (attendanceData || []).filter(item => {
       const itemDate = new Date(item.date)
-      return itemDate >= weekStart && itemDate <= weekEnd
+      return itemDate >= dateRange.start && itemDate <= dateRange.end
     })
     
     setFilteredData(filtered)
-  }, [currentWeek, attendanceData])
+  }, [dateRange, attendanceData])
 
   const handleClassClick = (classId: string) => {
     setSelectedClassId(classId)
@@ -93,6 +89,11 @@ export function AttendancePageClient({ attendanceData }: AttendancePageClientPro
 
   const handleDateRangeChange = (startDate: Date, endDate: Date) => {
     setCurrentWeek(startDate)
+    setDateRange({ start: startDate, end: endDate })
+  }
+
+  const handleFilterTypeChange = (type: 'week' | 'month' | 'year') => {
+    setFilterType(type)
   }
 
   const selectedClass = selectedClassId 
@@ -114,11 +115,13 @@ export function AttendancePageClient({ attendanceData }: AttendancePageClientPro
         </RestrictedAction>
       </div>
 
-      {/* Week Filter */}
+      {/* Week/Month/Year Filter */}
       <AttendanceWeekFilter
         currentWeek={currentWeek}
         onWeekChange={handleWeekChange}
         onDateRangeChange={handleDateRangeChange}
+        filterType={filterType}
+        onFilterTypeChange={handleFilterTypeChange}
       />
 
       {/* Content */}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Modal } from '@/components/ui/modal'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { 
   Edit, 
   Users, 
@@ -16,7 +17,8 @@ import {
   AlertCircle,
   CheckCircle,
   User,
-  GraduationCap
+  GraduationCap,
+  Calendar
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatCurrency } from '@/lib/utils'
@@ -53,6 +55,11 @@ export function FeesPageClient({ classes, summary }: FeesPageClientProps) {
   const [feeAmount, setFeeAmount] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [localClasses, setLocalClasses] = useState(classes)
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+  
+  // Generate list of years (current year and past 5 years)
+  const currentYear = new Date().getFullYear()
+  const availableYears = Array.from({ length: 6 }, (_, i) => currentYear - i)
 
   const handleEditFee = (classItem: ClassFee) => {
     setEditingClass(classItem)
@@ -116,11 +123,28 @@ export function FeesPageClient({ classes, summary }: FeesPageClientProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-[var(--foreground)]">Fees Overview</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Manage fees for all classes in your madrasah. Fees are set when creating classes.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-[var(--foreground)]">Fees Overview</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Manage fees for all classes in your madrasah. Fees are set when creating classes.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-gray-500" />
+          <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
+            <SelectTrigger className="w-[120px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {availableYears.map(year => (
+                <SelectItem key={year} value={year.toString()}>
+                  {year}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Summary Statistics */}
