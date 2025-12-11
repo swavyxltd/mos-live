@@ -39,7 +39,8 @@ import {
   Moon,
   Sun,
   Receipt,
-  Target
+  Target,
+  UserPlus
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -65,6 +66,7 @@ const staffNavigation = [
   { name: 'Classes', href: '/classes', icon: GraduationCap, permissionKey: 'access_classes' },
   { name: 'Students', href: '/students', icon: Users, permissionKey: 'access_students' },
   { name: 'Applications', href: '/applications', icon: FileCheck, permissionKey: 'access_applications' },
+  { name: 'Onboarding', href: '/admin/onboarding', icon: UserPlus, permissionKey: 'access_students' },
   { name: 'Staff', href: '/staff', icon: UserCheck, permissionKey: 'access_staff' },
   { name: 'Attendance', href: '/attendance', icon: ClipboardList, permissionKey: 'access_attendance' },
   { name: 'Finances', href: '/finances', icon: Home, permissionKey: 'access_finances' },
