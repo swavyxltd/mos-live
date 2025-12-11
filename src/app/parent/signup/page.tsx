@@ -354,6 +354,10 @@ function ParentSignupForm() {
       }
       setCurrentStep('personal')
       setError('')
+      // Call Onboarding01's handleNextStep to open the next step
+      if (typeof window !== 'undefined' && (window as any).__onboardingNextStep) {
+        (window as any).__onboardingNextStep('account')
+      }
     } else if (currentStep === 'personal') {
       // Validate personal step
       if (!formData.firstName || formData.firstName.trim().length < 1) {
@@ -374,6 +378,10 @@ function ParentSignupForm() {
       }
       setCurrentStep('payment')
       setError('')
+      // Call Onboarding01's handleNextStep to open the next step
+      if (typeof window !== 'undefined' && (window as any).__onboardingNextStep) {
+        (window as any).__onboardingNextStep('personal')
+      }
     }
   }
 
@@ -553,25 +561,25 @@ function ParentSignupForm() {
       customContent: (
         <div className="mt-2 space-y-4" onClick={(e) => e.stopPropagation()}>
           {applicationId && applicationData && (
-            <div className="mb-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
               <div className="space-y-2">
                 <div>
-                  <label className="text-xs font-medium text-gray-600">Madrasah</label>
-                  <p className="text-sm font-medium text-gray-900">
+                  <label className="text-xs font-medium text-green-600">Madrasah</label>
+                  <p className="text-sm font-medium text-green-900">
                     {applicationData.org.name}
                   </p>
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-gray-600">Parent Name</label>
-                  <p className="text-sm font-medium text-gray-900">
+                  <label className="text-xs font-medium text-green-600">Parent Name</label>
+                  <p className="text-sm font-medium text-green-900">
                     {applicationData.application.guardianName}
                   </p>
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-gray-600">Children</label>
+                  <label className="text-xs font-medium text-green-600">Children</label>
                   <div className="space-y-1">
                     {applicationData.application.children.map((child, idx) => (
-                      <p key={idx} className="text-sm font-medium text-gray-900">
+                      <p key={idx} className="text-sm font-medium text-green-900">
                         {child.firstName} {child.lastName}
                       </p>
                     ))}
@@ -1325,6 +1333,15 @@ function ParentSignupForm() {
           <Onboarding01
             steps={onboardingSteps}
             title="Create your parent account"
+            onNextStep={(stepId) => {
+              // This is called by Onboarding01's internal handleNextStep
+              // We just need to ensure our currentStep state is in sync
+              if (stepId === 'account') {
+                setCurrentStep('personal')
+              } else if (stepId === 'personal') {
+                setCurrentStep('payment')
+              }
+            }}
           />
         )}
 
