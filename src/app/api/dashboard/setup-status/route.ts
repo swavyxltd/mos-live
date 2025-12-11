@@ -35,10 +35,12 @@ async function handleGET(request: NextRequest) {
 
     // 1. Check payment methods for parents
     // At least one payment method should be enabled
-    const hasPaymentMethods = 
-      (org.acceptsCard === true && (org.stripeConnectAccountId || org.stripePublishableKey)) ||
-      org.acceptsCash === true ||
-      org.acceptsBankTransfer === true
+    // Check both accepts* and *Enabled fields to handle all cases
+    const hasCardPayment = Boolean(org.acceptsCard) && Boolean(org.stripeConnectAccountId || org.stripePublishableKey)
+    const hasCashPayment = Boolean(org.acceptsCash) || Boolean(org.cashPaymentEnabled)
+    const hasBankTransfer = Boolean(org.acceptsBankTransfer) || Boolean(org.bankTransferEnabled)
+    
+    const hasPaymentMethods = hasCardPayment || hasCashPayment || hasBankTransfer
     setupStatus.paymentMethodsConfigured = hasPaymentMethods
 
     // 2. Check if staff exists (excluding the current user if they're the only one)

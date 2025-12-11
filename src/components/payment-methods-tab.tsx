@@ -88,11 +88,27 @@ export function PaymentMethodsTab() {
 
   const fetchPaymentSettings = async () => {
     try {
-      const response = await fetch('/api/settings/payment-methods')
+      const response = await fetch('/api/settings/payment-methods', {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      })
       if (response.ok) {
         const data = await response.json()
+        // Ensure both field sets are in sync - use the accepts* fields as source of truth
+        const acceptsCash = data.acceptsCash ?? data.cashPaymentEnabled ?? false
+        const acceptsBankTransfer = data.acceptsBankTransfer ?? data.bankTransferEnabled ?? false
+        const acceptsCard = data.acceptsCard ?? false
+        
         setSettings({
           ...data,
+          acceptsCard,
+          acceptsCash,
+          acceptsBankTransfer,
+          // Keep both field sets in sync
+          cashPaymentEnabled: acceptsCash,
+          bankTransferEnabled: acceptsBankTransfer,
           paymentInstructions: data.paymentInstructions || '',
           bankAccountName: data.bankAccountName || null,
           bankSortCode: data.bankSortCode || null,
@@ -104,11 +120,6 @@ export function PaymentMethodsTab() {
           bankAccountNumber: data.bankAccountNumber || null
         })
         setIsEditingBankDetails(false)
-        setTempBankDetails({
-          bankAccountName: data.bankAccountName || null,
-          bankSortCode: data.bankSortCode || null,
-          bankAccountNumber: data.bankAccountNumber || null
-        })
       } else {
         throw new Error('Failed to fetch payment settings')
       }
@@ -171,17 +182,18 @@ export function PaymentMethodsTab() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          acceptsCard: settings.acceptsCard,
-          acceptsCash: settings.acceptsCash,
-          acceptsBankTransfer: settings.acceptsBankTransfer,
+          acceptsCard: Boolean(settings.acceptsCard),
+          acceptsCash: Boolean(settings.acceptsCash),
+          acceptsBankTransfer: Boolean(settings.acceptsBankTransfer),
           // Keep both field sets in sync
-          cashPaymentEnabled: settings.acceptsCash,
-          bankTransferEnabled: settings.acceptsBankTransfer
+          cashPaymentEnabled: Boolean(settings.cashPaymentEnabled),
+          bankTransferEnabled: Boolean(settings.bankTransferEnabled)
         })
       })
 
       if (response.ok) {
         toast.success('Payment methods saved successfully')
+        // Re-fetch to ensure state is in sync with database
         await fetchPaymentSettings()
       } else {
         const error = await response.json()
@@ -488,7 +500,7 @@ export function PaymentMethodsTab() {
               </div>
               <div className="shrink-0">
                 <Switch
-                  checked={settings.acceptsBankTransfer ?? settings.bankTransferEnabled ?? false}
+                  checked={settings.bankTransferEnabled ?? settings.acceptsBankTransfer ?? false}
                   onCheckedChange={(checked) => {
                     handleSettingChange('acceptsBankTransfer', checked)
                     handleSettingChange('bankTransferEnabled', checked)
@@ -513,7 +525,7 @@ export function PaymentMethodsTab() {
               </div>
               <div className="shrink-0">
                 <Switch
-                  checked={settings.acceptsCash ?? settings.cashPaymentEnabled}
+                  checked={settings.cashPaymentEnabled ?? settings.acceptsCash ?? false}
                   onCheckedChange={(checked) => {
                     handleSettingChange('acceptsCash', checked)
                     handleSettingChange('cashPaymentEnabled', checked)

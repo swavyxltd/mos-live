@@ -22,10 +22,10 @@ async function handleGET() {
     }
 
     // Return payment method settings (without sensitive keys)
-    // Return actual saved values, defaulting to false if null
+    // Explicitly convert to boolean to handle any null values (shouldn't happen with Prisma defaults, but safe to handle)
     return NextResponse.json({
-      stripeEnabled: org.stripeEnabled,
-      autoPaymentEnabled: org.autoPaymentEnabled,
+      stripeEnabled: org.stripeEnabled ?? false,
+      autoPaymentEnabled: org.autoPaymentEnabled ?? true,
       cashPaymentEnabled: org.cashPaymentEnabled ?? false,
       bankTransferEnabled: org.bankTransferEnabled ?? false,
       acceptsCard: org.acceptsCard ?? false,
@@ -205,11 +205,11 @@ async function handlePUT(request: NextRequest) {
       settings: {
         stripeEnabled: updatedOrg.stripeEnabled,
         autoPaymentEnabled: updatedOrg.autoPaymentEnabled,
-        cashPaymentEnabled: updatedOrg.cashPaymentEnabled ?? false,
-        bankTransferEnabled: updatedOrg.bankTransferEnabled ?? false,
-        acceptsCard: updatedOrg.acceptsCard ?? false,
-        acceptsCash: updatedOrg.acceptsCash ?? false,
-        acceptsBankTransfer: updatedOrg.acceptsBankTransfer ?? false,
+        cashPaymentEnabled: updatedOrg.cashPaymentEnabled,
+        bankTransferEnabled: updatedOrg.bankTransferEnabled,
+        acceptsCard: updatedOrg.acceptsCard,
+        acceptsCash: updatedOrg.acceptsCash,
+        acceptsBankTransfer: updatedOrg.acceptsBankTransfer,
         billingDay: updatedOrg.billingDay ?? updatedOrg.feeDueDay ?? 1,
         paymentInstructions: updatedOrg.paymentInstructions,
         bankAccountName: updatedOrg.bankAccountName,
