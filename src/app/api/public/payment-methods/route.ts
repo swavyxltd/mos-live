@@ -24,6 +24,8 @@ async function handleGET(request: NextRequest) {
         acceptsCard: true,
         acceptsCash: true,
         acceptsBankTransfer: true,
+        cashPaymentEnabled: true,
+        bankTransferEnabled: true,
         stripeEnabled: true,
         stripePublishableKey: true,
         stripeConnectAccountId: true,
@@ -44,16 +46,22 @@ async function handleGET(request: NextRequest) {
     }
 
     // Determine if Stripe card payments are available
+    // Card payments require: acceptsCard enabled AND Stripe Connect account connected
+    const hasStripeConnect = !!org.stripeConnectAccountId
     const hasStripeConfigured = !!(org.stripePublishableKey || org.stripeConnectAccountId)
-    const cardPaymentsAvailable = org.acceptsCard && hasStripeConfigured
+    const cardPaymentsAvailable = Boolean(org.acceptsCard) && hasStripeConnect
+
+    // Check both field sets for cash and bank transfer (they should be in sync, but check both for safety)
+    const cashEnabled = Boolean(org.acceptsCash || org.cashPaymentEnabled)
+    const bankEnabled = Boolean(org.acceptsBankTransfer || org.bankTransferEnabled)
 
     // Return payment method settings (without sensitive keys)
     const billingDay = org.billingDay ?? org.feeDueDay ?? 1
     
     return NextResponse.json({
       acceptsCard: cardPaymentsAvailable,
-      acceptsCash: org.acceptsCash ?? false,
-      acceptsBankTransfer: org.acceptsBankTransfer ?? false,
+      acceptsCash: cashEnabled,
+      acceptsBankTransfer: bankEnabled,
       hasStripeConfigured,
       hasStripeConnect: !!org.stripeConnectAccountId,
       stripeEnabled: org.stripeEnabled,
