@@ -18,18 +18,43 @@ async function handlePOST(request: NextRequest) {
     }
 
     // Verify user exists and 2FA was completed (code should be cleared)
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        email: true,
-        twoFactorCode: true,
-        twoFactorCodeExpiry: true,
-        lastTwoFactorAt: true,
-        isSuperAdmin: true,
-        memorableWord: true
+    // Note: memorableWord might not exist if migration hasn't run yet
+    let user
+    try {
+      user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          email: true,
+          twoFactorCode: true,
+          twoFactorCodeExpiry: true,
+          lastTwoFactorAt: true,
+          isSuperAdmin: true,
+          memorableWord: true
+        }
+      })
+    } catch (dbError: any) {
+      // If memorableWord column doesn't exist yet, query without it
+      if (dbError?.message?.includes('memorableWord') || dbError?.code === 'P2021') {
+        user = await prisma.user.findUnique({
+          where: { id: userId },
+          select: {
+            id: true,
+            email: true,
+            twoFactorCode: true,
+            twoFactorCodeExpiry: true,
+            lastTwoFactorAt: true,
+            isSuperAdmin: true
+          }
+        })
+        // Set memorableWord to null if column doesn't exist
+        if (user) {
+          (user as any).memorableWord = null
+        }
+      } else {
+        throw dbError
       }
-    })
+    }
 
     if (!user) {
       return NextResponse.json(
@@ -77,7 +102,7 @@ async function handlePOST(request: NextRequest) {
       signinToken,
       email: user.email,
       isSuperAdmin: user.isSuperAdmin,
-      needsMemorableWord: user.isSuperAdmin && !user.memorableWord
+      needsMemorableWord: user.isSuperAdmin && !(user as any).memorableWord
     })
   } catch (error: any) {
     logger.error('Complete signin error', error)

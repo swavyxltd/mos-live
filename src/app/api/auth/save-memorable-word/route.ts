@@ -65,19 +65,34 @@ async function handlePOST(request: NextRequest) {
     // Sanitize and save memorable word
     const sanitizedWord = sanitizeText(trimmedWord, MAX_STRING_LENGTHS.text || 50)
 
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        memorableWord: sanitizedWord
+    try {
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          memorableWord: sanitizedWord
+        }
+      })
+
+      logger.info('Memorable word saved', { userId })
+
+      return NextResponse.json({
+        success: true,
+        message: 'Memorable word saved successfully'
+      })
+    } catch (dbError: any) {
+      // If memorableWord column doesn't exist yet, log and return error
+      if (dbError?.message?.includes('memorableWord') || dbError?.code === 'P2021') {
+        logger.error('Memorable word column does not exist - migration may not have run', { userId })
+        return NextResponse.json(
+          { 
+            error: 'Database migration required. Please contact support.',
+            ...(process.env.NODE_ENV === 'development' && { details: 'memorableWord column does not exist' })
+          },
+          { status: 500 }
+        )
       }
-    })
-
-    logger.info('Memorable word saved', { userId })
-
-    return NextResponse.json({
-      success: true,
-      message: 'Memorable word saved successfully'
-    })
+      throw dbError
+    }
   } catch (error: any) {
     logger.error('Save memorable word error', error)
     const isDevelopment = process.env.NODE_ENV === 'development'

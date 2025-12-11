@@ -147,7 +147,8 @@ function Verify2FAContent() {
       }
 
       // Check if owner account needs memorable word
-      if (sessionData.needsMemorableWord) {
+      // Only show if explicitly needed (column exists and user is owner without word)
+      if (sessionData.needsMemorableWord === true) {
         setNeedsMemorableWord(true)
         setShowMemorableWordStep(true)
         setIsLoading(false)
@@ -155,7 +156,12 @@ function Verify2FAContent() {
       }
 
       // Complete signin if no memorable word needed
-      await completeSignIn(sessionData.signinToken)
+      try {
+        await completeSignIn(sessionData.signinToken)
+      } catch (signInError) {
+        setError('An error occurred during sign in. Please try again.')
+        setIsLoading(false)
+      }
     } catch (error) {
       setError('An error occurred. Please try again.')
       setIsLoading(false)
@@ -163,40 +169,57 @@ function Verify2FAContent() {
   }
 
   const completeSignIn = async (signinToken: string) => {
-    const userEmail = sessionStorage.getItem('pendingEmail')
-    if (!userEmail) {
-      setError('Session expired. Please sign in again.')
-      router.push('/auth/signin')
-      return
-    }
-
-    // Complete signin with NextAuth using the signin token
-    const result = await signIn('credentials', {
-      email: userEmail,
-      password: signinToken, // Use token as password
-      redirect: false,
-      callbackUrl: callbackUrl
-    })
-
-    // Clear sessionStorage
-    sessionStorage.removeItem('pendingUserId')
-    sessionStorage.removeItem('pendingEmail')
-
-    if (result?.error) {
-      setError('Failed to complete sign in. Please try again.')
-      setIsLoading(false)
-      return
-    }
-
-    if (result?.ok) {
-      // Get session and redirect
-      const session = await getSession()
-      if ((session?.user as any)?.roleHints) {
-        const redirectUrl = getPostLoginRedirect((session.user as any).roleHints)
-        window.location.href = redirectUrl || callbackUrl
-      } else {
-        window.location.href = callbackUrl
+    try {
+      const userEmail = sessionStorage.getItem('pendingEmail')
+      if (!userEmail) {
+        setError('Session expired. Please sign in again.')
+        router.push('/auth/signin')
+        return
       }
+
+      // Complete signin with NextAuth using the signin token
+      const result = await signIn('credentials', {
+        email: userEmail,
+        password: signinToken, // Use token as password
+        redirect: false,
+        callbackUrl: callbackUrl
+      })
+
+      // Clear sessionStorage
+      sessionStorage.removeItem('pendingUserId')
+      sessionStorage.removeItem('pendingEmail')
+
+      if (result?.error) {
+        setError('Failed to complete sign in. Please try again.')
+        setIsLoading(false)
+        setIsSavingMemorableWord(false)
+        return
+      }
+
+      if (result?.ok) {
+        // Get session and redirect
+        try {
+          const session = await getSession()
+          if ((session?.user as any)?.roleHints) {
+            const redirectUrl = getPostLoginRedirect((session.user as any).roleHints)
+            window.location.href = redirectUrl || callbackUrl
+          } else {
+            window.location.href = callbackUrl
+          }
+        } catch (sessionError) {
+          // If session fetch fails, still redirect to callback
+          window.location.href = callbackUrl
+        }
+      } else {
+        // Unexpected result
+        setError('An error occurred during sign in. Please try again.')
+        setIsLoading(false)
+        setIsSavingMemorableWord(false)
+      }
+    } catch (error) {
+      setError('An error occurred during sign in. Please try again.')
+      setIsLoading(false)
+      setIsSavingMemorableWord(false)
     }
   }
 
