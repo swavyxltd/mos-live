@@ -75,17 +75,18 @@ export async function middleware(request: NextRequest) {
   // Org status checks skipped in middleware (no DB on Edge). Handled in server routes/pages if needed.
   
   // Determine the correct portal for this user
-  // Owners and org admins are mutually exclusive - owners can only access /owner routes
-  // Use token.isSuperAdmin directly (updated on every request) instead of roleHints.isOwner
+  // Priority: Owner → Parent → Admin → Staff
+  // Parents should NEVER see staff/admin pages, even if they have those roles
   let correctPortal = ''
   if (token.isSuperAdmin) {
     correctPortal = '/owner'
+  } else if (roleHints?.isParent) {
+    // Parent is checked BEFORE admin/staff to ensure parents always go to parent portal
+    correctPortal = '/parent'
   } else if (roleHints?.orgAdminOf && roleHints.orgAdminOf.length > 0) {
     correctPortal = '/staff'
   } else if (roleHints?.orgStaffOf && roleHints.orgStaffOf.length > 0) {
     correctPortal = '/staff'
-  } else if (roleHints?.isParent) {
-    correctPortal = '/parent'
   } else {
     // No clear role, redirect to sign in
     return NextResponse.redirect(new URL('/auth/signin', request.url))
@@ -112,8 +113,30 @@ export async function middleware(request: NextRequest) {
     }
   }
   
+  // Block parents from accessing staff routes (dashboard, classes, etc.)
+  // These routes are under /(staff) layout, so check if user is trying to access them
+  if ((pathname.startsWith('/dashboard') || 
+       pathname.startsWith('/classes') || 
+       pathname.startsWith('/students') || 
+       pathname.startsWith('/finances') || 
+       pathname.startsWith('/payments') || 
+       pathname.startsWith('/attendance') || 
+       pathname.startsWith('/applications') || 
+       pathname.startsWith('/staff') || 
+       pathname.startsWith('/settings') ||
+       pathname.startsWith('/messages') ||
+       pathname.startsWith('/calendar') ||
+       pathname.startsWith('/fees') ||
+       pathname.startsWith('/gift-aid')) && 
+      roleHints?.isParent && 
+      !roleHints?.orgAdminOf?.length && 
+      !roleHints?.orgStaffOf?.length) {
+    // User is a parent trying to access staff routes - redirect to parent dashboard
+    return NextResponse.redirect(new URL('/parent/dashboard', request.url))
+  }
+
   // Redirect Finance Officers and Teachers from regular dashboard
-  if (pathname === '/dashboard' && roleHints.orgStaffOf.length > 0) {
+  if (pathname === '/dashboard' && roleHints?.orgStaffOf && roleHints.orgStaffOf.length > 0 && !roleHints?.isParent) {
     // Check if user is a Finance Officer or Teacher (we'll need to get this from the token)
     const token = await getToken({ req: request })
     if (token?.staffSubrole === 'FINANCE_OFFICER') {

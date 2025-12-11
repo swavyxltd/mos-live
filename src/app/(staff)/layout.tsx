@@ -89,6 +89,16 @@ export default async function StaffLayout({
     redirect('/auth/signin?error=NotMember')
   }
 
+  // BLOCK PARENTS from accessing staff routes
+  if (userRole === 'PARENT') {
+    redirect('/parent/dashboard')
+  }
+
+  // Only allow ADMIN and STAFF roles
+  if (userRole !== 'ADMIN' && userRole !== 'STAFF') {
+    redirect('/auth/signin?error=NotAuthorized')
+  }
+
   // Only show onboarding to the first admin (isInitialAdmin) on their first login
   if (userRole === 'ADMIN' && !session.user.isSuperAdmin) {
     const { prisma } = await import('@/lib/prisma')
