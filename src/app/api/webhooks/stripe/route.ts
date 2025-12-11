@@ -71,7 +71,29 @@ async function handlePOST(request: NextRequest) {
   }
 }
 
+// GET handler for endpoint verification (returns status)
+async function handleGET(request: NextRequest) {
+  return NextResponse.json({
+    status: 'active',
+    endpoint: '/api/webhooks/stripe',
+    method: 'POST',
+    description: 'Stripe webhook endpoint for handling billing events',
+    events: [
+      'customer.subscription.created',
+      'customer.subscription.updated',
+      'customer.subscription.deleted',
+      'invoice.payment_succeeded',
+      'invoice.payment_failed',
+      'setup_intent.succeeded',
+      'payment_intent.succeeded',
+      'payment_intent.payment_failed'
+    ],
+    note: 'This endpoint only accepts POST requests from Stripe. Use Stripe Dashboard to test webhooks.'
+  })
+}
+
 export const POST = handlePOST // Webhooks don't need rate limiting, they're verified by signature
+export const GET = handleGET // For endpoint verification
 
 async function handlePaymentIntentSucceeded(paymentIntent: any) {
   const { metadata } = paymentIntent
