@@ -178,18 +178,38 @@ async function handleGET(
       ? Math.floor((new Date().getTime() - new Date(student.dob).getTime()) / (1000 * 60 * 60 * 24 * 365.25))
       : 0
 
-    // Calculate attendance stats
-    const allAttendance = await prisma.attendance.findMany({
-      where: {
-        studentId: id,
-        orgId
-      },
-      select: {
-        status: true,
-        date: true
-      }
-    })
-
+    // Calculate attendance stats - use count queries for better performance
+    const finalOrgId = orgId || student.orgId
+    const [presentCount, absentCount, lateCount, totalCount] = await Promise.all([
+      prisma.attendance.count({
+        where: {
+          studentId: id,
+          orgId: finalOrgId,
+          status: 'PRESENT'
+        }
+      }),
+      prisma.attendance.count({
+        where: {
+          studentId: id,
+          orgId: finalOrgId,
+          status: 'ABSENT'
+        }
+      }),
+      prisma.attendance.count({
+        where: {
+          studentId: id,
+          orgId: finalOrgId,
+          status: 'LATE'
+        }
+      }),
+      prisma.attendance.count({
+        where: {
+          studentId: id,
+          orgId: finalOrgId
+        }
+      })
+    ])
+    
     const presentAndLateCount = presentCount + lateCount
     const attendanceRate = totalCount > 0
       ? Math.round((presentAndLateCount / totalCount) * 100)
