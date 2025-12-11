@@ -61,6 +61,7 @@ function ParentSignupForm() {
   const [multipleStudents, setMultipleStudents] = useState<VerifiedStudent[]>([])
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null)
   const [applicationData, setApplicationData] = useState<ApplicationData | null>(null)
+  const [orgName, setOrgName] = useState<string | null>(null)
 
   // Verify child form data (only shown when no applicationId)
   const [verifyFormData, setVerifyFormData] = useState({
@@ -87,7 +88,7 @@ function ParentSignupForm() {
     relationshipToStudent: 'PARENT',
     // Payment & Gift Aid
     preferredPaymentMethod: '',
-    giftAidStatus: 'NOT_DECLARED'
+    giftAidStatus: 'NOT_SURE'
   })
 
   const [paymentSettings, setPaymentSettings] = useState<{
@@ -120,9 +121,24 @@ function ParentSignupForm() {
         setLoading(false)
         return
       }
+      // Fetch org name
+      fetchOrgName()
       setLoading(false)
     }
   }, [applicationId, orgSlug])
+
+  const fetchOrgName = async () => {
+    if (!orgSlug) return
+    try {
+      const response = await fetch(`/api/public/org-by-slug?slug=${orgSlug}`)
+      if (response.ok) {
+        const data = await response.json()
+        setOrgName(data.name)
+      }
+    } catch (err) {
+      // Silently fail - org name is not critical
+    }
+  }
 
   const fetchApplicationData = async () => {
     try {
@@ -516,12 +532,10 @@ function ParentSignupForm() {
   }
 
   // Determine page title
-  const pageTitle = applicationId && applicationData
-    ? `Create Your Parent Portal Account`
-    : `Create Your Parent Portal Account`
+  const pageTitle = `Create Your Parent Account`
   
   const pageSubtitle = applicationId && applicationData
-    ? `Your child's application has been accepted at ${applicationData.org.name}. Create your account to access the Parent Portal.`
+    ? `Your child's application has been accepted. Create your account to access the Parent Portal.`
     : verifiedStudent
     ? `Verified: ${verifiedStudent.firstName} ${verifiedStudent.lastName}`
     : `Verify your child's details to create your Parent Portal account.`
@@ -1069,40 +1083,8 @@ function ParentSignupForm() {
             <p className="text-xs text-neutral-500 mb-4">
               Gift Aid allows the madrasah to claim an extra 25% from the government on your donations at no extra cost to you.
             </p>
-            
-            {/* Full Gift Aid Declaration Statement */}
-            <div className="mb-4 p-4 bg-neutral-50 border border-neutral-200 rounded-lg">
-              <h4 className="text-sm font-semibold text-neutral-900 mb-3">Gift Aid Declaration Statement</h4>
-              <div className="space-y-2 text-xs text-neutral-700 leading-relaxed">
-                <p className="mb-3">
-                  I want the madrasah to reclaim tax on all qualifying payments I have made since 6 April 2024 and all future payments I make from the date of this declaration until I notify you otherwise.
-                </p>
-                <p className="font-medium mb-2">I understand that:</p>
-                <ul className="list-disc list-inside space-y-1 ml-2">
-                  <li>I must pay an amount of Income Tax and/or Capital Gains Tax for each tax year (6 April to 5 April) that is at least equal to the amount of Gift Aid that all charities and Community Amateur Sports Clubs (CASCs) will reclaim on my donations for that tax year.</li>
-                  <li>I understand the madrasah will reclaim 25% of the value of my payments from HMRC.</li>
-                  <li>If I pay less Income Tax and/or Capital Gains Tax than the amount of Gift Aid claimed on all my donations in that tax year, it is my responsibility to pay any difference.</li>
-                  <li>Please notify the madrasah if you want to cancel this declaration, change your name or home address, or if you no longer pay sufficient tax on your income and/or capital gains.</li>
-                </ul>
-                <p className="mt-3 font-medium">
-                  I confirm that I am a UK taxpayer and that the information I have provided is correct.
-                </p>
-              </div>
-            </div>
 
             <div className="space-y-2">
-              <label className="flex items-center gap-2 p-3 border border-neutral-200 rounded-lg cursor-pointer hover:bg-neutral-50">
-                <input
-                  type="radio"
-                  name="giftAid"
-                  value="NOT_DECLARED"
-                  checked={formData.giftAidStatus === 'NOT_DECLARED'}
-                  onChange={(e) => setFormData({ ...formData, giftAidStatus: e.target.value })}
-                  className="w-4 h-4"
-                />
-                <Gift className="h-4 w-4 text-neutral-400" />
-                <span className="text-sm">Not Declared</span>
-              </label>
               <label className="flex items-center gap-2 p-3 border border-neutral-200 rounded-lg cursor-pointer hover:bg-neutral-50">
                 <input
                   type="radio"
@@ -1113,7 +1095,19 @@ function ParentSignupForm() {
                   className="w-4 h-4"
                 />
                 <Gift className="h-4 w-4 text-green-500" />
-                <span className="text-sm">Eligible for Gift Aid</span>
+                <span className="text-sm">Yes, I am eligible for Gift Aid</span>
+              </label>
+              <label className="flex items-center gap-2 p-3 border border-neutral-200 rounded-lg cursor-pointer hover:bg-neutral-50">
+                <input
+                  type="radio"
+                  name="giftAid"
+                  value="NOT_SURE"
+                  checked={formData.giftAidStatus === 'NOT_SURE'}
+                  onChange={(e) => setFormData({ ...formData, giftAidStatus: e.target.value })}
+                  className="w-4 h-4"
+                />
+                <Gift className="h-4 w-4 text-neutral-400" />
+                <span className="text-sm">I'm not sure</span>
               </label>
               <label className="flex items-center gap-2 p-3 border border-neutral-200 rounded-lg cursor-pointer hover:bg-neutral-50">
                 <input
@@ -1125,7 +1119,7 @@ function ParentSignupForm() {
                   className="w-4 h-4"
                 />
                 <Gift className="h-4 w-4 text-neutral-400" />
-                <span className="text-sm">Not Eligible</span>
+                <span className="text-sm">No, I am not eligible</span>
               </label>
             </div>
           </div>
@@ -1165,14 +1159,14 @@ function ParentSignupForm() {
 
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
-      <div className="flex w-[60vw] flex-col gap-6">
+      <div className="flex w-full md:w-[60vw] flex-col gap-6">
         {/* Logo/Branding */}
         <a href="/" className="flex items-center gap-2 self-center">
           <Image src="/logo.png" alt="Madrasah OS" width={128} height={32} className="h-8 w-auto" priority fetchPriority="high" />
         </a>
 
         <div className="text-center mb-2">
-          <h1 className="text-2xl font-semibold text-neutral-900">{pageTitle}</h1>
+          <h1 className="text-lg sm:text-xl font-semibold text-neutral-900">{pageTitle}</h1>
           <p className="text-sm text-neutral-600 mt-1">{pageSubtitle}</p>
         </div>
 
