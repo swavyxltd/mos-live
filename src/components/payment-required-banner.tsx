@@ -19,14 +19,40 @@ export function PaymentRequiredBanner() {
       return
     }
 
-    // Get payment status from sessionStorage (set during initial load)
-    const storedStatus = sessionStorage.getItem('hasPaymentMethod')
-    if (storedStatus !== null) {
-      setHasPaymentMethod(storedStatus === 'true')
-    } else {
-      // Fallback: if not in sessionStorage, assume true (shouldn't happen on initial load)
-      setHasPaymentMethod(true)
+    // Check payment status directly from API
+    const checkPaymentStatus = async () => {
+      try {
+        const response = await fetch('/api/settings/platform-payment')
+        if (response.ok) {
+          const data = await response.json()
+          // Use hasPaymentMethod from API or check paymentMethodId
+          const hasPayment = data.hasPaymentMethod || !!data.paymentMethodId
+          setHasPaymentMethod(hasPayment)
+          // Update sessionStorage for other components
+          sessionStorage.setItem('hasPaymentMethod', hasPayment ? 'true' : 'false')
+        } else {
+          // If API fails, check sessionStorage as fallback
+          const storedStatus = sessionStorage.getItem('hasPaymentMethod')
+          if (storedStatus !== null) {
+            setHasPaymentMethod(storedStatus === 'true')
+          } else {
+            // Default to true if we can't determine (be permissive)
+            setHasPaymentMethod(true)
+          }
+        }
+      } catch (error) {
+        // If API fails, check sessionStorage as fallback
+        const storedStatus = sessionStorage.getItem('hasPaymentMethod')
+        if (storedStatus !== null) {
+          setHasPaymentMethod(storedStatus === 'true')
+        } else {
+          // Default to true if we can't determine (be permissive)
+          setHasPaymentMethod(true)
+        }
+      }
     }
+
+    checkPaymentStatus()
   }, [session])
 
   const handlePaymentSuccess = async () => {
