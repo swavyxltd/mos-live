@@ -143,16 +143,22 @@ export async function middleware(request: NextRequest) {
   // No special middleware check needed - they work exactly like /dashboard, /classes, etc.
   // The layout will handle permissions and access control
   
-  if (pathname.startsWith('/parent') && !roleHints?.isParent) {
-    // Redirect to their correct portal
-    if (token.isSuperAdmin) {
-      return NextResponse.redirect(new URL('/owner/overview', request.url))
-    } else if ((roleHints?.orgAdminOf && roleHints.orgAdminOf.length > 0) || 
-               (roleHints?.orgStaffOf && roleHints.orgStaffOf.length > 0)) {
-      return NextResponse.redirect(new URL('/dashboard', request.url))
-    } else {
-      return NextResponse.redirect(new URL('/auth/signin', request.url))
+  if (pathname.startsWith('/parent')) {
+    // Only redirect if we're CERTAIN they're not a parent
+    // If roleHints are missing or unclear, let the layout handle verification
+    if (roleHints && !roleHints.isParent) {
+      // We have roleHints and they're definitely not a parent - redirect
+      if (token.isSuperAdmin) {
+        return NextResponse.redirect(new URL('/owner/overview', request.url))
+      } else if ((roleHints.orgAdminOf && roleHints.orgAdminOf.length > 0) || 
+                 (roleHints.orgStaffOf && roleHints.orgStaffOf.length > 0)) {
+        return NextResponse.redirect(new URL('/dashboard', request.url))
+      } else {
+        return NextResponse.redirect(new URL('/auth/signin', request.url))
+      }
     }
+    // If roleHints are missing or isParent is unclear, let the parent layout handle it
+    // The layout will verify they're actually a parent and redirect if needed
   }
   
   // Add pathname as a header for server components to use
