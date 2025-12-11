@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { getActiveOrg } from '@/lib/org'
@@ -11,5 +12,9 @@ export default async function MessagesPage() {
     return <div>Loading...</div>
   }
 
-  return <MessagesPageClient />
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <MessagesPageClient />
+    </Suspense>
+  )
 }

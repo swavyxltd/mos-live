@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { SendMessageModal } from './send-message-modal'
@@ -25,7 +26,11 @@ interface Pagination {
 }
 
 export function MessagesPageClient() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const classId = searchParams.get('classId')
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [initialClassId, setInitialClassId] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
@@ -39,6 +44,15 @@ export function MessagesPageClient() {
   useEffect(() => {
     fetchMessages(page)
   }, [page])
+
+  useEffect(() => {
+    if (classId) {
+      setInitialClassId(classId)
+      setIsModalOpen(true)
+      // Remove classId from URL after opening modal
+      router.replace('/messages', { scroll: false })
+    }
+  }, [classId, router])
 
   const fetchMessages = async (currentPage: number = 1) => {
     setLoading(true)
@@ -199,13 +213,17 @@ export function MessagesPageClient() {
 
       <SendMessageModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false)
+          setInitialClassId(null)
+        }}
         onSend={handleSendMessage}
         onMessageSent={() => {
           // Reset to page 1 to see the new message
           setPage(1)
           fetchMessages(1)
         }}
+        initialClassId={initialClassId}
       />
     </div>
   )

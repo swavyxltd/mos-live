@@ -222,8 +222,8 @@ export function ClassDetailModal({ classId, isOpen, onClose, onClassUpdate }: Cl
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-[#eef2ff]">
-                      <BookOpen className="h-5 w-5 text-[#1d4ed8]" />
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-[var(--muted)]">
+                      <BookOpen className="h-5 w-5 text-[var(--foreground)]" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h2 className="text-lg sm:text-xl font-semibold text-[var(--foreground)] truncate">
@@ -456,10 +456,12 @@ export function ClassDetailModal({ classId, isOpen, onClose, onClassUpdate }: Cl
                               </div>
                             </div>
                             <div className="flex flex-col sm:flex-row gap-2 pt-3 border-t border-[var(--border)]">
-                              <Button variant="outline" size="sm" className="flex-1">
-                                <Mail className="h-4 w-4 mr-2" />
-                                Send Email
-                              </Button>
+                              <Link href={`/messages?classId=${classData.id}`} className="flex-1">
+                                <Button variant="outline" size="sm" className="w-full">
+                                  <Mail className="h-4 w-4 mr-2" />
+                                  Send Email
+                                </Button>
+                              </Link>
                               {classData.teacher.id && (
                                 <Link href={`/staff/${classData.teacher.id}`} className="flex-1">
                                   <Button variant="outline" size="sm" className="w-full">

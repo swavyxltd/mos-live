@@ -16,6 +16,7 @@ interface SendMessageModalProps {
   onClose: () => void
   onSend: (data: MessageData) => Promise<void>
   onMessageSent?: () => void // Callback to refresh messages list
+  initialClassId?: string | null // Pre-select a class when opening
 }
 
 interface MessageData {
@@ -37,7 +38,7 @@ interface Parent {
   email: string
 }
 
-export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent }: SendMessageModalProps) {
+export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent, initialClassId }: SendMessageModalProps) {
   const [formData, setFormData] = useState({
     title: '',
     message: '',
@@ -58,8 +59,26 @@ export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent }: Sen
     if (isOpen) {
       fetchClasses()
       fetchParents()
+      // If initialClassId is provided, set it and change audience to 'class'
+      if (initialClassId) {
+        setFormData(prev => ({
+          ...prev,
+          audience: 'class',
+          classId: initialClassId
+        }))
+      } else {
+        // Reset form when opening without initialClassId
+        setFormData({
+          title: '',
+          message: '',
+          audience: 'all',
+          classId: '',
+          parentId: '',
+          showOnAnnouncements: true
+        })
+      }
     }
-  }, [isOpen])
+  }, [isOpen, initialClassId])
 
   const fetchClasses = async () => {
     setLoadingClasses(true)
