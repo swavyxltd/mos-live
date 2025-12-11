@@ -79,7 +79,7 @@ export function SetupGuide() {
       description: 'Configure how parents can pay fees (card, cash, or bank transfer)',
       completed: setupStatus.paymentMethodsConfigured,
       icon: CreditCard,
-      href: '/settings/payment-methods',
+      href: '/settings?tab=payment-methods',
       action: 'Configure Payment Methods'
     },
     {

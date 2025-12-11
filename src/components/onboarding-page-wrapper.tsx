@@ -101,8 +101,8 @@ export function OnboardingPageWrapper({ initialStudents, classes, stats, orgSlug
         <StatCard
           title="Total Students"
           value={stats.total}
-          icon={<Users className="h-4 w-4 text-gray-600" />}
-          className="border-l-4 border-l-gray-500 bg-gray-50/30"
+          icon={<Users className="h-4 w-4 text-blue-600" />}
+          className="border-l-4 border-l-blue-500 bg-blue-50/30"
         />
         
         <StatCard

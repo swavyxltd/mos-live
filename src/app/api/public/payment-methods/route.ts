@@ -52,8 +52,8 @@ async function handleGET(request: NextRequest) {
     
     return NextResponse.json({
       acceptsCard: cardPaymentsAvailable,
-      acceptsCash: org.acceptsCash ?? true,
-      acceptsBankTransfer: org.acceptsBankTransfer ?? true,
+      acceptsCash: org.acceptsCash ?? false,
+      acceptsBankTransfer: org.acceptsBankTransfer ?? false,
       hasStripeConfigured,
       hasStripeConnect: !!org.stripeConnectAccountId,
       stripeEnabled: org.stripeEnabled,

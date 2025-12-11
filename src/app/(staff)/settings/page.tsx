@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -65,6 +65,7 @@ interface BillingRecord {
 export default function SettingsPage() {
   const { data: session, update, status } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [loading, setLoading] = useState(false)
   const [loadingOrgSettings, setLoadingOrgSettings] = useState(true)
   const [orgPhoneError, setOrgPhoneError] = useState('')
@@ -137,7 +138,21 @@ export default function SettingsPage() {
 
   const [billingRecords, setBillingRecords] = useState<BillingRecord[]>([])
   const [loadingBillingRecords, setLoadingBillingRecords] = useState(true)
-  const [activeTab, setActiveTab] = useState('organisation')
+  // Initialize activeTab from URL parameter, default to 'organisation'
+  const [activeTab, setActiveTab] = useState(() => {
+    const tabParam = searchParams.get('tab')
+    return tabParam && ['organisation', 'profile', 'payment-methods', 'subscription'].includes(tabParam)
+      ? tabParam
+      : 'organisation'
+  })
+
+  // Update activeTab when URL parameter changes
+  useEffect(() => {
+    const tabParam = searchParams.get('tab')
+    if (tabParam && ['organisation', 'profile', 'payment-methods', 'subscription'].includes(tabParam)) {
+      setActiveTab(tabParam)
+    }
+  }, [searchParams])
 
   useEffect(() => {
     fetchUserSettings()

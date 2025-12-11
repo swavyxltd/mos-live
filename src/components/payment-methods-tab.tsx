@@ -49,14 +49,17 @@ export function PaymentMethodsTab() {
   const { hasPermission } = useStaffPermissions(session?.user, userSubrole as any)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [savingPaymentMethods, setSavingPaymentMethods] = useState(false)
+  const [savingBillingDay, setSavingBillingDay] = useState(false)
+  const [savingPaymentInstructions, setSavingPaymentInstructions] = useState(false)
   const [settings, setSettings] = useState<PaymentMethodSettings>({
     stripeEnabled: false,
     autoPaymentEnabled: true,
-    cashPaymentEnabled: true,
-    bankTransferEnabled: true,
+    cashPaymentEnabled: false,
+    bankTransferEnabled: false,
     acceptsCard: false,
-    acceptsCash: true,
-    acceptsBankTransfer: true,
+    acceptsCash: false,
+    acceptsBankTransfer: false,
     billingDay: 1,
     stripeConnectAccountId: null,
     hasStripeConnect: false,
@@ -153,6 +156,100 @@ export function PaymentMethodsTab() {
       toast.error(error instanceof Error ? error.message : 'Failed to save payment settings')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleSavePaymentMethods = async () => {
+    if (!hasPermission('access_settings')) {
+      toast.error('You do not have permission to manage payment settings')
+      return
+    }
+
+    setSavingPaymentMethods(true)
+    try {
+      const response = await fetch('/api/settings/payment-methods', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          acceptsCard: settings.acceptsCard,
+          acceptsCash: settings.acceptsCash,
+          acceptsBankTransfer: settings.acceptsBankTransfer,
+          cashPaymentEnabled: settings.cashPaymentEnabled,
+          bankTransferEnabled: settings.bankTransferEnabled
+        })
+      })
+
+      if (response.ok) {
+        toast.success('Payment methods saved successfully')
+        await fetchPaymentSettings()
+      } else {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to save payment methods')
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to save payment methods')
+    } finally {
+      setSavingPaymentMethods(false)
+    }
+  }
+
+  const handleSaveBillingDay = async () => {
+    if (!hasPermission('access_settings')) {
+      toast.error('You do not have permission to manage payment settings')
+      return
+    }
+
+    setSavingBillingDay(true)
+    try {
+      const response = await fetch('/api/settings/payment-methods', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          billingDay: settings.billingDay
+        })
+      })
+
+      if (response.ok) {
+        toast.success('Billing day saved successfully')
+        await fetchPaymentSettings()
+      } else {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to save billing day')
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to save billing day')
+    } finally {
+      setSavingBillingDay(false)
+    }
+  }
+
+  const handleSavePaymentInstructions = async () => {
+    if (!hasPermission('access_settings')) {
+      toast.error('You do not have permission to manage payment settings')
+      return
+    }
+
+    setSavingPaymentInstructions(true)
+    try {
+      const response = await fetch('/api/settings/payment-methods', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          paymentInstructions: settings.paymentInstructions
+        })
+      })
+
+      if (response.ok) {
+        toast.success('Payment instructions saved successfully')
+        await fetchPaymentSettings()
+      } else {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to save payment instructions')
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to save payment instructions')
+    } finally {
+      setSavingPaymentInstructions(false)
     }
   }
 
@@ -428,6 +525,30 @@ export function PaymentMethodsTab() {
               Parents can pay in cash at the school office
             </p>
           </div>
+
+          {/* Save Button for Payment Methods */}
+          {hasPermission('access_settings') && (
+            <div className="flex justify-end pt-4">
+              <Button
+                onClick={handleSavePaymentMethods}
+                disabled={savingPaymentMethods}
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                {savingPaymentMethods ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" />
+                    Save Payment Methods
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -554,17 +675,41 @@ export function PaymentMethodsTab() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="max-w-xs">
-            <Label htmlFor="billingDay">Billing Day</Label>
-            <Input
-              id="billingDay"
-              type="number"
-              min="1"
-              max="28"
-              value={settings.billingDay}
-              onChange={(e) => handleSettingChange('billingDay', parseInt(e.target.value) || 1)}
-              disabled={!hasPermission('access_settings')}
-            />
+          <div className="space-y-4">
+            <div className="max-w-xs">
+              <Label htmlFor="billingDay">Billing Day</Label>
+              <Input
+                id="billingDay"
+                type="number"
+                min="1"
+                max="28"
+                value={settings.billingDay}
+                onChange={(e) => handleSettingChange('billingDay', parseInt(e.target.value) || 1)}
+                disabled={!hasPermission('access_settings')}
+              />
+            </div>
+            {hasPermission('access_settings') && (
+              <div className="flex justify-end">
+                <Button
+                  onClick={handleSaveBillingDay}
+                  disabled={savingBillingDay}
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  {savingBillingDay ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      Save Billing Day
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -581,13 +726,37 @@ export function PaymentMethodsTab() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Textarea
-            placeholder="Enter payment instructions for parents..."
-            value={settings.paymentInstructions || ''}
-            onChange={(e) => handleSettingChange('paymentInstructions', e.target.value)}
-            disabled={!hasPermission('manage_payments')}
-            rows={4}
-          />
+          <div className="space-y-4">
+            <Textarea
+              placeholder="Enter payment instructions for parents..."
+              value={settings.paymentInstructions || ''}
+              onChange={(e) => handleSettingChange('paymentInstructions', e.target.value)}
+              disabled={!hasPermission('access_settings')}
+              rows={4}
+            />
+            {hasPermission('access_settings') && (
+              <div className="flex justify-end">
+                <Button
+                  onClick={handleSavePaymentInstructions}
+                  disabled={savingPaymentInstructions}
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  {savingPaymentInstructions ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      Save Instructions
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 

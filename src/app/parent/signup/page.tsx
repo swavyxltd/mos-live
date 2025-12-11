@@ -188,8 +188,8 @@ function ParentSignupForm() {
         const settings = await response.json()
         setPaymentSettings({
           acceptsCard: settings.acceptsCard || false,
-          acceptsCash: settings.acceptsCash !== false, // Default true
-          acceptsBankTransfer: settings.acceptsBankTransfer !== false, // Default true
+          acceptsCash: settings.acceptsCash || false, // Default false
+          acceptsBankTransfer: settings.acceptsBankTransfer || false, // Default false
           hasStripeConfigured: settings.hasStripeConfigured || false,
           hasStripeConnect: settings.hasStripeConnect || false,
           stripeEnabled: settings.stripeEnabled || false,
@@ -201,11 +201,11 @@ function ParentSignupForm() {
         })
       }
     } catch (err) {
-      // Default to all payment methods if fetch fails
+      // Default to all payment methods off if fetch fails
       setPaymentSettings({
         acceptsCard: false,
-        acceptsCash: true,
-        acceptsBankTransfer: true,
+        acceptsCash: false,
+        acceptsBankTransfer: false,
         hasStripeConfigured: false,
         hasStripeConnect: false,
         stripeEnabled: false,

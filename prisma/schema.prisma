@@ -327,8 +327,8 @@ model Org {
   stripeSecretKey        String?
   stripeWebhookSecret    String?
   autoPaymentEnabled     Boolean                @default(true)
-  cashPaymentEnabled     Boolean                @default(true)
-  bankTransferEnabled    Boolean                @default(true)
+  cashPaymentEnabled     Boolean                @default(false)
+  bankTransferEnabled    Boolean                @default(false)
   paymentInstructions    String?
   addressLine1           String?
   city                   String?
@@ -343,8 +343,8 @@ model Org {
   feeDueDay              Int?                   @default(1)
   stripeConnectAccountId String?
   acceptsCard            Boolean                @default(false)
-  acceptsCash            Boolean                @default(true)
-  acceptsBankTransfer    Boolean                @default(true)
+  acceptsCash            Boolean                @default(false)
+  acceptsBankTransfer    Boolean                @default(false)
   billingDay             Int?                   @default(1)
   Application            Application[]
   Attendance             Attendance[]
