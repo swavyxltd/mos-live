@@ -181,16 +181,11 @@ export function StudentDetailModal({
   )
 
   // Check if user has access to fees - admins, finance officers, and super admins can view
-  // Also check role hints from session
-  const userRole = session?.user?.roleHints
-  const isOrgAdmin = userRole?.orgAdminOf && userRole.orgAdminOf.length > 0
-  // Check if user has access to fees - admins, finance officers, and super admins can view
   // Also check role hints from session - ADMIN role should always see fees
   const userRole = session?.user?.roleHints
   const isOrgAdmin = userRole?.orgAdminOf && userRole.orgAdminOf.length > 0
-  // For now, let's be more permissive - if user is admin or has finance access, show fees
-  // Also check if they can view the fees section
-  const canViewFees = session?.user?.isSuperAdmin || isOrgAdmin || isAdmin() || isFinanceOfficer() || canViewSection('fees') || true // Temporarily show for all to debug
+  // Show fees for: super admins, org admins, staff with admin subrole, finance officers, or users with fees permission
+  const canViewFees = session?.user?.isSuperAdmin || isOrgAdmin || isAdmin() || isFinanceOfficer() || canViewSection('fees')
 
   // Fetch student data
   useEffect(() => {
