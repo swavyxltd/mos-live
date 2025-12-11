@@ -3,7 +3,7 @@
 import { useSearchParams, useRouter } from 'next/navigation'
 import { useState, useEffect, Suspense } from 'react'
 import Image from 'next/image'
-import { Mail, Lock, User, Calendar, AlertCircle, Loader2, CheckCircle, Phone, MapPin, CreditCard, Gift, Building2, Coins, Shield, PhoneCall, Globe, MessageSquare, Info } from 'lucide-react'
+import { Mail, Lock, User, Calendar, AlertCircle, Loader2, CheckCircle, Phone, MapPin, CreditCard, Gift, Building2, Coins, Shield, PhoneCall, Globe, MessageSquare, Info, Copy } from 'lucide-react'
 import { isValidEmail, isValidDateOfBirth, isValidName, isValidPhone, isValidUKPostcode } from '@/lib/input-validation'
 import { Onboarding01 } from '@/components/onboarding-01'
 import { formatDate } from '@/lib/utils'
@@ -164,8 +164,12 @@ function ParentSignupForm() {
         name: data.application.guardianName
       }))
       
-      // Fetch payment settings for this org (will use org slug from data)
-      await fetchPaymentSettings()
+      // Fetch payment settings for this org (pass slug directly since state update is async)
+      if (data.org?.slug) {
+        await fetchPaymentSettings(data.org.slug)
+      } else {
+        console.error('No org slug in application data:', data)
+      }
       
       setShowSignupForm(true) // Skip verification, show signup form directly
       setLoading(false)
@@ -175,32 +179,42 @@ function ParentSignupForm() {
     }
   }
 
-  const fetchPaymentSettings = async (orgId?: string) => {
+  const fetchPaymentSettings = async (orgSlugParam?: string) => {
     try {
-      // Use orgSlug from URL or from application data
-      const slugToUse = applicationData?.org?.slug || orgSlug
-      if (!slugToUse) return
+      // Use passed slug, or from URL, or from application data
+      const slugToUse = orgSlugParam || applicationData?.org?.slug || orgSlug
+      if (!slugToUse) {
+        console.log('No orgSlug available for fetching payment settings')
+        return
+      }
 
+      console.log('Fetching payment settings for orgSlug:', slugToUse)
       // Fetch from public endpoint
       const response = await fetch(`/api/public/payment-methods?orgSlug=${slugToUse}`)
       
       if (response.ok) {
         const settings = await response.json()
+        console.log('Payment settings received:', settings)
         setPaymentSettings({
-          acceptsCard: settings.acceptsCard || false,
-          acceptsCash: settings.acceptsCash || false, // Default false
-          acceptsBankTransfer: settings.acceptsBankTransfer || false, // Default false
-          hasStripeConfigured: settings.hasStripeConfigured || false,
-          hasStripeConnect: settings.hasStripeConnect || false,
-          stripeEnabled: settings.stripeEnabled || false,
+          acceptsCard: Boolean(settings.acceptsCard),
+          acceptsCash: Boolean(settings.acceptsCash),
+          acceptsBankTransfer: Boolean(settings.acceptsBankTransfer),
+          hasStripeConfigured: Boolean(settings.hasStripeConfigured),
+          hasStripeConnect: Boolean(settings.hasStripeConnect),
+          stripeEnabled: Boolean(settings.stripeEnabled),
           bankAccountName: settings.bankAccountName || null,
           bankSortCode: settings.bankSortCode || null,
           bankAccountNumber: settings.bankAccountNumber || null,
           paymentInstructions: settings.paymentInstructions || null,
           billingDay: settings.billingDay || 1
         })
+      } else {
+        console.error('Failed to fetch payment settings:', response.status, response.statusText)
+        const errorData = await response.json().catch(() => ({}))
+        console.error('Error data:', errorData)
       }
     } catch (err) {
+      console.error('Error fetching payment settings:', err)
       // Default to all payment methods off if fetch fails
       setPaymentSettings({
         acceptsCard: false,
@@ -284,7 +298,12 @@ function ParentSignupForm() {
       setSelectedStudentId(data.student.id)
       
       // Fetch payment settings
-      await fetchPaymentSettings()
+      // Fetch payment settings - use orgSlug from URL if available
+      if (orgSlug) {
+        await fetchPaymentSettings(orgSlug)
+      } else if (applicationData?.org?.slug) {
+        await fetchPaymentSettings(applicationData.org.slug)
+      }
       
       setShowSignupForm(true) // Hide verification, show signup form
       setSubmitting(false)
@@ -382,14 +401,38 @@ function ParentSignupForm() {
       if (typeof window !== 'undefined' && (window as any).__onboardingNextStep) {
         (window as any).__onboardingNextStep('personal')
       }
+    } else if (currentStep === 'payment') {
+      // Payment step - validate if payment method is required
+      if (paymentSettings) {
+        const hasAvailableMethods = paymentSettings.acceptsCard || paymentSettings.acceptsCash || paymentSettings.acceptsBankTransfer
+        if (hasAvailableMethods && !formData.preferredPaymentMethod) {
+          setError('Please select a payment method')
+          return
+        }
+      }
+      setError('')
+      // Call Onboarding01's handleNextStep to open the next step (Gift Aid)
+      if (typeof window !== 'undefined' && (window as any).__onboardingNextStep) {
+        (window as any).__onboardingNextStep('payment')
+      }
     }
   }
 
   const handleBackStep = () => {
     if (currentStep === 'payment') {
       setCurrentStep('personal')
+      setError('')
+      // Call Onboarding01's handleBackStep to go back to previous step
+      if (typeof window !== 'undefined' && (window as any).__onboardingBackStep) {
+        (window as any).__onboardingBackStep('payment')
+      }
     } else if (currentStep === 'personal') {
       setCurrentStep('account')
+      setError('')
+      // Call Onboarding01's handleBackStep to go back to previous step
+      if (typeof window !== 'undefined' && (window as any).__onboardingBackStep) {
+        (window as any).__onboardingBackStep('personal')
+      }
     }
   }
 
@@ -948,7 +991,7 @@ function ParentSignupForm() {
                       value="CARD"
                       checked={formData.preferredPaymentMethod === 'CARD'}
                       onChange={(e) => setFormData({ ...formData, preferredPaymentMethod: e.target.value })}
-                      className="w-4 h-4 mt-0.5"
+                      className="w-4 h-4 mt-0.5 accent-green-600"
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
@@ -975,7 +1018,7 @@ function ParentSignupForm() {
                       value="BANK_TRANSFER"
                       checked={formData.preferredPaymentMethod === 'BANK_TRANSFER'}
                       onChange={(e) => setFormData({ ...formData, preferredPaymentMethod: e.target.value })}
-                      className="w-4 h-4 mt-0.5"
+                      className="w-4 h-4 mt-0.5 accent-green-600"
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
@@ -987,32 +1030,71 @@ function ParentSignupForm() {
                           <p className="text-xs text-neutral-600">
                             Set up a standing order for automatic monthly payments.
                           </p>
-                          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
                             <div className="flex items-center space-x-2 mb-3">
-                              <Info className="h-4 w-4 text-blue-600" />
-                              <p className="text-xs font-medium text-blue-900">Standing Order Details</p>
+                              <Info className="h-4 w-4 text-gray-600" />
+                              <p className="text-xs font-medium text-gray-900">Standing Order Details</p>
                             </div>
-                            <div className="space-y-2 text-xs text-blue-800 mb-3">
-                              <div className="flex justify-between">
+                            <div className="space-y-2 text-xs text-gray-800 mb-3">
+                              <div className="flex justify-between items-center">
                                 <span className="font-medium">Account Name:</span>
-                                <span className="font-mono">{paymentSettings.bankAccountName}</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono">{paymentSettings.bankAccountName}</span>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      navigator.clipboard.writeText(paymentSettings.bankAccountName || '')
+                                    }}
+                                    className="p-1 hover:bg-gray-200 rounded transition-colors"
+                                    title="Copy account name"
+                                  >
+                                    <Copy className="h-3 w-3 text-gray-600" />
+                                  </button>
+                                </div>
                               </div>
-                              <div className="flex justify-between">
+                              <div className="flex justify-between items-center">
                                 <span className="font-medium">Sort Code:</span>
-                                <span className="font-mono">{paymentSettings.bankSortCode}</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono">{paymentSettings.bankSortCode}</span>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      navigator.clipboard.writeText(paymentSettings.bankSortCode || '')
+                                    }}
+                                    className="p-1 hover:bg-gray-200 rounded transition-colors"
+                                    title="Copy sort code"
+                                  >
+                                    <Copy className="h-3 w-3 text-gray-600" />
+                                  </button>
+                                </div>
                               </div>
-                              <div className="flex justify-between">
+                              <div className="flex justify-between items-center">
                                 <span className="font-medium">Account Number:</span>
-                                <span className="font-mono">{paymentSettings.bankAccountNumber}</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono">{paymentSettings.bankAccountNumber}</span>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      navigator.clipboard.writeText(paymentSettings.bankAccountNumber || '')
+                                    }}
+                                    className="p-1 hover:bg-gray-200 rounded transition-colors"
+                                    title="Copy account number"
+                                  >
+                                    <Copy className="h-3 w-3 text-gray-600" />
+                                  </button>
+                                </div>
                               </div>
                               <div className="flex justify-between">
                                 <span className="font-medium">Payment Date:</span>
                                 <span>The {paymentSettings.billingDay}{paymentSettings.billingDay === 1 ? 'st' : paymentSettings.billingDay === 2 ? 'nd' : paymentSettings.billingDay === 3 ? 'rd' : 'th'} of each month</span>
                               </div>
                             </div>
-                            <div className="mt-3 p-2 bg-white border border-blue-200 rounded">
-                              <p className="text-xs font-medium text-blue-900 mb-1">How to set up:</p>
-                              <p className="text-xs text-blue-800">
+                            <div className="mt-3 p-2 bg-white border border-gray-200 rounded">
+                              <p className="text-xs font-medium text-gray-900 mb-1">How to set up:</p>
+                              <p className="text-xs text-gray-800">
                                 Set up a standing order through your online banking or mobile banking app using the details above. 
                                 Once set up, payments will be made automatically each month—no need to remember to pay manually!
                               </p>
@@ -1035,7 +1117,7 @@ function ParentSignupForm() {
                       value="CASH"
                       checked={formData.preferredPaymentMethod === 'CASH'}
                       onChange={(e) => setFormData({ ...formData, preferredPaymentMethod: e.target.value })}
-                      className="w-4 h-4 mt-0.5"
+                      className="w-4 h-4 mt-0.5 accent-green-600"
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">

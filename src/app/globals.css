@@ -233,3 +233,47 @@ table {
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom radio button styling - white by default, green when selected */
+input[type="radio"] {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid #d1d5db;
+  border-radius: 50%;
+  background-color: white;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+input[type="radio"]:checked {
+  border-color: #16a34a;
+  background-color: white;
+}
+
+input[type="radio"]:checked::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background-color: #16a34a;
+}
+
+input[type="radio"]:hover {
+  border-color: #9ca3af;
+}
+
+input[type="radio"]:checked:hover {
+  border-color: #15803d;
+}
+
+input[type="radio"]:checked::before {
+  background-color: #15803d;
+}

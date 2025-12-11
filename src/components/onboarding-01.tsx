@@ -194,13 +194,30 @@ export function Onboarding01({
     }
   }, [currentSteps, onNextStep]);
 
-  // Expose handleNextStep via window for buttons to access
+  const handleBackStep = useCallback((currentStepId: string) => {
+    const currentIndex = currentSteps.findIndex(s => s.id === currentStepId);
+    if (currentIndex > 0) {
+      const prevStep = currentSteps[currentIndex - 1];
+      setOpenStepId(prevStep.id);
+      // Scroll to previous step
+      setTimeout(() => {
+        const prevElement = document.querySelector(`[data-step-id="${prevStep.id}"]`);
+        if (prevElement) {
+          prevElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+    }
+  }, [currentSteps]);
+
+  // Expose handleNextStep and handleBackStep via window for buttons to access
   useEffect(() => {
     (window as any).__onboardingNextStep = handleNextStep;
+    (window as any).__onboardingBackStep = handleBackStep;
     return () => {
       delete (window as any).__onboardingNextStep;
+      delete (window as any).__onboardingBackStep;
     };
-  }, [handleNextStep]);
+  }, [handleNextStep, handleBackStep]);
 
   const handleStepAction = (step: OnboardingStep) => {
     if (onStepAction) {
@@ -230,7 +247,7 @@ export function Onboarding01({
 
   return (
     <div className="w-full">
-      <div className="w-full rounded-lg border border-border bg-white p-4 text-card-foreground">
+      <div className="w-full bg-white p-4 text-card-foreground">
           <div className="mb-4 mr-2 flex flex-col justify-between sm:flex-row sm:items-center">
             <h3 className="ml-2 font-semibold text-foreground">
               {title}
@@ -269,7 +286,6 @@ export function Onboarding01({
                   data-step-id={step.id}
                   className={cn(
                     "group",
-                    isOpen && "rounded-lg",
                     showBorderTop && "border-t border-border"
                   )}
                 >
@@ -289,14 +305,12 @@ export function Onboarding01({
                       }
                     }}
                     className={cn(
-                      "block w-full cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                      isOpen && "rounded-lg"
+                      "block w-full cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     )}
                   >
                     <div
                       className={cn(
-                        "relative overflow-hidden rounded-lg transition-colors",
-                        isOpen && "border border-border"
+                        "relative overflow-hidden transition-colors"
                       )}
                     >
                       <div className="relative flex items-center justify-between gap-3 py-3 pl-4 pr-2">
