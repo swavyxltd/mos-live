@@ -25,7 +25,9 @@ async function handlePOST(request: NextRequest) {
         email: true,
         twoFactorCode: true,
         twoFactorCodeExpiry: true,
-        lastTwoFactorAt: true
+        lastTwoFactorAt: true,
+        isSuperAdmin: true,
+        memorableWord: true
       }
     })
 
@@ -73,7 +75,9 @@ async function handlePOST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       signinToken,
-      email: user.email
+      email: user.email,
+      isSuperAdmin: user.isSuperAdmin,
+      needsMemorableWord: user.isSuperAdmin && !user.memorableWord
     })
   } catch (error: any) {
     logger.error('Complete signin error', error)

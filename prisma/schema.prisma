@@ -617,6 +617,7 @@ model User {
   twoFactorCode          String?
   twoFactorCodeExpiry    DateTime?
   twoFactorEnabled       Boolean                 @default(true)
+  memorableWord          String?
   address                String?
   giftAidDeclaredAt      DateTime?
   giftAidStatus          String?

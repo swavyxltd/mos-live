@@ -16,6 +16,10 @@ function Verify2FAContent() {
   const [successMessage, setSuccessMessage] = useState('')
   const [email, setEmail] = useState('')
   const [pendingUserId, setPendingUserId] = useState<string | null>(null)
+  const [needsMemorableWord, setNeedsMemorableWord] = useState(false)
+  const [memorableWord, setMemorableWord] = useState('')
+  const [isSavingMemorableWord, setIsSavingMemorableWord] = useState(false)
+  const [showMemorableWordStep, setShowMemorableWordStep] = useState(false)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
@@ -142,45 +146,121 @@ function Verify2FAContent() {
         return
       }
 
-      // Use the signin token to complete NextAuth signin
-      const userEmail = sessionStorage.getItem('pendingEmail')
-      if (!userEmail) {
-        setError('Session expired. Please sign in again.')
-        router.push('/auth/signin')
-        return
-      }
-
-      // Complete signin with NextAuth using the signin token
-      const result = await signIn('credentials', {
-        email: userEmail,
-        password: sessionData.signinToken, // Use token as password
-        redirect: false,
-        callbackUrl: callbackUrl
-      })
-
-      // Clear sessionStorage
-      sessionStorage.removeItem('pendingUserId')
-      sessionStorage.removeItem('pendingEmail')
-
-      if (result?.error) {
-        setError('Failed to complete sign in. Please try again.')
+      // Check if owner account needs memorable word
+      if (sessionData.needsMemorableWord) {
+        setNeedsMemorableWord(true)
+        setShowMemorableWordStep(true)
         setIsLoading(false)
         return
       }
 
-      if (result?.ok) {
-        // Get session and redirect
-        const session = await getSession()
-        if ((session?.user as any)?.roleHints) {
-          const redirectUrl = getPostLoginRedirect((session.user as any).roleHints)
-          window.location.href = redirectUrl || callbackUrl
-        } else {
-          window.location.href = callbackUrl
-        }
-      }
+      // Complete signin if no memorable word needed
+      await completeSignIn(sessionData.signinToken)
     } catch (error) {
       setError('An error occurred. Please try again.')
       setIsLoading(false)
+    }
+  }
+
+  const completeSignIn = async (signinToken: string) => {
+    const userEmail = sessionStorage.getItem('pendingEmail')
+    if (!userEmail) {
+      setError('Session expired. Please sign in again.')
+      router.push('/auth/signin')
+      return
+    }
+
+    // Complete signin with NextAuth using the signin token
+    const result = await signIn('credentials', {
+      email: userEmail,
+      password: signinToken, // Use token as password
+      redirect: false,
+      callbackUrl: callbackUrl
+    })
+
+    // Clear sessionStorage
+    sessionStorage.removeItem('pendingUserId')
+    sessionStorage.removeItem('pendingEmail')
+
+    if (result?.error) {
+      setError('Failed to complete sign in. Please try again.')
+      setIsLoading(false)
+      return
+    }
+
+    if (result?.ok) {
+      // Get session and redirect
+      const session = await getSession()
+      if ((session?.user as any)?.roleHints) {
+        const redirectUrl = getPostLoginRedirect((session.user as any).roleHints)
+        window.location.href = redirectUrl || callbackUrl
+      } else {
+        window.location.href = callbackUrl
+      }
+    }
+  }
+
+  const handleSaveMemorableWord = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!memorableWord.trim()) {
+      setError('Please enter a memorable word')
+      return
+    }
+
+    if (memorableWord.trim().length < 3) {
+      setError('Memorable word must be at least 3 characters')
+      return
+    }
+
+    if (!pendingUserId) {
+      setError('Session expired. Please sign in again.')
+      router.push('/auth/signin')
+      return
+    }
+
+    setIsSavingMemorableWord(true)
+    setError('')
+
+    try {
+      // Get signin token first (we need it for completing signin)
+      const sessionResponse = await fetch('/api/auth/complete-signin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: pendingUserId })
+      })
+
+      const sessionData = await sessionResponse.json()
+
+      if (!sessionResponse.ok || !sessionData.success) {
+        setError(sessionData.error || 'Failed to get signin token. Please try again.')
+        setIsSavingMemorableWord(false)
+        return
+      }
+
+      // Save memorable word
+      const saveResponse = await fetch('/api/auth/save-memorable-word', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: pendingUserId,
+          memorableWord: memorableWord.trim()
+        })
+      })
+
+      const saveData = await saveResponse.json()
+
+      if (!saveResponse.ok) {
+        setError(saveData.error || 'Failed to save memorable word. Please try again.')
+        setIsSavingMemorableWord(false)
+        return
+      }
+
+      // Memorable word saved - complete signin
+      await completeSignIn(sessionData.signinToken)
+    } catch (error) {
+      setError('An error occurred. Please try again.')
+      setIsSavingMemorableWord(false)
     }
   }
 
@@ -273,8 +353,46 @@ function Verify2FAContent() {
             </div>
           )}
 
-          {/* Code input form */}
-          <form onSubmit={handleVerify} className="space-y-6">
+          {/* Memorable Word Step - Only for owner accounts */}
+          {showMemorableWordStep && needsMemorableWord ? (
+            <form onSubmit={handleSaveMemorableWord} className="space-y-6">
+              <div>
+                <label htmlFor="memorableWord" className="block text-sm font-medium text-gray-700 mb-2">
+                  Enter Memorable Word *
+                </label>
+                <p className="text-xs text-gray-500 mb-3">
+                  Please enter a memorable word for your owner account. This will be stored securely.
+                </p>
+                <input
+                  id="memorableWord"
+                  type="text"
+                  value={memorableWord}
+                  onChange={(e) => {
+                    setMemorableWord(e.target.value)
+                    setError('')
+                  }}
+                  className="w-full h-11 px-4 text-base border-2 border-gray-200 rounded-lg focus:outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100 transition-colors"
+                  placeholder="Enter your memorable word"
+                  disabled={isSavingMemorableWord}
+                  autoFocus
+                  maxLength={50}
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                  Minimum 3 characters
+                </p>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSavingMemorableWord || !memorableWord.trim() || memorableWord.trim().length < 3}
+                className="w-full h-11 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSavingMemorableWord ? 'Saving...' : 'Continue'}
+              </button>
+            </form>
+          ) : (
+            /* Code input form */
+            <form onSubmit={handleVerify} className="space-y-6">
             {/* Code inputs */}
             <div className="flex justify-center gap-2 sm:gap-3">
               {code.map((digit, index) => (
@@ -331,6 +449,7 @@ function Verify2FAContent() {
               </button>
             </div>
           </form>
+          )}
         </div>
       </div>
     </div>
