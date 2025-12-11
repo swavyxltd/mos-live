@@ -17,8 +17,16 @@ export default async function OwnerLayout({
     redirect('/auth/signin')
   }
   
-  if (!canAccessOwnerFeatures('ADMIN', session.user.isSuperAdmin)) {
-    redirect('/dashboard')
+  // STRICT: Only allow super admins (owners) to access owner portal
+  if (!session.user.isSuperAdmin) {
+    // Redirect based on their actual role
+    if (session.user.roleHints?.isParent) {
+      redirect('/parent/dashboard')
+    } else if (session.user.roleHints?.orgAdminOf?.length || session.user.roleHints?.orgStaffOf?.length) {
+      redirect('/dashboard')
+    } else {
+      redirect('/auth/signin')
+    }
   }
   
   const org = await getActiveOrg()
