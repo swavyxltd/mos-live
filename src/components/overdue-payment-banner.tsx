@@ -92,12 +92,12 @@ export function OverduePaymentBanner() {
 
   return (
     <>
-      <Card className="mb-6 border-red-200 bg-red-50">
+      <Card className="mb-6 border-red-200 bg-red-50 w-full max-w-full">
         <CardContent className="p-4 !pt-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <AlertTriangle className="h-6 w-6 text-red-600" />
-              <div>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-center space-x-3 flex-1 min-w-0">
+              <AlertTriangle className="h-6 w-6 text-red-600 flex-shrink-0" />
+              <div className="min-w-0">
                 <h3 className="font-semibold text-red-900">
                   Payment Overdue
                 </h3>
@@ -108,7 +108,7 @@ export function OverduePaymentBanner() {
             </div>
             <Button 
               onClick={handlePayNow}
-              className="bg-red-600 hover:bg-red-700 text-white"
+              className="bg-red-600 hover:bg-red-700 text-white flex-shrink-0"
             >
               <CreditCard className="h-4 w-4 mr-2" />
               Pay Now

@@ -432,22 +432,23 @@ export function getPostLoginRedirect(roleHints: {
   orgStaffOf: string[]
   isParent: boolean
 }): string {
-  // Priority order: Owner → Admin → Parent → Staff → Fallback
-  // Note: Parent is checked before Staff to ensure parents always go to parent portal
+  // Priority order: Parent → Owner → Admin → Staff → Fallback
+  // Note: Parent is checked FIRST to ensure parents always go to parent portal,
+  // even if they also have owner/admin/staff roles
   
-  // 1) Owner → /owner
+  // 1) Parent → /parent/dashboard (checked FIRST to prioritize parent portal)
+  if (roleHints.isParent) {
+    return '/parent/dashboard'
+  }
+  
+  // 2) Owner → /owner
   if (roleHints.isOwner) {
     return '/owner/overview'
   }
   
-  // 2) Admin (org admin) → /dashboard
+  // 3) Admin (org admin) → /dashboard
   if (roleHints.orgAdminOf.length > 0) {
     return '/dashboard'
-  }
-  
-  // 3) Parent → /parent/dashboard (checked before Staff to prioritize parent portal)
-  if (roleHints.isParent) {
-    return '/parent/dashboard'
   }
   
   // 4) Staff (any staff role) → /dashboard
