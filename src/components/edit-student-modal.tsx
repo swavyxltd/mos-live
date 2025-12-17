@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { X, Save, User, Mail, Phone, MapPin, Heart, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import { isValidName, isValidDateOfBirth, isValidEmailStrict, isValidPhone, isValidAddressLine, isValidCity, isValidUKPostcode } from '@/lib/input-validation'
+import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes-warning'
 
 interface Student {
   id: string
@@ -59,6 +60,7 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
   })
 
   const [isLoading, setIsLoading] = useState(false)
+  const [originalFormData, setOriginalFormData] = useState(formData)
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -76,7 +78,7 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
   // Initialize form data when student changes
   useEffect(() => {
     if (student) {
-      setFormData({
+      const initialData = {
         firstName: student.firstName || '',
         lastName: student.lastName || '',
         dateOfBirth: student.dateOfBirth || '',
@@ -91,7 +93,9 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
         selectedClasses: (student.classes && Array.isArray(student.classes)) 
           ? student.classes.map((cls: any) => cls.id || cls).filter(Boolean)
           : []
-      })
+      }
+      setFormData(initialData)
+      setOriginalFormData(initialData)
     }
   }, [student])
 
@@ -118,6 +122,18 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
         : [...prev.selectedClasses, classId]
     }))
   }
+
+  // Check if there are unsaved changes
+  const hasUnsavedChanges = () => {
+    if (!isOpen) return false
+    return JSON.stringify(formData) !== JSON.stringify(originalFormData)
+  }
+
+  // Use the unsaved changes warning hook (only when modal is open)
+  const { startSaving, finishSaving } = useUnsavedChangesWarning({
+    hasUnsavedChanges,
+    enabled: isOpen
+  })
 
   const handleSave = async () => {
     // Validate first name
@@ -169,6 +185,7 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
     }
 
     setIsLoading(true)
+    startSaving()
 
     try {
       // Prepare the updated student data
@@ -224,11 +241,13 @@ export function EditStudentModal({ isOpen, onClose, onSave, student, classes }: 
       })
       
       toast.success('Student updated successfully!')
+      setOriginalFormData({ ...formData })
       onClose()
     } catch (error: any) {
       toast.error(`Failed to update student: ${error.message}`)
     } finally {
       setIsLoading(false)
+      finishSaving()
     }
   }
 

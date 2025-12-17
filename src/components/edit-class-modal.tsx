@@ -17,6 +17,7 @@ import {
   DollarSign
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes-warning'
 
 interface Teacher {
   id: string
@@ -60,6 +61,7 @@ export function EditClassModal({ classId, isOpen, onClose, onSave }: EditClassMo
     },
     monthlyFee: 0
   })
+  const [originalFormData, setOriginalFormData] = useState(formData)
 
   // Fetch class data and teachers when modal opens
   useEffect(() => {
@@ -68,7 +70,7 @@ export function EditClassModal({ classId, isOpen, onClose, onSave }: EditClassMo
       fetchTeachers()
     } else {
       // Reset form when modal closes
-      setFormData({
+      const resetData = {
         name: '',
         description: '',
         teacherId: '',
@@ -78,7 +80,9 @@ export function EditClassModal({ classId, isOpen, onClose, onSave }: EditClassMo
           endTime: '7:00 PM'
         },
         monthlyFee: 0
-      })
+      }
+      setFormData(resetData)
+      setOriginalFormData(resetData)
       setError('')
     }
   }, [isOpen, classId])
@@ -104,7 +108,7 @@ export function EditClassModal({ classId, isOpen, onClose, onSave }: EditClassMo
           }
         }
 
-        setFormData({
+        const initialData = {
           name: data.name || '',
           description: data.description || '',
           teacherId: data.teacherId || data.User?.id || '',
@@ -114,7 +118,9 @@ export function EditClassModal({ classId, isOpen, onClose, onSave }: EditClassMo
             endTime: parsedSchedule.endTime || '7:00 PM'
           },
           monthlyFee: data.monthlyFeeP ? data.monthlyFeeP / 100 : 0
-        })
+        }
+        setFormData(initialData)
+        setOriginalFormData(initialData)
       } else {
         toast.error('Failed to load class data')
       }
@@ -171,6 +177,18 @@ export function EditClassModal({ classId, isOpen, onClose, onSave }: EditClassMo
     }))
   }
 
+  // Check if there are unsaved changes
+  const hasUnsavedChanges = () => {
+    if (!isOpen) return false
+    return JSON.stringify(formData) !== JSON.stringify(originalFormData)
+  }
+
+  // Use the unsaved changes warning hook (only when modal is open)
+  const { startSaving, finishSaving } = useUnsavedChangesWarning({
+    hasUnsavedChanges,
+    enabled: isOpen
+  })
+
   const handleSave = async () => {
     if (!classId) {
       setError('Class ID is missing')
@@ -200,6 +218,7 @@ export function EditClassModal({ classId, isOpen, onClose, onSave }: EditClassMo
 
     setIsSubmitting(true)
     setError('')
+    startSaving()
 
     try {
       // Convert schedule object to string format

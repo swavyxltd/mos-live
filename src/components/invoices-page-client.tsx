@@ -415,7 +415,31 @@ export function InvoicesPageClient({ initialInvoices = [] }: InvoicesPageClientP
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        {/* Mobile: Dropdown Select */}
+        <div className="md:hidden">
+          <Select value={activeTab} onValueChange={setActiveTab}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a tab" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="invoices">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  <span>Invoices</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="payments">
+                <div className="flex items-center gap-2">
+                  <Receipt className="h-4 w-4" />
+                  <span>Payment Records</span>
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Desktop: Tabs */}
+        <TabsList className="hidden md:grid w-full grid-cols-2">
           <TabsTrigger value="invoices" className="flex items-center space-x-2">
             <FileText className="h-4 w-4" />
             <span>Invoices</span>

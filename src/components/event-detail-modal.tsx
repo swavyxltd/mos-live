@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes-warning'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -56,6 +57,7 @@ export function EventDetailModal({
     teacher: '',
     allDay: false
   })
+  const [originalFormData, setOriginalFormData] = useState(formData)
 
   const eventTypes = [
     { value: 'CLASS', label: 'Class' },
@@ -82,7 +84,7 @@ export function EventDetailModal({
 
   const handleEdit = () => {
     if (event) {
-      setFormData({
+      const initialData = {
         title: event.title,
         description: event.description || '',
         type: event.type,
@@ -92,7 +94,9 @@ export function EventDetailModal({
         location: event.location || '',
         teacher: event.teacher || '',
         allDay: event.allDay || false
-      })
+      }
+      setFormData(initialData)
+      setOriginalFormData(initialData)
       setIsEditing(true)
     }
   }
@@ -101,6 +105,7 @@ export function EventDetailModal({
     if (!event) return
 
     setLoading(true)
+    startSaving()
     try {
       const { isDemoMode } = await import('@/lib/demo-mode')
       
@@ -123,6 +128,7 @@ export function EventDetailModal({
 
         if (response.ok) {
           const updatedEvent = await response.json()
+          setOriginalFormData({ ...formData })
           onEventUpdated?.(updatedEvent)
           setIsEditing(false)
         }
@@ -130,6 +136,7 @@ export function EventDetailModal({
     } catch (error) {
     } finally {
       setLoading(false)
+      finishSaving()
     }
   }
 
@@ -170,6 +177,18 @@ export function EventDetailModal({
       [field]: value
     }))
   }
+
+  // Check if there are unsaved changes (only when editing)
+  const hasUnsavedChanges = () => {
+    if (!open || !isEditing) return false
+    return JSON.stringify(formData) !== JSON.stringify(originalFormData)
+  }
+
+  // Use the unsaved changes warning hook (only when modal is open and editing)
+  const { startSaving, finishSaving } = useUnsavedChangesWarning({
+    hasUnsavedChanges,
+    enabled: open && isEditing
+  })
 
   if (!event) return null
 

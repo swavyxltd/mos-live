@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { X, Save, User, MapPin, Heart, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
+import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes-warning'
 
 interface Student {
   id: string
@@ -36,7 +37,7 @@ export function ParentEditStudentModal({ isOpen, onClose, onSave, student }: Par
     medicalNotes: '',
     address: ''
   })
-
+  const [originalFormData, setOriginalFormData] = useState(formData)
   const [isLoading, setIsLoading] = useState(false)
 
   // Prevent body scroll when modal is open
@@ -55,14 +56,16 @@ export function ParentEditStudentModal({ isOpen, onClose, onSave, student }: Par
   // Initialize form data when student changes
   useEffect(() => {
     if (student) {
-      setFormData({
+      const initialData = {
         firstName: student.firstName || '',
         lastName: student.lastName || '',
         dateOfBirth: student.dateOfBirth || '',
         allergies: student.allergies || 'None',
         medicalNotes: student.medicalNotes || '',
         address: student.address || ''
-      })
+      }
+      setFormData(initialData)
+      setOriginalFormData(initialData)
     }
   }, [student])
 
@@ -80,6 +83,18 @@ export function ParentEditStudentModal({ isOpen, onClose, onSave, student }: Par
     }
     setFormData(prev => ({ ...prev, [field]: value }))
   }
+
+  // Check if there are unsaved changes
+  const hasUnsavedChanges = () => {
+    if (!isOpen) return false
+    return JSON.stringify(formData) !== JSON.stringify(originalFormData)
+  }
+
+  // Use the unsaved changes warning hook (only when modal is open)
+  const { startSaving, finishSaving } = useUnsavedChangesWarning({
+    hasUnsavedChanges,
+    enabled: isOpen
+  })
 
   const handleSave = async () => {
     // Import validation functions
@@ -118,6 +133,7 @@ export function ParentEditStudentModal({ isOpen, onClose, onSave, student }: Par
     }
 
     setIsLoading(true)
+    startSaving()
 
     try {
       const response = await fetch(`/api/parent/students/${student?.id}`, {
@@ -152,11 +168,13 @@ export function ParentEditStudentModal({ isOpen, onClose, onSave, student }: Par
       })
       
       toast.success('Child information updated successfully!')
+      setOriginalFormData({ ...formData })
       onClose()
     } catch (error: any) {
       toast.error(`Failed to update child information: ${error.message}`)
     } finally {
       setIsLoading(false)
+      finishSaving()
     }
   }
 

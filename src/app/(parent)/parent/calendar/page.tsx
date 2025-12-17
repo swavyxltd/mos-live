@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Calendar, Download, Clock, MapPin } from 'lucide-react'
+import { Calendar, Clock, MapPin } from 'lucide-react'
 import { CardSkeleton, Skeleton } from '@/components/loading/skeleton'
 
 export default function ParentCalendarPage() {
@@ -208,10 +207,6 @@ export default function ParentCalendarPage() {
               View your children's class schedules, holidays, exams, and special events.
             </p>
           </div>
-          <Button variant="outline" className="flex items-center gap-2">
-            <Download className="h-4 w-4" />
-            Download ICS
-          </Button>
         </div>
 
         {/* Upcoming Events List */}

@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { AddEventModal } from '@/components/add-event-modal'
 import { EventDetailModal } from '@/components/event-detail-modal'
-import { Download, Calendar, Clock, MapPin } from 'lucide-react'
+import { Calendar, Clock, MapPin } from 'lucide-react'
 import { RestrictedAction } from '@/components/restricted-action'
 import { PageSkeleton } from '@/components/loading/skeleton'
 
@@ -155,10 +155,6 @@ export default function CalendarPage() {
           <RestrictedAction action="schedule">
             <AddEventModal onEventAdded={handleEventAdded} />
           </RestrictedAction>
-          <Button variant="outline" className="flex items-center gap-2">
-            <Download className="h-4 w-4" />
-            Download ICS
-          </Button>
         </div>
       </div>
 

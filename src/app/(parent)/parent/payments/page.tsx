@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { StatCard } from '@/components/ui/stat-card'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
@@ -294,7 +295,37 @@ export default function ParentInvoicesPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        {/* Mobile: Dropdown Select */}
+        <div className="md:hidden">
+          <Select value={activeTab} onValueChange={setActiveTab}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a tab" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="overview">
+                <div className="flex items-center gap-2">
+                  <Receipt className="h-4 w-4" />
+                  <span>Overview</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="history">
+                <div className="flex items-center gap-2">
+                  <History className="h-4 w-4" />
+                  <span>Payment History</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="settings">
+                <div className="flex items-center gap-2">
+                  <CreditCard className="h-4 w-4" />
+                  <span>Payment Methods</span>
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Desktop: Tabs */}
+        <TabsList className="hidden md:grid w-full grid-cols-3">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <Receipt className="h-4 w-4" />
             <span>Overview</span>

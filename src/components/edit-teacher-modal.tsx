@@ -6,6 +6,7 @@ import { Modal } from '@/components/ui/modal'
 import { TeacherForm } from '@/components/teacher-form'
 import { toast } from 'sonner'
 import { StaffPermissionKey } from '@/types/staff-roles'
+import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes-warning'
 
 interface Teacher {
   id: string
@@ -40,6 +41,7 @@ export function EditTeacherModal({ isOpen, onClose, onSave, teacher }: EditTeach
   const [isLoading, setIsLoading] = useState(true)
   const [initialData, setInitialData] = useState<any>(null)
   const [error, setError] = useState('')
+  const [hasFormChanges, setHasFormChanges] = useState(false)
 
   // Fetch current permissions when modal opens
   useEffect(() => {
@@ -76,7 +78,7 @@ export function EditTeacherModal({ isOpen, onClose, onSave, teacher }: EditTeach
         permissions = data.permissions || []
       }
 
-      setInitialData({
+      const data = {
         name: teacher.name,
         email: teacher.email,
         phone: teacher.phone,
@@ -85,11 +87,13 @@ export function EditTeacherModal({ isOpen, onClose, onSave, teacher }: EditTeach
         isActive: teacher.isActive,
         staffSubrole: teacher.staffSubrole || 'TEACHER',
         permissionKeys: permissions
-      })
+      }
+      setInitialData(data)
+      setHasFormChanges(false)
     } catch (error: any) {
       setError(error.message || 'Failed to load staff data')
       // Set basic data even if permissions fail
-      setInitialData({
+      const data = {
         name: teacher.name,
         email: teacher.email,
         phone: teacher.phone,
@@ -98,15 +102,32 @@ export function EditTeacherModal({ isOpen, onClose, onSave, teacher }: EditTeach
         isActive: teacher.isActive,
         staffSubrole: teacher.staffSubrole || 'TEACHER',
         permissionKeys: []
-      })
+      }
+      setInitialData(data)
+      setHasFormChanges(false)
     } finally {
       setIsLoading(false)
     }
   }
 
+  // Check if there are unsaved changes (warn if modal is open - TeacherForm manages its own state)
+  const hasUnsavedChanges = () => {
+    if (!isOpen || !initialData || isSubmitting) return false
+    // Since TeacherForm manages its own state, we'll warn if modal is open
+    // This is a safety measure to prevent accidental navigation
+    return true
+  }
+
+  // Use the unsaved changes warning hook (only when modal is open)
+  const { startSaving, finishSaving } = useUnsavedChangesWarning({
+    hasUnsavedChanges,
+    enabled: isOpen && initialData !== null && !isSubmitting
+  })
+
   const handleSubmit = async (data: any) => {
     setIsSubmitting(true)
     setError('')
+    startSaving()
     
     try {
       // Get active org
@@ -167,17 +188,20 @@ export function EditTeacherModal({ isOpen, onClose, onSave, teacher }: EditTeach
         window.dispatchEvent(new CustomEvent('refresh-owner-dashboard'))
       }
       
+      setHasFormChanges(false)
       onSave(data)
       onClose()
     } catch (error: any) {
       setError(error.message || 'An error occurred. Please try again.')
     } finally {
       setIsSubmitting(false)
+      finishSaving()
     }
   }
 
   const handleCancel = () => {
     setError('')
+    setHasFormChanges(false)
     onClose()
   }
 

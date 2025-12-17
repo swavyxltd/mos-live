@@ -231,45 +231,45 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
     return (
       <div className="space-y-4">
         {/* Quick Stats */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="border border-[var(--border)] rounded-lg p-4 bg-[var(--card)]">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 bg-[var(--muted)] rounded-lg flex items-center justify-center flex-shrink-0">
-                <CheckCircle2 className="h-4 w-4 text-[var(--foreground)]" />
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          <div className="border border-[var(--border)] rounded-lg p-2 sm:p-4 bg-[var(--card)]">
+            <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-[var(--muted)] rounded-lg flex items-center justify-center flex-shrink-0">
+                <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 text-[var(--foreground)]" />
               </div>
-              <span className="text-sm font-medium text-[var(--muted-foreground)]">Present</span>
+              <span className="text-xs sm:text-sm font-medium text-[var(--muted-foreground)]">Present</span>
             </div>
-            <div className="text-2xl font-bold text-[var(--foreground)]">{presentDays}</div>
-            <div className="text-xs text-[var(--muted-foreground)] mt-1">of {totalDays} days</div>
+            <div className="text-xl sm:text-2xl font-bold text-[var(--foreground)]">{presentDays}</div>
+            <div className="text-[10px] sm:text-xs text-[var(--muted-foreground)] mt-0.5 sm:mt-1">of {totalDays} days</div>
           </div>
           
-          <div className="border border-[var(--border)] rounded-lg p-4 bg-[var(--card)]">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 bg-[var(--muted)] rounded-lg flex items-center justify-center flex-shrink-0">
-                <XCircle className="h-4 w-4 text-[var(--foreground)]" />
+          <div className="border border-[var(--border)] rounded-lg p-2 sm:p-4 bg-[var(--card)]">
+            <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-[var(--muted)] rounded-lg flex items-center justify-center flex-shrink-0">
+                <XCircle className="h-3 w-3 sm:h-4 sm:w-4 text-[var(--foreground)]" />
               </div>
-              <span className="text-sm font-medium text-[var(--muted-foreground)]">Absent</span>
+              <span className="text-xs sm:text-sm font-medium text-[var(--muted-foreground)]">Absent</span>
             </div>
-            <div className="text-2xl font-bold text-[var(--foreground)]">{absentDays}</div>
-            <div className="text-xs text-[var(--muted-foreground)] mt-1">missed days</div>
+            <div className="text-xl sm:text-2xl font-bold text-[var(--foreground)]">{absentDays}</div>
+            <div className="text-[10px] sm:text-xs text-[var(--muted-foreground)] mt-0.5 sm:mt-1">missed days</div>
           </div>
           
-          <div className="border border-[var(--border)] rounded-lg p-4 bg-[var(--card)]">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 bg-[var(--muted)] rounded-lg flex items-center justify-center flex-shrink-0">
-                <Clock className="h-4 w-4 text-[var(--foreground)]" />
+          <div className="border border-[var(--border)] rounded-lg p-2 sm:p-4 bg-[var(--card)]">
+            <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-[var(--muted)] rounded-lg flex items-center justify-center flex-shrink-0">
+                <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-[var(--foreground)]" />
               </div>
-              <span className="text-sm font-medium text-[var(--muted-foreground)]">Late</span>
+              <span className="text-xs sm:text-sm font-medium text-[var(--muted-foreground)]">Late</span>
             </div>
-            <div className="text-2xl font-bold text-[var(--foreground)]">{lateDays}</div>
-            <div className="text-xs text-[var(--muted-foreground)] mt-1">arrivals</div>
+            <div className="text-xl sm:text-2xl font-bold text-[var(--foreground)]">{lateDays}</div>
+            <div className="text-[10px] sm:text-xs text-[var(--muted-foreground)] mt-0.5 sm:mt-1">arrivals</div>
           </div>
         </div>
 
         {/* Week Days */}
-        <div className="border border-[var(--border)] rounded-lg p-4 bg-[var(--card)]">
-          <h3 className="text-sm font-semibold text-[var(--foreground)] mb-4">Daily Breakdown</h3>
-          <div className="grid grid-cols-5 gap-3">
+        <div className="border border-[var(--border)] rounded-lg p-3 sm:p-4 bg-[var(--card)]">
+          <h3 className="text-xs sm:text-sm font-semibold text-[var(--foreground)] mb-3 sm:mb-4">Daily Breakdown</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3">
             {child.weeklyAttendance.map((day, index) => {
               const isToday = day.date === todayDateString
               const isFuture = day.date > todayDateString
@@ -278,17 +278,17 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
                 <div 
                   key={index} 
                   className={`
-                    flex flex-col items-center gap-2 p-3 rounded-lg border transition-all
+                    flex flex-col items-center gap-1 sm:gap-2 p-2 sm:p-3 rounded-lg border transition-all
                     ${isToday ? 'border-[var(--primary)] bg-[var(--primary)]/5' : 'border-[var(--border)] bg-[var(--card)]'}
                     ${!isFuture && day.status !== 'NOT_SCHEDULED' ? 'hover:bg-[var(--accent)]' : 'opacity-60'}
                   `}
                 >
-                  <div className="text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wide">
+                  <div className="text-[10px] sm:text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wide">
                     {day.day}
                   </div>
                   
                   <div className={`
-                    w-10 h-10 rounded-full flex items-center justify-center border-2
+                    w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border-2
                     ${day.status === 'NOT_SCHEDULED' || isFuture 
                       ? 'bg-[var(--muted)] border-[var(--border)]' 
                       : day.status === 'PRESENT'
@@ -299,21 +299,21 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
                     }
                   `}>
                     {day.status !== 'NOT_SCHEDULED' && !isFuture && (
-                      day.status === 'PRESENT' ? <CheckCircle2 className="h-5 w-5 text-white" /> :
-                      day.status === 'ABSENT' ? <XCircle className="h-5 w-5 text-white" /> :
-                      <Clock className="h-5 w-5 text-white" />
+                      day.status === 'PRESENT' ? <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-white" /> :
+                      day.status === 'ABSENT' ? <XCircle className="h-4 w-4 sm:h-5 sm:w-5 text-white" /> :
+                      <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                     )}
                   </div>
                   
                   <div className="text-center">
                     {day.status === 'PRESENT' || day.status === 'LATE' ? (
-                      <div className="text-xs font-medium text-[var(--foreground)]">{day.time}</div>
+                      <div className="text-[10px] sm:text-xs font-medium text-[var(--foreground)]">{day.time}</div>
                     ) : day.status === 'ABSENT' ? (
-                      <div className="text-xs font-medium text-red-600">Absent</div>
+                      <div className="text-[10px] sm:text-xs font-medium text-red-600">Absent</div>
                     ) : isFuture ? (
-                      <div className="text-xs text-[var(--muted-foreground)]">Upcoming</div>
+                      <div className="text-[10px] sm:text-xs text-[var(--muted-foreground)]">Upcoming</div>
                     ) : (
-                      <div className="text-xs text-[var(--muted-foreground)]">No class</div>
+                      <div className="text-[10px] sm:text-xs text-[var(--muted-foreground)]">No class</div>
                     )}
                   </div>
                 </div>

@@ -39,9 +39,11 @@ export function Page({ children, user, org, userRole, staffSubrole, permissions,
         <Topbar title={title} breadcrumbs={breadcrumbs} user={user} userRole={userRole} />
         <main className="py-4 sm:py-6 w-full min-w-0">
           <div className="w-full min-w-0 pt-4 md:pt-0">
-            <MaintenanceNotificationBanner />
-            {userRole === 'PARENT' && <OverduePaymentBanner />}
-            {(userRole === 'ADMIN' || userRole === 'STAFF') && <PaymentRequiredBanner />}
+            <div className="w-full min-w-0 px-4 sm:px-6 lg:px-8">
+              <MaintenanceNotificationBanner />
+              {userRole === 'PARENT' && <OverduePaymentBanner />}
+              {(userRole === 'ADMIN' || userRole === 'STAFF') && <PaymentRequiredBanner />}
+            </div>
             <div className="w-full min-w-0 px-4 sm:px-6 lg:px-8">
             {children}
             </div>

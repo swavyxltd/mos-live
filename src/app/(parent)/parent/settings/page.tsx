@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -11,9 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Save, User, Mail, Phone, MapPin, Gift } from 'lucide-react'
 import { toast } from 'sonner'
 import { isValidPhone, isValidUKPostcode } from '@/lib/input-validation'
+import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes-warning'
 
 interface UserSettings {
-  name: string
+  firstName: string
+  lastName: string
   email: string
   phone: string
   address: string
@@ -28,8 +30,11 @@ export default function ParentSettingsPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [loadingSettings, setLoadingSettings] = useState(true)
+  const [phoneError, setPhoneError] = useState('')
+  const [postcodeError, setPostcodeError] = useState('')
   const [userSettings, setUserSettings] = useState<UserSettings>({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     phone: '',
     address: '',
@@ -39,7 +44,8 @@ export default function ParentSettingsPage() {
     giftAidStatus: ''
   })
   const [originalUserSettings, setOriginalUserSettings] = useState<UserSettings>({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     phone: '',
     address: '',
@@ -49,16 +55,54 @@ export default function ParentSettingsPage() {
     giftAidStatus: ''
   })
 
+  // Check if there are unsaved changes
+  const hasUnsavedChanges = () => {
+    if (loadingSettings) return false
+    
+    return (
+      userSettings.firstName.trim() !== originalUserSettings.firstName.trim() ||
+      userSettings.lastName.trim() !== originalUserSettings.lastName.trim() ||
+      userSettings.email.trim() !== originalUserSettings.email.trim() ||
+      userSettings.phone.trim() !== originalUserSettings.phone.trim() ||
+      (userSettings.address || '').trim() !== (originalUserSettings.address || '').trim() ||
+      (userSettings.city || '').trim() !== (originalUserSettings.city || '').trim() ||
+      (userSettings.postcode || '').trim() !== (originalUserSettings.postcode || '').trim() ||
+      (userSettings.title || '') !== (originalUserSettings.title || '') ||
+      (userSettings.giftAidStatus || '') !== (originalUserSettings.giftAidStatus || '')
+    )
+  }
+
+  // Use the unsaved changes warning hook
+  const { startSaving, finishSaving } = useUnsavedChangesWarning({
+    hasUnsavedChanges,
+    enabled: !loadingSettings
+  })
+
   useEffect(() => {
     if (status === 'authenticated' && session?.user) {
-      // Initialize with session data first
-      if (session.user.name || session.user.email) {
-        setUserSettings(prev => ({
-          ...prev,
-          name: session.user?.name || prev.name || '',
-          email: session.user?.email || prev.email || ''
-        }))
+      // Initialize with session data first - always try to populate name
+      const fullName = (session.user?.name || '').trim()
+      let firstName = ''
+      let lastName = ''
+      
+      if (fullName) {
+        const nameParts = fullName.split(/\s+/).filter(part => part.length > 0)
+        if (nameParts.length === 1) {
+          firstName = nameParts[0]
+          lastName = ''
+        } else if (nameParts.length > 1) {
+          firstName = nameParts[0]
+          lastName = nameParts.slice(1).join(' ')
+        }
       }
+      
+      setUserSettings(prev => ({
+        ...prev,
+        firstName: firstName || prev.firstName, // Only update if we have a value
+        lastName: lastName || prev.lastName, // Only update if we have a value
+        email: session.user?.email || prev.email || ''
+      }))
+      
       fetchUserSettings()
     }
   }, [status, session])
@@ -117,8 +161,27 @@ export default function ParentSettingsPage() {
       
       const data = await response.json()
       console.log('User settings loaded:', data)
+      // Split name into firstName and lastName - prioritize API data, fallback to session
+      const fullName = (data.name || session?.user?.name || '').trim()
+      let firstName = ''
+      let lastName = ''
+      
+      if (fullName) {
+        const nameParts = fullName.split(/\s+/).filter(part => part.length > 0)
+        if (nameParts.length === 1) {
+          // Only one name part - treat as first name
+          firstName = nameParts[0]
+          lastName = ''
+        } else if (nameParts.length > 1) {
+          // Multiple parts - first is firstName, rest is lastName
+          firstName = nameParts[0]
+          lastName = nameParts.slice(1).join(' ')
+        }
+      }
+      
       const settings = {
-        name: data.name || session?.user?.name || '',
+        firstName: firstName,
+        lastName: lastName,
         email: data.email || session?.user?.email || '',
         phone: data.phone || '',
         address: data.address || '',
@@ -140,6 +203,18 @@ export default function ParentSettingsPage() {
 
   const handleSave = async () => {
     // Validate required fields
+    if (!userSettings.firstName || userSettings.firstName.trim() === '') {
+      toast.error('First name is required')
+      setLoading(false)
+      return
+    }
+    
+    if (!userSettings.lastName || userSettings.lastName.trim() === '') {
+      toast.error('Last name is required')
+      setLoading(false)
+      return
+    }
+    
     if (!userSettings.phone || userSettings.phone.trim() === '') {
       toast.error('Phone number is required')
       setLoading(false)
@@ -161,12 +236,16 @@ export default function ParentSettingsPage() {
     }
 
     setLoading(true)
+    startSaving()
     try {
+      // Combine firstName and lastName into name for API
+      const fullName = `${userSettings.firstName.trim()} ${userSettings.lastName.trim()}`.trim()
+      
       const response = await fetch('/api/settings/user', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: userSettings.name || '',
+          name: fullName,
           email: userSettings.email || '',
           phone: userSettings.phone || '',
           address: userSettings.address || '',
@@ -184,8 +263,25 @@ export default function ParentSettingsPage() {
         
         // Update local state with the saved data
         if (data.user) {
-          setUserSettings({
-            name: data.user.name || '',
+          // Split name into firstName and lastName
+          const fullName = (data.user.name || '').trim()
+          let firstName = ''
+          let lastName = ''
+          
+          if (fullName) {
+            const nameParts = fullName.split(/\s+/).filter(part => part.length > 0)
+            if (nameParts.length === 1) {
+              firstName = nameParts[0]
+              lastName = ''
+            } else if (nameParts.length > 1) {
+              firstName = nameParts[0]
+              lastName = nameParts.slice(1).join(' ')
+            }
+          }
+          
+          const updatedSettings = {
+            firstName: firstName,
+            lastName: lastName,
             email: data.user.email || '',
             phone: data.user.phone || '',
             address: data.user.address || '',
@@ -193,7 +289,10 @@ export default function ParentSettingsPage() {
             postcode: data.user.postcode || '',
             title: data.user.title || '',
             giftAidStatus: data.user.giftAidStatus || ''
-          })
+          }
+          
+          setUserSettings(updatedSettings)
+          setOriginalUserSettings(updatedSettings)
         }
         
         // Force NextAuth to refresh the session
@@ -212,6 +311,7 @@ export default function ParentSettingsPage() {
       toast.error('Failed to save settings. Please try again.')
     } finally {
       setLoading(false)
+      finishSaving()
     }
   }
 
@@ -243,7 +343,7 @@ export default function ParentSettingsPage() {
         <CardContent className="space-y-6">
           {/* Basic Information */}
           <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="title">Title</Label>
                 <Select
@@ -267,20 +367,45 @@ export default function ParentSettingsPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input
-                  id="name"
-                  value={userSettings.name}
-                  onChange={(e) => {
-                    const value = e.target.value
-                    if (value.length > 0) {
-                      setUserSettings(prev => ({ ...prev, name: value.charAt(0).toUpperCase() + value.slice(1) }))
-                    } else {
-                      setUserSettings(prev => ({ ...prev, name: value }))
-                    }
-                  }}
-                  placeholder="Enter your full name"
-                />
+                <Label htmlFor="firstName">First Name *</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--muted-foreground)]" />
+                  <Input
+                    id="firstName"
+                    value={userSettings.firstName}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      setUserSettings(prev => ({ 
+                        ...prev, 
+                        firstName: value.length > 0 ? value.charAt(0).toUpperCase() + value.slice(1) : value 
+                      }))
+                    }}
+                    placeholder="First name"
+                    className="pl-9"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Last Name *</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--muted-foreground)]" />
+                  <Input
+                    id="lastName"
+                    value={userSettings.lastName}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      setUserSettings(prev => ({ 
+                        ...prev, 
+                        lastName: value.length > 0 ? value.charAt(0).toUpperCase() + value.slice(1) : value 
+                      }))
+                    }}
+                    placeholder="Last name"
+                    className="pl-9"
+                    required
+                  />
+                </div>
               </div>
             </div>
           </div>

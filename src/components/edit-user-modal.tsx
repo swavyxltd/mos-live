@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { X, Save, User, Mail, Phone, Loader2, MapPin, CreditCard } from 'lucide-react'
 import { toast } from 'sonner'
 import { isValidPhone, isValidUKPostcode } from '@/lib/input-validation'
+import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes-warning'
 
 interface User {
   id: string
@@ -103,6 +104,18 @@ export function EditUserModal({ isOpen, onClose, onSave, userId }: EditUserModal
     }
   }
 
+  // Check if there are unsaved changes
+  const hasUnsavedChanges = () => {
+    if (!isOpen) return false
+    return JSON.stringify(formData) !== JSON.stringify(originalFormData)
+  }
+
+  // Use the unsaved changes warning hook (only when modal is open)
+  const { startSaving, finishSaving } = useUnsavedChangesWarning({
+    hasUnsavedChanges,
+    enabled: isOpen
+  })
+
   const handleSave = async () => {
     if (!userId) return
 
@@ -125,6 +138,7 @@ export function EditUserModal({ isOpen, onClose, onSave, userId }: EditUserModal
     }
 
     setSaving(true)
+    startSaving()
     try {
       const res = await fetch(`/api/owner/users/${userId}`, {
         method: 'PUT',
@@ -138,6 +152,7 @@ export function EditUserModal({ isOpen, onClose, onSave, userId }: EditUserModal
       }
 
       toast.success('User updated successfully')
+      setOriginalFormData({ ...formData })
       onSave()
       onClose()
     } catch (error: any) {
@@ -145,6 +160,7 @@ export function EditUserModal({ isOpen, onClose, onSave, userId }: EditUserModal
       console.error('Error updating user:', error)
     } finally {
       setSaving(false)
+      finishSaving()
     }
   }
 

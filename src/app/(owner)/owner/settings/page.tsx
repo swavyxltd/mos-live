@@ -14,6 +14,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { useToast } from '@/hooks/use-toast'
 import { toast } from 'sonner'
 import { Skeleton, CardSkeleton, StatCardSkeleton } from '@/components/loading/skeleton'
+import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes-warning'
 
 interface PlatformSettings {
   id: string
@@ -135,6 +136,7 @@ export default function OwnerSettingsPage() {
 
   const handleSave = async () => {
     setLoading(true)
+    startSaving()
     try {
       const response = await fetch('/api/owner/settings', {
         method: 'PUT',
@@ -168,12 +170,25 @@ export default function OwnerSettingsPage() {
       })
     } finally {
       setLoading(false)
+      finishSaving()
     }
   }
 
   const handleInputChange = (field: keyof PlatformSettings, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
+
+  // Check if there are unsaved changes
+  const hasUnsavedChanges = () => {
+    if (loadingData || !settings) return false
+    return JSON.stringify(formData) !== JSON.stringify(settings)
+  }
+
+  // Use the unsaved changes warning hook
+  const { startSaving, finishSaving } = useUnsavedChangesWarning({
+    hasUnsavedChanges,
+    enabled: !loadingData && settings !== null
+  })
 
   if (loadingData) {
     return (
@@ -220,15 +235,45 @@ export default function OwnerSettingsPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="platform" className="flex items-center gap-2">
-              <Globe className="h-4 w-4" />
-              Platform
-            </TabsTrigger>
-            <TabsTrigger value="security" className="flex items-center gap-2">
-              <Shield className="h-4 w-4" />
-              Security
-            </TabsTrigger>
+        {/* Mobile: Dropdown Select */}
+        <div className="md:hidden">
+          <Select value={activeTab} onValueChange={setActiveTab}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a tab" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="platform">
+                <div className="flex items-center gap-2">
+                  <Globe className="h-4 w-4" />
+                  <span>Platform</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="security">
+                <div className="flex items-center gap-2">
+                  <Shield className="h-4 w-4" />
+                  <span>Security</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="billing">
+                <div className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4" />
+                  <span>Billing</span>
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Desktop: Tabs */}
+        <TabsList className="hidden md:grid w-full grid-cols-3">
+          <TabsTrigger value="platform" className="flex items-center gap-2">
+            <Globe className="h-4 w-4" />
+            Platform
+          </TabsTrigger>
+          <TabsTrigger value="security" className="flex items-center gap-2">
+            <Shield className="h-4 w-4" />
+            Security
+          </TabsTrigger>
           <TabsTrigger value="billing" className="flex items-center gap-2">
             <Building2 className="h-4 w-4" />
             Billing

@@ -22,6 +22,7 @@ import { StaffSubrole } from '@/types/staff-roles'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { PaymentMethodsTab } from '@/components/payment-methods-tab'
 import { isValidPhone, isValidUKPostcode } from '@/lib/input-validation'
+import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes-warning'
 
 interface OrganisationSettings {
   name: string
@@ -397,8 +398,25 @@ export default function SettingsPage() {
     setPaymentSettings(updatedSettings)
   }
 
+  // Check if there are unsaved changes in organisation or user settings
+  const hasUnsavedChanges = () => {
+    if (loadingOrgSettings) return false
+    
+    const orgChanged = JSON.stringify(orgSettings) !== JSON.stringify(originalOrgSettings)
+    const userChanged = JSON.stringify(userSettings) !== JSON.stringify(originalUserSettings)
+    
+    return orgChanged || userChanged
+  }
+
+  // Use the unsaved changes warning hook
+  const { startSaving, finishSaving } = useUnsavedChangesWarning({
+    hasUnsavedChanges,
+    enabled: !loadingOrgSettings
+  })
+
   const handleSaveOrgSettings = async () => {
     setLoading(true)
+    startSaving()
     try {
       const response = await fetch('/api/settings/organisation', {
         method: 'PUT',
@@ -408,6 +426,8 @@ export default function SettingsPage() {
       
       if (response.ok) {
         toast.success('Organisation settings saved successfully')
+        // Update original settings to reflect saved state
+        setOriginalOrgSettings({ ...orgSettings })
         // Trigger refresh of org name everywhere
         window.dispatchEvent(new CustomEvent('refresh-org-name'))
         // Also refresh owner dashboard if org name changed
@@ -425,11 +445,13 @@ export default function SettingsPage() {
       toast.error('Failed to save organisation settings')
     } finally {
       setLoading(false)
+      finishSaving()
     }
   }
 
   const handleSaveUserSettings = async () => {
     setLoading(true)
+    startSaving()
     try {
       const response = await fetch('/api/settings/user', {
         method: 'PUT',
@@ -449,12 +471,14 @@ export default function SettingsPage() {
         
         // Update local state with the saved data
         if (data.user) {
-          setUserSettings({
+          const updatedUserSettings = {
             name: data.user.name || '',
             email: data.user.email || '',
             phone: data.user.phone || '',
             twoFactorEnabled: data.user.twoFactorEnabled !== false
-          })
+          }
+          setUserSettings(updatedUserSettings)
+          setOriginalUserSettings(updatedUserSettings)
         }
         
         // Force NextAuth to refresh the session by calling update()
@@ -486,6 +510,7 @@ export default function SettingsPage() {
       toast.error('Failed to save user settings. Please try again.')
     } finally {
       setLoading(false)
+      finishSaving()
     }
   }
 

@@ -8,6 +8,12 @@ declare module 'next-auth' {
       image?: string | null
       isSuperAdmin: boolean
       staffSubrole?: string
+      phone?: string | null
+      address?: string | null
+      city?: string | null
+      postcode?: string | null
+      title?: string | null
+      giftAidStatus?: string | null
       roleHints?: {
         isOwner: boolean
         orgAdminOf: string[]
@@ -24,6 +30,12 @@ declare module 'next-auth' {
     image?: string | null
     isSuperAdmin: boolean
     staffSubrole?: string
+    phone?: string | null
+    address?: string | null
+    city?: string | null
+    postcode?: string | null
+    title?: string | null
+    giftAidStatus?: string | null
   }
 }
 
@@ -31,6 +43,12 @@ declare module 'next-auth/jwt' {
   interface JWT {
     isSuperAdmin: boolean
     staffSubrole?: string
+    phone?: string | null
+    address?: string | null
+    city?: string | null
+    postcode?: string | null
+    title?: string | null
+    giftAidStatus?: string | null
     roleHints?: {
       isOwner: boolean
       orgAdminOf: string[]

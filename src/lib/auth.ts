@@ -297,7 +297,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         // When trigger is 'update' (when update() is called), ALWAYS fetch fresh data from database
-        // This ensures profile changes (name, email, image) are immediately reflected
+        // This ensures profile changes (name, email, image, phone, address, etc.) are immediately reflected
         if (trigger === 'update') {
           try {
             const dbUser = await prisma.user.findUnique({
@@ -307,7 +307,13 @@ export const authOptions: NextAuthOptions = {
                 email: true,
                 image: true,
                 isSuperAdmin: true,
-                staffSubrole: true
+                staffSubrole: true,
+                phone: true,
+                address: true,
+                city: true,
+                postcode: true,
+                title: true,
+                giftAidStatus: true
               }
             })
             
@@ -317,10 +323,17 @@ export const authOptions: NextAuthOptions = {
               token.image = dbUser.image
               token.isSuperAdmin = dbUser.isSuperAdmin
               token.staffSubrole = dbUser.staffSubrole
+              token.phone = dbUser.phone
+              token.address = dbUser.address
+              token.city = dbUser.city
+              token.postcode = dbUser.postcode
+              token.title = dbUser.title
+              token.giftAidStatus = dbUser.giftAidStatus
             }
           } catch (error) {
             // Log error server-side only (not to console in production)
             if (process.env.NODE_ENV === 'development') {
+              console.error('[Auth] Error fetching user data on update:', error)
             }
           }
         }
@@ -335,7 +348,13 @@ export const authOptions: NextAuthOptions = {
                 email: true,
                 image: true,
                 isSuperAdmin: true,
-                staffSubrole: true
+                staffSubrole: true,
+                phone: true,
+                address: true,
+                city: true,
+                postcode: true,
+                title: true,
+                giftAidStatus: true
               }
             })
             
@@ -345,10 +364,17 @@ export const authOptions: NextAuthOptions = {
               token.image = dbUser.image
               token.isSuperAdmin = dbUser.isSuperAdmin
               token.staffSubrole = dbUser.staffSubrole
+              token.phone = dbUser.phone
+              token.address = dbUser.address
+              token.city = dbUser.city
+              token.postcode = dbUser.postcode
+              token.title = dbUser.title
+              token.giftAidStatus = dbUser.giftAidStatus
             }
           } catch (error) {
             // Log error server-side only (not to console in production)
             if (process.env.NODE_ENV === 'development') {
+              console.error('[Auth] Error fetching user data on initial login:', error)
             }
           }
         }
@@ -393,6 +419,13 @@ export const authOptions: NextAuthOptions = {
         // Ensure isSuperAdmin is always a boolean, defaulting to false if undefined
         session.user.isSuperAdmin = Boolean(token.isSuperAdmin ?? false)
         session.user.staffSubrole = token.staffSubrole as string
+        // Include all user profile fields in session
+        session.user.phone = token.phone as string | null | undefined
+        session.user.address = token.address as string | null | undefined
+        session.user.city = token.city as string | null | undefined
+        session.user.postcode = token.postcode as string | null | undefined
+        session.user.title = token.title as string | null | undefined
+        session.user.giftAidStatus = token.giftAidStatus as string | null | undefined
         // Ensure roleHints is always set, even if there was an error fetching it
         session.user.roleHints = (token.roleHints as {
           isOwner: boolean

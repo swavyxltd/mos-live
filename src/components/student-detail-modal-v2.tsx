@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { 
   X,
@@ -594,7 +595,45 @@ export function StudentDetailModal({
                 {/* Right Column - Tabbed Interface */}
                 <div className="lg:col-span-2">
                   <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-4">
+                    {/* Mobile: Dropdown Select */}
+                    <div className="md:hidden">
+                      <Select value={activeTab} onValueChange={setActiveTab}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select a tab" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="attendance">
+                            <div className="flex items-center gap-2">
+                              <Calendar className="h-4 w-4" />
+                              <span>Attendance</span>
+                            </div>
+                          </SelectItem>
+                          {canViewFees && (
+                            <SelectItem value="fees">
+                              <div className="flex items-center gap-2">
+                                <DollarSign className="h-4 w-4" />
+                                <span>Fees</span>
+                              </div>
+                            </SelectItem>
+                          )}
+                          <SelectItem value="notes">
+                            <div className="flex items-center gap-2">
+                              <FileText className="h-4 w-4" />
+                              <span>Notes</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="activity">
+                            <div className="flex items-center gap-2">
+                              <Activity className="h-4 w-4" />
+                              <span>Activity</span>
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Desktop: Tabs */}
+                    <TabsList className="hidden md:grid w-full grid-cols-4">
                       <TabsTrigger value="attendance" className="text-xs sm:text-sm">
                         <Calendar className="h-4 w-4 mr-1.5 sm:mr-2" />
                         <span className="hidden sm:inline">Attendance</span>

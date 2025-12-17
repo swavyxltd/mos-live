@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes-warning'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -65,6 +66,7 @@ export function EditLeadModal({ isOpen, onClose, onSave, leadId }: EditLeadModal
     notes: '',
     assignedToUserId: '',
   })
+  const [originalFormData, setOriginalFormData] = useState(formData)
 
   useEffect(() => {
     if (isOpen && leadId) {
@@ -81,7 +83,7 @@ export function EditLeadModal({ isOpen, onClose, onSave, leadId }: EditLeadModal
       if (!res.ok) throw new Error('Failed to load lead')
       const data = await res.json()
       setLead(data.lead)
-      setFormData({
+      const initialData = {
         orgName: data.lead.orgName || '',
         city: data.lead.city || '',
         country: data.lead.country || 'UK',
@@ -96,7 +98,9 @@ export function EditLeadModal({ isOpen, onClose, onSave, leadId }: EditLeadModal
           : '',
         notes: data.lead.notes || '',
         assignedToUserId: data.lead.assignedToUserId || '',
-      })
+      }
+      setFormData(initialData)
+      setOriginalFormData(initialData)
     } catch (error) {
       console.error('Error loading lead:', error)
       toast.error('Failed to load lead')
@@ -193,6 +197,7 @@ export function EditLeadModal({ isOpen, onClose, onSave, leadId }: EditLeadModal
 
     setIsSubmitting(true)
     setError('')
+    startSaving()
 
     try {
       const res = await fetch(`/api/owner/leads/${leadId}`, {
@@ -219,16 +224,45 @@ export function EditLeadModal({ isOpen, onClose, onSave, leadId }: EditLeadModal
       window.dispatchEvent(new CustomEvent('refresh-owner-dashboard'))
       
       toast.success('Lead updated successfully')
+      setOriginalFormData({ ...formData })
       onSave(data.lead)
       handleClose()
     } catch (err) {
       setError('An error occurred. Please try again.')
       setIsSubmitting(false)
+    } finally {
+      finishSaving()
     }
   }
 
+  // Check if there are unsaved changes
+  const hasUnsavedChanges = () => {
+    if (!isOpen) return false
+    return JSON.stringify(formData) !== JSON.stringify(originalFormData)
+  }
+
+  // Use the unsaved changes warning hook (only when modal is open)
+  const { startSaving, finishSaving } = useUnsavedChangesWarning({
+    hasUnsavedChanges,
+    enabled: isOpen
+  })
+
   const handleClose = () => {
     setFormData({
+      orgName: '',
+      city: '',
+      country: 'UK',
+      estimatedStudents: '',
+      contactName: '',
+      contactEmail: '',
+      contactPhone: '',
+      source: '',
+      status: 'NEW',
+      nextContactAt: '',
+      notes: '',
+      assignedToUserId: '',
+    })
+    setOriginalFormData({
       orgName: '',
       city: '',
       country: 'UK',

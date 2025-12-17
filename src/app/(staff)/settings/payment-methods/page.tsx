@@ -21,6 +21,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useStaffPermissions } from '@/lib/staff-permissions'
+import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes-warning'
 
 interface PaymentMethodSettings {
   stripeEnabled: boolean
@@ -55,6 +56,12 @@ export default function PaymentMethodsPage() {
     secretKey: '',
     webhookSecret: ''
   })
+  const [originalSettings, setOriginalSettings] = useState<PaymentMethodSettings | null>(null)
+  const [originalStripeKeys, setOriginalStripeKeys] = useState({
+    publishableKey: '',
+    secretKey: '',
+    webhookSecret: ''
+  })
 
   useEffect(() => {
     fetchPaymentSettings()
@@ -65,13 +72,15 @@ export default function PaymentMethodsPage() {
       const response = await fetch('/api/settings/payment-methods')
       if (response.ok) {
         const data = await response.json()
-        setSettings({
+        const loadedSettings = {
           ...data,
           paymentInstructions: data.paymentInstructions || '',
           bankAccountName: data.bankAccountName || null,
           bankSortCode: data.bankSortCode || null,
           bankAccountNumber: data.bankAccountNumber || null
-        })
+        }
+        setSettings(loadedSettings)
+        setOriginalSettings(loadedSettings)
       } else {
         throw new Error('Failed to fetch payment settings')
       }
@@ -89,6 +98,7 @@ export default function PaymentMethodsPage() {
     }
 
     setSaving(true)
+    startSaving()
     try {
       const response = await fetch('/api/settings/payment-methods', {
         method: 'PUT',
@@ -103,6 +113,9 @@ export default function PaymentMethodsPage() {
 
       if (response.ok) {
         toast.success('Payment settings saved successfully')
+        // Update original settings to reflect saved state
+        setOriginalSettings({ ...settings })
+        setOriginalStripeKeys({ ...stripeKeys })
         await fetchPaymentSettings()
       } else {
         const error = await response.json()
@@ -112,6 +125,7 @@ export default function PaymentMethodsPage() {
       toast.error(error instanceof Error ? error.message : 'Failed to save payment settings')
     } finally {
       setSaving(false)
+      finishSaving()
     }
   }
 
@@ -126,6 +140,22 @@ export default function PaymentMethodsPage() {
   const handleStripeKeyChange = (key: string, value: string) => {
     setStripeKeys(prev => ({ ...prev, [key]: value }))
   }
+
+  // Check if there are unsaved changes
+  const hasUnsavedChanges = () => {
+    if (loading || !originalSettings) return false
+    
+    const settingsChanged = JSON.stringify(settings) !== JSON.stringify(originalSettings)
+    const keysChanged = JSON.stringify(stripeKeys) !== JSON.stringify(originalStripeKeys)
+    
+    return settingsChanged || keysChanged
+  }
+
+  // Use the unsaved changes warning hook
+  const { startSaving, finishSaving } = useUnsavedChangesWarning({
+    hasUnsavedChanges,
+    enabled: !loading && originalSettings !== null
+  })
 
   if (loading) {
     return (
