@@ -4,9 +4,9 @@ import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 
 interface ApplyPageProps {
-  params: {
+  params: Promise<{
     orgSlug: string
-  }
+  }>
 }
 
 export default async function ApplyPage({ params }: ApplyPageProps) {

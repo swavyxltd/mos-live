@@ -49,17 +49,30 @@ export default function ParentInvoicesPage() {
     paymentInstructions: '',
     bankAccountName: null as string | null,
     bankSortCode: null as string | null,
-    bankAccountNumber: null as string | null
+    bankAccountNumber: null as string | null,
+    billingDay: 1
   })
   const [preferredPaymentMethod, setPreferredPaymentMethod] = useState<'CASH' | 'BANK_TRANSFER' | null>(null)
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null)
 
   const fetchPaymentSettings = async () => {
     try {
       const response = await fetch('/api/settings/payment-methods')
       if (response.ok) {
         const settings = await response.json()
-        setPaymentSettings(settings)
+        setPaymentSettings({
+          acceptsCard: settings.acceptsCard || false,
+          acceptsCash: settings.acceptsCash || false,
+          acceptsBankTransfer: settings.acceptsBankTransfer || false,
+          cashPaymentEnabled: settings.cashPaymentEnabled || false,
+          bankTransferEnabled: settings.bankTransferEnabled || false,
+          paymentInstructions: settings.paymentInstructions || '',
+          bankAccountName: settings.bankAccountName || null,
+          bankSortCode: settings.bankSortCode || null,
+          bankAccountNumber: settings.bankAccountNumber || null,
+          billingDay: settings.billingDay || 1
+        })
         
         // Auto-select if only one method is available
         // Use acceptsCash/acceptsBankTransfer as primary, fallback to cashPaymentEnabled/bankTransferEnabled
@@ -225,6 +238,7 @@ export default function ParentInvoicesPage() {
   }
 
   const handleOverduePaymentClick = () => {
+    setSelectedInvoiceId(null) // Pay all overdue
     setIsPaymentModalOpen(true)
   }
 
@@ -363,13 +377,33 @@ export default function ParentInvoicesPage() {
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-[var(--muted-foreground)]">Date</span>
                       <span className="text-sm font-medium text-[var(--foreground)]">
-                        {pendingFees.length > 0 ? (() => {
-                          const nextDueDate = pendingFees
-                            .map((fee: any) => fee.dueDate ? new Date(fee.dueDate) : null)
-                            .filter((date: Date | null) => date !== null)
-                            .sort((a: Date, b: Date) => a.getTime() - b.getTime())[0]
-                          return nextDueDate ? format(nextDueDate, 'd MMM yyyy') : 'N/A'
-                        })() : 'N/A'}
+                        {(() => {
+                          // Calculate next payment date based on billing day
+                          const today = new Date()
+                          const billingDay = paymentSettings.billingDay || 15
+                          
+                          // Get next payment date (next occurrence of billing day)
+                          let nextPaymentDate = new Date(today.getFullYear(), today.getMonth(), billingDay)
+                          
+                          // If billing day has passed this month, move to next month
+                          if (nextPaymentDate < today) {
+                            nextPaymentDate = new Date(today.getFullYear(), today.getMonth() + 1, billingDay)
+                          }
+                          
+                          // If there are pending fees with earlier due dates, show the earliest one instead
+                          if (pendingFees.length > 0) {
+                            const earliestDueDate = pendingFees
+                              .map((fee: any) => fee.dueDate ? new Date(fee.dueDate) : null)
+                              .filter((date: Date | null) => date !== null)
+                              .sort((a: Date, b: Date) => a.getTime() - b.getTime())[0]
+                            
+                            if (earliestDueDate && earliestDueDate < nextPaymentDate) {
+                              return format(earliestDueDate, 'd MMM yyyy')
+                            }
+                          }
+                          
+                          return format(nextPaymentDate, 'd MMM yyyy')
+                        })()}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
@@ -501,62 +535,65 @@ export default function ParentInvoicesPage() {
                 <div>
                   {pendingFees.map((fee: any, index: number) => (
                     <div key={fee.id}>
-                      <div
-                        className="flex items-center justify-between p-4 hover:bg-[var(--accent)]/50 transition-colors"
-                      >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold text-[var(--foreground)]">
-                            {fee.invoiceNumber || fee.id}
-                          </h3>
-                          <Badge
-                            variant={
-                              (fee.displayStatus || fee.status) === 'OVERDUE' 
-                                ? 'destructive' 
-                                : (fee.displayStatus || fee.status) === 'UPCOMING'
-                                ? 'default'
-                                : 'outline'
-                            }
-                            className="text-xs"
-                          >
-                            {(fee.displayStatus || fee.status) === 'UPCOMING' ? 'Upcoming' : (fee.displayStatus || fee.status)}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-[var(--muted-foreground)]">
-                          {fee.studentName || fee.student || 'Unknown Student'}
-                        </p>
-                        {fee.dueDate && (
-                          <p className="text-xs text-[var(--muted-foreground)] mt-1">
-                            Due: {format(new Date(fee.dueDate), 'MMM dd, yyyy')}
-                          </p>
-                        )}
-                        {fee.status === 'PAID' && fee.paymentDate && fee.paymentMethod && (
-                          <p className="text-xs text-green-600 mt-1">
-                            Paid: {format(new Date(fee.paymentDate), 'MMM dd, yyyy')} via {fee.paymentMethod}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <div className="text-lg font-bold text-[var(--foreground)]">
-                            £{(fee.amount || 0).toFixed(2)}
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 p-4 hover:bg-[var(--accent)]/50 transition-colors">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <h3 className="font-semibold text-[var(--foreground)] text-sm sm:text-base">
+                              {fee.invoiceNumber || fee.id}
+                            </h3>
+                            <Badge
+                              variant={
+                                (fee.displayStatus || fee.status) === 'OVERDUE' 
+                                  ? 'destructive' 
+                                  : (fee.displayStatus || fee.status) === 'UPCOMING'
+                                  ? 'default'
+                                  : 'outline'
+                              }
+                              className="text-xs"
+                            >
+                              {(fee.displayStatus || fee.status) === 'UPCOMING' ? 'Upcoming' : (fee.displayStatus || fee.status)}
+                            </Badge>
                           </div>
+                          <p className="text-sm text-[var(--muted-foreground)]">
+                            {fee.studentName || fee.student || 'Unknown Student'}
+                          </p>
+                          {fee.dueDate && (
+                            <p className="text-xs text-[var(--muted-foreground)] mt-1">
+                              Due: {format(new Date(fee.dueDate), 'MMM dd, yyyy')}
+                            </p>
+                          )}
+                          {fee.status === 'PAID' && fee.paymentDate && fee.paymentMethod && (
+                            <p className="text-xs text-green-600 mt-1">
+                              Paid: {format(new Date(fee.paymentDate), 'MMM dd, yyyy')} via {fee.paymentMethod}
+                            </p>
+                          )}
                         </div>
-                        {fee.status !== 'PAID' ? (
-                          <Button
-                            variant={(fee.displayStatus || fee.status) === 'OVERDUE' ? 'destructive' : 'default'}
-                            size="sm"
-                            onClick={() => setIsPaymentModalOpen(true)}
-                          >
-                            <CreditCard className="h-4 w-4 mr-2" />
-                            Pay Now
-                          </Button>
-                        ) : (
-                          <Badge variant="default" className="bg-green-100 text-green-800">
-                            Paid
-                          </Badge>
-                        )}
-                      </div>
+                        <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4 flex-shrink-0 sm:ml-4">
+                          <div className="text-left sm:text-right">
+                            <div className="text-base sm:text-lg font-bold text-[var(--foreground)]">
+                              £{(fee.amount || 0).toFixed(2)}
+                            </div>
+                          </div>
+                          {fee.status !== 'PAID' ? (
+                            <Button
+                              variant={(fee.displayStatus || fee.status) === 'OVERDUE' ? 'destructive' : 'default'}
+                              size="sm"
+                              onClick={() => {
+                                setSelectedInvoiceId(fee.id)
+                                setIsPaymentModalOpen(true)
+                              }}
+                              className="flex-shrink-0"
+                            >
+                              <CreditCard className="h-4 w-4 sm:mr-2" />
+                              <span className="hidden sm:inline">Pay Now</span>
+                              <span className="sm:hidden">Pay</span>
+                            </Button>
+                          ) : (
+                            <Badge variant="default" className="bg-green-100 text-green-800 flex-shrink-0">
+                              Paid
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                       {index < pendingFees.length - 1 && (
                         <div className="border-b border-[var(--border)]" />
@@ -841,8 +878,13 @@ export default function ParentInvoicesPage() {
       {/* Payment Modal */}
       <PaymentModal
         isOpen={isPaymentModalOpen}
-        onClose={() => setIsPaymentModalOpen(false)}
-        overdueAmount={Math.round(overdueFees.reduce((sum: number, fee: any) => sum + (fee?.amount || 0), 0))}
+        onClose={() => {
+          setIsPaymentModalOpen(false)
+          setSelectedInvoiceId(null)
+        }}
+        overdueAmount={selectedInvoiceId 
+          ? Math.round((pendingFees.find((f: any) => f.id === selectedInvoiceId)?.amount || 0))
+          : Math.round(overdueFees.reduce((sum: number, fee: any) => sum + (fee?.amount || 0), 0))}
         onPaymentSuccess={handlePaymentSuccess}
       />
     </div>

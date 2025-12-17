@@ -1,12 +1,15 @@
 import { redirect } from 'next/navigation'
 
 interface ClassDetailsPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export default async function ClassDetailsPage({ params }: ClassDetailsPageProps) {
+  // Resolve params - in Next.js 16+, params is a Promise
+  const resolvedParams = await params
+  
   // Redirect to classes page - viewing is now done via modal
   redirect('/classes')
   const session = await getServerSession(authOptions)
@@ -21,7 +24,7 @@ export default async function ClassDetailsPage({ params }: ClassDetailsPageProps
   
   const classData = await prisma.class.findFirst({
     where: {
-      id: params.id,
+      id: resolvedParams.id,
       orgId: org.id
     },
     include: {
