@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Image from 'next/image'
 
-export function InitialAppLoader() {
+function InitialAppLoaderContent() {
   const [showLoader, setShowLoader] = useState(true)
   const [progress, setProgress] = useState(0)
   const pathname = usePathname()
@@ -175,5 +175,22 @@ export function InitialAppLoader() {
       </div>
     </div>
   )
+}
+
+export function InitialAppLoader() {
+  // Only render if we're in a browser environment (client-side)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Don't render during SSR or before mount
+  // This ensures useSession is only called when SessionProvider is available
+  if (!mounted) {
+    return null
+  }
+
+  return <InitialAppLoaderContent />
 }
 

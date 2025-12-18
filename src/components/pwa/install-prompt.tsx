@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
-import { X, Smartphone, Download, Sparkles, ArrowUp } from 'lucide-react'
+import { X, Download, Sparkles, ArrowUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface BeforeInstallPromptEvent extends Event {
@@ -122,11 +122,8 @@ export function InstallPrompt() {
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-emerald-200/20 dark:bg-emerald-800/20 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2" />
         
         <div className="relative p-5">
-          {/* Header with icon */}
+          {/* Header */}
           <div className="flex items-start gap-4 mb-4">
-            <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg">
-              <Smartphone className="h-6 w-6 text-white" />
-            </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <h3 className="font-bold text-base text-gray-900 dark:text-gray-100">
