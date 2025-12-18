@@ -175,8 +175,8 @@ export function InstallPrompt() {
           </div>
 
           {/* Action buttons */}
-          <div className="flex gap-2">
-            {!isIOS && (
+          {!isIOS && (
+            <div className="flex gap-2">
               <Button
                 onClick={handleInstall}
                 className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 font-semibold"
@@ -185,16 +185,8 @@ export function InstallPrompt() {
                 <Download className="h-4 w-4 mr-2" />
                 Install Now
               </Button>
-            )}
-            <Button
-              onClick={handleDismiss}
-              variant="outline"
-              size="sm"
-              className="flex-shrink-0 border-gray-300 hover:bg-white/80"
-            >
-              Later
-            </Button>
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
