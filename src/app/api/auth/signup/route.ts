@@ -122,7 +122,7 @@ async function handlePOST(request: NextRequest) {
 
     if (existingUser) {
       return NextResponse.json(
-        { error: 'This email is already registered. Please use a different email or sign in with your existing account.' },
+        { error: 'This email address is already associated with an account. Please sign in with your existing account or use a different email address.' },
         { status: 400 }
       )
     }
@@ -339,7 +339,7 @@ async function handlePOST(request: NextRequest) {
     // Handle unique constraint violation
     if (error.code === 'P2002') {
       return NextResponse.json(
-        { error: 'This email is already being used. Please use a different one.' },
+        { error: 'This email address is already in use. Please use a different email address or sign in with your existing account.' },
         { status: 400 }
       )
     }

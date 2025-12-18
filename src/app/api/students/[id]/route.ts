@@ -204,35 +204,42 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
           parentUserId = existingStudent.primaryParentId
         } else if (parentEmail) {
           // Create new parent if email is provided
+          // First check if email already exists - block ALL existing emails
+          const sanitizedParentEmail = parentEmail.toLowerCase().trim()
           let parentUser = await tx.user.findUnique({
-            where: { email: parentEmail.toLowerCase().trim() }
+            where: { email: sanitizedParentEmail }
           })
 
-          if (!parentUser) {
-            try {
-              parentUser = await tx.user.create({
-                data: {
-                  id: crypto.randomUUID(),
-                  email: parentEmail.toLowerCase().trim(),
-                  name: parentName || '',
-                  phone: parentPhone || null,
-                  updatedAt: new Date()
-                }
-              })
-            } catch (createError: any) {
-              // Handle unique constraint violation (race condition)
-              if (createError.code === 'P2002') {
-                // User was created between our check and create, fetch it
-                parentUser = await tx.user.findUnique({
-                  where: { email: parentEmail.toLowerCase().trim() }
-                })
-                if (!parentUser) {
-                  throw new Error('This email is already being used. Please use a different one.')
-                }
-              } else {
-                throw createError
+          if (parentUser) {
+            // Email already exists - cannot create duplicate
+            throw new Error('This email address is already associated with an account. Please use a different email address or link to the existing account.')
+          }
+
+          // Email doesn't exist - create new user
+          try {
+            parentUser = await tx.user.create({
+              data: {
+                id: crypto.randomUUID(),
+                email: sanitizedParentEmail,
+                name: parentName || '',
+                phone: parentPhone || null,
+                updatedAt: new Date()
               }
+            })
+          } catch (createError: any) {
+            // Handle unique constraint violation (race condition)
+            if (createError.code === 'P2002') {
+              // User was created between our check and create, fetch it
+              parentUser = await tx.user.findUnique({
+                where: { email: sanitizedParentEmail }
+              })
+                if (!parentUser) {
+                  throw new Error('This email address is already in use. Please use a different email address.')
+                }
+            } else {
+              throw createError
             }
+          }
 
             // Add parent to organisation
             await tx.userOrgMembership.upsert({

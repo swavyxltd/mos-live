@@ -150,7 +150,8 @@ async function handlePOST(request: NextRequest) {
       hashedPassword = await bcrypt.hash(password, 12)
     }
 
-    // Check if user already exists
+    // Check if user already exists - block ALL existing emails
+    // Same email cannot be used again across entire app for any account type
     const existingUser = await prisma.user.findUnique({
       where: { email: sanitizedEmail },
       select: {
@@ -159,70 +160,43 @@ async function handlePOST(request: NextRequest) {
       }
     })
 
-    // Block using existing emails for new accounts
-    // This endpoint can update existing users, but cannot create duplicates
     if (existingUser) {
-      // If trying to change account type (owner to non-owner or vice versa), block it
-      if (existingUser.isSuperAdmin && !isSuperAdmin) {
-        return NextResponse.json(
-          { error: 'This email belongs to an owner account and cannot be used for organisation accounts.' },
-          { status: 403 }
-        )
-      }
-      if (!existingUser.isSuperAdmin && isSuperAdmin) {
-        return NextResponse.json(
-          { error: 'This email belongs to an organisation account and cannot be converted to an owner account.' },
-          { status: 403 }
-        )
-      }
-      // If user exists, we'll update them (handled in update logic below)
-      // This prevents creating duplicate accounts with the same email
+      // Email already exists - block creation completely
+      return NextResponse.json(
+        { error: 'This email address is already associated with an account. Please use a different email address.' },
+        { status: 400 }
+      )
     }
 
-    let user
-    if (existingUser) {
-      // Update existing user
-      user = await prisma.user.update({
-        where: { email: sanitizedEmail },
+    // Create new user (password required for new users)
+    if (!hashedPassword && !shouldSendInvitation) {
+      return NextResponse.json(
+        { error: 'Password is required for new users' },
+        { status: 400 }
+      )
+    }
+
+    try {
+      user = await prisma.user.create({
         data: {
+          id: crypto.randomUUID(),
+          email: sanitizedEmail,
           name: sanitizedName,
-          ...(hashedPassword && { password: hashedPassword }),
+          password: hashedPassword || crypto.randomBytes(32).toString('hex'), // Temporary password if sending invitation
           phone: sanitizedPhone,
           isSuperAdmin: isSuperAdmin || false,
           updatedAt: new Date()
         }
       })
-    } else {
-      // Create new user (password required for new users)
-      if (!hashedPassword && !shouldSendInvitation) {
+    } catch (createError: any) {
+      // Handle unique constraint violation (race condition)
+      if (createError.code === 'P2002') {
         return NextResponse.json(
-          { error: 'Password is required for new users' },
+          { error: 'This email address is already in use. Please use a different email address.' },
           { status: 400 }
         )
       }
-
-      try {
-        user = await prisma.user.create({
-          data: {
-            id: crypto.randomUUID(),
-            email: sanitizedEmail,
-            name: sanitizedName,
-            password: hashedPassword || crypto.randomBytes(32).toString('hex'), // Temporary password if sending invitation
-            phone: sanitizedPhone,
-            isSuperAdmin: isSuperAdmin || false,
-            updatedAt: new Date()
-          }
-        })
-      } catch (createError: any) {
-        // Handle unique constraint violation (race condition)
-        if (createError.code === 'P2002') {
-          return NextResponse.json(
-            { error: 'This email is already being used. Please use a different one.' },
-            { status: 400 }
-          )
-        }
-        throw createError
-      }
+      throw createError
     }
 
     // If orgId and role provided, create membership
@@ -347,7 +321,7 @@ async function handlePOST(request: NextRequest) {
     // Handle unique constraint violation
     if (error.code === 'P2002') {
       return NextResponse.json(
-        { error: 'This email is already being used. Please use a different one.' },
+        { error: 'This email address is already in use. Please use a different email address.' },
         { status: 400 }
       )
     }

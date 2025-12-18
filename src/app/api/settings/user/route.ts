@@ -54,7 +54,7 @@ async function handlePUT(request: NextRequest) {
       
       if (existingUser && existingUser.id !== session.user.id) {
         return NextResponse.json(
-          { error: 'Email is already in use by another account' },
+          { error: 'This email address is already associated with another account. Please use a different email address.' },
           { status: 400 }
         )
       }

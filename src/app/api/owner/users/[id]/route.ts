@@ -157,13 +157,13 @@ async function handlePUT(
 
     // Check if email is already taken by another user
     const existingUser = await prisma.user.findUnique({
-      where: { email },
+      where: { email: email.toLowerCase().trim() },
       select: { id: true }
     })
 
     if (existingUser && existingUser.id !== userId) {
       return NextResponse.json(
-        { error: 'Email is already in use' },
+        { error: 'This email address is already associated with another account. Please use a different email address.' },
         { status: 400 }
       )
     }
