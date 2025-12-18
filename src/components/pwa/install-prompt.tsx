@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
-import { X } from 'lucide-react'
+import { X, Smartphone, Download, Sparkles, ArrowUp } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface BeforeInstallPromptEvent extends Event {
@@ -16,6 +16,7 @@ export function InstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false)
   const [isIOS, setIsIOS] = useState(false)
   const [isStandalone, setIsStandalone] = useState(false)
+  const [isAnimating, setIsAnimating] = useState(false)
 
   useEffect(() => {
     // Only show for logged-in users
@@ -54,12 +55,14 @@ export function InstallPrompt() {
       e.preventDefault()
       setDeferredPrompt(e as BeforeInstallPromptEvent)
       setShowPrompt(true)
+      setTimeout(() => setIsAnimating(true), 100)
     }
 
     // For iOS, show prompt after a delay
     if (iOS) {
       const timer = setTimeout(() => {
         setShowPrompt(true)
+        setTimeout(() => setIsAnimating(true), 100)
       }, 3000) // Show after 3 seconds
       return () => clearTimeout(timer)
     }
@@ -89,8 +92,11 @@ export function InstallPrompt() {
   }
 
   const handleDismiss = () => {
-    setShowPrompt(false)
-    localStorage.setItem('pwa-install-dismissed', Date.now().toString())
+    setIsAnimating(false)
+    setTimeout(() => {
+      setShowPrompt(false)
+      localStorage.setItem('pwa-install-dismissed', Date.now().toString())
+    }, 200)
   }
 
   // Don't show if already installed or no session
@@ -105,46 +111,88 @@ export function InstallPrompt() {
   }
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-50 md:left-auto md:right-4 md:w-96">
-      <div className="bg-background border border-border rounded-lg shadow-lg p-4 flex items-start gap-3">
-        <div className="flex-1">
-          <h3 className="font-semibold text-sm mb-1">Install Madrasah OS</h3>
-          {isIOS ? (
-            <p className="text-xs text-muted-foreground mb-3">
-              Tap the share button <span className="inline-block">📤</span> and select &quot;Add to Home Screen&quot;
-            </p>
-          ) : (
-            <p className="text-xs text-muted-foreground mb-3">
-              Install our app for a better experience with quick access and offline support.
-            </p>
-          )}
+    <div 
+      className={`fixed bottom-4 left-4 right-4 z-50 md:left-auto md:right-4 md:w-96 transition-all duration-300 ${
+        isAnimating ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+      }`}
+    >
+      <div className="relative bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-2 border-blue-200 dark:border-blue-800 rounded-xl shadow-2xl overflow-hidden">
+        {/* Decorative background elements */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-200/20 dark:bg-blue-800/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-indigo-200/20 dark:bg-indigo-800/20 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2" />
+        
+        <div className="relative p-5">
+          {/* Header with icon */}
+          <div className="flex items-start gap-4 mb-4">
+            <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
+              <Smartphone className="h-6 w-6 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="font-bold text-base text-gray-900 dark:text-gray-100">
+                  Install Madrasah OS
+                </h3>
+                <Sparkles className="h-4 w-4 text-blue-500 animate-pulse" />
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                {isIOS ? (
+                  <>
+                    Get quick access from your home screen. Tap <ArrowUp className="inline h-3 w-3 mx-0.5" /> then &quot;Add to Home Screen&quot;
+                  </>
+                ) : (
+                  <>
+                    Install our app for faster access, offline support, and a better mobile experience.
+                  </>
+                )}
+              </p>
+            </div>
+            <button
+              onClick={handleDismiss}
+              className="flex-shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1 rounded-lg hover:bg-white/50 dark:hover:bg-gray-800/50"
+              aria-label="Dismiss"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          {/* Benefits list */}
+          <div className="mb-4 space-y-2">
+            <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+              <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+              <span>Faster loading times</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+              <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+              <span>Works offline</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+              <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+              <span>Home screen access</span>
+            </div>
+          </div>
+
+          {/* Action buttons */}
           <div className="flex gap-2">
             {!isIOS && (
               <Button
                 onClick={handleInstall}
+                className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 font-semibold"
                 size="sm"
-                className="text-xs"
               >
-                Install
+                <Download className="h-4 w-4 mr-2" />
+                Install Now
               </Button>
             )}
             <Button
               onClick={handleDismiss}
-              variant="ghost"
+              variant="outline"
               size="sm"
-              className="text-xs"
+              className="flex-shrink-0 border-gray-300 dark:border-gray-700 hover:bg-white/80 dark:hover:bg-gray-800/80"
             >
-              Not now
+              Later
             </Button>
           </div>
         </div>
-        <button
-          onClick={handleDismiss}
-          className="text-muted-foreground hover:text-foreground transition-colors"
-          aria-label="Dismiss"
-        >
-          <X className="h-4 w-4" />
-        </button>
       </div>
     </div>
   )

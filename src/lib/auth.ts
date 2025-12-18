@@ -239,6 +239,7 @@ export const authOptions: NextAuthOptions = {
         path: '/',
         secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
         domain: process.env.NODE_ENV === 'production' ? '.madrasah.io' : undefined, // Allow cookies on all subdomains
+        maxAge: 7 * 24 * 60 * 60, // 7 days in seconds - persist across app closes
       },
     },
     callbackUrl: {
