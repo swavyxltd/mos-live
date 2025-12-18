@@ -228,7 +228,8 @@ export const authOptions: NextAuthOptions = {
   ],
   session: {
     strategy: 'jwt',
-    maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
+    maxAge: 30 * 24 * 60 * 60, // 30 days in seconds - longer session for better UX
+    updateAge: 24 * 60 * 60, // Update session every 24 hours
   },
   cookies: {
     sessionToken: {
@@ -239,7 +240,7 @@ export const authOptions: NextAuthOptions = {
         path: '/',
         secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
         domain: process.env.NODE_ENV === 'production' ? '.madrasah.io' : undefined, // Allow cookies on all subdomains
-        maxAge: 7 * 24 * 60 * 60, // 7 days in seconds - persist across app closes
+        maxAge: 30 * 24 * 60 * 60, // 30 days in seconds - persist across app closes
       },
     },
     callbackUrl: {
