@@ -137,25 +137,26 @@ export function InstallPrompt() {
         isAnimating ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
       }`}
     >
-      <div className="relative bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 border-2 border-green-200 dark:border-green-800 rounded-xl shadow-2xl overflow-hidden">
-        {/* Decorative background elements */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-green-200/20 dark:bg-green-800/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-emerald-200/20 dark:bg-emerald-800/20 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2" />
+      <div className="relative bg-white border-2 border-green-200 rounded-xl shadow-2xl overflow-hidden">
+        {/* Decorative background elements with green gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-emerald-50" />
+        <div className="absolute top-0 right-0 w-32 h-32 bg-green-200/30 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-emerald-200/30 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2" />
         
-        <div className="relative p-5">
+        <div className="relative p-5 bg-white/95">
           {/* Header */}
           <div className="flex items-start gap-4 mb-4">
             <div className="flex-1 min-w-0 pr-8">
               <div className="flex items-center gap-2 mb-1">
-                <h3 className="font-bold text-base text-gray-900 dark:text-gray-100">
+                <h3 className="font-bold text-base text-gray-900">
                   Install Madrasah OS
                 </h3>
                 <Sparkles className="h-4 w-4 text-green-500 animate-pulse" />
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed break-words w-full">
+              <p className="text-sm text-gray-600 leading-relaxed break-words w-full">
                 {isIOS ? (
                   <>
-                    Get quick access from your home screen. Tap <ShareIcon className="inline h-4 w-4 mx-0.5 align-middle text-gray-600 dark:text-gray-400" /> then &quot;Add to Home Screen&quot;
+                    Get quick access from your home screen. Tap <ShareIcon className="inline h-4 w-4 mx-0.5 align-middle text-gray-600" /> then &quot;Add to Home Screen&quot;
                   </>
                 ) : (
                   <>
@@ -166,7 +167,7 @@ export function InstallPrompt() {
             </div>
             <button
               onClick={handleDismiss}
-              className="flex-shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1 rounded-lg hover:bg-white/50 dark:hover:bg-gray-800/50"
+              className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-white/50"
               aria-label="Dismiss"
             >
               <X className="h-5 w-5" />
@@ -189,7 +190,7 @@ export function InstallPrompt() {
               onClick={handleDismiss}
               variant="outline"
               size="sm"
-              className="flex-shrink-0 border-gray-300 dark:border-gray-700 hover:bg-white/80 dark:hover:bg-gray-800/80"
+              className="flex-shrink-0 border-gray-300 hover:bg-white/80"
             >
               Later
             </Button>
