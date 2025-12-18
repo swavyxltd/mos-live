@@ -15,8 +15,8 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
   return (
     <SessionProvider 
-      refetchInterval={5 * 60} // Refetch every 5 minutes to keep session fresh
-      refetchOnWindowFocus={true}
+      refetchInterval={0} // Don't auto-refetch - rely on cookie persistence
+      refetchOnWindowFocus={false} // Don't refetch on focus - can cause logout issues
       refetchWhenOffline={false}
     >
       <TopProgressBar />

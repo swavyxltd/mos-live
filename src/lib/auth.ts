@@ -239,7 +239,8 @@ export const authOptions: NextAuthOptions = {
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
-        domain: process.env.NODE_ENV === 'production' ? '.madrasah.io' : undefined, // Allow cookies on all subdomains
+        // Don't set domain - let browser handle it automatically for better PWA compatibility
+        // Setting domain can cause issues with PWAs and subdomains
         maxAge: 30 * 24 * 60 * 60, // 30 days in seconds - persist across app closes
       },
     },
@@ -250,7 +251,7 @@ export const authOptions: NextAuthOptions = {
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production',
-        domain: process.env.NODE_ENV === 'production' ? '.madrasah.io' : undefined,
+        maxAge: 30 * 24 * 60 * 60, // Also persist callback URL
       },
     },
     csrfToken: {
@@ -260,7 +261,7 @@ export const authOptions: NextAuthOptions = {
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production',
-        domain: process.env.NODE_ENV === 'production' ? '.madrasah.io' : undefined,
+        maxAge: 30 * 24 * 60 * 60, // Also persist CSRF token
       },
     },
   },
