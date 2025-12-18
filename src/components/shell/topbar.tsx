@@ -36,14 +36,30 @@ export function Topbar({ title, user: initialUser, userRole }: TopbarProps) {
   // Check dark mode state after hydration to avoid mismatch
   React.useEffect(() => {
     setMounted(true)
-    const isDark = document.documentElement.classList.contains('dark')
-    setIsDarkMode(isDark)
+    // Load dark mode preference from localStorage
+    const savedTheme = localStorage.getItem('theme')
+    const prefersDark = savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)
+    
+    if (prefersDark) {
+      document.documentElement.classList.add('dark')
+      setIsDarkMode(true)
+    } else {
+      document.documentElement.classList.remove('dark')
+      setIsDarkMode(false)
+    }
   }, [])
 
   const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode)
-    // You can implement actual dark mode logic here
-    document.documentElement.classList.toggle('dark')
+    const newDarkMode = !isDarkMode
+    setIsDarkMode(newDarkMode)
+    
+    if (newDarkMode) {
+      document.documentElement.classList.add('dark')
+      localStorage.setItem('theme', 'dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+      localStorage.setItem('theme', 'light')
+    }
   }
 
   return (
