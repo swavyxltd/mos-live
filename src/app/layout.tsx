@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { validateEnv } from "@/lib/env";
+import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -18,6 +19,13 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Madrasah OS",
     description: "Complete management system for Islamic schools and madrasahs",
+  },
+  manifest: "/manifest.json",
+  themeColor: "#000000",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Madrasah OS",
   },
 };
 
@@ -37,6 +45,7 @@ export default function RootLayout({
         <Providers>
           {children}
         </Providers>
+        <ServiceWorkerRegister />
       </body>
     </html>
   );
