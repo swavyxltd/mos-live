@@ -2,8 +2,29 @@
 
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
-import { X, Download, Sparkles, ArrowUp } from 'lucide-react'
+import { X, Download, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+
+// iOS-style share icon (square with arrow pointing up)
+function ShareIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      {/* Square base */}
+      <rect x="3" y="11" width="12" height="12" rx="2" fill="none" />
+      {/* Arrow pointing up */}
+      <path d="M9 7l3-3 3 3" fill="none" />
+      <line x1="12" y1="4" x2="12" y2="11" fill="none" />
+    </svg>
+  )
+}
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>
@@ -124,17 +145,17 @@ export function InstallPrompt() {
         <div className="relative p-5">
           {/* Header */}
           <div className="flex items-start gap-4 mb-4">
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 pr-8">
               <div className="flex items-center gap-2 mb-1">
                 <h3 className="font-bold text-base text-gray-900 dark:text-gray-100">
                   Install Madrasah OS
                 </h3>
                 <Sparkles className="h-4 w-4 text-green-500 animate-pulse" />
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+              <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed break-words w-full">
                 {isIOS ? (
                   <>
-                    Get quick access from your home screen. Tap <ArrowUp className="inline h-3 w-3 mx-0.5" /> then &quot;Add to Home Screen&quot;
+                    Get quick access from your home screen. Tap <ShareIcon className="inline h-4 w-4 mx-0.5 align-middle text-gray-600 dark:text-gray-400" /> then &quot;Add to Home Screen&quot;
                   </>
                 ) : (
                   <>
