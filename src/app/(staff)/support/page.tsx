@@ -78,12 +78,12 @@ export default function SupportPage() {
           role: ticket.role || 'STAFF',
           createdAt: ticket.createdAt,
           updatedAt: ticket.updatedAt,
-          createdBy: ticket.createdBy || ticket.User || {
+          createdBy: ticket.User || ticket.createdBy || {
             id: '',
             name: 'Unknown',
             email: ''
           },
-          responses: ticket.responses || []
+          responses: ticket.SupportTicketResponse || ticket.responses || []
         }))
         setTickets(transformed)
       } else {
@@ -288,11 +288,11 @@ export default function SupportPage() {
                         {/* Display responses */}
                         {ticket.responses && ticket.responses.length > 0 && (
                           <div className="mt-3 space-y-2">
-                            {ticket.responses.map((response) => (
+                            {ticket.responses.map((response: any) => (
                               <div key={response.id} className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded-r-md">
                                 <div className="flex items-center space-x-2 mb-1">
                                   <span className="text-sm font-medium text-blue-800">
-                                    {response.createdBy.name}
+                                    {response.User?.name || response.createdBy?.name || 'Support Team'}
                                   </span>
                                   <span className="text-sm text-blue-600">
                                     {format(new Date(response.createdAt), 'MMM d, yyyy')}

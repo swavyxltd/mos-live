@@ -51,16 +51,16 @@ async function handleGET(request: NextRequest) {
     const tickets = await prisma.supportTicket.findMany({
       where: whereClause,
       include: {
-        createdBy: {
+        User: {
           select: {
             id: true,
             name: true,
             email: true
           }
         },
-        responses: {
+        SupportTicketResponse: {
           include: {
-            createdBy: {
+            User: {
               select: {
                 id: true,
                 name: true,
