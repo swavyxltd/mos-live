@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
-import { X, Download } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
+import { X, Share2, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 export function AddToHomeScreenPrompt() {
   const { data: session, status } = useSession()
   const [showPrompt, setShowPrompt] = useState(false)
+  const [isAnimating, setIsAnimating] = useState(false)
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
   const [isIOS, setIsIOS] = useState(false)
   const [isStandalone, setIsStandalone] = useState(false)
@@ -43,6 +43,8 @@ export function AddToHomeScreenPrompt() {
     if (iOS) {
       const timer = setTimeout(() => {
         setShowPrompt(true)
+        // Trigger animation after state update
+        setTimeout(() => setIsAnimating(true), 10)
       }, 3000) // Show after 3 seconds
       return () => clearTimeout(timer)
     }
@@ -52,6 +54,7 @@ export function AddToHomeScreenPrompt() {
       e.preventDefault()
       setDeferredPrompt(e)
       setShowPrompt(true)
+      setTimeout(() => setIsAnimating(true), 10)
     }
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
@@ -61,6 +64,19 @@ export function AddToHomeScreenPrompt() {
     }
   }, [session, status])
 
+  // Prevent body scroll when prompt is open
+  useEffect(() => {
+    if (showPrompt && isAnimating) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [showPrompt, isAnimating])
+
   const handleInstall = async () => {
     if (deferredPrompt) {
       // Android/Chrome
@@ -69,21 +85,27 @@ export function AddToHomeScreenPrompt() {
       
       if (outcome === 'accepted') {
         localStorage.setItem('pwa-installed', 'true')
-        setShowPrompt(false)
+        handleClose()
       }
       
       setDeferredPrompt(null)
     } else if (isIOS) {
-      // iOS - just show instructions
-      // The prompt will guide users to use the share button
-      setShowPrompt(false)
+      // iOS - just close, user will follow instructions
+      handleClose()
       localStorage.setItem('pwa-installed', 'true')
     }
   }
 
+  const handleClose = () => {
+    setIsAnimating(false)
+    setTimeout(() => {
+      setShowPrompt(false)
+    }, 300) // Wait for animation to complete
+  }
+
   const handleDismiss = () => {
     localStorage.setItem('pwa-install-dismissed', 'true')
-    setShowPrompt(false)
+    handleClose()
   }
 
   // Only show on mobile devices
@@ -94,50 +116,109 @@ export function AddToHomeScreenPrompt() {
   }
 
   return (
-    <Card className="mb-6 border-[var(--border)] bg-[var(--card)] shadow-sm">
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-3 flex-1">
-            <div className="w-8 h-8 bg-[var(--primary)]/10 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Download className="h-4 w-4 text-[var(--primary)]" />
+    <>
+      {/* Backdrop */}
+      <div 
+        className={`fixed inset-0 bg-black/40 backdrop-blur-sm z-[9998] transition-opacity duration-300 ${
+          isAnimating ? 'opacity-100' : 'opacity-0'
+        }`}
+        onClick={handleDismiss}
+      />
+      
+      {/* Bottom Sheet */}
+      <div 
+        className={`fixed bottom-0 left-0 right-0 z-[9999] transition-transform duration-300 ease-out ${
+          isAnimating ? 'translate-y-0' : 'translate-y-full'
+        }`}
+      >
+        <div className="bg-[var(--card)] border-t border-[var(--border)] rounded-t-2xl shadow-2xl max-w-md mx-auto">
+          {/* Handle bar */}
+          <div className="flex justify-center pt-3 pb-2">
+            <div className="w-12 h-1 bg-[var(--muted-foreground)]/30 rounded-full" />
+          </div>
+
+          {/* Content */}
+          <div className="px-5 pb-6">
+            {/* Header */}
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center gap-2 flex-1">
+                <div className="w-10 h-10 bg-[var(--primary)]/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="h-5 w-5 text-[var(--primary)]" />
+                </div>
+                <h3 className="text-lg font-semibold text-[var(--foreground)]">
+                  Install Madrasah OS
+                </h3>
+              </div>
+              <button
+                onClick={handleDismiss}
+                className="p-1.5 rounded-lg hover:bg-[var(--accent)] transition-colors flex-shrink-0 ml-2"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5 text-[var(--muted-foreground)]" />
+              </button>
             </div>
-            <div className="flex-1">
-              <h3 className="text-sm font-semibold text-[var(--foreground)] mb-1">
-                Add to Home Screen
-              </h3>
-              <p className="text-sm text-[var(--muted-foreground)] mb-3">
+
+            {/* Instructions */}
+            <div className="mb-6">
+              <p className="text-sm text-[var(--muted-foreground)] mb-4 leading-relaxed">
                 {isIOS ? (
                   <>
-                    Tap the share button <span className="font-mono text-xs">□↑</span> and select &quot;Add to Home Screen&quot; for quick access.
+                    Get quick access from your home screen. Tap{' '}
+                    <span className="inline-flex items-center gap-1 font-medium text-[var(--foreground)]">
+                      <Share2 className="h-4 w-4 inline" />
+                    </span>{' '}
+                    then &quot;Add to Home Screen&quot;.
                   </>
                 ) : (
                   <>
-                    Install Madrasah OS on your device for a better experience and quick access.
+                    Install our app for faster access, offline support, and a better experience. 
+                    Get quick access right from your home screen.
                   </>
                 )}
               </p>
+
+              {/* iOS Share Icon Visual Guide */}
+              {isIOS && (
+                <div className="flex items-center gap-3 p-3 bg-[var(--muted)]/50 rounded-lg border border-[var(--border)]">
+                  <div className="flex-shrink-0">
+                    <div className="w-10 h-10 bg-[var(--primary)] rounded-lg flex items-center justify-center">
+                      <Share2 className="h-5 w-5 text-white" />
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-[var(--foreground)] mb-0.5">
+                      Look for the Share button
+                    </p>
+                    <p className="text-xs text-[var(--muted-foreground)]">
+                      Usually at the bottom of your browser
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <Button
+                onClick={handleDismiss}
+                variant="outline"
+                className="flex-1 border-[var(--border)] hover:bg-[var(--accent)]"
+              >
+                Later
+              </Button>
               {!isIOS && (
                 <Button
                   onClick={handleInstall}
-                  size="sm"
-                  className="bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/90"
+                  className="flex-1 bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/90"
                 >
-                  <Download className="h-4 w-4 mr-2" />
-                  Install App
+                  Install Now
                 </Button>
               )}
             </div>
           </div>
-          <button
-            onClick={handleDismiss}
-            className="p-1 rounded-md hover:bg-[var(--accent)] transition-colors flex-shrink-0"
-            aria-label="Dismiss prompt"
-          >
-            <X className="h-4 w-4 text-[var(--muted-foreground)]" />
-          </button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </>
   )
 }
 
