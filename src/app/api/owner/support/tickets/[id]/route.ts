@@ -29,12 +29,17 @@ async function handleGET(
     // Check if user is an owner/super admin
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      include: {
-        ownedOrgs: true
+      select: {
+        id: true,
+        isSuperAdmin: true
       }
     })
 
-    if (!user || (!user.isSuperAdmin && user.ownedOrgs.length === 0)) {
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    if (!user.isSuperAdmin) {
       return NextResponse.json({ error: 'Access denied. Owner privileges required.' }, { status: 403 })
     }
 
@@ -42,23 +47,23 @@ async function handleGET(
     const ticket = await prisma.supportTicket.findUnique({
       where: { id: ticketId },
       include: {
-        createdBy: {
+        User: {
           select: {
             id: true,
             name: true,
             email: true
           }
         },
-        org: {
+        Org: {
           select: {
             id: true,
             name: true,
             slug: true
           }
         },
-        responses: {
+        SupportTicketResponse: {
           include: {
-            createdBy: {
+            User: {
               select: {
                 id: true,
                 name: true,
@@ -73,11 +78,6 @@ async function handleGET(
 
     if (!ticket) {
       return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
-    }
-
-    // Check if user has access to this ticket's organisation
-    if (!user.isSuperAdmin && !user.ownedOrgs.some(org => org.id === ticket.orgId)) {
-      return NextResponse.json({ error: 'Access denied to this ticket' }, { status: 403 })
     }
 
     return NextResponse.json(ticket)
@@ -122,12 +122,17 @@ async function handlePATCH(
     // Check if user is an owner/super admin
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      include: {
-        ownedOrgs: true
+      select: {
+        id: true,
+        isSuperAdmin: true
       }
     })
 
-    if (!user || (!user.isSuperAdmin && user.ownedOrgs.length === 0)) {
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    if (!user.isSuperAdmin) {
       return NextResponse.json({ error: 'Access denied. Owner privileges required.' }, { status: 403 })
     }
 
@@ -135,18 +140,25 @@ async function handlePATCH(
     const ticket = await prisma.supportTicket.findUnique({
       where: { id: ticketId },
       include: {
-        createdBy: true,
-        org: true
+        User: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        Org: {
+          select: {
+            id: true,
+            name: true,
+            slug: true
+          }
+        }
       }
     })
 
     if (!ticket) {
       return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
-    }
-
-    // Check if user has access to this ticket's organisation
-    if (!user.isSuperAdmin && !user.ownedOrgs.some(org => org.id === ticket.orgId)) {
-      return NextResponse.json({ error: 'Access denied to this ticket' }, { status: 403 })
     }
 
     // Update the ticket status
@@ -157,23 +169,23 @@ async function handlePATCH(
         updatedAt: new Date()
       },
       include: {
-        createdBy: {
+        User: {
           select: {
             id: true,
             name: true,
             email: true
           }
         },
-        org: {
+        Org: {
           select: {
             id: true,
             name: true,
             slug: true
           }
         },
-        responses: {
+        SupportTicketResponse: {
           include: {
-            createdBy: {
+            User: {
               select: {
                 id: true,
                 name: true,
@@ -187,7 +199,7 @@ async function handlePATCH(
     })
 
     // Send email notification to the ticket creator about status change
-    if (ticket.createdBy?.email && ticket.status !== status) {
+    if (ticket.User?.email && ticket.status !== status) {
       try {
         const statusMessages = {
           'OPEN': 'Your support ticket has been reopened.',
@@ -210,13 +222,13 @@ async function handlePATCH(
         
         const html = await generateEmailTemplate({
           title: 'Support Ticket Status Update',
-          description: `Hello ${ticket.createdBy.name || 'there'},<br><br>${statusMessages[status as keyof typeof statusMessages]}`,
+          description: `Hello ${ticket.User?.name || 'there'},<br><br>${statusMessages[status as keyof typeof statusMessages]}`,
           content,
           footerText: 'You can view the full conversation and any responses by logging into your account.'
         })
         
         await sendEmail({
-          to: ticket.createdBy.email,
+          to: ticket.User.email,
           subject: `Support ticket status update: ${ticket.subject}`,
           html
         })

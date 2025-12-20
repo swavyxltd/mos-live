@@ -99,15 +99,21 @@ export function SupportTicketDetailModal({
     
     try {
       setLoading(true)
-      const response = await fetch(`/api/owner/support/tickets/${ticketId}`)
+      const response = await fetch(`/api/owner/support/tickets/${ticketId}`, {
+        credentials: 'include'
+      })
       if (response.ok) {
         const data = await response.json()
+        console.log('Ticket data:', data)
         setTicket(data)
         setNewStatus(data.status)
       } else {
-        toast.error('Failed to load ticket details')
+        const errorData = await response.json().catch(() => ({}))
+        console.error('Error fetching ticket:', response.status, errorData)
+        toast.error(errorData.error || 'Failed to load ticket details')
       }
     } catch (error) {
+      console.error('Error fetching ticket:', error)
       toast.error('Failed to load ticket details')
     } finally {
       setLoading(false)
@@ -247,7 +253,7 @@ export function SupportTicketDetailModal({
                 <div>
                   <p className="text-xs text-[var(--muted-foreground)]">Created By</p>
                   <p className="text-sm font-medium text-[var(--foreground)]">
-                    {ticket.createdBy?.name || 'Unknown'}
+                    {ticket.User?.name || ticket.createdBy?.name || 'Unknown'}
                   </p>
                 </div>
               </div>
@@ -256,7 +262,7 @@ export function SupportTicketDetailModal({
                 <div>
                   <p className="text-xs text-[var(--muted-foreground)]">Email</p>
                   <p className="text-sm font-medium text-[var(--foreground)]">
-                    {ticket.createdBy?.email || 'N/A'}
+                    {ticket.User?.email || ticket.createdBy?.email || 'N/A'}
                   </p>
                 </div>
               </div>
@@ -265,7 +271,7 @@ export function SupportTicketDetailModal({
                 <div>
                   <p className="text-xs text-[var(--muted-foreground)]">Organisation</p>
                   <p className="text-sm font-medium text-[var(--foreground)]">
-                    {ticket.org?.name || 'Unknown'}
+                    {ticket.Org?.name || ticket.org?.name || 'Unknown'}
                   </p>
                 </div>
               </div>
