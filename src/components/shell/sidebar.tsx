@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useSession } from 'next-auth/react'
+import { signOut, useSession } from 'next-auth/react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -36,8 +36,6 @@ import {
   Shield,
   HeadphonesIcon,
   Search,
-  Moon,
-  Sun,
   Receipt,
   Target,
   UserPlus,
@@ -119,38 +117,7 @@ export function Sidebar({ user: initialUser, org, userRole, staffSubrole, permis
     image: session.user.image || initialUser.image,
     isSuperAdmin: session.user.isSuperAdmin ?? initialUser.isSuperAdmin
   } : initialUser
-  const [isDarkMode, setIsDarkMode] = React.useState(false)
-  const [mounted, setMounted] = React.useState(false)
   const pathname = usePathname()
-
-  // Check dark mode state after hydration to avoid mismatch
-  React.useEffect(() => {
-    setMounted(true)
-    // Load dark mode preference from localStorage
-    const savedTheme = localStorage.getItem('theme')
-    const prefersDark = savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)
-    
-    if (prefersDark) {
-      document.documentElement.classList.add('dark')
-      setIsDarkMode(true)
-    } else {
-      document.documentElement.classList.remove('dark')
-      setIsDarkMode(false)
-    }
-  }, [])
-
-  const toggleDarkMode = () => {
-    const newDarkMode = !isDarkMode
-    setIsDarkMode(newDarkMode)
-    
-    if (newDarkMode) {
-      document.documentElement.classList.add('dark')
-      localStorage.setItem('theme', 'dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-      localStorage.setItem('theme', 'light')
-    }
-  }
   
   const isOwner = user.isSuperAdmin || userRole === 'OWNER'
   const isParent = userRole === 'PARENT'
@@ -234,19 +201,6 @@ export function Sidebar({ user: initialUser, org, userRole, staffSubrole, permis
                 <GlobalSearch />
               </div>
             )}
-            {/* Dark Mode Toggle - Mobile only */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleDarkMode}
-              className="h-10 w-10 hover:bg-gray-100 flex-shrink-0"
-            >
-              {mounted && isDarkMode ? (
-                <Sun className="h-5 w-5" />
-              ) : (
-                <Moon className="h-5 w-5" />
-              )}
-            </Button>
             {/* Hamburger Menu */}
             <Button
               variant="ghost"
@@ -348,23 +302,10 @@ export function Sidebar({ user: initialUser, org, userRole, staffSubrole, permis
             <Button
               variant="ghost"
               className="w-full justify-start text-[var(--sidebar-foreground)] hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-accent-foreground)]"
-              onClick={async () => {
-                try {
-                  // Clear all storage first
-                  sessionStorage.clear()
-                  localStorage.clear()
-                  
-                  // Use our custom signout endpoint which properly clears all cookies server-side
-                  // This ensures cookies are cleared before redirect
-                  const callbackUrl = encodeURIComponent('/auth/signin?loggedOut=true')
-                  window.location.href = `/api/auth/signout?callbackUrl=${callbackUrl}`
-                } catch (error) {
-                  console.error('Logout error:', error)
-                  // Fallback: clear storage and redirect manually
-                  sessionStorage.clear()
-                  localStorage.clear()
-                  window.location.href = '/auth/signin?loggedOut=true'
-                }
+              onClick={() => {
+                // Clear sessionStorage on sign out
+                sessionStorage.clear()
+                signOut({ callbackUrl: '/auth/signin' })
               }}
             >
               <svg className="mr-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
