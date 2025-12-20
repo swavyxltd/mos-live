@@ -15,18 +15,25 @@ export function AddToHomeScreenPrompt() {
 
   // Function to check if app is installed/standalone
   const checkIfInstalled = useCallback(() => {
+    // Check if window is available (client-side only)
+    if (typeof window === 'undefined') {
+      return false
+    }
+
     // Check for standalone display mode (most reliable)
     const isStandaloneMode = 
       window.matchMedia('(display-mode: standalone)').matches ||
       (window.navigator as any).standalone === true ||
-      document.referrer.includes('android-app://') ||
+      (typeof document !== 'undefined' && document.referrer.includes('android-app://')) ||
       // Additional iOS checks
       (window.matchMedia('(display-mode: fullscreen)').matches && 
        /iPad|iPhone|iPod/.test(navigator.userAgent))
 
     if (isStandaloneMode) {
       // Mark as installed if we detect standalone mode
-      localStorage.setItem('pwa-installed', 'true')
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('pwa-installed', 'true')
+      }
       setIsStandalone(true)
       return true
     }
@@ -36,6 +43,11 @@ export function AddToHomeScreenPrompt() {
   }, [])
 
   useEffect(() => {
+    // Only run on client-side
+    if (typeof window === 'undefined') {
+      return
+    }
+
     // Only show for logged-in users
     if (status !== 'authenticated' || !session?.user) {
       return
@@ -49,8 +61,8 @@ export function AddToHomeScreenPrompt() {
     setIsIOS(iOS)
 
     // Check if already dismissed or marked as installed
-    const dismissed = localStorage.getItem('pwa-install-dismissed') === 'true'
-    const markedAsInstalled = localStorage.getItem('pwa-installed') === 'true'
+    const dismissed = typeof localStorage !== 'undefined' && localStorage.getItem('pwa-install-dismissed') === 'true'
+    const markedAsInstalled = typeof localStorage !== 'undefined' && localStorage.getItem('pwa-installed') === 'true'
 
     // Don't show if already installed, dismissed, or marked as installed
     if (isInstalled || dismissed || markedAsInstalled) {
@@ -61,7 +73,7 @@ export function AddToHomeScreenPrompt() {
     if (iOS) {
       const timer = setTimeout(() => {
         // Double-check if installed before showing
-        if (!checkIfInstalled() && localStorage.getItem('pwa-installed') !== 'true') {
+        if (!checkIfInstalled() && typeof localStorage !== 'undefined' && localStorage.getItem('pwa-installed') !== 'true') {
           setShowPrompt(true)
           // Trigger animation after state update
           setTimeout(() => setIsAnimating(true), 10)
@@ -73,7 +85,7 @@ export function AddToHomeScreenPrompt() {
     // For Android/Chrome, listen for beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
       // Double-check if installed before showing
-      if (!checkIfInstalled() && localStorage.getItem('pwa-installed') !== 'true') {
+      if (!checkIfInstalled() && typeof localStorage !== 'undefined' && localStorage.getItem('pwa-installed') !== 'true') {
         e.preventDefault()
         setDeferredPrompt(e)
         setShowPrompt(true)
@@ -113,6 +125,11 @@ export function AddToHomeScreenPrompt() {
 
   // Continuously check if app becomes installed (when user opens from home screen)
   useEffect(() => {
+    // Only run on client-side
+    if (typeof window === 'undefined') {
+      return
+    }
+
     const checkInterval = setInterval(() => {
       if (checkIfInstalled()) {
         // If we detect standalone mode, hide the prompt immediately
@@ -175,10 +192,10 @@ export function AddToHomeScreenPrompt() {
   // Only show on mobile devices
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
 
-  // Double-check if installed before rendering
-  const isInstalled = checkIfInstalled() || localStorage.getItem('pwa-installed') === 'true'
+  // Check if installed before rendering (without calling checkIfInstalled to avoid re-renders)
+  const markedAsInstalled = typeof window !== 'undefined' && typeof localStorage !== 'undefined' && localStorage.getItem('pwa-installed') === 'true'
 
-  if (!showPrompt || !isMobile || isStandalone || isInstalled || status !== 'authenticated') {
+  if (!showPrompt || !isMobile || isStandalone || markedAsInstalled || status !== 'authenticated') {
     return null
   }
 
