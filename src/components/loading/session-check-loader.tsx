@@ -46,7 +46,7 @@ export function SessionCheckLoader() {
         
         {/* Subheading */}
         <p className="text-sm text-gray-600 font-medium">
-          Organising every corner of your madrasah.
+          Moving Islamic education forward.
         </p>
         
         {/* Progress Bar */}

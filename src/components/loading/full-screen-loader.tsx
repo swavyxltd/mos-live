@@ -42,7 +42,7 @@ export function FullScreenLoader() {
         
         {/* Subheading */}
         <p className="text-sm text-[var(--muted-foreground)] font-medium">
-          Organising every corner of your madrasah.
+          Moving Islamic education forward.
         </p>
         
         {/* Progress Bar */}
