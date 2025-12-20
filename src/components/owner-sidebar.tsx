@@ -144,18 +144,30 @@ export function OwnerSidebar({ user }: OwnerSidebarProps) {
               variant="ghost"
               className="w-full justify-start"
               onClick={async () => {
-                // Clear all storage first
-                sessionStorage.clear()
-                localStorage.clear()
-                
-                // Sign out without redirect
-                await signOut({ 
-                  callbackUrl: '/auth/signin',
-                  redirect: false 
-                })
-                
-                // Force a full page reload to ensure cookies are cleared
-                window.location.href = '/auth/signin'
+                try {
+                  // Clear all storage first
+                  sessionStorage.clear()
+                  localStorage.clear()
+                  
+                  // Call custom signout endpoint to explicitly clear cookies
+                  await fetch('/api/auth/signout', {
+                    method: 'POST',
+                    credentials: 'include'
+                  })
+                  
+                  // Also call NextAuth signOut
+                  await signOut({ 
+                    callbackUrl: '/auth/signin',
+                    redirect: false 
+                  })
+                  
+                  // Force a full page reload to ensure cookies are cleared
+                  window.location.href = '/auth/signin'
+                } catch (error) {
+                  console.error('Logout error:', error)
+                  // Still redirect even if there's an error
+                  window.location.href = '/auth/signin'
+                }
               }}
             >
               <svg className="mr-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

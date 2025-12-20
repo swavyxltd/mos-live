@@ -150,18 +150,30 @@ export function ParentSidebar({ user, org }: ParentSidebarProps) {
               variant="ghost"
               className="w-full justify-start"
               onClick={async () => {
-                // Clear all storage first
-                sessionStorage.clear()
-                localStorage.clear()
-                
-                // Sign out without redirect
-                await signOut({ 
-                  callbackUrl: '/auth/signin?portal=parent',
-                  redirect: false 
-                })
-                
-                // Force a full page reload to ensure cookies are cleared
-                window.location.href = '/auth/signin?portal=parent'
+                try {
+                  // Clear all storage first
+                  sessionStorage.clear()
+                  localStorage.clear()
+                  
+                  // Call custom signout endpoint to explicitly clear cookies
+                  await fetch('/api/auth/signout', {
+                    method: 'POST',
+                    credentials: 'include'
+                  })
+                  
+                  // Also call NextAuth signOut
+                  await signOut({ 
+                    callbackUrl: '/auth/signin?portal=parent',
+                    redirect: false 
+                  })
+                  
+                  // Force a full page reload to ensure cookies are cleared
+                  window.location.href = '/auth/signin?portal=parent'
+                } catch (error) {
+                  console.error('Logout error:', error)
+                  // Still redirect even if there's an error
+                  window.location.href = '/auth/signin?portal=parent'
+                }
               }}
             >
               <svg className="mr-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
