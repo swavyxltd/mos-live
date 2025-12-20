@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { signOut } from 'next-auth/react'
 import { 
   Home, 
   CreditCard, 
@@ -155,26 +154,15 @@ export function ParentSidebar({ user, org }: ParentSidebarProps) {
                   sessionStorage.clear()
                   localStorage.clear()
                   
-                  // Call NextAuth signOut first to clear session
-                  await signOut({ 
-                    callbackUrl: '/auth/signin?portal=parent&loggedOut=true',
-                    redirect: false 
-                  })
-                  
-                  // Call custom signout endpoint to clear cookies
-                  await fetch('/api/auth/signout', {
-                    method: 'POST',
-                    credentials: 'include'
-                  })
-                  
-                  // Small delay to ensure cookies are cleared, then redirect
-                  await new Promise(resolve => setTimeout(resolve, 100))
-                  
-                  // Force full page reload to ensure everything is cleared
-                  window.location.href = '/auth/signin?portal=parent&loggedOut=true'
+                  // Use our custom signout endpoint which properly clears all cookies server-side
+                  // This ensures cookies are cleared before redirect
+                  const callbackUrl = encodeURIComponent('/auth/signin?portal=parent&loggedOut=true')
+                  window.location.href = `/api/auth/signout?callbackUrl=${callbackUrl}`
                 } catch (error) {
                   console.error('Logout error:', error)
-                  // Still redirect on error with loggedOut flag
+                  // Fallback: clear storage and redirect manually
+                  sessionStorage.clear()
+                  localStorage.clear()
                   window.location.href = '/auth/signin?portal=parent&loggedOut=true'
                 }
               }}
