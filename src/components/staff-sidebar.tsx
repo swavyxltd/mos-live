@@ -202,9 +202,15 @@ export function StaffSidebar({ user, org, userRole, staffSubrole }: StaffSidebar
               className="w-full justify-start"
               onClick={async () => {
                 try {
-                  // Clear all storage
+                  // Clear all storage first
                   sessionStorage.clear()
                   localStorage.clear()
+                  
+                  // Call NextAuth signOut first to clear session
+                  await signOut({ 
+                    callbackUrl: '/auth/signin?loggedOut=true',
+                    redirect: false 
+                  })
                   
                   // Call custom signout endpoint to clear cookies
                   await fetch('/api/auth/signout', {
@@ -212,18 +218,15 @@ export function StaffSidebar({ user, org, userRole, staffSubrole }: StaffSidebar
                     credentials: 'include'
                   })
                   
-                  // Call NextAuth signOut
-                  await signOut({ 
-                    callbackUrl: '/auth/signin',
-                    redirect: false 
-                  })
+                  // Small delay to ensure cookies are cleared, then redirect
+                  await new Promise(resolve => setTimeout(resolve, 100))
                   
                   // Force full page reload to ensure everything is cleared
-                  window.location.href = '/auth/signin'
+                  window.location.href = '/auth/signin?loggedOut=true'
                 } catch (error) {
                   console.error('Logout error:', error)
-                  // Still redirect on error
-                  window.location.href = '/auth/signin'
+                  // Still redirect on error with loggedOut flag
+                  window.location.href = '/auth/signin?loggedOut=true'
                 }
               }}
             >

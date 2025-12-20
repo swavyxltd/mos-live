@@ -23,6 +23,12 @@ export function SessionRestore() {
 
     if (!isStandalone) return
 
+    // Check if user just logged out - don't auto-redirect in this case
+    const urlParams = new URLSearchParams(window.location.search)
+    const loggedOut = urlParams.get('loggedOut') === 'true'
+    
+    if (loggedOut) return
+
     // Only redirect if we have a valid session and we're on the login page
     // This runs once on mount - no aggressive restoration
     if (status === 'authenticated' && session?.user?.id) {

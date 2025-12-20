@@ -25,6 +25,9 @@ function SignInPageContent() {
 
   // Check for existing session on mount
   useEffect(() => {
+    // Check if user just logged out - don't auto-redirect in this case
+    const loggedOut = searchParams.get('loggedOut') === 'true'
+    
     // Add timeout to prevent infinite loading (max 5 seconds)
     const timeout = setTimeout(() => {
       setCheckingSession(false)
@@ -32,6 +35,14 @@ function SignInPageContent() {
 
     // Wait for session to load
     if (status === 'loading') {
+      return () => clearTimeout(timeout)
+    }
+
+    // If user just logged out, don't auto-redirect even if session exists
+    // This prevents the issue where logout redirects back to dashboard
+    if (loggedOut) {
+      clearTimeout(timeout)
+      setCheckingSession(false)
       return () => clearTimeout(timeout)
     }
 
@@ -68,7 +79,7 @@ function SignInPageContent() {
     setCheckingSession(false)
 
     return () => clearTimeout(timeout)
-  }, [session, status, router])
+  }, [session, status, router, searchParams])
 
   // Initialize success messages only once
   useEffect(() => {
