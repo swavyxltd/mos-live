@@ -23,17 +23,8 @@ function SignInPageContent() {
   const resetSuccess = searchParams.get('reset') === 'success'
   const signupSuccess = searchParams.get('signup') === 'success'
 
-  // Check for existing session on mount (for PWA session restoration)
+  // Check for existing session on mount
   useEffect(() => {
-    // Don't check session if user just logged out
-    const justLoggedOut = sessionStorage.getItem('justLoggedOut') === 'true'
-    if (justLoggedOut) {
-      // Clear the flag and show login form
-      sessionStorage.removeItem('justLoggedOut')
-      setCheckingSession(false)
-      return
-    }
-
     // Add timeout to prevent infinite loading (max 5 seconds)
     const timeout = setTimeout(() => {
       setCheckingSession(false)

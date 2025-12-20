@@ -202,36 +202,27 @@ export function StaffSidebar({ user, org, userRole, staffSubrole }: StaffSidebar
               className="w-full justify-start"
               onClick={async () => {
                 try {
-                  // Set flag to prevent session restoration
-                  sessionStorage.setItem('justLoggedOut', 'true')
-                  
-                  // Clear all storage (but keep justLoggedOut flag)
-                  localStorage.clear()
-                  // Clear sessionStorage but preserve the logout flag
-                  const logoutFlag = sessionStorage.getItem('justLoggedOut')
+                  // Clear all storage
                   sessionStorage.clear()
-                  if (logoutFlag) {
-                    sessionStorage.setItem('justLoggedOut', 'true')
-                  }
+                  localStorage.clear()
                   
-                  // Call custom signout endpoint to explicitly clear cookies
+                  // Call custom signout endpoint to clear cookies
                   await fetch('/api/auth/signout', {
                     method: 'POST',
                     credentials: 'include'
                   })
                   
-                  // Also call NextAuth signOut
+                  // Call NextAuth signOut
                   await signOut({ 
                     callbackUrl: '/auth/signin',
                     redirect: false 
                   })
                   
-                  // Force a full page reload to ensure cookies are cleared
+                  // Force full page reload to ensure everything is cleared
                   window.location.href = '/auth/signin'
                 } catch (error) {
                   console.error('Logout error:', error)
-                  // Still redirect even if there's an error
-                  sessionStorage.setItem('justLoggedOut', 'true')
+                  // Still redirect on error
                   window.location.href = '/auth/signin'
                 }
               }}

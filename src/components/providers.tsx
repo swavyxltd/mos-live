@@ -16,8 +16,8 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
   return (
     <SessionProvider 
-      refetchInterval={60 * 60} // Refetch every hour to keep session fresh
-      refetchOnWindowFocus={true} // Refetch on focus to restore session from cookies
+      refetchInterval={0} // Don't auto-refetch - let cookies handle persistence
+      refetchOnWindowFocus={false} // Don't refetch on focus - simple login/logout
       refetchWhenOffline={false}
       basePath="/api/auth"
     >
