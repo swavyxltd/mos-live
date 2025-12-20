@@ -1,85 +1,25 @@
 'use client'
 
-import { signIn, getSession, useSession } from 'next-auth/react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { signIn, getSession } from 'next-auth/react'
+import { useSearchParams } from 'next/navigation'
 import { useEffect, useState, useRef, Suspense } from 'react'
 import Image from 'next/image'
+import { LogIn } from 'lucide-react'
 import { getPostLoginRedirect } from '@/lib/auth'
 import { LoginForm } from '@/components/login-form'
-import { SessionCheckLoader } from '@/components/loading/session-check-loader'
 
 function SignInPageContent() {
   const searchParams = useSearchParams()
-  const router = useRouter()
-  const { data: session, status } = useSession()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
-  const [checkingSession, setCheckingSession] = useState(true)
+  const sessionCheckedRef = useRef(false)
   const hasInitializedRef = useRef(false)
   
   // Get URL params once and memoize
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
   const resetSuccess = searchParams.get('reset') === 'success'
   const signupSuccess = searchParams.get('signup') === 'success'
-
-  // Check for existing session on mount
-  useEffect(() => {
-    // Check if user just logged out - don't auto-redirect in this case
-    const loggedOut = searchParams.get('loggedOut') === 'true'
-    
-    // Add timeout to prevent infinite loading (max 5 seconds)
-    const timeout = setTimeout(() => {
-      setCheckingSession(false)
-    }, 5000)
-
-    // Wait for session to load
-    if (status === 'loading') {
-      return () => clearTimeout(timeout)
-    }
-
-    // If user just logged out, don't auto-redirect even if session exists
-    // This prevents the issue where logout redirects back to dashboard
-    if (loggedOut) {
-      clearTimeout(timeout)
-      setCheckingSession(false)
-      return () => clearTimeout(timeout)
-    }
-
-    // If we have a session, redirect to dashboard
-    if (status === 'authenticated' && session?.user?.id) {
-      const roleHints = (session.user as any)?.roleHints as {
-        isOwner?: boolean
-        orgAdminOf?: string[]
-        orgStaffOf?: string[]
-        isParent?: boolean
-      } | undefined
-
-      if (roleHints) {
-        let redirectPath = '/'
-        if (roleHints.isParent) {
-          redirectPath = '/parent/dashboard'
-        } else if (roleHints.isOwner) {
-          redirectPath = '/owner/overview'
-        } else if (roleHints.orgAdminOf?.length || roleHints.orgStaffOf?.length) {
-          redirectPath = '/dashboard'
-        }
-        
-        clearTimeout(timeout)
-        // Show loading screen briefly, then redirect
-        setTimeout(() => {
-          router.push(redirectPath)
-        }, 500) // Small delay to show loading screen
-        return
-      }
-    }
-
-    // No session or session check complete - show login form
-    clearTimeout(timeout)
-    setCheckingSession(false)
-
-    return () => clearTimeout(timeout)
-  }, [session, status, router, searchParams])
 
   // Initialize success messages only once
   useEffect(() => {
@@ -94,6 +34,11 @@ function SignInPageContent() {
       setSuccessMessage('Account created successfully! Please sign in to continue.')
     }
   }, []) // Empty deps - only run once on mount
+
+  // Note: We don't check session here because:
+  // 1. Middleware will handle redirecting authenticated users
+  // 2. Checking session on client-side can cause race conditions in production
+  // 3. If user is already logged in, middleware will redirect them before this page loads
 
   const handleCredentialsSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -151,6 +96,34 @@ function SignInPageContent() {
         } else if (result?.ok) {
           // Get session to check user role and redirect appropriately
           const session = await getSession()
+          
+          // If in PWA mode, extend session to 90 days
+          const isPWA = window.matchMedia('(display-mode: standalone)').matches ||
+                       (window.navigator as any).standalone === true ||
+                       document.referrer.includes('android-app://')
+          
+          if (isPWA && session?.user?.id) {
+            try {
+              // Store PWA login preference
+              if (typeof window !== 'undefined') {
+                const { setPWALoginPreference } = await import('@/lib/pwa-auth')
+                setPWALoginPreference(session.user.id)
+              }
+              
+              // Extend session cookie to 90 days
+              await fetch('/api/auth/extend-pwa-session', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'x-pwa-mode': 'true',
+                },
+              })
+            } catch (error) {
+              console.error('Failed to extend PWA session:', error)
+              // Continue with normal redirect even if extension fails
+            }
+          }
+          
           if ((session?.user as any)?.roleHints) {
             const redirectUrl = getPostLoginRedirect((session.user as any).roleHints)
             window.location.href = redirectUrl
@@ -172,11 +145,6 @@ function SignInPageContent() {
     } finally {
       setIsLoading(false)
     }
-  }
-
-  // Show loading screen while checking session
-  if (checkingSession || status === 'loading') {
-    return <SessionCheckLoader />
   }
 
   return (

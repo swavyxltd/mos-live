@@ -7,6 +7,7 @@ import { Topbar } from './topbar'
 import { OverduePaymentBanner } from '@/components/overdue-payment-banner'
 import { PaymentRequiredBanner } from '@/components/payment-required-banner'
 import { MaintenanceNotificationBanner } from '@/components/maintenance-notification-banner'
+import { AddToHomeScreenPrompt } from '@/components/add-to-home-screen-prompt'
 import { InitialAppLoader } from '@/components/loading/initial-app-loader'
 
 interface PageProps {
@@ -43,6 +44,7 @@ export function Page({ children, user, org, userRole, staffSubrole, permissions,
               <MaintenanceNotificationBanner />
               {userRole === 'PARENT' && <OverduePaymentBanner />}
               {(userRole === 'ADMIN' || userRole === 'STAFF') && <PaymentRequiredBanner />}
+              <AddToHomeScreenPrompt />
             </div>
             <div className="w-full min-w-0 px-4 sm:px-6 lg:px-8">
             {children}

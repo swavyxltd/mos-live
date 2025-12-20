@@ -79,8 +79,7 @@ async function getUserRoleHints(userId: string) {
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as any,
-  // ✅ 3. NEXTAUTH_URL should be set to https://app.madrasah.io in production
-  // NextAuth will use this for callbacks and session management
+  // Use NEXTAUTH_URL if set, otherwise construct from request
   secret: process.env.NEXTAUTH_SECRET,
   providers: [
     CredentialsProvider({
@@ -228,40 +227,40 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   session: {
-    strategy: 'jwt', // ✅ 1. Using JWT strategy (not database sessions)
-    maxAge: 90 * 24 * 60 * 60, // ✅ 5. Increased to 90 days for better persistence across app restarts
-    updateAge: 24 * 60 * 60, // Update session every 24 hours
+    strategy: 'jwt',
+    // Default 7 days for browser, 90 days for PWA (handled in JWT callback)
+    maxAge: 7 * 24 * 60 * 60, // 7 days in seconds (default)
   },
   cookies: {
     sessionToken: {
       name: `next-auth.session-token`,
       options: {
         httpOnly: true,
-        sameSite: 'lax' as const, // ✅ 2. Explicitly set to "lax"
-        path: '/', // ✅ 2. Explicitly set to "/"
-        secure: process.env.NODE_ENV === 'production', // ✅ 2. Secure in production (required for HTTPS on app.madrasah.io)
-        // ✅ 4. Domain not set - cookies will be scoped to app.madrasah.io automatically
-        maxAge: 90 * 24 * 60 * 60, // ✅ 5. 90 days - persist across app restarts
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+        domain: process.env.NODE_ENV === 'production' ? '.madrasah.io' : undefined, // Allow cookies on all subdomains
+        // Note: maxAge for PWA (90 days) is handled via API endpoint that extends the cookie
       },
     },
     callbackUrl: {
       name: `next-auth.callback-url`,
       options: {
         httpOnly: true,
-        sameSite: 'lax' as const,
+        sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production',
-        maxAge: 90 * 24 * 60 * 60,
+        domain: process.env.NODE_ENV === 'production' ? '.madrasah.io' : undefined,
       },
     },
     csrfToken: {
       name: `next-auth.csrf-token`,
       options: {
         httpOnly: true,
-        sameSite: 'lax' as const,
+        sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production',
-        maxAge: 90 * 24 * 60 * 60,
+        domain: process.env.NODE_ENV === 'production' ? '.madrasah.io' : undefined,
       },
     },
   },
@@ -445,18 +444,8 @@ export const authOptions: NextAuthOptions = {
       return session
     },
     async redirect({ url, baseUrl }) {
-      // ✅ 6. Ensure all redirects stay on the same domain (app.madrasah.io)
-      // If the URL is already absolute, ensure it's on our domain
-      if (url.startsWith('http')) {
-        const urlObj = new URL(url)
-        const baseUrlObj = new URL(baseUrl)
-        // Only allow redirects to the same domain
-        if (urlObj.hostname === baseUrlObj.hostname || urlObj.hostname === 'app.madrasah.io') {
-          return url
-        }
-        // If redirect is to different domain, redirect to baseUrl instead
-        return baseUrl
-      }
+      // If the URL is already absolute, return it
+      if (url.startsWith('http')) return url
       
       // If the URL starts with '/', make it absolute
       if (url.startsWith('/')) return `${baseUrl}${url}`

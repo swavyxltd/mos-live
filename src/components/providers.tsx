@@ -6,8 +6,7 @@ import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { ReactNode } from 'react'
 import { TopProgressBar } from '@/components/loading/top-progress-bar'
-import { InstallPrompt } from '@/components/pwa/install-prompt'
-import { SessionRestore } from '@/components/pwa/session-restore'
+import { PWASessionManager } from '@/components/pwa-session-manager'
 
 interface ProvidersProps {
   children: ReactNode
@@ -16,15 +15,13 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
   return (
     <SessionProvider 
-      refetchInterval={0} // Don't auto-refetch - let cookies handle persistence
-      refetchOnWindowFocus={false} // Don't refetch on focus - simple login/logout
+      refetchInterval={0} 
+      refetchOnWindowFocus={true}
       refetchWhenOffline={false}
-      basePath="/api/auth"
     >
+      <PWASessionManager />
       <TopProgressBar />
-      <SessionRestore />
       {children}
-      <InstallPrompt />
       <Toaster />
       <Analytics />
       <SpeedInsights />

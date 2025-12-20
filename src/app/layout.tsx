@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { validateEnv } from "@/lib/env";
-import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
+import { PWASetup } from "@/components/pwa-setup";
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   themeColor: "#000000",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "Madrasah OS",
   },
 };
@@ -40,28 +40,12 @@ export default function RootLayout({
   }
 
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  const theme = localStorage.getItem('theme');
-                  if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                    document.documentElement.classList.add('dark');
-                  }
-                } catch (e) {}
-              })();
-            `,
-          }}
-        />
-      </head>
+    <html lang="en">
       <body className={inter.className}>
+        <PWASetup />
         <Providers>
           {children}
         </Providers>
-        <ServiceWorkerRegister />
       </body>
     </html>
   );
