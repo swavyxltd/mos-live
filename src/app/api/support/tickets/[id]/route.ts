@@ -7,7 +7,7 @@ import { logger } from '@/lib/logger'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -15,11 +15,21 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const ticketId = params.id
+    // Resolve params if it's a Promise (Next.js 15+)
+    const resolvedParams = params instanceof Promise ? await params : params
+    const ticketId = resolvedParams.id
+
+    logger.info('Fetching support ticket', { ticketId, userId: session.user.id })
+
+    if (!ticketId) {
+      logger.error('Ticket ID is missing', { params, resolvedParams })
+      return NextResponse.json({ error: 'Ticket ID is required' }, { status: 400 })
+    }
 
     // Get user's active org
     const org = await getActiveOrg(session.user.id)
     if (!org) {
+      logger.warn('No active organization found', { userId: session.user.id })
       return NextResponse.json({ error: 'No active organization' }, { status: 400 })
     }
 
@@ -41,12 +51,19 @@ export async function GET(
     })
 
     if (!ticket) {
+      logger.warn('Ticket not found', { ticketId, userId: session.user.id, orgId: org.id })
       return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
     }
 
     // Check if user has access to this ticket
     // User must be the creator or belong to the same org
     if (ticket.orgId !== org.id) {
+      logger.warn('Access denied - org mismatch', { 
+        ticketId, 
+        userId: session.user.id, 
+        ticketOrgId: ticket.orgId, 
+        userOrgId: org.id 
+      })
       return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
@@ -61,11 +78,20 @@ export async function GET(
       }))
     }
 
+    logger.info('Successfully fetched support ticket', { ticketId, ticketNumber: ticket.ticketNumber })
     return NextResponse.json(transformedTicket)
-  } catch (error) {
-    logger.error('Error fetching support ticket:', error)
+  } catch (error: any) {
+    logger.error('Error fetching support ticket:', {
+      error: error?.message,
+      stack: error?.stack,
+      name: error?.name
+    })
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to fetch ticket' },
+      { 
+        error: 'Failed to fetch ticket',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
