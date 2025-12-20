@@ -54,9 +54,14 @@ export default function OwnerSupportPage() {
       if (ticketsRes.ok) {
         const ticketsData = await ticketsRes.json()
         setTickets(ticketsData)
+      } else {
+        const errorData = await ticketsRes.json().catch(() => ({}))
+        console.error('Error fetching tickets:', errorData)
+        setTickets([]) // Set empty array on error to prevent infinite loading
       }
     } catch (error) {
       console.error('Error fetching tickets:', error)
+      setTickets([]) // Set empty array on error to prevent infinite loading
     } finally {
       setLoading(false)
     }
@@ -94,9 +99,9 @@ export default function OwnerSupportPage() {
       priority: 'medium',
       category: 'general',
       customer: {
-        name: ticket.createdBy?.name || 'Unknown',
-        email: ticket.createdBy?.email || '',
-        orgName: ticket.org?.name || 'Unknown Org'
+        name: ticket.User?.name || ticket.createdBy?.name || 'Unknown',
+        email: ticket.User?.email || ticket.createdBy?.email || '',
+        orgName: ticket.Org?.name || ticket.org?.name || 'Unknown Org'
       },
       assignedTo: 'Unassigned',
       createdAt: ticket.createdAt,

@@ -17,13 +17,17 @@ async function handleGET(request: NextRequest) {
     // Check if user is an owner/super admin
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      include: {
-        ownedOrgs: true,
-        roleHints: true
+      select: {
+        id: true,
+        isSuperAdmin: true
       }
     })
 
-    if (!user || (!user.isSuperAdmin && user.ownedOrgs.length === 0)) {
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    if (!user.isSuperAdmin) {
       return NextResponse.json({ error: 'Access denied. Owner privileges required.' }, { status: 403 })
     }
 
@@ -34,16 +38,7 @@ async function handleGET(request: NextRequest) {
     // Build where clause
     let whereClause: any = {}
 
-    // If user is super admin, get all tickets
-    // If user is owner, get tickets from their organisations only
-    if (user.isSuperAdmin) {
-      // Super admin can see all tickets
-    } else {
-      // Owner can only see tickets from their organisations
-      whereClause.orgId = {
-        in: user.ownedOrgs.map(org => org.id)
-      }
-    }
+    // Super admin can see all tickets, no filtering needed
 
     // Filter by status if provided
     if (status) {
@@ -58,14 +53,14 @@ async function handleGET(request: NextRequest) {
     const tickets = await prisma.supportTicket.findMany({
       where: whereClause,
       include: {
-        createdBy: {
+        User: {
           select: {
             id: true,
             name: true,
             email: true
           }
         },
-        org: {
+        Org: {
           select: {
             id: true,
             name: true,
@@ -74,7 +69,7 @@ async function handleGET(request: NextRequest) {
         },
         responses: {
           include: {
-            createdBy: {
+            User: {
               select: {
                 id: true,
                 name: true,
