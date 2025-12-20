@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { signOut } from 'next-auth/react'
 import { 
   Home, 
   CreditCard, 
@@ -148,23 +149,10 @@ export function ParentSidebar({ user, org }: ParentSidebarProps) {
             <Button
               variant="ghost"
               className="w-full justify-start"
-              onClick={async () => {
-                try {
-                  // Clear all storage first
-                  sessionStorage.clear()
-                  localStorage.clear()
-                  
-                  // Use our custom signout endpoint which properly clears all cookies server-side
-                  // This ensures cookies are cleared before redirect
-                  const callbackUrl = encodeURIComponent('/auth/signin?portal=parent&loggedOut=true')
-                  window.location.href = `/api/auth/signout?callbackUrl=${callbackUrl}`
-                } catch (error) {
-                  console.error('Logout error:', error)
-                  // Fallback: clear storage and redirect manually
-                  sessionStorage.clear()
-                  localStorage.clear()
-                  window.location.href = '/auth/signin?portal=parent&loggedOut=true'
-                }
+              onClick={() => {
+                // Clear sessionStorage on sign out
+                sessionStorage.clear()
+                signOut({ callbackUrl: '/auth/signin?portal=parent' })
               }}
             >
               <svg className="mr-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

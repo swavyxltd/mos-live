@@ -5,28 +5,16 @@ import { usePathname } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Image from 'next/image'
 
-function InitialAppLoaderContent() {
+export function InitialAppLoader() {
   const [showLoader, setShowLoader] = useState(true)
   const [progress, setProgress] = useState(0)
   const pathname = usePathname()
   const { data: session, status } = useSession()
 
   useEffect(() => {
-    // Add timeout to prevent infinite loading
-    const timeout = setTimeout(() => {
-      setShowLoader(false)
-    }, 5000) // Max 5 seconds loading time
-
-    // Wait for session to be loaded, but don't wait forever
+    // Wait for session to be loaded
     if (status === 'loading') {
-      // If loading takes more than 3 seconds, hide loader anyway
-      const loadingTimeout = setTimeout(() => {
-        setShowLoader(false)
-      }, 3000)
-      return () => {
-        clearTimeout(loadingTimeout)
-        clearTimeout(timeout)
-      }
+      return
     }
 
     // Only show on initial app load (dashboard routes after sign-in)
@@ -43,50 +31,33 @@ function InitialAppLoaderContent() {
     const isAppRoute = isDashboardRoute || isParentRoute || isStaffRoute || isOwnerRoute
     
     if (!isAppRoute) {
-      clearTimeout(timeout)
-      setShowLoader(false)
-      return
-    }
-
-    // If no session after loading completes, hide loader (user will be redirected to login)
-    if (status === 'unauthenticated' || (!session?.user?.id && status !== 'loading')) {
-      clearTimeout(timeout)
       setShowLoader(false)
       return
     }
 
     // Wait for session to be available (important for 2FA flow)
-    // But don't wait forever - if session doesn't load, hide loader
     if (!session?.user?.id) {
       return
     }
 
-    // Detect if this is a browser refresh or app reopen
+    // Detect if this is a browser refresh
     const isRefresh = performance.getEntriesByType('navigation')[0]?.type === 'reload'
-    const isAppReopen = performance.getEntriesByType('navigation')[0]?.type === 'navigate' && 
-                        document.referrer === '' && 
-                        !sessionStorage.getItem('appJustOpened')
     
     // Check if this is the first load after sign-in or a browser refresh
-    // Use localStorage instead of sessionStorage for persistence across app closes
+    // Use a combination of session user ID and hasVisitedApp to detect new session
     const sessionKey = `hasVisitedApp_${session.user.id}`
-    const hasVisitedBefore = localStorage.getItem(sessionKey)
+    const hasVisitedBefore = sessionStorage.getItem(sessionKey)
     
-    // Show loader only on actual refresh, not on app reopen
-    // For app reopens, we want to skip the loader for better UX
-    const shouldShowLoader = isRefresh && !hasVisitedBefore
+    // Show loader on refresh OR first visit
+    const shouldShowLoader = isRefresh || !hasVisitedBefore
 
     if (!shouldShowLoader) {
-      clearTimeout(timeout)
       setShowLoader(false)
-      // Mark that app was just opened (for next time)
-      sessionStorage.setItem('appJustOpened', 'true')
-      setTimeout(() => sessionStorage.removeItem('appJustOpened'), 1000)
       return
     }
 
-    // Mark as visited using localStorage (persists across app closes)
-    localStorage.setItem(sessionKey, 'true')
+    // Mark as visited for this user session (but will be cleared on refresh)
+    sessionStorage.setItem(sessionKey, 'true')
 
     // Check payment status in the background (no visible loader, silent operation)
     const checkPaymentStatus = async () => {
@@ -148,21 +119,28 @@ function InitialAppLoaderContent() {
         const remainingTime = Math.max(0, duration - timeElapsed)
         
         setTimeout(() => {
-          clearTimeout(timeout)
           setShowLoader(false)
         }, remainingTime + 100) // Small buffer
       }
     }
     
     requestAnimationFrame(animate)
-
-    return () => {
-      clearTimeout(timeout)
-    }
   }, [pathname, session, status])
 
-  // Don't clear localStorage on unload - we want it to persist across app closes
-  // Only clear on actual refresh (handled by navigation type detection)
+  // Clear the visited flag on page unload (refresh detection)
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (session?.user?.id) {
+        const sessionKey = `hasVisitedApp_${session.user.id}`
+        sessionStorage.removeItem(sessionKey)
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  }, [session])
 
   if (!showLoader) return null
 
@@ -184,7 +162,7 @@ function InitialAppLoaderContent() {
         
         {/* Subheading */}
         <p className="text-sm text-[var(--muted-foreground)] font-medium">
-          Moving Islamic education forward.
+          Organising every corner of your madrasah.
         </p>
         
         {/* Progress Bar */}
@@ -197,22 +175,5 @@ function InitialAppLoaderContent() {
       </div>
     </div>
   )
-}
-
-export function InitialAppLoader() {
-  // Only render if we're in a browser environment (client-side)
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  // Don't render during SSR or before mount
-  // This ensures useSession is only called when SessionProvider is available
-  if (!mounted) {
-    return null
-  }
-
-  return <InitialAppLoaderContent />
 }
 

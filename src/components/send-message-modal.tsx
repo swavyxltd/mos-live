@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Send, Copy, X } from 'lucide-react'
+import { Send, Copy, X, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Switch } from '@/components/ui/switch'
 
@@ -245,6 +245,12 @@ export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent, initi
     }
 
     setLoading(true)
+    
+    // Show immediate feedback to user
+    const sendingToast = toast.loading('Sending emails...', {
+      description: 'Please wait while we send your message to all recipients.'
+    })
+    
     try {
       // Send via email - explicitly use EMAIL channel and saveOnly=false
       const response = await fetch('/api/messages/send', {
@@ -265,8 +271,14 @@ export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent, initi
       })
       
       if (!response.ok) {
-        throw new Error('Failed to send email')
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to send email')
       }
+      
+      const result = await response.json()
+      
+      // Dismiss loading toast and show success
+      toast.dismiss(sendingToast)
       
       // Refresh messages list
       if (onMessageSent) {
@@ -286,15 +298,32 @@ export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent, initi
         showOnAnnouncements: true
       })
       
-      toast.success('Email sent successfully!')
-    } catch (error) {
-      toast.error('Failed to send email. Please try again.')
+      // Show success message with details
+      const successMessage = result.recipients > 0
+        ? `Email sent successfully to ${result.successCount} recipient${result.successCount !== 1 ? 's' : ''}!`
+        : 'Email sent successfully!'
+      
+      toast.success(successMessage, {
+        description: result.failureCount > 0 
+          ? `${result.failureCount} email${result.failureCount !== 1 ? 's' : ''} failed to send.`
+          : undefined
+      })
+    } catch (error: any) {
+      // Dismiss loading toast and show error
+      toast.dismiss(sendingToast)
+      toast.error('Failed to send email', {
+        description: error?.message || 'Please try again.'
+      })
     } finally {
       setLoading(false)
     }
   }
 
   const handleCancel = () => {
+    // Prevent closing while sending
+    if (loading) {
+      return
+    }
     setFormData({
       title: '',
       message: '',
@@ -308,8 +337,19 @@ export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent, initi
 
   return (
     <>
-    <Modal isOpen={isOpen} onClose={handleCancel} title="New Message">
-      <div className="space-y-6">
+    <Modal isOpen={isOpen} onClose={loading ? () => {} : handleCancel} title="New Message">
+      <div className="space-y-6 relative">
+        {loading && (
+          <div className="absolute inset-0 bg-[var(--card)]/95 backdrop-blur-sm z-50 flex items-center justify-center rounded-lg -m-4 sm:-m-6">
+            <div className="flex flex-col items-center gap-3 p-6 bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-lg">
+              <Loader2 className="h-8 w-8 animate-spin text-[var(--primary)]" />
+              <div className="text-center">
+                <p className="font-medium text-[var(--foreground)]">Sending emails...</p>
+                <p className="text-sm text-[var(--muted-foreground)] mt-1">This may take a few moments</p>
+              </div>
+            </div>
+          </div>
+        )}
         <div>
           <Label htmlFor="title">Title</Label>
           <Input
@@ -432,7 +472,12 @@ export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent, initi
             )}
           </Button>
           <Button type="button" onClick={handleSendEmail} disabled={loading}>
-            {loading ? 'Sending...' : (
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Sending...
+              </>
+            ) : (
               <>
                 <Send className="h-4 w-4 mr-2" />
                 Send via Email

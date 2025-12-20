@@ -206,6 +206,7 @@ async function handlePOST(request: NextRequest) {
                   role: 'PARENT'
                 }
               })
+            }
 
               // Link student to parent
               await tx.student.update({

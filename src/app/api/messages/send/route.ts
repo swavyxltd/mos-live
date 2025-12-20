@@ -7,6 +7,7 @@ import { whatsapp } from '@/lib/whatsapp'
 import { sendEmail } from '@/lib/mail'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
+import { generateEmailTemplate } from '@/lib/email-template'
 import crypto from 'crypto'
 
 const sendMessageSchema = z.object({
@@ -202,35 +203,63 @@ async function handlePOST(request: NextRequest) {
   let successCount = 0
   let failureCount = 0
   
-  if (!saveOnly) {
-    for (const recipient of recipients) {
-      try {
-        if (channel === 'EMAIL' && recipient.email) {
-          const { generateEmailTemplate } = await import('@/lib/email-template')
-          const html = await generateEmailTemplate({
-            title,
-            description: body,
-            footerText: 'Best regards, The Madrasah Team'
-          })
-          
+  if (!saveOnly && recipients.length > 0) {
+    if (channel === 'EMAIL') {
+      // Generate email template once (all emails have same content)
+      // This is a significant optimization - template generation includes DB calls for logo
+      const html = await generateEmailTemplate({
+        title,
+        description: body,
+        footerText: 'Best regards, The Madrasah Team'
+      })
+      const textContent = `${title}\n\n${body}\n\nBest regards,\nThe Madrasah Team`
+      
+      // Send all emails in parallel using Promise.allSettled
+      // This ensures all emails are attempted even if some fail
+      const emailRecipients = recipients.filter(r => r.email)
+      const emailPromises = emailRecipients.map(async (recipient) => {
+        try {
           await sendEmail({
-            to: recipient.email,
+            to: recipient.email!,
             subject: title,
             html,
-            text: `${title}\n\n${body}\n\nBest regards,\nThe Madrasah Team`
+            text: textContent
           })
-          successCount++
-        } else if (channel === 'WHATSAPP' && recipient.phone) {
-          // WhatsApp sending is disabled - admin will copy and send manually
-          // Just count as success since message is saved to DB
-          successCount++
+          return { success: true, recipient: recipient.email }
+        } catch (error) {
+          logger.error(`Failed to send email to ${recipient.email}`, error, {
+            recipient: recipient.email,
+            recipientId: recipient.id
+          })
+          return { success: false, recipient: recipient.email, error }
         }
-      } catch (error) {
-        logger.error(`Failed to send ${channel}`, error, {
-          recipient: recipient.email || recipient.phone
-        })
-        failureCount++
-      }
+      })
+      
+      // Wait for all emails to complete (success or failure)
+      const results = await Promise.allSettled(emailPromises)
+      
+      // Count successes and failures
+      results.forEach((result) => {
+        if (result.status === 'fulfilled') {
+          if (result.value.success) {
+            successCount++
+          } else {
+            failureCount++
+          }
+        } else {
+          // Promise itself was rejected (shouldn't happen, but handle it)
+          failureCount++
+          logger.error('Email promise rejected', result.reason)
+        }
+      })
+      
+      // Handle WhatsApp recipients (if any)
+      const whatsappRecipients = recipients.filter(r => r.phone && !r.email)
+      successCount += whatsappRecipients.length // WhatsApp sending is disabled, just count as success
+    } else if (channel === 'WHATSAPP') {
+      // WhatsApp sending is disabled - admin will copy and send manually
+      // Just count as success since message is saved to DB
+      successCount = recipients.filter(r => r.phone).length
     }
   } else {
     // If saveOnly, mark all as success since we're just saving to DB
