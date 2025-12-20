@@ -15,6 +15,7 @@ import { Plus, Search, BookOpen, Video, HelpCircle, MessageSquare, Mail, Filter,
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { PageSkeleton } from '@/components/loading/skeleton'
+import { UserSupportTicketDetailModal } from '@/components/user-support-ticket-detail-modal'
 
 interface SupportTicket {
   id: string
@@ -52,6 +53,8 @@ export default function SupportPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [showCreateTicket, setShowCreateTicket] = useState(false)
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null)
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false)
   const [newTicket, setNewTicket] = useState({
     subject: '',
     body: '',
@@ -114,6 +117,8 @@ export default function SupportPage() {
         setTickets([ticket, ...tickets])
         setNewTicket({ subject: '', body: '', role: 'STAFF' })
         setShowCreateTicket(false)
+        toast.success('Support ticket created successfully')
+        fetchTickets() // Refresh to get the full ticket data
       } else {
         toast.error('Failed to create support ticket')
       }
@@ -121,6 +126,7 @@ export default function SupportPage() {
       toast.error('Failed to create support ticket')
     }
   }
+
 
   const filteredTickets = tickets.filter(ticket => {
     const matchesSearch = ticket.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -256,7 +262,14 @@ export default function SupportPage() {
                 </div>
               ) : (
                 filteredTickets.map((ticket) => (
-                  <Card key={ticket.id} className="p-4 hover:shadow-md transition-shadow border-l-4 border-l-blue-500">
+                  <Card 
+                    key={ticket.id} 
+                    className="p-4 hover:shadow-md transition-shadow border-l-4 border-l-blue-500 cursor-pointer"
+                    onClick={() => {
+                      setSelectedTicketId(ticket.id)
+                      setIsViewModalOpen(true)
+                    }}
+                  >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-2">
@@ -285,28 +298,20 @@ export default function SupportPage() {
                           )}
                         </div>
                         
-                        {/* Display responses */}
+                        {/* Display latest response preview */}
                         {ticket.responses && ticket.responses.length > 0 && (
-                          <div className="mt-3 space-y-2">
-                            {ticket.responses.map((response: any) => (
-                              <div key={response.id} className="bg-blue-50 border-l-4 border-blue-400 p-3 rounded-r-md">
-                                <div className="flex items-center space-x-2 mb-1">
-                                  <span className="text-sm font-medium text-blue-800">
-                                    {response.User?.name || response.createdBy?.name || 'Support Team'}
-                                  </span>
-                                  <span className="text-sm text-blue-600">
-                                    {format(new Date(response.createdAt), 'MMM d, yyyy')}
-                                  </span>
-                                </div>
-                                <p className="text-sm text-blue-700">{response.body}</p>
-                              </div>
-                            ))}
+                          <div className="mt-3">
+                            <div className="text-xs text-[var(--muted-foreground)] mb-1">
+                              Latest response:
+                            </div>
+                            <div className="bg-blue-50 border-l-4 border-blue-400 p-2 rounded-r-md">
+                              <p className="text-xs text-blue-700 line-clamp-2">
+                                {ticket.responses[ticket.responses.length - 1].body}
+                              </p>
+                            </div>
                           </div>
                         )}
                       </div>
-                      <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
                     </div>
                   </Card>
                 ))
@@ -314,6 +319,17 @@ export default function SupportPage() {
             </div>
           </Card>
         </div>
+
+        {/* Ticket Detail Modal */}
+        <UserSupportTicketDetailModal
+          isOpen={isViewModalOpen}
+          onClose={() => {
+            setIsViewModalOpen(false)
+            setSelectedTicketId(null)
+          }}
+          ticketId={selectedTicketId}
+          onUpdate={fetchTickets}
+        />
 
         {/* Contact & Help Section */}
         <div className="space-y-6">

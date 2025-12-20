@@ -2,6 +2,7 @@ export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { getActiveOrg } from '@/lib/org'
 import { prisma } from '@/lib/prisma'
 import { sendEmail } from '@/lib/mail'
 import { logger } from '@/lib/logger'
@@ -9,7 +10,7 @@ import { sanitizeText, MAX_STRING_LENGTHS } from '@/lib/input-validation'
 import { withRateLimit } from '@/lib/api-middleware'
 import crypto from 'crypto'
 
-// POST /api/owner/support/tickets/[id]/respond - Respond to a support ticket
+// POST /api/support/tickets/[id]/respond - Respond to a support ticket (for users)
 async function handlePOST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> | { id: string } }
@@ -37,26 +38,17 @@ async function handlePOST(
     // Sanitize input
     const sanitizedResponseBody = sanitizeText(responseBody, MAX_STRING_LENGTHS.body)
 
-    // Check if user is an owner/super admin
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: {
-        id: true,
-        isSuperAdmin: true
-      }
-    })
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    const org = await getActiveOrg(session.user.id)
+    if (!org) {
+      return NextResponse.json({ error: 'No organisation found' }, { status: 404 })
     }
 
-    if (!user.isSuperAdmin) {
-      return NextResponse.json({ error: 'Access denied. Owner privileges required.' }, { status: 403 })
-    }
-
-    // Get the ticket and verify ownership
-    const ticket = await prisma.supportTicket.findUnique({
-      where: { id: ticketId },
+    // Get the ticket and verify it belongs to the org
+    const ticket = await prisma.supportTicket.findFirst({
+      where: {
+        id: ticketId,
+        orgId: org.id
+      },
       include: {
         User: {
           select: {
@@ -109,46 +101,39 @@ async function handlePOST(
       data: { updatedAt: new Date() }
     })
 
-    // Send email notification to the ticket creator
-    if (ticket.User?.email) {
-      try {
-        const { generateEmailTemplate } = await import('@/lib/email-template')
-        const content = `
-          <div style="margin-bottom: 16px;">
-            <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280; font-weight: 500;">Ticket Number:</p>
-            <p style="margin: 0 0 12px 0; font-size: 18px; color: #111827; font-weight: 700;">${ticket.ticketNumber}</p>
-            <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280; font-weight: 500;">Subject:</p>
-            <p style="margin: 0 0 16px 0; font-size: 16px; color: #111827; font-weight: 600;">${ticket.subject}</p>
+    // Send email notification to support@madrasah.io about the new response
+    try {
+      const { generateEmailTemplate } = await import('@/lib/email-template')
+      const content = `
+        <div style="margin-bottom: 16px;">
+          <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280; font-weight: 500;">Ticket Number:</p>
+          <p style="margin: 0 0 12px 0; font-size: 18px; color: #111827; font-weight: 700;">${ticket.ticketNumber}</p>
+          <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280; font-weight: 500;">Subject:</p>
+          <p style="margin: 0 0 16px 0; font-size: 16px; color: #111827; font-weight: 600;">${ticket.subject}</p>
+        </div>
+        <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-top: 16px;">
+          <p style="margin: 0; font-size: 14px; color: #6b7280; font-weight: 500; margin-bottom: 8px;">New Response from ${ticket.User?.name || 'User'}:</p>
+          <div style="font-size: 15px; color: #374151; line-height: 1.6; white-space: pre-wrap;">
+            ${sanitizedResponseBody}
           </div>
-          <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-top: 16px;">
-            <p style="margin: 0; font-size: 14px; color: #6b7280; font-weight: 500; margin-bottom: 8px;">Our Response:</p>
-            <div style="font-size: 15px; color: #374151; line-height: 1.6; white-space: pre-wrap;">
-              ${sanitizedResponseBody}
-            </div>
-          </div>
-          <div style="margin-top: 16px; padding: 12px; background-color: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 4px;">
-            <p style="margin: 0; font-size: 14px; color: #1e40af;">
-              <strong>Note:</strong> You can view the full conversation and respond by logging into your account.
-            </p>
-          </div>
-        `
-        
-        const html = await generateEmailTemplate({
-          title: 'Update on Your Support Ticket',
-          description: `Hello ${ticket.User.name || 'there'},<br><br>We have an update on your support ticket. Please see our response below.`,
-          content,
-          footerText: 'If you have any further questions, please reply to this ticket through your account portal.'
-        })
-        
-        await sendEmail({
-          to: ticket.User.email,
-          subject: `[${ticket.ticketNumber}] Update on your support ticket: ${ticket.subject}`,
-          html
-        })
-      } catch (emailError: any) {
-        logger.error('Error sending email notification', emailError)
-        // Don't fail the request if email fails
-      }
+        </div>
+      `
+      
+      const html = await generateEmailTemplate({
+        title: 'New Response on Support Ticket',
+        description: `A user has responded to support ticket ${ticket.ticketNumber}.`,
+        content,
+        footerText: `You can view and respond to this ticket in the owner portal.`
+      })
+      
+      await sendEmail({
+        to: 'support@madrasah.io',
+        subject: `[${ticket.ticketNumber}] New response on support ticket: ${ticket.subject}`,
+        html
+      })
+    } catch (emailError: any) {
+      logger.error('Error sending email notification', emailError)
+      // Don't fail the request if email fails
     }
 
     return NextResponse.json(response, { status: 201 })
@@ -166,3 +151,4 @@ async function handlePOST(
 }
 
 export const POST = withRateLimit(handlePOST)
+
