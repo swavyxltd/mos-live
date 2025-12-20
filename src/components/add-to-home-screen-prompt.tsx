@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { X, Share2, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -13,6 +13,28 @@ export function AddToHomeScreenPrompt() {
   const [isIOS, setIsIOS] = useState(false)
   const [isStandalone, setIsStandalone] = useState(false)
 
+  // Function to check if app is installed/standalone
+  const checkIfInstalled = useCallback(() => {
+    // Check for standalone display mode (most reliable)
+    const isStandaloneMode = 
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as any).standalone === true ||
+      document.referrer.includes('android-app://') ||
+      // Additional iOS checks
+      (window.matchMedia('(display-mode: fullscreen)').matches && 
+       /iPad|iPhone|iPod/.test(navigator.userAgent))
+
+    if (isStandaloneMode) {
+      // Mark as installed if we detect standalone mode
+      localStorage.setItem('pwa-installed', 'true')
+      setIsStandalone(true)
+      return true
+    }
+
+    setIsStandalone(false)
+    return false
+  }, [])
+
   useEffect(() => {
     // Only show for logged-in users
     if (status !== 'authenticated' || !session?.user) {
@@ -20,49 +42,61 @@ export function AddToHomeScreenPrompt() {
     }
 
     // Check if already installed (standalone mode)
-    const isStandaloneMode = 
-      window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as any).standalone === true ||
-      document.referrer.includes('android-app://')
-
-    setIsStandalone(isStandaloneMode)
+    const isInstalled = checkIfInstalled()
 
     // Check if iOS
     const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream
     setIsIOS(iOS)
 
-    // Check if already dismissed
+    // Check if already dismissed or marked as installed
     const dismissed = localStorage.getItem('pwa-install-dismissed') === 'true'
-    const isInstalled = localStorage.getItem('pwa-installed') === 'true'
+    const markedAsInstalled = localStorage.getItem('pwa-installed') === 'true'
 
-    if (isStandaloneMode || dismissed || isInstalled) {
+    // Don't show if already installed, dismissed, or marked as installed
+    if (isInstalled || dismissed || markedAsInstalled) {
       return
     }
 
     // For iOS, show prompt after a delay
     if (iOS) {
       const timer = setTimeout(() => {
-        setShowPrompt(true)
-        // Trigger animation after state update
-        setTimeout(() => setIsAnimating(true), 10)
+        // Double-check if installed before showing
+        if (!checkIfInstalled() && localStorage.getItem('pwa-installed') !== 'true') {
+          setShowPrompt(true)
+          // Trigger animation after state update
+          setTimeout(() => setIsAnimating(true), 10)
+        }
       }, 3000) // Show after 3 seconds
       return () => clearTimeout(timer)
     }
 
     // For Android/Chrome, listen for beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault()
-      setDeferredPrompt(e)
-      setShowPrompt(true)
-      setTimeout(() => setIsAnimating(true), 10)
+      // Double-check if installed before showing
+      if (!checkIfInstalled() && localStorage.getItem('pwa-installed') !== 'true') {
+        e.preventDefault()
+        setDeferredPrompt(e)
+        setShowPrompt(true)
+        setTimeout(() => setIsAnimating(true), 10)
+      }
     }
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
 
+    // Also check on visibility change (when user switches back to the app)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkIfInstalled()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [session, status])
+  }, [session, status, checkIfInstalled])
 
   // Prevent body scroll when prompt is open
   useEffect(() => {
@@ -76,6 +110,34 @@ export function AddToHomeScreenPrompt() {
       document.body.style.overflow = ''
     }
   }, [showPrompt, isAnimating])
+
+  // Continuously check if app becomes installed (when user opens from home screen)
+  useEffect(() => {
+    const checkInterval = setInterval(() => {
+      if (checkIfInstalled()) {
+        // If we detect standalone mode, hide the prompt immediately
+        setShowPrompt(false)
+        setIsAnimating(false)
+      }
+    }, 1000) // Check every second
+
+    // Also check on page focus/visibility
+    const handleFocus = () => {
+      if (checkIfInstalled()) {
+        setShowPrompt(false)
+        setIsAnimating(false)
+      }
+    }
+
+    window.addEventListener('focus', handleFocus)
+    document.addEventListener('visibilitychange', handleFocus)
+
+    return () => {
+      clearInterval(checkInterval)
+      window.removeEventListener('focus', handleFocus)
+      document.removeEventListener('visibilitychange', handleFocus)
+    }
+  }, [checkIfInstalled])
 
   const handleInstall = async () => {
     if (deferredPrompt) {
@@ -91,8 +153,10 @@ export function AddToHomeScreenPrompt() {
       setDeferredPrompt(null)
     } else if (isIOS) {
       // iOS - just close, user will follow instructions
-      handleClose()
+      // Mark as installed - when they actually install and open from home screen,
+      // the standalone detection will confirm it
       localStorage.setItem('pwa-installed', 'true')
+      handleClose()
     }
   }
 
@@ -111,7 +175,10 @@ export function AddToHomeScreenPrompt() {
   // Only show on mobile devices
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
 
-  if (!showPrompt || !isMobile || isStandalone || status !== 'authenticated') {
+  // Double-check if installed before rendering
+  const isInstalled = checkIfInstalled() || localStorage.getItem('pwa-installed') === 'true'
+
+  if (!showPrompt || !isMobile || isStandalone || isInstalled || status !== 'authenticated') {
     return null
   }
 
