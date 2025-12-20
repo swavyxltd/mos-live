@@ -1,10 +1,13 @@
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { SplitTitle } from '@/components/ui/split-title'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { SupportTicketDetailModal } from '@/components/support-ticket-detail-modal'
 import { 
   HeadphonesIcon, 
   MessageSquare,
@@ -29,10 +32,37 @@ import {
 } from 'lucide-react'
 import { Skeleton, StatCardSkeleton, CardSkeleton } from '@/components/loading/skeleton'
 
-export default async function OwnerSupportPage() {
-  const session = await getServerSession(authOptions)
+export default function OwnerSupportPage() {
+  const { data: session, status } = useSession()
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null)
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false)
+  const [tickets, setTickets] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   
-  if (!session?.user?.id) {
+  useEffect(() => {
+    if (status === 'loading') return
+    fetchTickets()
+  }, [status])
+
+  const fetchTickets = async () => {
+    try {
+      setLoading(true)
+      const ticketsRes = await fetch('/api/owner/support/tickets', {
+        cache: 'no-store'
+      })
+      
+      if (ticketsRes.ok) {
+        const ticketsData = await ticketsRes.json()
+        setTickets(ticketsData)
+      }
+    } catch (error) {
+      console.error('Error fetching tickets:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (status === 'loading' || loading) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-8 w-64 mb-2" />
@@ -45,70 +75,60 @@ export default async function OwnerSupportPage() {
     )
   }
 
-  // Fetch support tickets from API
-  let supportData: any = {
+  // Calculate support data from tickets
+  const supportData: any = {
     stats: {
-      totalTickets: 0,
-      openTickets: 0,
-      resolvedTickets: 0,
-      pendingTickets: 0,
+      totalTickets: tickets.length,
+      openTickets: tickets.filter((t: any) => t.status === 'OPEN').length,
+      resolvedTickets: tickets.filter((t: any) => t.status === 'RESOLVED' || t.status === 'CLOSED').length,
+      pendingTickets: tickets.filter((t: any) => t.status === 'IN_PROGRESS').length,
       averageResponseTime: 0,
       customerSatisfaction: 0
     },
-    recentTickets: [],
+    recentTickets: tickets.slice(0, 10).map((ticket: any) => ({
+      id: ticket.id,
+      ticketNumber: ticket.ticketNumber || ticket.id.substring(0, 8).toUpperCase(),
+      title: ticket.subject,
+      description: ticket.body,
+      status: ticket.status.toLowerCase(),
+      priority: 'medium',
+      category: 'general',
+      customer: {
+        name: ticket.createdBy?.name || 'Unknown',
+        email: ticket.createdBy?.email || '',
+        orgName: ticket.org?.name || 'Unknown Org'
+      },
+      assignedTo: 'Unassigned',
+      createdAt: ticket.createdAt,
+      lastActivity: ticket.updatedAt,
+      responseTime: ticket.responses && ticket.responses.length > 0 
+        ? `${Math.floor((new Date(ticket.responses[0].createdAt).getTime() - new Date(ticket.createdAt).getTime()) / (1000 * 60 * 60))} hours`
+        : 'No response yet'
+    })),
     teamPerformance: [],
     commonIssues: [],
     satisfactionTrends: []
   }
 
-  try {
-    const baseUrl = process.env.NEXTAUTH_URL || process.env.APP_BASE_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://app.madrasah.io')
-    const ticketsRes = await fetch(`${baseUrl}/api/owner/support/tickets`, {
-      cache: 'no-store'
-    })
-    
-    if (ticketsRes.ok) {
-      const tickets = await ticketsRes.json()
-      
-      // Format tickets for display
-      supportData.recentTickets = tickets.slice(0, 10).map((ticket: any) => ({
-        id: ticket.id,
-        title: ticket.subject,
-        description: ticket.body,
-        status: ticket.status.toLowerCase(),
-        priority: ticket.priority || 'medium',
-        category: ticket.category || 'general',
-        customer: {
-          name: ticket.createdBy?.name || 'Unknown',
-          email: ticket.createdBy?.email || '',
-          orgName: ticket.org?.name || 'Unknown Org'
-        },
-        assignedTo: 'Unassigned', // Would need assignment tracking
-        createdAt: ticket.createdAt,
-        lastActivity: ticket.updatedAt,
-        responseTime: ticket.responses && ticket.responses.length > 0 
-          ? `${Math.floor((new Date(ticket.responses[0].createdAt).getTime() - new Date(ticket.createdAt).getTime()) / (1000 * 60 * 60))} hours`
-          : 'No response yet'
-      }))
+  // Calculate average response time
+  const ticketsWithResponses = tickets.filter((t: any) => t.responses && t.responses.length > 0)
+  if (ticketsWithResponses.length > 0) {
+    const totalResponseTime = ticketsWithResponses.reduce((sum: number, t: any) => {
+      const firstResponse = t.responses[0]
+      const responseTime = new Date(firstResponse.createdAt).getTime() - new Date(t.createdAt).getTime()
+      return sum + responseTime
+    }, 0)
+    supportData.stats.averageResponseTime = Math.round((totalResponseTime / ticketsWithResponses.length) / (1000 * 60 * 60) * 10) / 10
+  }
 
-      // Calculate stats
-      supportData.stats.totalTickets = tickets.length
-      supportData.stats.openTickets = tickets.filter((t: any) => t.status === 'OPEN').length
-      supportData.stats.resolvedTickets = tickets.filter((t: any) => t.status === 'RESOLVED').length
-      supportData.stats.pendingTickets = tickets.filter((t: any) => t.status === 'PENDING').length
-      
-      // Calculate average response time (from first response)
-      const ticketsWithResponses = tickets.filter((t: any) => t.responses && t.responses.length > 0)
-      if (ticketsWithResponses.length > 0) {
-        const totalResponseTime = ticketsWithResponses.reduce((sum: number, t: any) => {
-          const firstResponse = t.responses[0]
-          const responseTime = new Date(firstResponse.createdAt).getTime() - new Date(t.createdAt).getTime()
-          return sum + responseTime
-        }, 0)
-        supportData.stats.averageResponseTime = Math.round((totalResponseTime / ticketsWithResponses.length) / (1000 * 60 * 60) * 10) / 10
-      }
-    }
-  } catch (error) {
+  const handleViewTicket = (ticketId: string) => {
+    setSelectedTicketId(ticketId)
+    setIsViewModalOpen(true)
+  }
+
+  const handleCloseModal = () => {
+    setIsViewModalOpen(false)
+    setSelectedTicketId(null)
   }
 
   // Show skeleton if no data
@@ -318,7 +338,7 @@ export default async function OwnerSupportPage() {
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-2">
                       <h3 className="font-medium">{ticket.title}</h3>
-                      <Badge variant="outline" className="text-xs">{ticket.id}</Badge>
+                      <Badge variant="outline" className="text-xs font-mono">{ticket.ticketNumber || ticket.id.substring(0, 8).toUpperCase()}</Badge>
                       {getStatusBadge(ticket.status)}
                       {getPriorityBadge(ticket.priority)}
                     </div>
@@ -348,11 +368,18 @@ export default async function OwnerSupportPage() {
                     <p className="font-medium">{ticket.assignedTo}</p>
                     <p className="text-gray-500">Assigned to</p>
                   </div>
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleViewTicket(ticket.id)}
+                  >
                     <Eye className="h-4 w-4 mr-2" />
                     View
                   </Button>
-                  <Button size="sm">
+                  <Button 
+                    size="sm"
+                    onClick={() => handleViewTicket(ticket.id)}
+                  >
                     <Reply className="h-4 w-4 mr-2" />
                     Reply
                   </Button>
@@ -440,6 +467,14 @@ export default async function OwnerSupportPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Ticket Detail Modal */}
+      <SupportTicketDetailModal
+        isOpen={isViewModalOpen}
+        onClose={handleCloseModal}
+        ticketId={selectedTicketId}
+        onUpdate={fetchTickets}
+      />
     </div>
   )
 }

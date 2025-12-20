@@ -7,6 +7,93 @@ import { sendEmail } from '@/lib/mail'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
 
+// GET /api/owner/support/tickets/[id] - Get a specific support ticket
+async function handleGET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> | { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Resolve params if it's a Promise (Next.js 15+)
+    const resolvedParams = params instanceof Promise ? await params : params
+    const ticketId = resolvedParams.id
+    
+    if (!ticketId) {
+      return NextResponse.json({ error: 'Ticket ID is required' }, { status: 400 })
+    }
+
+    // Check if user is an owner/super admin
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      include: {
+        ownedOrgs: true
+      }
+    })
+
+    if (!user || (!user.isSuperAdmin && user.ownedOrgs.length === 0)) {
+      return NextResponse.json({ error: 'Access denied. Owner privileges required.' }, { status: 403 })
+    }
+
+    // Get the ticket
+    const ticket = await prisma.supportTicket.findUnique({
+      where: { id: ticketId },
+      include: {
+        createdBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        org: {
+          select: {
+            id: true,
+            name: true,
+            slug: true
+          }
+        },
+        responses: {
+          include: {
+            createdBy: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
+          },
+          orderBy: { createdAt: 'asc' }
+        }
+      }
+    })
+
+    if (!ticket) {
+      return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
+    }
+
+    // Check if user has access to this ticket's organisation
+    if (!user.isSuperAdmin && !user.ownedOrgs.some(org => org.id === ticket.orgId)) {
+      return NextResponse.json({ error: 'Access denied to this ticket' }, { status: 403 })
+    }
+
+    return NextResponse.json(ticket)
+  } catch (error: any) {
+    logger.error('Error fetching support ticket', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
+    return NextResponse.json(
+      { 
+        error: 'Internal server error',
+        ...(isDevelopment && { details: error?.message })
+      },
+      { status: 500 }
+    )
+  }
+}
+
 // PATCH /api/owner/support/tickets/[id] - Update support ticket status
 async function handlePATCH(
   request: NextRequest,
@@ -28,7 +115,7 @@ async function handlePATCH(
     const body = await request.json()
     const { status } = body
 
-    if (!status || !['OPEN', 'IN_PROGRESS', 'CLOSED'].includes(status)) {
+    if (!status || !['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'].includes(status)) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
     }
 
@@ -105,6 +192,7 @@ async function handlePATCH(
         const statusMessages = {
           'OPEN': 'Your support ticket has been reopened.',
           'IN_PROGRESS': 'We are now working on your support ticket.',
+          'RESOLVED': 'Your support ticket has been resolved.',
           'CLOSED': 'Your support ticket has been resolved and closed.'
         }
 
@@ -152,4 +240,5 @@ async function handlePATCH(
   }
 }
 
+export const GET = withRateLimit(handleGET)
 export const PATCH = withRateLimit(handlePATCH)

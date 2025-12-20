@@ -7,7 +7,17 @@ import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { sanitizeText, MAX_STRING_LENGTHS } from '@/lib/input-validation'
 import { withRateLimit } from '@/lib/api-middleware'
+import { sendEmail } from '@/lib/mail'
+import { generateEmailTemplate } from '@/lib/email-template'
 import crypto from 'crypto'
+
+// Generate a unique ticket number
+function generateTicketNumber(): string {
+  const date = new Date()
+  const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '') // YYYYMMDD
+  const randomStr = crypto.randomBytes(3).toString('hex').toUpperCase() // 6 character hex string
+  return `TKT-${dateStr}-${randomStr}`
+}
 
 // GET /api/support/tickets - Get all support tickets for the current org
 async function handleGET(request: NextRequest) {
@@ -41,12 +51,24 @@ async function handleGET(request: NextRequest) {
     const tickets = await prisma.supportTicket.findMany({
       where: whereClause,
       include: {
-        User: {
+        createdBy: {
           select: {
             id: true,
             name: true,
             email: true
           }
+        },
+        responses: {
+          include: {
+            createdBy: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
+          },
+          orderBy: { createdAt: 'asc' }
         }
       },
       orderBy: { createdAt: 'desc' }
@@ -90,9 +112,40 @@ async function handlePOST(request: NextRequest) {
     const sanitizedSubject = sanitizeText(subject, MAX_STRING_LENGTHS.title)
     const sanitizedBody = sanitizeText(ticketBody, MAX_STRING_LENGTHS.body)
 
+    // Get user info for email notification
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        id: true,
+        name: true,
+        email: true
+      }
+    })
+
+    // Generate unique ticket number
+    let ticketNumber: string
+    let isUnique = false
+    let attempts = 0
+    while (!isUnique && attempts < 10) {
+      ticketNumber = generateTicketNumber()
+      const existing = await prisma.supportTicket.findUnique({
+        where: { ticketNumber }
+      })
+      if (!existing) {
+        isUnique = true
+      }
+      attempts++
+    }
+
+    if (!isUnique) {
+      // Fallback: use UUID-based ticket number if we can't generate a unique one
+      ticketNumber = `TKT-${crypto.randomUUID().substring(0, 8).toUpperCase()}`
+    }
+
     const ticket = await prisma.supportTicket.create({
       data: {
         id: crypto.randomUUID(),
+        ticketNumber: ticketNumber!,
         orgId: org.id,
         createdById: session.user.id,
         role: role || 'USER',
@@ -108,9 +161,53 @@ async function handlePOST(request: NextRequest) {
             name: true,
             email: true
           }
+        },
+        org: {
+          select: {
+            id: true,
+            name: true,
+            slug: true
+          }
         }
       }
     })
+
+    // Send email notification to support@madrasah.io
+    try {
+      const roleDisplay = role === 'ADMIN' ? 'Admin' : role === 'STAFF' ? 'Staff' : role === 'PARENT' ? 'Parent' : 'User'
+      const content = `
+        <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-top: 16px;">
+          <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280; font-weight: 500;">Ticket Number:</p>
+          <p style="margin: 0 0 12px 0; font-size: 18px; color: #111827; font-weight: 700;">${ticket.ticketNumber}</p>
+          <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280; font-weight: 500;">Subject:</p>
+          <p style="margin: 0 0 12px 0; font-size: 16px; color: #111827; font-weight: 600;">${ticket.subject}</p>
+          <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280; font-weight: 500;">From:</p>
+          <p style="margin: 0 0 12px 0; font-size: 16px; color: #111827; font-weight: 600;">${user?.name || 'Unknown'} (${user?.email || 'No email'}) - ${roleDisplay}</p>
+          <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280; font-weight: 500;">Organisation:</p>
+          <p style="margin: 0 0 12px 0; font-size: 16px; color: #111827; font-weight: 600;">${org.name}</p>
+          <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280; font-weight: 500;">Message:</p>
+          <div style="background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 4px; padding: 12px; margin-top: 8px;">
+            <p style="margin: 0; font-size: 15px; color: #374151; line-height: 1.6; white-space: pre-wrap;">${ticket.body}</p>
+          </div>
+        </div>
+      `
+      
+      const html = await generateEmailTemplate({
+        title: 'New Support Ticket Created',
+        description: `A new support ticket has been created and requires your attention.`,
+        content,
+        footerText: `You can view and respond to this ticket in the owner portal.`
+      })
+      
+      await sendEmail({
+        to: 'support@madrasah.io',
+        subject: `[${ticket.ticketNumber}] New Support Ticket: ${ticket.subject}`,
+        html
+      })
+    } catch (emailError: any) {
+      logger.error('Error sending support ticket notification email', emailError)
+      // Don't fail the request if email fails
+    }
 
     return NextResponse.json(ticket, { status: 201 })
   } catch (error: any) {

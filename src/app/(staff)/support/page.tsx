@@ -18,6 +18,7 @@ import { PageSkeleton } from '@/components/loading/skeleton'
 
 interface SupportTicket {
   id: string
+  ticketNumber: string
   subject: string
   body: string
   status: string
@@ -70,13 +71,14 @@ export default function SupportPage() {
         // Transform API data to match SupportTicket interface
         const transformed: SupportTicket[] = data.map((ticket: any) => ({
           id: ticket.id,
+          ticketNumber: ticket.ticketNumber || ticket.id.substring(0, 8).toUpperCase(),
           subject: ticket.subject,
           body: ticket.body,
           status: ticket.status,
           role: ticket.role || 'STAFF',
           createdAt: ticket.createdAt,
           updatedAt: ticket.updatedAt,
-          createdBy: ticket.User || {
+          createdBy: ticket.createdBy || ticket.User || {
             id: '',
             name: 'Unknown',
             email: ''
@@ -259,6 +261,7 @@ export default function SupportPage() {
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-2">
                           <h4 className="font-medium text-[var(--foreground)]">{ticket.subject}</h4>
+                          <Badge variant="outline" className="text-xs font-mono">{ticket.ticketNumber}</Badge>
                           <Badge className={getStatusColor(ticket.status)}>
                             {ticket.status.replace('_', ' ')}
                           </Badge>
