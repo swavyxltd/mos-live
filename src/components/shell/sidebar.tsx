@@ -348,10 +348,19 @@ export function Sidebar({ user: initialUser, org, userRole, staffSubrole, permis
             <Button
               variant="ghost"
               className="w-full justify-start text-[var(--sidebar-foreground)] hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-accent-foreground)]"
-              onClick={() => {
-                // Clear sessionStorage on sign out
+              onClick={async () => {
+                // Clear all storage first
                 sessionStorage.clear()
-                signOut({ callbackUrl: '/auth/signin' })
+                localStorage.clear()
+                
+                // Sign out without redirect
+                await signOut({ 
+                  callbackUrl: '/auth/signin',
+                  redirect: false 
+                })
+                
+                // Force a full page reload to ensure cookies are cleared
+                window.location.href = '/auth/signin'
               }}
             >
               <svg className="mr-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
