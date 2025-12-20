@@ -40,12 +40,17 @@ async function handlePOST(
     // Check if user is an owner/super admin
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      include: {
-        ownedOrgs: true
+      select: {
+        id: true,
+        isSuperAdmin: true
       }
     })
 
-    if (!user || (!user.isSuperAdmin && user.ownedOrgs.length === 0)) {
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    if (!user.isSuperAdmin) {
       return NextResponse.json({ error: 'Access denied. Owner privileges required.' }, { status: 403 })
     }
 
@@ -53,18 +58,25 @@ async function handlePOST(
     const ticket = await prisma.supportTicket.findUnique({
       where: { id: ticketId },
       include: {
-        createdBy: true,
-        org: true
+        User: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        Org: {
+          select: {
+            id: true,
+            name: true,
+            slug: true
+          }
+        }
       }
     })
 
     if (!ticket) {
       return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
-    }
-
-    // Check if user has access to this ticket's organisation
-    if (!user.isSuperAdmin && !user.ownedOrgs.some(org => org.id === ticket.orgId)) {
-      return NextResponse.json({ error: 'Access denied to this ticket' }, { status: 403 })
     }
 
     // Create the response
@@ -76,7 +88,7 @@ async function handlePOST(
         createdById: session.user.id
       },
       include: {
-        createdBy: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -93,32 +105,39 @@ async function handlePOST(
     })
 
     // Send email notification to the ticket creator
-    if (ticket.createdBy?.email) {
+    if (ticket.User?.email) {
       try {
         const { generateEmailTemplate } = await import('@/lib/email-template')
         const content = `
           <div style="margin-bottom: 16px;">
-            <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280; font-weight: 500;">Ticket:</p>
+            <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280; font-weight: 500;">Ticket Number:</p>
+            <p style="margin: 0 0 12px 0; font-size: 18px; color: #111827; font-weight: 700;">${ticket.ticketNumber}</p>
+            <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280; font-weight: 500;">Subject:</p>
             <p style="margin: 0 0 16px 0; font-size: 16px; color: #111827; font-weight: 600;">${ticket.subject}</p>
           </div>
           <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-top: 16px;">
             <p style="margin: 0; font-size: 14px; color: #6b7280; font-weight: 500; margin-bottom: 8px;">Our Response:</p>
             <div style="font-size: 15px; color: #374151; line-height: 1.6; white-space: pre-wrap;">
-              ${responseBody}
+              ${sanitizedResponseBody}
             </div>
+          </div>
+          <div style="margin-top: 16px; padding: 12px; background-color: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 4px;">
+            <p style="margin: 0; font-size: 14px; color: #1e40af;">
+              <strong>Note:</strong> You can view the full conversation and respond by logging into your account.
+            </p>
           </div>
         `
         
         const html = await generateEmailTemplate({
-          title: 'Support Ticket Response',
-          description: `Hello ${ticket.createdBy.name || 'there'},<br><br>We have responded to your support ticket.`,
+          title: 'Update on Your Support Ticket',
+          description: `Hello ${ticket.User.name || 'there'},<br><br>We have an update on your support ticket. Please see our response below.`,
           content,
-          footerText: 'You can view the full conversation and respond by logging into your account.'
+          footerText: 'If you have any further questions, please reply to this ticket through your account portal.'
         })
         
         await sendEmail({
-          to: ticket.createdBy.email,
-          subject: `Response to your support ticket: ${ticket.subject}`,
+          to: ticket.User.email,
+          subject: `[${ticket.ticketNumber}] Update on your support ticket: ${ticket.subject}`,
           html
         })
       } catch (emailError: any) {

@@ -215,13 +215,15 @@ async function handlePATCH(
             <p style="margin: 0 0 12px 0; font-size: 16px; color: #111827; font-weight: 600;">${ticket.subject}</p>
             <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280; font-weight: 500;">Status:</p>
             <p style="margin: 0 0 12px 0; font-size: 16px; color: #111827; font-weight: 600;">${status.replace('_', ' ')}</p>
+            <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280; font-weight: 500;">Ticket Number:</p>
+            <p style="margin: 0 0 12px 0; font-size: 18px; color: #111827; font-weight: 700;">${ticket.ticketNumber}</p>
             <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280; font-weight: 500;">Organisation:</p>
-            <p style="margin: 0; font-size: 16px; color: #111827; font-weight: 600;">${ticket.org?.name || 'N/A'}</p>
+            <p style="margin: 0; font-size: 16px; color: #111827; font-weight: 600;">${ticket.Org?.name || 'N/A'}</p>
           </div>
         `
         
         const html = await generateEmailTemplate({
-          title: 'Support Ticket Status Update',
+          title: 'Update on Your Support Ticket',
           description: `Hello ${ticket.User?.name || 'there'},<br><br>${statusMessages[status as keyof typeof statusMessages]}`,
           content,
           footerText: 'You can view the full conversation and any responses by logging into your account.'
@@ -229,7 +231,7 @@ async function handlePATCH(
         
         await sendEmail({
           to: ticket.User.email,
-          subject: `Support ticket status update: ${ticket.subject}`,
+          subject: `[${ticket.ticketNumber}] Update on your support ticket: ${ticket.subject}`,
           html
         })
       } catch (emailError: any) {
