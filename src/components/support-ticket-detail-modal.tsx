@@ -49,6 +49,16 @@ interface Ticket {
     name: string
     slug: string
   }
+  SupportTicketResponse?: Array<{
+    id: string
+    body: string
+    createdAt: string
+    User: {
+      id: string
+      name: string
+      email: string
+    }
+  }>
   responses?: Array<{
     id: string
     body: string
@@ -312,19 +322,19 @@ export function SupportTicketDetailModal({
           </div>
 
           {/* Responses */}
-          {ticket.responses && ticket.responses.length > 0 && (
+          {(ticket.SupportTicketResponse || ticket.responses) && (ticket.SupportTicketResponse || ticket.responses)!.length > 0 && (
             <div className="border-t pt-4">
               <h4 className="font-semibold text-[var(--foreground)] mb-3 flex items-center">
                 <MessageSquare className="h-4 w-4 mr-2" />
-                Responses ({ticket.responses.length})
+                Responses ({(ticket.SupportTicketResponse || ticket.responses)!.length})
               </h4>
               <div className="space-y-3">
-                {ticket.responses.map((response) => (
+                {(ticket.SupportTicketResponse || ticket.responses)!.map((response: any) => (
                   <div key={response.id} className="p-4 bg-blue-50 border-l-4 border-blue-400 rounded-r-md">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center space-x-2">
                         <span className="text-sm font-medium text-blue-800">
-                          {response.createdBy.name}
+                          {response.User?.name || response.createdBy?.name || 'Unknown'}
                         </span>
                         <span className="text-xs text-blue-600">
                           {format(new Date(response.createdAt), 'MMM d, yyyy HH:mm')}

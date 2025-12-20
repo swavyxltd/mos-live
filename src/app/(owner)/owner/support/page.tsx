@@ -41,22 +41,31 @@ export default function OwnerSupportPage() {
   
   useEffect(() => {
     if (status === 'loading') return
+    if (!session?.user?.id) return
     fetchTickets()
-  }, [status])
+  }, [status, session])
 
   const fetchTickets = async () => {
     try {
       setLoading(true)
       const ticketsRes = await fetch('/api/owner/support/tickets', {
-        cache: 'no-store'
+        cache: 'no-store',
+        credentials: 'include'
       })
       
       if (ticketsRes.ok) {
         const ticketsData = await ticketsRes.json()
-        setTickets(ticketsData)
+        console.log('Tickets fetched:', ticketsData)
+        setTickets(Array.isArray(ticketsData) ? ticketsData : [])
       } else {
-        const errorData = await ticketsRes.json().catch(() => ({}))
-        console.error('Error fetching tickets:', errorData)
+        const errorText = await ticketsRes.text()
+        let errorData = {}
+        try {
+          errorData = JSON.parse(errorText)
+        } catch {
+          errorData = { message: errorText }
+        }
+        console.error('Error fetching tickets:', ticketsRes.status, errorData)
         setTickets([]) // Set empty array on error to prevent infinite loading
       }
     } catch (error) {
@@ -67,7 +76,24 @@ export default function OwnerSupportPage() {
     }
   }
 
-  if (status === 'loading' || loading) {
+  if (status === 'loading') {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-64 mb-2" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <StatCardSkeleton key={i} />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (!session?.user?.id) {
+    return <div>Please sign in to access this page.</div>
+  }
+
+  if (loading) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-8 w-64 mb-2" />
@@ -106,8 +132,8 @@ export default function OwnerSupportPage() {
       assignedTo: 'Unassigned',
       createdAt: ticket.createdAt,
       lastActivity: ticket.updatedAt,
-      responseTime: ticket.responses && ticket.responses.length > 0 
-        ? `${Math.floor((new Date(ticket.responses[0].createdAt).getTime() - new Date(ticket.createdAt).getTime()) / (1000 * 60 * 60))} hours`
+      responseTime: ticket.SupportTicketResponse && ticket.SupportTicketResponse.length > 0 
+        ? `${Math.floor((new Date(ticket.SupportTicketResponse[0].createdAt).getTime() - new Date(ticket.createdAt).getTime()) / (1000 * 60 * 60))} hours`
         : 'No response yet'
     })),
     teamPerformance: [],
@@ -116,10 +142,10 @@ export default function OwnerSupportPage() {
   }
 
   // Calculate average response time
-  const ticketsWithResponses = tickets.filter((t: any) => t.responses && t.responses.length > 0)
+  const ticketsWithResponses = tickets.filter((t: any) => t.SupportTicketResponse && t.SupportTicketResponse.length > 0)
   if (ticketsWithResponses.length > 0) {
     const totalResponseTime = ticketsWithResponses.reduce((sum: number, t: any) => {
-      const firstResponse = t.responses[0]
+      const firstResponse = t.SupportTicketResponse[0]
       const responseTime = new Date(firstResponse.createdAt).getTime() - new Date(t.createdAt).getTime()
       return sum + responseTime
     }, 0)

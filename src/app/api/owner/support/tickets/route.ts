@@ -67,7 +67,7 @@ async function handleGET(request: NextRequest) {
             slug: true
           }
         },
-        responses: {
+        SupportTicketResponse: {
           include: {
             User: {
               select: {
