@@ -17,6 +17,16 @@ export function SessionRestore() {
     // Only run on client side
     if (typeof window === 'undefined') return
 
+    // Check if user just logged out - don't restore session if so
+    const justLoggedOut = sessionStorage.getItem('justLoggedOut') === 'true'
+    if (justLoggedOut) {
+      // Clear the flag after a short delay
+      setTimeout(() => {
+        sessionStorage.removeItem('justLoggedOut')
+      }, 1000)
+      return
+    }
+
     // Check if we're in a PWA standalone mode
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
       (window.navigator as any).standalone ||
@@ -33,8 +43,8 @@ export function SessionRestore() {
       })
         .then(res => res.json())
         .then(data => {
-          // If we got a session, trigger an update to refresh the client-side session
-          if (data?.user?.id) {
+          // Only restore if we didn't just log out
+          if (data?.user?.id && !sessionStorage.getItem('justLoggedOut')) {
             update()
           }
         })
@@ -44,6 +54,11 @@ export function SessionRestore() {
     }
 
     if (!isStandalone) return
+
+    // Don't redirect if user just logged out
+    if (sessionStorage.getItem('justLoggedOut') === 'true') {
+      return
+    }
 
     // If we have a session, ensure we're on the right page
     if (status === 'authenticated' && session?.user?.id) {

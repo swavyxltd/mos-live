@@ -151,9 +151,17 @@ export function ParentSidebar({ user, org }: ParentSidebarProps) {
               className="w-full justify-start"
               onClick={async () => {
                 try {
-                  // Clear all storage first
-                  sessionStorage.clear()
+                  // Set flag to prevent session restoration
+                  sessionStorage.setItem('justLoggedOut', 'true')
+                  
+                  // Clear all storage (but keep justLoggedOut flag)
                   localStorage.clear()
+                  // Clear sessionStorage but preserve the logout flag
+                  const logoutFlag = sessionStorage.getItem('justLoggedOut')
+                  sessionStorage.clear()
+                  if (logoutFlag) {
+                    sessionStorage.setItem('justLoggedOut', 'true')
+                  }
                   
                   // Call custom signout endpoint to explicitly clear cookies
                   await fetch('/api/auth/signout', {
@@ -172,6 +180,7 @@ export function ParentSidebar({ user, org }: ParentSidebarProps) {
                 } catch (error) {
                   console.error('Logout error:', error)
                   // Still redirect even if there's an error
+                  sessionStorage.setItem('justLoggedOut', 'true')
                   window.location.href = '/auth/signin?portal=parent'
                 }
               }}

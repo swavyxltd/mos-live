@@ -350,9 +350,17 @@ export function Sidebar({ user: initialUser, org, userRole, staffSubrole, permis
               className="w-full justify-start text-[var(--sidebar-foreground)] hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-accent-foreground)]"
               onClick={async () => {
                 try {
-                  // Clear all storage first
-                  sessionStorage.clear()
+                  // Set flag to prevent session restoration
+                  sessionStorage.setItem('justLoggedOut', 'true')
+                  
+                  // Clear all storage (but keep justLoggedOut flag)
                   localStorage.clear()
+                  // Clear sessionStorage but preserve the logout flag
+                  const logoutFlag = sessionStorage.getItem('justLoggedOut')
+                  sessionStorage.clear()
+                  if (logoutFlag) {
+                    sessionStorage.setItem('justLoggedOut', 'true')
+                  }
                   
                   // Call custom signout endpoint to explicitly clear cookies
                   await fetch('/api/auth/signout', {
@@ -371,6 +379,7 @@ export function Sidebar({ user: initialUser, org, userRole, staffSubrole, permis
                 } catch (error) {
                   console.error('Logout error:', error)
                   // Still redirect even if there's an error
+                  sessionStorage.setItem('justLoggedOut', 'true')
                   window.location.href = '/auth/signin'
                 }
               }}
