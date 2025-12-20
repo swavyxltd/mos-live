@@ -1,25 +1,74 @@
 'use client'
 
-import { signIn, getSession } from 'next-auth/react'
-import { useSearchParams } from 'next/navigation'
+import { signIn, getSession, useSession } from 'next-auth/react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { useEffect, useState, useRef, Suspense } from 'react'
 import Image from 'next/image'
-import { LogIn } from 'lucide-react'
 import { getPostLoginRedirect } from '@/lib/auth'
 import { LoginForm } from '@/components/login-form'
+import { SessionCheckLoader } from '@/components/loading/session-check-loader'
 
 function SignInPageContent() {
   const searchParams = useSearchParams()
+  const router = useRouter()
+  const { data: session, status } = useSession()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
-  const sessionCheckedRef = useRef(false)
+  const [checkingSession, setCheckingSession] = useState(true)
   const hasInitializedRef = useRef(false)
   
   // Get URL params once and memoize
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
   const resetSuccess = searchParams.get('reset') === 'success'
   const signupSuccess = searchParams.get('signup') === 'success'
+
+  // Check for existing session on mount (for PWA session restoration)
+  useEffect(() => {
+    // Add timeout to prevent infinite loading (max 5 seconds)
+    const timeout = setTimeout(() => {
+      setCheckingSession(false)
+    }, 5000)
+
+    // Wait for session to load
+    if (status === 'loading') {
+      return () => clearTimeout(timeout)
+    }
+
+    // If we have a session, redirect to dashboard
+    if (status === 'authenticated' && session?.user?.id) {
+      const roleHints = (session.user as any)?.roleHints as {
+        isOwner?: boolean
+        orgAdminOf?: string[]
+        orgStaffOf?: string[]
+        isParent?: boolean
+      } | undefined
+
+      if (roleHints) {
+        let redirectPath = '/'
+        if (roleHints.isParent) {
+          redirectPath = '/parent/dashboard'
+        } else if (roleHints.isOwner) {
+          redirectPath = '/owner/overview'
+        } else if (roleHints.orgAdminOf?.length || roleHints.orgStaffOf?.length) {
+          redirectPath = '/dashboard'
+        }
+        
+        clearTimeout(timeout)
+        // Show loading screen briefly, then redirect
+        setTimeout(() => {
+          router.push(redirectPath)
+        }, 500) // Small delay to show loading screen
+        return
+      }
+    }
+
+    // No session or session check complete - show login form
+    clearTimeout(timeout)
+    setCheckingSession(false)
+
+    return () => clearTimeout(timeout)
+  }, [session, status, router])
 
   // Initialize success messages only once
   useEffect(() => {
@@ -34,11 +83,6 @@ function SignInPageContent() {
       setSuccessMessage('Account created successfully! Please sign in to continue.')
     }
   }, []) // Empty deps - only run once on mount
-
-  // Note: We don't check session here because:
-  // 1. Middleware will handle redirecting authenticated users
-  // 2. Checking session on client-side can cause race conditions in production
-  // 3. If user is already logged in, middleware will redirect them before this page loads
 
   const handleCredentialsSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -119,8 +163,13 @@ function SignInPageContent() {
     }
   }
 
+  // Show loading screen while checking session
+  if (checkingSession || status === 'loading') {
+    return <SessionCheckLoader />
+  }
+
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
+    <div className="flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10 bg-white dark:bg-white">
         <div className="flex w-full max-w-sm flex-col gap-6">
           {/* Logo/Branding */}
           <a href="/" className="flex items-center gap-2 self-center">
@@ -149,24 +198,26 @@ function SignInPageContent() {
 
 export default function SignInPage() {
   return (
-    <Suspense fallback={
-      <div className="flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
-        <div className="flex w-full max-w-sm flex-col gap-6">
-          <div className="flex items-center gap-2 self-center">
-            <Image 
-              src="/logo.png" 
-              alt="Madrasah OS" 
-              width={128}
-              height={32}
-              className="h-8 w-auto"
-              priority
-            />
+    <div className="bg-white dark:bg-white">
+      <Suspense fallback={
+        <div className="flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10 bg-white">
+          <div className="flex w-full max-w-sm flex-col gap-6">
+            <div className="flex items-center gap-2 self-center">
+              <Image 
+                src="/logo.png" 
+                alt="Madrasah OS" 
+                width={128}
+                height={32}
+                className="h-8 w-auto"
+                priority
+              />
+            </div>
+            <div className="text-center text-gray-600">Loading...</div>
           </div>
-          <div className="text-center text-gray-600">Loading...</div>
         </div>
-      </div>
-    }>
-      <SignInPageContent />
-    </Suspense>
+      }>
+        <SignInPageContent />
+      </Suspense>
+    </div>
   )
 }
