@@ -27,7 +27,7 @@ async function handleGET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const org = await getActiveOrg()
+    const org = await getActiveOrg(session.user.id)
     if (!org) {
       return NextResponse.json({ error: 'No organisation found' }, { status: 404 })
     }
@@ -96,7 +96,7 @@ async function handlePOST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const org = await getActiveOrg()
+    const org = await getActiveOrg(session.user.id)
     if (!org) {
       return NextResponse.json({ error: 'No organisation found' }, { status: 404 })
     }
@@ -162,7 +162,7 @@ async function handlePOST(request: NextRequest) {
             email: true
           }
         },
-        org: {
+        Org: {
           select: {
             id: true,
             name: true,
