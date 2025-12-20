@@ -77,9 +77,11 @@ async function handleGET(
     })
 
     if (!ticket) {
+      logger.warn('Ticket not found', { ticketId, userId: session.user.id })
       return NextResponse.json({ error: 'Ticket not found' }, { status: 404 })
     }
 
+    logger.info('Successfully fetched support ticket', { ticketId, ticketNumber: ticket.ticketNumber })
     return NextResponse.json(ticket)
   } catch (error: any) {
     logger.error('Error fetching support ticket', error)

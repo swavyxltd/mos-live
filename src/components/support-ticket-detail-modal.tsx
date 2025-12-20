@@ -109,12 +109,21 @@ export function SupportTicketDetailModal({
         setNewStatus(data.status)
       } else {
         const errorData = await response.json().catch(() => ({}))
-        console.error('Error fetching ticket:', response.status, errorData)
-        toast.error(errorData.error || 'Failed to load ticket details')
+        console.error('Error fetching ticket:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData,
+          ticketId
+        })
+        toast.error(errorData.error || `Failed to fetch ticket (${response.status})`)
       }
-    } catch (error) {
-      console.error('Error fetching ticket:', error)
-      toast.error('Failed to load ticket details')
+    } catch (error: any) {
+      console.error('Error fetching ticket:', {
+        error,
+        message: error?.message,
+        ticketId
+      })
+      toast.error(error?.message || 'Failed to fetch ticket')
     } finally {
       setLoading(false)
     }
