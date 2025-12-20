@@ -233,40 +233,30 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
               parentUser = await tx.user.findUnique({
                 where: { email: sanitizedParentEmail }
               })
-                if (!parentUser) {
-                  throw new Error('This email address is already in use. Please use a different email address.')
-                }
+              if (!parentUser) {
+                throw new Error('This email address is already in use. Please use a different email address.')
+              }
             } else {
               throw createError
             }
           }
 
-            // Add parent to organisation
-            await tx.userOrgMembership.upsert({
-              where: {
-                userId_orgId: {
-                  userId: parentUser.id,
-                  orgId: orgId
-                }
-              },
-              update: {},
-              create: {
-                id: crypto.randomUUID(),
+          // Add parent to organisation
+          await tx.userOrgMembership.upsert({
+            where: {
+              userId_orgId: {
                 userId: parentUser.id,
-                orgId: orgId,
-                role: 'PARENT'
+                orgId: orgId
               }
-            })
-          } else {
-            // Update existing user
-            await tx.user.update({
-              where: { id: parentUser.id },
-              data: {
-                ...(parentName && { name: parentName }),
-                ...(parentPhone && { phone: parentPhone })
-              }
-            })
-          }
+            },
+            update: {},
+            create: {
+              id: crypto.randomUUID(),
+              userId: parentUser.id,
+              orgId: orgId,
+              role: 'PARENT'
+            }
+          })
           parentUserId = parentUser.id
         }
       }

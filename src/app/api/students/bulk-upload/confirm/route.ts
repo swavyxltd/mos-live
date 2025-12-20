@@ -206,7 +206,6 @@ async function handlePOST(request: NextRequest) {
                   role: 'PARENT'
                 }
               })
-            }
 
               // Link student to parent
               await tx.student.update({
@@ -216,27 +215,28 @@ async function handlePOST(request: NextRequest) {
                 }
               })
             }
+          }
 
-            // Check if student is already enrolled in class
-            const existingEnrollment = await tx.studentClass.findFirst({
-              where: {
+          // Check if student is already enrolled in class
+          const existingEnrollment = await tx.studentClass.findFirst({
+            where: {
+              studentId: studentData.existingStudentId,
+              classId: studentData.classId
+            }
+          })
+
+          if (!existingEnrollment) {
+            await tx.studentClass.create({
+              data: {
+                id: crypto.randomUUID(),
+                orgId: org.id,
                 studentId: studentData.existingStudentId,
                 classId: studentData.classId
               }
             })
+          }
 
-            if (!existingEnrollment) {
-              await tx.studentClass.create({
-                data: {
-                  id: crypto.randomUUID(),
-                  orgId: org.id,
-                  studentId: studentData.existingStudentId,
-                  classId: studentData.classId
-                }
-              })
-            }
-
-            return { student: updatedStudent, parentUser, isUpdate: true }
+          return { student: updatedStudent, parentUser, isUpdate: true }
           } else {
             // Create new student
             // Only create parent user if email is provided
