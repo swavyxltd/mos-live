@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useSession, signIn } from 'next-auth/react'
+import { useEffect, useState, useRef } from 'react'
+import { useSession } from 'next-auth/react'
 import { isPWAMode, setPWALoginPreference, getPWALoginPreference, clearPWALoginPreference } from '@/lib/pwa-auth'
 import { FullScreenLoader } from '@/components/loading/full-screen-loader'
 
@@ -13,6 +13,7 @@ export function PWASessionManager() {
   const { data: session, status } = useSession()
   const [isCheckingSession, setIsCheckingSession] = useState(false)
   const [isPWA, setIsPWA] = useState(false)
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     const pwaMode = isPWAMode()
@@ -23,9 +24,18 @@ export function PWASessionManager() {
       return
     }
 
+    // Clear any existing timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+      timeoutRef.current = null
+    }
+
     const checkAndRestoreSession = async () => {
       // If we have an active session, extend it for PWA
       if (status === 'authenticated' && session?.user?.id) {
+        // Always clear loading state when authenticated
+        setIsCheckingSession(false)
+        
         // Check if we've already extended this session
         const alreadyExtended = document.cookie.includes('pwa-mode=true')
         
@@ -53,19 +63,29 @@ export function PWASessionManager() {
         return
       }
 
-      // If session is loading, show loading screen briefly
+      // If session is loading, show loading screen briefly with timeout
       if (status === 'loading') {
         const preference = getPWALoginPreference()
         if (preference && preference.userId) {
           // We have a remembered login, show loading while checking
           setIsCheckingSession(true)
-          // Will be cleared when status changes
+          
+          // Set a timeout to clear loading after 5 seconds max
+          timeoutRef.current = setTimeout(() => {
+            setIsCheckingSession(false)
+          }, 5000)
+        } else {
+          // No preference, don't show loading
+          setIsCheckingSession(false)
         }
         return
       }
 
       // If no session but we're in PWA mode, check for remembered login
       if (status === 'unauthenticated') {
+        // Always clear loading when unauthenticated
+        setIsCheckingSession(false)
+        
         const preference = getPWALoginPreference()
         
         if (preference && preference.userId) {
@@ -77,6 +97,14 @@ export function PWASessionManager() {
     }
 
     checkAndRestoreSession()
+
+    // Cleanup timeout on unmount or status change
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
+    }
   }, [session, status])
 
   // Show loading screen while checking PWA session
