@@ -25,11 +25,17 @@ interface SetupStatus {
 export function SetupGuide() {
   const [setupStatus, setSetupStatus] = useState<SetupStatus | null>(null)
   const [loading, setLoading] = useState(true)
-  const [dismissed, setDismissed] = useState(false)
+  // Initialize dismissed state from localStorage immediately to prevent flash
+  const [dismissed, setDismissed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('setup-guide-dismissed') === 'true'
+    }
+    return false
+  })
   const [copiedLink, setCopiedLink] = useState(false)
   const router = useRouter()
 
-  // Check if setup guide was permanently dismissed
+  // Also check on mount to ensure we have the latest value
   useEffect(() => {
     const dismissedPermanently = localStorage.getItem('setup-guide-dismissed')
     if (dismissedPermanently === 'true') {
@@ -84,16 +90,24 @@ export function SetupGuide() {
   }
 
   const handleDismissPermanently = () => {
+    // Mark as permanently dismissed in localStorage
     localStorage.setItem('setup-guide-dismissed', 'true')
     setDismissed(true)
+    toast.success('Setup guide dismissed')
   }
 
-  // Don't show if dismissed
-  if (loading || !setupStatus || dismissed) {
+  // Don't show if dismissed - check this FIRST before anything else
+  if (dismissed) {
+    return null
+  }
+
+  // Don't show if still loading or no status
+  if (loading || !setupStatus) {
     return null
   }
 
   // Show completion message when all steps are done
+  // But only if not dismissed
   if (setupStatus.completionPercentage === 100) {
     return (
       <Card className="mb-6 border-2 border-green-200 bg-green-50">
