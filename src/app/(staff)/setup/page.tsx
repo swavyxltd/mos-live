@@ -260,8 +260,13 @@ export default function OnboardingPage() {
           toast.error('Please enable at least one payment method')
           return
         }
-        if (paymentData.billingDay !== null && (paymentData.billingDay < 1 || paymentData.billingDay > 28)) {
-          toast.error('Billing day must be between 1 and 28, or leave empty')
+        // Billing day is required
+        if (paymentData.billingDay === null || paymentData.billingDay === undefined || paymentData.billingDay === '') {
+          toast.error('Billing day is required. Please enter a day between 1 and 28')
+          return
+        }
+        if (paymentData.billingDay < 1 || paymentData.billingDay > 28) {
+          toast.error('Billing day must be between 1 and 28')
           return
         }
         dataToSave = paymentData
@@ -661,12 +666,13 @@ export default function OnboardingPage() {
 
                 <div>
                   <Label htmlFor="billingDay">Billing Day (1-28) *</Label>
+                  <p className="text-xs text-gray-500 mb-2">Required: Set the day of the month when parents will be billed</p>
                   <Input
                     id="billingDay"
                     type="number"
                     min="1"
                     max="28"
-                    value={paymentData.billingDay}
+                    value={paymentData.billingDay ?? ''}
                     onChange={(e) => setPaymentData({ ...paymentData, billingDay: e.target.value === '' ? null : parseInt(e.target.value) || null })}
                     required
                   />

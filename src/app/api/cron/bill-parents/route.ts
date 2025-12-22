@@ -22,6 +22,9 @@ export async function GET(request: NextRequest) {
     logger.info('Starting monthly parent billing cron', { currentDay, currentMonth })
 
     // Find all orgs where today is their billing day
+    // Use getBillingDay utility to ensure we only get orgs with valid billing days
+    const { getBillingDay } = await import('@/lib/billing-day')
+    
     const orgs = await prisma.org.findMany({
       where: {
         status: 'ACTIVE',
@@ -31,21 +34,42 @@ export async function GET(request: NextRequest) {
           { billingDay: currentDay },
           { feeDueDay: currentDay } // Fallback for legacy data
         ]
+      },
+      select: {
+        id: true,
+        billingDay: true,
+        feeDueDay: true,
+        name: true
       }
     })
 
-    logger.info('Found orgs to bill', { count: orgs.length })
+    logger.info('Found orgs to bill (before validation)', { count: orgs.length })
+
+    // Filter to only orgs with valid billing day matching today
+    const orgsToBill = orgs.filter(org => {
+      const billingDay = getBillingDay(org)
+      return billingDay !== null && billingDay === currentDay
+    })
+
+    logger.info('Found orgs to bill (after validation)', { count: orgsToBill.length, currentDay })
 
     let totalCharged = 0
     let totalFailed = 0
 
-    for (const org of orgs) {
-      const { getBillingDay } = await import('@/lib/billing-day')
+    for (const org of orgsToBill) {
       const billingDay = getBillingDay(org)
-      // Skip if billing day is not set or doesn't match today
-      if (!billingDay || billingDay !== currentDay) continue
+      // Double-check (should never fail at this point, but defensive)
+      if (!billingDay || billingDay !== currentDay) {
+        logger.warn(`Skipping org ${org.id} - billing day mismatch`, { 
+          orgBillingDay: billingDay, 
+          currentDay 
+        })
+        continue
+      }
 
       try {
+        logger.info(`Processing org ${org.id} (${org.name})`, { billingDay })
+        
         // Get all students with CARD payment method in this org
         const students = await prisma.student.findMany({
           where: {

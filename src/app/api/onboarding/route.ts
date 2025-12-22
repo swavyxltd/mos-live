@@ -154,23 +154,21 @@ async function handlePUT(request: NextRequest) {
         if (data.acceptsBankTransfer !== undefined) {
           paymentUpdateData.acceptsBankTransfer = data.acceptsBankTransfer
         }
-        // Billing day is now platform-wide and set by admins, not during onboarding
+        // Billing day is required during onboarding
         if (data.billingDay !== undefined) {
-          // Allow null/empty to clear billing day
-          if (data.billingDay === null || data.billingDay === '' || data.billingDay === undefined) {
-            paymentUpdateData.billingDay = null
-            paymentUpdateData.feeDueDay = null
-          } else {
-            const validBillingDay = Math.max(1, Math.min(28, Math.floor(Number(data.billingDay))))
-            if (isNaN(validBillingDay) || validBillingDay < 1 || validBillingDay > 28) {
-              return NextResponse.json(
-                { error: 'Billing day must be between 1 and 28' },
-                { status: 400 }
-              )
-            }
-            paymentUpdateData.billingDay = validBillingDay
-            paymentUpdateData.feeDueDay = validBillingDay // Keep in sync
+          const { prepareBillingDayUpdate } = await import('@/lib/billing-day')
+          const billingDayUpdate = prepareBillingDayUpdate(data.billingDay)
+          
+          // During onboarding, billing day is required (cannot be null)
+          if (billingDayUpdate === null || billingDayUpdate.billingDay === null) {
+            return NextResponse.json(
+              { error: 'Billing day is required and must be between 1 and 28' },
+              { status: 400 }
+            )
           }
+          
+          paymentUpdateData.billingDay = billingDayUpdate.billingDay
+          paymentUpdateData.feeDueDay = billingDayUpdate.feeDueDay // Keep in sync
         }
         if (data.bankAccountName) {
           paymentUpdateData.bankAccountName = sanitizeText(data.bankAccountName, MAX_STRING_LENGTHS.name)
@@ -322,7 +320,7 @@ async function handleGET(request: NextRequest) {
       admin: !!(user?.name && user?.email),
       organisation: !!(orgData?.addressLine1 && orgData?.city && orgData?.postcode && 
                       orgData?.phone && orgData?.email && orgData?.publicPhone && orgData?.publicEmail),
-      payments: !!(orgData?.billingDay && (
+      payments: !!(orgData?.billingDay && orgData.billingDay >= 1 && orgData.billingDay <= 28 && (
         orgData?.acceptsCard || orgData?.acceptsCash || orgData?.acceptsBankTransfer
       ))
     }

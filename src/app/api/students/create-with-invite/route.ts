@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireRole, requireOrg } from '@/lib/roles'
 import { prisma } from '@/lib/prisma'
 import { sendParentOnboardingEmail } from '@/lib/mail'
-import { checkPaymentMethod } from '@/lib/payment-check'
+import { checkPaymentMethod, checkBillingDay } from '@/lib/payment-check'
 import { logger } from '@/lib/logger'
 import { sanitizeText, isValidEmail, isValidEmailStrict, isValidName, isValidDateOfBirth, MAX_STRING_LENGTHS } from '@/lib/input-validation'
 import { withRateLimit } from '@/lib/api-middleware'
@@ -23,6 +23,15 @@ async function handlePOST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Payment method required. Please set up a payment method to add students.' },
         { status: 402 }
+      )
+    }
+
+    // Check billing day
+    const hasBillingDay = await checkBillingDay()
+    if (!hasBillingDay) {
+      return NextResponse.json(
+        { error: 'Billing day required. Please set a billing day in Settings → Payment Methods before adding students.' },
+        { status: 400 }
       )
     }
 

@@ -8,6 +8,7 @@ import { sendParentOnboardingEmail } from '@/lib/mail'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
 import { isValidName, isValidEmailStrict, isValidDateOfBirth } from '@/lib/input-validation'
+import { checkBillingDay } from '@/lib/payment-check'
 
 interface StudentData {
   firstName: string
@@ -37,6 +38,15 @@ async function handlePOST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Organisation not found' },
         { status: 404 }
+      )
+    }
+
+    // Check billing day before creating students
+    const hasBillingDay = await checkBillingDay()
+    if (!hasBillingDay) {
+      return NextResponse.json(
+        { error: 'Billing day required. Please set a billing day in Settings → Payment Methods before uploading students.' },
+        { status: 400 }
       )
     }
 

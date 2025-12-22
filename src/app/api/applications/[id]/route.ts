@@ -78,6 +78,16 @@ export async function PATCH(
     // If status is ACCEPTED, create student records and send email
     let emailSent = false
     if (status === 'ACCEPTED') {
+      // Check billing day before creating students
+      const { checkBillingDay } = await import('@/lib/payment-check')
+      const hasBillingDay = await checkBillingDay()
+      if (!hasBillingDay) {
+        return NextResponse.json(
+          { error: 'Billing day required. Please set a billing day in Settings → Payment Methods before accepting applications.' },
+          { status: 400 }
+        )
+      }
+
       try {
         // Use transaction to ensure all-or-nothing student creation
         const result = await prisma.$transaction(async (tx) => {
