@@ -161,7 +161,9 @@ async function handlePUT(request: NextRequest) {
               { status: 400 }
             )
           }
-          paymentUpdateData.billingDay = data.billingDay
+          const validBillingDay = Math.max(1, Math.min(28, Number(data.billingDay) || 1))
+          paymentUpdateData.billingDay = validBillingDay
+          paymentUpdateData.feeDueDay = validBillingDay // Keep in sync
         }
         if (data.bankAccountName) {
           paymentUpdateData.bankAccountName = sanitizeText(data.bankAccountName, MAX_STRING_LENGTHS.name)

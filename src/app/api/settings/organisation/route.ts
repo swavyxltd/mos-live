@@ -119,7 +119,10 @@ async function handlePUT(request: NextRequest) {
         ...(sanitizedName && { name: sanitizedName }),
         slug: newSlug,
         ...(timezone && { timezone }),
-        ...(feeDueDay !== undefined && { feeDueDay }),
+        ...(feeDueDay !== undefined && { 
+          feeDueDay,
+          billingDay: feeDueDay // Keep billingDay in sync with feeDueDay
+        }),
         ...(sanitizedAddress !== undefined && { address: sanitizedAddress }),
         ...(sanitizedAddressLine1 !== undefined && { addressLine1: sanitizedAddressLine1 }),
         ...(sanitizedPostcode !== undefined && { postcode: sanitizedPostcode }),

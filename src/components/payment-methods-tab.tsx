@@ -20,10 +20,13 @@ import {
   Shield,
   Edit,
   X,
-  Calendar
+  Calendar,
+  Clock,
+  AlertCircle
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useStaffPermissions } from '@/lib/staff-permissions'
+import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes-warning'
 
 interface PaymentMethodSettings {
   stripeEnabled: boolean
@@ -43,6 +46,14 @@ interface PaymentMethodSettings {
   hasStripeConfigured: boolean
 }
 
+// Helper function to get ordinal suffix
+const getOrdinalSuffix = (n: number): string => {
+  if (n === 1 || n === 21 || n === 31) return 'st'
+  if (n === 2 || n === 22) return 'nd'
+  if (n === 3 || n === 23) return 'rd'
+  return 'th'
+}
+
 export function PaymentMethodsTab() {
   const { data: session } = useSession()
   const userSubrole = (session?.user as any)?.staffSubrole || 'ADMIN'
@@ -53,6 +64,23 @@ export function PaymentMethodsTab() {
   const [savingBillingDay, setSavingBillingDay] = useState(false)
   const [savingPaymentInstructions, setSavingPaymentInstructions] = useState(false)
   const [settings, setSettings] = useState<PaymentMethodSettings>({
+    stripeEnabled: false,
+    autoPaymentEnabled: true,
+    cashPaymentEnabled: false,
+    bankTransferEnabled: false,
+    acceptsCard: false,
+    acceptsCash: false,
+    acceptsBankTransfer: false,
+    billingDay: 1,
+    stripeConnectAccountId: null,
+    hasStripeConnect: false,
+    paymentInstructions: '',
+    bankAccountName: null,
+    bankSortCode: null,
+    bankAccountNumber: null,
+    hasStripeConfigured: false
+  })
+  const [originalSettings, setOriginalSettings] = useState<PaymentMethodSettings>({
     stripeEnabled: false,
     autoPaymentEnabled: true,
     cashPaymentEnabled: false,
@@ -82,13 +110,28 @@ export function PaymentMethodsTab() {
     bankAccountNumber: null as string | null
   })
 
+  // Check if there are unsaved changes
+  const hasUnsavedChanges = () => {
+    if (loading) return false
+    
+    // Compare current settings with original settings
+    return JSON.stringify(settings) !== JSON.stringify(originalSettings)
+  }
+
+  // Use the unsaved changes warning hook
+  const { startSaving, finishSaving } = useUnsavedChangesWarning({
+    hasUnsavedChanges,
+    enabled: !loading
+  })
+
   useEffect(() => {
     fetchPaymentSettings()
   }, [])
 
   const fetchPaymentSettings = async () => {
     try {
-      const response = await fetch('/api/settings/payment-methods', {
+      // Add timestamp to bypass any caching
+      const response = await fetch(`/api/settings/payment-methods?t=${Date.now()}`, {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache',
@@ -103,7 +146,7 @@ export function PaymentMethodsTab() {
         const bankEnabled = data.acceptsBankTransfer === true || data.bankTransferEnabled === true
         const cardEnabled = data.acceptsCard === true
         
-        setSettings({
+        const loadedSettings = {
           ...data,
           acceptsCard: cardEnabled,
           acceptsCash: cashEnabled,
@@ -113,8 +156,12 @@ export function PaymentMethodsTab() {
           paymentInstructions: data.paymentInstructions || '',
           bankAccountName: data.bankAccountName || null,
           bankSortCode: data.bankSortCode || null,
-          bankAccountNumber: data.bankAccountNumber || null
-        })
+          bankAccountNumber: data.bankAccountNumber || null,
+          // Ensure billingDay is always a number, never null
+          billingDay: data.billingDay ? Number(data.billingDay) : 1
+        }
+        setSettings(loadedSettings)
+        setOriginalSettings(loadedSettings)
         setTempBankDetails({
           bankAccountName: data.bankAccountName || null,
           bankSortCode: data.bankSortCode || null,
@@ -176,6 +223,8 @@ export function PaymentMethodsTab() {
       toast.error('You do not have permission to manage payment settings')
       return
     }
+
+    startSaving()
 
     // Get current state values - ensure they're proper booleans
     const cashValue = settings.cashPaymentEnabled === true || settings.acceptsCash === true
@@ -256,6 +305,7 @@ export function PaymentMethodsTab() {
       toast.error(error instanceof Error ? error.message : 'Failed to save payment methods')
     } finally {
       setSavingPaymentMethods(false)
+      finishSaving()
     }
   }
 
@@ -265,18 +315,40 @@ export function PaymentMethodsTab() {
       return
     }
 
+    startSaving()
     setSavingBillingDay(true)
     try {
+      // Ensure we send a valid number, never null/undefined
+      const billingDayToSave = Math.max(1, Math.min(28, Number(settings.billingDay) || 1))
+      
       const response = await fetch('/api/settings/payment-methods', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          billingDay: settings.billingDay
+          billingDay: billingDayToSave
         })
       })
 
       if (response.ok) {
+        const result = await response.json()
         toast.success('Billing day saved successfully')
+        
+        // Update settings immediately from response - ALWAYS use the saved value
+        const savedBillingDay = result.settings?.billingDay ?? billingDayToSave
+        console.log('Billing day save response:', { 
+          result, 
+          savedBillingDay, 
+          sentValue: billingDayToSave 
+        })
+        
+        // Update both settings and originalSettings with the saved value
+        setSettings(prev => ({ ...prev, billingDay: Number(savedBillingDay) }))
+        setOriginalSettings(prev => ({ ...prev, billingDay: Number(savedBillingDay) }))
+        
+        // Small delay before refetch to ensure database commit
+        await new Promise(resolve => setTimeout(resolve, 100))
+        
+        // Refetch to ensure complete sync
         await fetchPaymentSettings()
       } else {
         const error = await response.json()
@@ -286,6 +358,7 @@ export function PaymentMethodsTab() {
       toast.error(error instanceof Error ? error.message : 'Failed to save billing day')
     } finally {
       setSavingBillingDay(false)
+      finishSaving()
     }
   }
 
@@ -295,6 +368,7 @@ export function PaymentMethodsTab() {
       return
     }
 
+    startSaving()
     setSavingPaymentInstructions(true)
     try {
       const response = await fetch('/api/settings/payment-methods', {
@@ -316,10 +390,11 @@ export function PaymentMethodsTab() {
       toast.error(error instanceof Error ? error.message : 'Failed to save payment instructions')
     } finally {
       setSavingPaymentInstructions(false)
+      finishSaving()
     }
   }
 
-  const handleSettingChange = (key: keyof PaymentMethodSettings, value: boolean | string) => {
+  const handleSettingChange = (key: keyof PaymentMethodSettings, value: boolean | string | number) => {
     // Auto-capitalize first letter for name fields
     if (key === 'bankAccountName' && typeof value === 'string' && value.length > 0) {
       value = value.charAt(0).toUpperCase() + value.slice(1)
@@ -481,6 +556,19 @@ export function PaymentMethodsTab() {
 
   return (
     <div className="space-y-6">
+      {/* Unsaved Changes Notification */}
+      {hasUnsavedChanges() && (
+        <div className="border border-yellow-200 bg-yellow-50 rounded-lg p-4 flex items-start gap-3">
+          <div className="w-5 h-5 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <AlertTriangle className="h-3.5 w-3.5 text-yellow-600" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-medium text-yellow-900">You have unsaved changes</p>
+            <p className="text-xs text-yellow-700 mt-1">Please save your changes before leaving this page.</p>
+          </div>
+        </div>
+      )}
+      
       {/* Payment Method Overview */}
       <Card>
         <CardHeader>
@@ -797,10 +885,83 @@ export function PaymentMethodsTab() {
                 min="1"
                 max="28"
                 value={settings.billingDay}
-                onChange={(e) => handleSettingChange('billingDay', parseInt(e.target.value) || 1)}
+                onChange={(e) => {
+                  const value = e.target.value
+                  const numValue = value === '' ? 1 : Math.max(1, Math.min(28, parseInt(value) || 1))
+                  handleSettingChange('billingDay', numValue)
+                }}
                 disabled={!hasPermission('access_settings')}
               />
+              <p className="text-sm text-gray-500 mt-1">
+                Day of the month when fees are due for all classes. This is also used as the fee due day for payment status calculations.
+              </p>
             </div>
+
+            {/* Payment Status Rules Card */}
+            <div className="border border-[var(--border)] rounded-lg p-4">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="w-10 h-10 bg-[var(--card)] rounded-lg flex items-center justify-center flex-shrink-0 border border-[var(--border)]">
+                  <Info className="h-5 w-5 text-[var(--foreground)]" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-sm font-semibold text-[var(--foreground)] mb-1">Payment Status Rules</h4>
+                  <p className="text-sm text-[var(--muted-foreground)]">
+                    How payment statuses are calculated based on the billing day
+                  </p>
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="space-y-2.5">
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <CheckCircle className="h-3.5 w-3.5 text-green-600" />
+                    </div>
+                    <div className="flex-1">
+                      <span className="text-sm font-medium text-[var(--foreground)]">PAID:</span>
+                      <span className="text-sm text-[var(--muted-foreground)] ml-1">Payment has been received and recorded</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Clock className="h-3.5 w-3.5 text-blue-600" />
+                    </div>
+                    <div className="flex-1">
+                      <span className="text-sm font-medium text-[var(--foreground)]">PENDING:</span>
+                      <span className="text-sm text-[var(--muted-foreground)] ml-1">Payment is due but less than 48 hours past the due date</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <AlertCircle className="h-3.5 w-3.5 text-yellow-600" />
+                    </div>
+                    <div className="flex-1">
+                      <span className="text-sm font-medium text-[var(--foreground)]">LATE:</span>
+                      <span className="text-sm text-[var(--muted-foreground)] ml-1">More than 48 hours (2 days) past the due date</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <AlertCircle className="h-3.5 w-3.5 text-red-600" />
+                    </div>
+                    <div className="flex-1">
+                      <span className="text-sm font-medium text-[var(--foreground)]">OVERDUE:</span>
+                      <span className="text-sm text-[var(--muted-foreground)] ml-1">More than 96 hours (4 days) past the due date</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="pt-3 border-t border-[var(--border)]">
+                  <p className="text-xs text-[var(--muted-foreground)]">
+                    <strong className="text-[var(--foreground)]">Example:</strong> If fees are due on the {settings.billingDay}{getOrdinalSuffix(settings.billingDay)} at 11:59 PM, payments will be marked as LATE after the {Math.min(settings.billingDay + 2, 31)}{getOrdinalSuffix(Math.min(settings.billingDay + 2, 31))} at 11:59 PM, and OVERDUE after the {Math.min(settings.billingDay + 4, 31)}{getOrdinalSuffix(Math.min(settings.billingDay + 4, 31))} at 11:59 PM.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {hasPermission('access_settings') && (
               <div className="flex justify-end">
                 <Button
@@ -827,87 +988,6 @@ export function PaymentMethodsTab() {
         </CardContent>
       </Card>
 
-      {/* Payment Instructions */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Info className="h-5 w-5" />
-            <span>Payment Instructions</span>
-          </CardTitle>
-          <CardDescription>
-            Provide instructions for parents on how to make payments.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <Textarea
-              placeholder="Enter payment instructions for parents..."
-              value={settings.paymentInstructions || ''}
-              onChange={(e) => handleSettingChange('paymentInstructions', e.target.value)}
-              disabled={!hasPermission('access_settings')}
-              rows={4}
-            />
-            {hasPermission('access_settings') && (
-              <div className="flex justify-end">
-                <Button
-                  onClick={handleSavePaymentInstructions}
-                  disabled={savingPaymentInstructions}
-                  size="sm"
-                  className="flex items-center gap-2"
-                >
-                  {savingPaymentInstructions ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4" />
-                      Save Instructions
-                    </>
-                  )}
-                </Button>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Security Notice */}
-      <Card className="border-gray-200 bg-gray-50">
-        <CardContent className="p-4">
-          <div className="flex items-center space-x-2 mb-2">
-            <Shield className="h-4 w-4 text-gray-600" />
-            <span className="text-sm font-medium text-gray-900">Security Notice</span>
-          </div>
-          <p className="text-sm text-gray-700">
-            All payment data is encrypted and processed securely. Stripe keys are stored securely and never exposed to clients.
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Save Button */}
-      {hasPermission('access_settings') && (
-        <div className="flex justify-end">
-          <Button
-            onClick={handleSaveSettings}
-            disabled={saving}
-            className="bg-[var(--primary)] text-[var(--primary-foreground)] hover:bg-[var(--primary)]/90"
-          >
-            {saving ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                Save Settings
-              </>
-            )}
-          </Button>
-        </div>
-      )}
     </div>
   )
 }

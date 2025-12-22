@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { Save, Globe, User, CreditCard, Calendar, Loader2, Download, DollarSign, Users, CheckCircle, Eye, FileText, Banknote, AlertTriangle, XCircle, Settings, Shield } from 'lucide-react'
+import { Save, Globe, User, CreditCard, Calendar, Loader2, Download, DollarSign, Users, CheckCircle, Eye, FileText, Banknote, AlertTriangle, XCircle, Settings, Shield, Clock } from 'lucide-react'
 import { toast } from 'sonner'
 import { StripePaymentMethodModal } from '@/components/stripe-payment-method'
 import { StatCard } from '@/components/ui/stat-card'
@@ -23,6 +23,18 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { PaymentMethodsTab } from '@/components/payment-methods-tab'
 import { isValidPhone, isValidUKPostcode } from '@/lib/input-validation'
 import { useUnsavedChangesWarning } from '@/hooks/use-unsaved-changes-warning'
+
+const DAYS_OF_WEEK = [
+  'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'
+]
+
+const TIME_SLOTS = [
+  '8:00 AM', '8:30 AM', '9:00 AM', '9:30 AM', '10:00 AM', '10:30 AM',
+  '11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM', '1:00 PM', '1:30 PM',
+  '2:00 PM', '2:30 PM', '3:00 PM', '3:30 PM', '4:00 PM', '4:30 PM',
+  '5:00 PM', '5:30 PM', '6:00 PM', '6:30 PM', '7:00 PM', '7:30 PM',
+  '8:00 PM', '8:30 PM'
+]
 
 interface OrganisationSettings {
   name: string
@@ -73,6 +85,11 @@ export default function SettingsPage() {
   const [orgPublicPhoneError, setOrgPublicPhoneError] = useState('')
   const [orgPostcodeError, setOrgPostcodeError] = useState('')
   const [userPhoneError, setUserPhoneError] = useState('')
+  const [officeHoursSchedule, setOfficeHoursSchedule] = useState({
+    days: [] as string[],
+    startTime: '9:00 AM',
+    endTime: '5:00 PM'
+  })
   const [orgSettings, setOrgSettings] = useState<OrganisationSettings>({
     name: '',
     timezone: 'Europe/London',
@@ -203,6 +220,77 @@ export default function SettingsPage() {
     }
   }
 
+  // Helper function to convert schedule to formatted string
+  const formatOfficeHours = (schedule: { days: string[], startTime: string, endTime: string }): string => {
+    if (schedule.days.length === 0) return ''
+    
+    if (schedule.days.length === 7) {
+      return `Monday - Sunday: ${schedule.startTime} - ${schedule.endTime}`
+    } else if (schedule.days.length === 5 && 
+               schedule.days.includes('Monday') && 
+               schedule.days.includes('Tuesday') && 
+               schedule.days.includes('Wednesday') && 
+               schedule.days.includes('Thursday') && 
+               schedule.days.includes('Friday')) {
+      return `Monday - Friday: ${schedule.startTime} - ${schedule.endTime}`
+    } else {
+      return schedule.days.map(day => `${day}: ${schedule.startTime} - ${schedule.endTime}`).join('\n')
+    }
+  }
+
+  // Helper function to parse office hours string to schedule
+  const parseOfficeHours = (officeHours: string): { days: string[], startTime: string, endTime: string } => {
+    if (!officeHours || officeHours.trim() === '') {
+      return { days: [], startTime: '9:00 AM', endTime: '5:00 PM' }
+    }
+
+    // Try to parse common formats
+    const lines = officeHours.split('\n').filter(line => line.trim())
+    
+    // Check for "Monday - Friday" or "Monday - Sunday" format
+    const weekdayRangeMatch = officeHours.match(/(Monday|Mon)\s*-\s*(Friday|Sunday|Fri|Sun):\s*(\d{1,2}:\d{2}\s*(?:AM|PM))\s*-\s*(\d{1,2}:\d{2}\s*(?:AM|PM))/i)
+    if (weekdayRangeMatch) {
+      const startTime = weekdayRangeMatch[3]
+      const endTime = weekdayRangeMatch[4]
+      const endDay = weekdayRangeMatch[2]
+      
+      if (endDay.toLowerCase().includes('friday') || endDay.toLowerCase().includes('fri')) {
+        return { days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], startTime, endTime }
+      } else if (endDay.toLowerCase().includes('sunday') || endDay.toLowerCase().includes('sun')) {
+        return { days: DAYS_OF_WEEK, startTime, endTime }
+      }
+    }
+
+    // Try to parse individual day lines
+    const parsedDays: string[] = []
+    let foundStartTime = '9:00 AM'
+    let foundEndTime = '5:00 PM'
+
+    for (const line of lines) {
+      const dayMatch = line.match(/(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Mon|Tue|Wed|Thu|Fri|Sat|Sun)/i)
+      const timeMatch = line.match(/(\d{1,2}:\d{2}\s*(?:AM|PM))\s*-\s*(\d{1,2}:\d{2}\s*(?:AM|PM))/i)
+      
+      if (dayMatch && timeMatch) {
+        const dayName = dayMatch[1]
+        const fullDayName = DAYS_OF_WEEK.find(d => 
+          d.toLowerCase().startsWith(dayName.toLowerCase().slice(0, 3))
+        )
+        if (fullDayName && !parsedDays.includes(fullDayName)) {
+          parsedDays.push(fullDayName)
+        }
+        foundStartTime = timeMatch[1]
+        foundEndTime = timeMatch[2]
+      }
+    }
+
+    if (parsedDays.length > 0) {
+      return { days: parsedDays, startTime: foundStartTime, endTime: foundEndTime }
+    }
+
+    // Default fallback
+    return { days: [], startTime: '9:00 AM', endTime: '5:00 PM' }
+  }
+
   const fetchOrgSettings = async () => {
     try {
       setLoadingOrgSettings(true)
@@ -227,6 +315,10 @@ export default function SettingsPage() {
         }
         setOrgSettings(settings)
         setOriginalOrgSettings(settings)
+        
+        // Parse office hours to schedule
+        const schedule = parseOfficeHours(settings.officeHours)
+        setOfficeHoursSchedule(schedule)
       }
     } catch (error) {
     } finally {
@@ -296,6 +388,29 @@ export default function SettingsPage() {
     }
     
     return nextPayment
+  }
+
+  const handleOfficeHoursScheduleChange = (field: 'days' | 'startTime' | 'endTime', value: any) => {
+    const newSchedule = {
+      ...officeHoursSchedule,
+      [field]: value
+    }
+    setOfficeHoursSchedule(newSchedule)
+    
+    // Update office hours string
+    const formattedHours = formatOfficeHours(newSchedule)
+    setOrgSettings(prev => ({ ...prev, officeHours: formattedHours }))
+  }
+
+  const toggleOfficeHoursDay = (day: string) => {
+    const newDays = officeHoursSchedule.days.includes(day)
+      ? officeHoursSchedule.days.filter(d => d !== day)
+      : [...officeHoursSchedule.days, day].sort((a, b) => {
+          const dayOrder = DAYS_OF_WEEK.indexOf(a) - DAYS_OF_WEEK.indexOf(b)
+          return dayOrder
+        })
+    
+    handleOfficeHoursScheduleChange('days', newDays)
   }
 
   const handleOrgSettingsChange = (field: keyof OrganisationSettings, value: string | number) => {
@@ -430,6 +545,8 @@ export default function SettingsPage() {
         setOriginalOrgSettings({ ...orgSettings })
         // Trigger refresh of org name everywhere
         window.dispatchEvent(new CustomEvent('refresh-org-name'))
+        // Trigger refresh of contact info (office hours, phone, email, address) everywhere
+        window.dispatchEvent(new CustomEvent('refresh-contact-info'))
         // Also refresh owner dashboard if org name changed
         if (window.location.pathname.startsWith('/owner/')) {
           window.dispatchEvent(new CustomEvent('refresh-owner-dashboard'))
@@ -774,31 +891,15 @@ export default function SettingsPage() {
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="late-threshold">Late Threshold (minutes)</Label>
-                <Input
-                  id="late-threshold"
-                  type="number"
-                  value={orgSettings.lateThreshold}
-                  onChange={(e) => handleOrgSettingsChange('lateThreshold', parseInt(e.target.value) || 0)}
-                  placeholder="Enter late threshold"
-                />
-              </div>
-              <div>
-                <Label htmlFor="fee-due-day">Fee Due Day (Day of Month) *</Label>
-                <Input
-                  id="fee-due-day"
-                  type="number"
-                  min="1"
-                  max="31"
-                  value={orgSettings.feeDueDay}
-                  onChange={(e) => handleOrgSettingsChange('feeDueDay', parseInt(e.target.value) || 1)}
-                  placeholder="e.g., 1 (for 1st of each month)"
-                  required
-                />
-                <p className="text-sm text-gray-500 mt-1">Day of the month when fees are due for all classes. Payments not received within 48 hours will be marked as late, and after 96 hours as overdue.</p>
-              </div>
+            <div>
+              <Label htmlFor="late-threshold">Late Threshold (minutes)</Label>
+              <Input
+                id="late-threshold"
+                type="number"
+                value={orgSettings.lateThreshold}
+                onChange={(e) => handleOrgSettingsChange('lateThreshold', parseInt(e.target.value) || 0)}
+                placeholder="Enter late threshold"
+              />
             </div>
 
             {/* Address Fields */}
@@ -938,18 +1039,85 @@ export default function SettingsPage() {
               <p className="text-sm text-gray-500 mt-1">Your organisation's website URL</p>
             </div>
 
-            <div>
-              <Label htmlFor="officeHours">Office Hours</Label>
-              <Textarea
-                id="officeHours"
-                value={orgSettings.officeHours}
-                onChange={(e) => handleOrgSettingsChange('officeHours', e.target.value)}
-                placeholder="Enter office hours (e.g., Monday - Friday: 9:00 AM - 5:00 PM)"
-                rows={3}
-              />
-              <p className="text-sm text-gray-500 mt-1">
-                Use line breaks to separate different days/times
-              </p>
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-base font-semibold text-[var(--foreground)] mb-1">Office Hours</h3>
+                <p className="text-sm text-gray-500">Select the days and times your office is open</p>
+              </div>
+              
+              {/* Days of Week */}
+              <div className="space-y-2">
+                <Label className="text-xs text-gray-600 font-normal">Select Days</Label>
+                <div className="flex flex-wrap gap-2">
+                  {DAYS_OF_WEEK.map((day) => (
+                    <Button
+                      key={day}
+                      type="button"
+                      variant={officeHoursSchedule.days.includes(day) ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => toggleOfficeHoursDay(day)}
+                      className="text-sm"
+                    >
+                      {day.slice(0, 3)}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Time Slots */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="officeStartTime" className="text-xs text-gray-600 font-normal">Start Time</Label>
+                  <Select 
+                    value={officeHoursSchedule.startTime} 
+                    onValueChange={(value) => handleOfficeHoursScheduleChange('startTime', value)}
+                  >
+                    <SelectTrigger id="officeStartTime">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TIME_SLOTS.map((time) => (
+                        <SelectItem key={time} value={time}>
+                          {time}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="officeEndTime" className="text-xs text-gray-600 font-normal">End Time</Label>
+                  <Select 
+                    value={officeHoursSchedule.endTime} 
+                    onValueChange={(value) => handleOfficeHoursScheduleChange('endTime', value)}
+                  >
+                    <SelectTrigger id="officeEndTime">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TIME_SLOTS.map((time) => (
+                        <SelectItem key={time} value={time}>
+                          {time}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Preview */}
+              {officeHoursSchedule.days.length > 0 && (
+                <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="flex items-start gap-2">
+                    <Clock className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm text-gray-700">
+                      <p className="font-medium mb-1">Preview:</p>
+                      <p className="text-gray-600 whitespace-pre-line">
+                        {formatOfficeHours(officeHoursSchedule)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

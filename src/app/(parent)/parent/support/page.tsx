@@ -69,22 +69,40 @@ export default function ParentSupportPage() {
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null)
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
 
+  const fetchContactInfo = async () => {
+    try {
+      const response = await fetch('/api/org/contact-info')
+      if (response.ok) {
+        const data = await response.json()
+        setContactInfo(data)
+        setLoading(false)
+      } else {
+        setLoading(false)
+      }
+    } catch (err) {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
     if (status === 'loading') return
 
     // Always fetch real contact information from organisation settings
-    fetch('/api/org/contact-info')
-      .then(res => res.json())
-      .then(data => {
-        setContactInfo(data)
-        setLoading(false)
-      })
-      .catch(err => {
-        setLoading(false)
-      })
+    fetchContactInfo()
 
     // Fetch support tickets
     fetchTickets()
+
+    // Listen for contact info updates
+    const handleRefreshContactInfo = () => {
+      fetchContactInfo()
+    }
+
+    window.addEventListener('refresh-contact-info', handleRefreshContactInfo)
+
+    return () => {
+      window.removeEventListener('refresh-contact-info', handleRefreshContactInfo)
+    }
   }, [status])
 
   const fetchTickets = async () => {

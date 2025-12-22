@@ -86,14 +86,9 @@ export function PaymentsPageClient({ classes }: PaymentsPageClientProps) {
     return Array.from(allMonths).sort().reverse()
   }
 
-  // Get initial month filter - use current month if available, otherwise use first available month
+  // Get initial month filter - always use current month as default
   const getInitialMonth = () => {
-    const currentMonth = getCurrentMonth()
-    const availableMonths = getAllUniqueMonthsFromProps()
-    if (availableMonths.includes(currentMonth)) {
-      return currentMonth
-    }
-    return availableMonths.length > 0 ? availableMonths[0] : 'all'
+    return getCurrentMonth()
   }
 
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null)
@@ -119,6 +114,8 @@ export function PaymentsPageClient({ classes }: PaymentsPageClientProps) {
   // Get unique months from all payment records across all classes
   const getAllUniqueMonths = () => {
     const allMonths = new Set<string>()
+    // Always include current month
+    allMonths.add(getCurrentMonth())
     localClasses.forEach(cls => {
       cls.paymentRecords.forEach(record => {
         allMonths.add(record.month)
@@ -129,10 +126,12 @@ export function PaymentsPageClient({ classes }: PaymentsPageClientProps) {
 
   // Get unique months from payment records for selected class
   const getUniqueMonths = () => {
-    if (!selectedClass) return []
-    const months = selectedClass.paymentRecords.map(r => r.month)
-    const unique = Array.from(new Set(months)).sort().reverse()
-    return unique
+    if (!selectedClass) return [getCurrentMonth()]
+    const months = new Set<string>()
+    // Always include current month
+    months.add(getCurrentMonth())
+    selectedClass.paymentRecords.forEach(r => months.add(r.month))
+    return Array.from(months).sort().reverse()
   }
 
   // Filter classes by month for overview stats

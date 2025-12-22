@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge'
 import { Modal } from '@/components/ui/modal'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { 
   Edit, 
   Users, 
@@ -17,8 +16,7 @@ import {
   AlertCircle,
   CheckCircle,
   User,
-  GraduationCap,
-  Calendar
+  GraduationCap
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatCurrency } from '@/lib/utils'
@@ -55,11 +53,6 @@ export function FeesPageClient({ classes, summary }: FeesPageClientProps) {
   const [feeAmount, setFeeAmount] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [localClasses, setLocalClasses] = useState(classes)
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
-  
-  // Generate list of years (current year and past 5 years)
-  const currentYear = new Date().getFullYear()
-  const availableYears = Array.from({ length: 6 }, (_, i) => currentYear - i)
 
   const handleEditFee = (classItem: ClassFee) => {
     setEditingClass(classItem)
@@ -133,21 +126,6 @@ export function FeesPageClient({ classes, summary }: FeesPageClientProps) {
           Manage fees for all classes in your madrasah. Fees are set when creating classes.
         </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-gray-500" />
-          <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
-            <SelectTrigger className="w-[120px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {availableYears.map(year => (
-                <SelectItem key={year} value={year.toString()}>
-                  {year}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
       </div>
 
       {/* Summary Statistics */}
@@ -188,7 +166,7 @@ export function FeesPageClient({ classes, summary }: FeesPageClientProps) {
               {formatCurrency(Math.round(summary.totalMonthlyRevenue * 100))}
             </div>
             <p className="text-sm text-muted-foreground">
-              Potential monthly income
+              Monthly income
             </p>
           </CardContent>
         </Card>
