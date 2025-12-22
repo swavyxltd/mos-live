@@ -64,7 +64,7 @@ export default function OnboardingPage() {
     acceptsCard: false,
     acceptsCash: true,
     acceptsBankTransfer: true,
-    billingDay: 1,
+    billingDay: null as any,
     bankAccountName: '',
     bankSortCode: '',
     bankAccountNumber: '',
@@ -114,7 +114,7 @@ export default function OnboardingPage() {
             acceptsCard: data.organisation.acceptsCard ?? false,
             acceptsCash: data.organisation.acceptsCash ?? true,
             acceptsBankTransfer: data.organisation.acceptsBankTransfer ?? true,
-            billingDay: data.organisation.billingDay ?? 1,
+            billingDay: data.organisation.billingDay ?? null,
             bankAccountName: data.organisation.bankAccountName || '',
             bankSortCode: data.organisation.bankSortCode || '',
             bankAccountNumber: data.organisation.bankAccountNumber || '',
@@ -260,8 +260,8 @@ export default function OnboardingPage() {
           toast.error('Please enable at least one payment method')
           return
         }
-        if (paymentData.billingDay < 1 || paymentData.billingDay > 28) {
-          toast.error('Billing day must be between 1 and 28')
+        if (paymentData.billingDay !== null && (paymentData.billingDay < 1 || paymentData.billingDay > 28)) {
+          toast.error('Billing day must be between 1 and 28, or leave empty')
           return
         }
         dataToSave = paymentData
@@ -667,7 +667,7 @@ export default function OnboardingPage() {
                     min="1"
                     max="28"
                     value={paymentData.billingDay}
-                    onChange={(e) => setPaymentData({ ...paymentData, billingDay: parseInt(e.target.value) || 1 })}
+                    onChange={(e) => setPaymentData({ ...paymentData, billingDay: e.target.value === '' ? null : parseInt(e.target.value) || null })}
                     required
                   />
                   <p className="text-xs text-gray-500 mt-1">Day of month when automatic payments are charged</p>
@@ -714,7 +714,7 @@ export default function OnboardingPage() {
                     <p><strong>Card Payments:</strong> {paymentData.acceptsCard ? 'Enabled' : 'Disabled'}</p>
                     <p><strong>Cash Payments:</strong> {paymentData.acceptsCash ? 'Enabled' : 'Disabled'}</p>
                     <p><strong>Bank Transfer:</strong> {paymentData.acceptsBankTransfer ? 'Enabled' : 'Disabled'}</p>
-                    <p><strong>Billing Day:</strong> {paymentData.billingDay}</p>
+                    <p><strong>Billing Day:</strong> {paymentData.billingDay ?? 'Not set'}</p>
                   </div>
                 </div>
               </div>

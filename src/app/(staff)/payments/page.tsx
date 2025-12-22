@@ -4,6 +4,7 @@ import { getActiveOrg } from '@/lib/org'
 import { PaymentsPageClient } from '@/components/payments-page-client'
 import { prisma } from '@/lib/prisma'
 import { calculatePaymentStatus } from '@/lib/payment-status'
+import { getBillingDay } from '@/lib/billing-day'
 
 export default async function PaymentsPage() {
   const session = await getServerSession(authOptions)
@@ -82,8 +83,8 @@ export default async function PaymentsPage() {
   })
 
   // Transform classes with payment statistics
-  // Get org feeDueDay setting
-  const orgFeeDueDay = (org as any)?.feeDueDay || 1
+  // Get org billing day setting (can be null)
+  const orgBillingDay = getBillingDay(org)
 
   const classesWithStats = classes.map(cls => {
     // Include all payment records (no filtering by date)
@@ -94,7 +95,7 @@ export default async function PaymentsPage() {
       const newStatus = calculatePaymentStatus(
         record.status,
         record.month,
-        orgFeeDueDay,
+        orgBillingDay,
         record.paidAt
       )
       return { ...record, status: newStatus }

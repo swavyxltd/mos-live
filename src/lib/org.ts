@@ -108,6 +108,8 @@ export async function getActiveOrg(userId?: string) {
         bankAccountName: true,
         bankSortCode: true,
         bankAccountNumber: true,
+        billingDay: true,
+        feeDueDay: true,
       }
     })
   } catch (error) {

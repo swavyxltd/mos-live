@@ -206,7 +206,7 @@ function ParentSignupForm() {
           bankSortCode: settings.bankSortCode || null,
           bankAccountNumber: settings.bankAccountNumber || null,
           paymentInstructions: settings.paymentInstructions || null,
-          billingDay: settings.billingDay || 1
+          billingDay: settings.billingDay ?? null
         })
       } else {
         console.error('Failed to fetch payment settings:', response.status, response.statusText)
@@ -227,7 +227,7 @@ function ParentSignupForm() {
         bankSortCode: null,
         bankAccountNumber: null,
         paymentInstructions: null,
-        billingDay: 1
+        billingDay: null
       })
     }
   }
@@ -1027,7 +1027,7 @@ function ParentSignupForm() {
                         )}
                       </div>
                       <p className="text-xs text-neutral-600">
-                        Automatic payments via {paymentSettings.hasStripeConnect ? 'Stripe' : 'card'}. Fees are charged automatically on the {paymentSettings.billingDay}{paymentSettings.billingDay === 1 ? 'st' : paymentSettings.billingDay === 2 ? 'nd' : paymentSettings.billingDay === 3 ? 'rd' : 'th'} of each month.
+                        Automatic payments via {paymentSettings.hasStripeConnect ? 'Stripe' : 'card'}.{paymentSettings.billingDay && <> Fees are charged automatically on the {paymentSettings.billingDay}{paymentSettings.billingDay === 1 ? 'st' : paymentSettings.billingDay === 2 ? 'nd' : paymentSettings.billingDay === 3 ? 'rd' : 'th'} of each month.</>}
                       </p>
                     </div>
                   </label>
@@ -1111,7 +1111,7 @@ function ParentSignupForm() {
                               </div>
                               <div className="flex justify-between">
                                 <span className="font-medium">Payment Date:</span>
-                                <span>The {paymentSettings.billingDay}{paymentSettings.billingDay === 1 ? 'st' : paymentSettings.billingDay === 2 ? 'nd' : paymentSettings.billingDay === 3 ? 'rd' : 'th'} of each month</span>
+                                <span>{paymentSettings.billingDay ? <>The {paymentSettings.billingDay}{paymentSettings.billingDay === 1 ? 'st' : paymentSettings.billingDay === 2 ? 'nd' : paymentSettings.billingDay === 3 ? 'rd' : 'th'} of each month</> : 'As agreed'}</span>
                               </div>
                             </div>
                             <div className="mt-3 p-2 bg-white border border-gray-200 rounded">
@@ -1147,7 +1147,7 @@ function ParentSignupForm() {
                         <span className="text-sm font-medium text-neutral-900">Cash</span>
                       </div>
                       <p className="text-xs text-neutral-600">
-                        Pay in person at the madrasah office by the {paymentSettings.billingDay}{paymentSettings.billingDay === 1 ? 'st' : paymentSettings.billingDay === 2 ? 'nd' : paymentSettings.billingDay === 3 ? 'rd' : 'th'} of each month. Please bring exact change when possible.
+                        Pay in person at the madrasah office{paymentSettings.billingDay ? <> by the {paymentSettings.billingDay}{paymentSettings.billingDay === 1 ? 'st' : paymentSettings.billingDay === 2 ? 'nd' : paymentSettings.billingDay === 3 ? 'rd' : 'th'} of each month</> : ''}. Please bring exact change when possible.
                       </p>
                     </div>
                   </label>

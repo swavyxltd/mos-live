@@ -1,15 +1,15 @@
 /**
- * Calculate the due date for a payment record based on the organisation's feeDueDay
+ * Calculate the due date for a payment record based on the organisation's billing day
  * @param month - Payment month in format "YYYY-MM"
- * @param feeDueDay - Day of month when fees are due (1-31) - from organisation settings
+ * @param billingDay - Day of month when fees are due (1-28) - from organisation settings
  * @returns Date object representing the due date
  */
-export function getPaymentDueDate(month: string, feeDueDay: number | null): Date | null {
-  if (!feeDueDay) return null
+export function getPaymentDueDate(month: string, billingDay: number | null): Date | null {
+  if (!billingDay || billingDay < 1 || billingDay > 28) return null
 
   const [year, monthNum] = month.split('-').map(Number)
   // Create date for the due day of the payment month
-  const dueDate = new Date(year, monthNum - 1, feeDueDay)
+  const dueDate = new Date(year, monthNum - 1, billingDay)
   
   // Set time to end of day (23:59:59) to ensure full day is counted
   dueDate.setHours(23, 59, 59, 999)
@@ -26,14 +26,14 @@ export function getPaymentDueDate(month: string, feeDueDay: number | null): Date
  * 
  * @param currentStatus - Current payment status
  * @param month - Payment month in format "YYYY-MM"
- * @param feeDueDay - Day of month when fees are due (1-31)
+ * @param billingDay - Day of month when fees are due (1-28)
  * @param paidAt - Date when payment was made (if paid)
  * @returns Updated payment status
  */
 export function calculatePaymentStatus(
   currentStatus: string,
   month: string,
-  feeDueDay: number | null,
+  billingDay: number | null,
   paidAt: Date | null
 ): string {
   // If already paid, keep as paid
@@ -41,12 +41,12 @@ export function calculatePaymentStatus(
     return 'PAID'
   }
 
-  // If no due day set, keep current status
-  if (!feeDueDay) {
+  // If no billing day set, keep current status
+  if (!billingDay || billingDay < 1 || billingDay > 28) {
     return currentStatus
   }
 
-  const dueDate = getPaymentDueDate(month, feeDueDay)
+  const dueDate = getPaymentDueDate(month, billingDay)
   if (!dueDate) {
     return currentStatus
   }

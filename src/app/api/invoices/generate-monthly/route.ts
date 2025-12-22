@@ -35,16 +35,24 @@ async function handlePOST(request: NextRequest) {
       return NextResponse.json({ error: 'No students found' }, { status: 400 })
     }
     
-    // Get org feeDueDay setting
+    // Get org billing day setting
     const org = await prisma.org.findUnique({
       where: { id: orgId },
-      select: { feeDueDay: true }
+      select: { billingDay: true, feeDueDay: true }
     })
-    const orgFeeDueDay = (org as any)?.feeDueDay || 1
+    const { getBillingDay } = await import('@/lib/billing-day')
+    const orgBillingDay = org ? getBillingDay(org) : null
+    
+    if (!orgBillingDay) {
+      return NextResponse.json(
+        { error: 'Billing day must be set before generating invoices' },
+        { status: 400 }
+      )
+    }
     
     const now = new Date()
-    // Calculate due date based on org feeDueDay for next month
-    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, orgFeeDueDay)
+    // Calculate due date based on org billing day for next month
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, orgBillingDay)
     const dueDate = nextMonth
     
     const createdInvoices = []

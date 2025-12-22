@@ -36,7 +36,7 @@ interface PaymentMethodSettings {
   acceptsCard: boolean
   acceptsCash: boolean
   acceptsBankTransfer: boolean
-  billingDay: number
+  billingDay: number | null
   stripeConnectAccountId: string | null
   hasStripeConnect: boolean
   paymentInstructions: string
@@ -71,7 +71,7 @@ export function PaymentMethodsTab() {
     acceptsCard: false,
     acceptsCash: false,
     acceptsBankTransfer: false,
-    billingDay: 1,
+    billingDay: null as any,
     stripeConnectAccountId: null,
     hasStripeConnect: false,
     paymentInstructions: '',
@@ -88,7 +88,7 @@ export function PaymentMethodsTab() {
     acceptsCard: false,
     acceptsCash: false,
     acceptsBankTransfer: false,
-    billingDay: 1,
+    billingDay: null as any,
     stripeConnectAccountId: null,
     hasStripeConnect: false,
     paymentInstructions: '',
@@ -130,7 +130,6 @@ export function PaymentMethodsTab() {
 
   const fetchPaymentSettings = async () => {
     try {
-      // Add timestamp to bypass any caching
       const response = await fetch(`/api/settings/payment-methods?t=${Date.now()}`, {
         cache: 'no-store',
         headers: {
@@ -141,10 +140,15 @@ export function PaymentMethodsTab() {
       if (response.ok) {
         const data = await response.json()
         
-        // Read actual boolean values from database - use accepts* as primary, fallback to *Enabled
+        // Read actual boolean values from database
         const cashEnabled = data.acceptsCash === true || data.cashPaymentEnabled === true
         const bankEnabled = data.acceptsBankTransfer === true || data.bankTransferEnabled === true
         const cardEnabled = data.acceptsCard === true
+        
+        // Billing day can be null or a number from the API
+        const billingDayValue = data.billingDay !== null && data.billingDay !== undefined 
+          ? Number(data.billingDay) 
+          : null
         
         const loadedSettings = {
           ...data,
@@ -157,8 +161,7 @@ export function PaymentMethodsTab() {
           bankAccountName: data.bankAccountName || null,
           bankSortCode: data.bankSortCode || null,
           bankAccountNumber: data.bankAccountNumber || null,
-          // Ensure billingDay is always a number, never null
-          billingDay: data.billingDay ? Number(data.billingDay) : 1
+          billingDay: billingDayValue
         }
         setSettings(loadedSettings)
         setOriginalSettings(loadedSettings)
@@ -309,6 +312,7 @@ export function PaymentMethodsTab() {
     }
   }
 
+
   const handleSaveBillingDay = async () => {
     if (!hasPermission('access_settings')) {
       toast.error('You do not have permission to manage payment settings')
@@ -318,35 +322,42 @@ export function PaymentMethodsTab() {
     startSaving()
     setSavingBillingDay(true)
     try {
-      // Ensure we send a valid number, never null/undefined
-      const billingDayToSave = Math.max(1, Math.min(28, Number(settings.billingDay) || 1))
+      // Allow null/empty to clear billing day, otherwise validate
+      let billingDayValue: number | null = null
+      
+      // Handle the value - it could be a number or string from the input
+      const rawValue = settings.billingDay
+      if (rawValue !== null && rawValue !== undefined && rawValue !== '') {
+        const numValue = typeof rawValue === 'string' ? Number(rawValue) : Number(rawValue)
+        if (!isNaN(numValue) && numValue >= 1 && numValue <= 28) {
+          billingDayValue = Math.floor(numValue)
+        } else {
+          toast.error('Billing day must be between 1 and 28')
+          setSavingBillingDay(false)
+          finishSaving()
+          return
+        }
+      }
       
       const response = await fetch('/api/settings/payment-methods', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          billingDay: billingDayToSave
+          billingDay: billingDayValue
         })
       })
 
       if (response.ok) {
         const result = await response.json()
+        const savedBillingDay = result.settings?.billingDay !== null && result.settings?.billingDay !== undefined
+          ? Number(result.settings.billingDay)
+          : null
+        
+        // Update state immediately with the saved value from API response
+        setSettings(prev => ({ ...prev, billingDay: savedBillingDay }))
+        setOriginalSettings(prev => ({ ...prev, billingDay: savedBillingDay }))
+        
         toast.success('Billing day saved successfully')
-        
-        // Update settings immediately from response - ALWAYS use the saved value
-        const savedBillingDay = result.settings?.billingDay ?? billingDayToSave
-        console.log('Billing day save response:', { 
-          result, 
-          savedBillingDay, 
-          sentValue: billingDayToSave 
-        })
-        
-        // Update both settings and originalSettings with the saved value
-        setSettings(prev => ({ ...prev, billingDay: Number(savedBillingDay) }))
-        setOriginalSettings(prev => ({ ...prev, billingDay: Number(savedBillingDay) }))
-        
-        // Small delay before refetch to ensure database commit
-        await new Promise(resolve => setTimeout(resolve, 100))
         
         // Refetch to ensure complete sync
         await fetchPaymentSettings()
@@ -398,6 +409,23 @@ export function PaymentMethodsTab() {
     // Auto-capitalize first letter for name fields
     if (key === 'bankAccountName' && typeof value === 'string' && value.length > 0) {
       value = value.charAt(0).toUpperCase() + value.slice(1)
+    }
+    // Special handling for billingDay - allow null/empty
+    if (key === 'billingDay') {
+      if (value === '' || value === null || value === undefined) {
+        setSettings(prev => ({ ...prev, [key]: null }))
+        return
+      }
+      const numValue = typeof value === 'string' ? Number(value) : Number(value)
+      if (!isNaN(numValue) && numValue > 0) {
+        // Clamp to valid range
+        const clamped = Math.max(1, Math.min(28, Math.floor(numValue)))
+        setSettings(prev => ({ ...prev, [key]: clamped }))
+      } else {
+        // Invalid number, set to null
+        setSettings(prev => ({ ...prev, [key]: null }))
+      }
+      return
     }
     setSettings(prev => ({ ...prev, [key]: value }))
   }
@@ -802,7 +830,7 @@ export function PaymentMethodsTab() {
                   )}
                   
                   <p className="text-xs text-[var(--muted-foreground)] mt-3">
-                    Parents can set up a standing order through their online banking using these details—once set up, payments will be made automatically each month on the {settings.billingDay}{settings.billingDay === 1 ? 'st' : settings.billingDay === 2 ? 'nd' : settings.billingDay === 3 ? 'rd' : 'th'} of each month.
+                    Parents can set up a standing order through their online banking using these details{settings.billingDay ? <>—once set up, payments will be made automatically each month on the {settings.billingDay}{settings.billingDay === 1 ? 'st' : settings.billingDay === 2 ? 'nd' : settings.billingDay === 3 ? 'rd' : 'th'} of each month</> : '.'}
                   </p>
                 </div>
               </div>
@@ -884,11 +912,11 @@ export function PaymentMethodsTab() {
                 type="number"
                 min="1"
                 max="28"
-                value={settings.billingDay}
+                value={settings.billingDay ?? ''}
+                placeholder="Not set"
                 onChange={(e) => {
                   const value = e.target.value
-                  const numValue = value === '' ? 1 : Math.max(1, Math.min(28, parseInt(value) || 1))
-                  handleSettingChange('billingDay', numValue)
+                  handleSettingChange('billingDay', value === '' ? null : value)
                 }}
                 disabled={!hasPermission('access_settings')}
               />
@@ -956,7 +984,11 @@ export function PaymentMethodsTab() {
                 
                 <div className="pt-3 border-t border-[var(--border)]">
                   <p className="text-xs text-[var(--muted-foreground)]">
-                    <strong className="text-[var(--foreground)]">Example:</strong> If fees are due on the {settings.billingDay}{getOrdinalSuffix(settings.billingDay)} at 11:59 PM, payments will be marked as LATE after the {Math.min(settings.billingDay + 2, 31)}{getOrdinalSuffix(Math.min(settings.billingDay + 2, 31))} at 11:59 PM, and OVERDUE after the {Math.min(settings.billingDay + 4, 31)}{getOrdinalSuffix(Math.min(settings.billingDay + 4, 31))} at 11:59 PM.
+                    <strong className="text-[var(--foreground)]">Example:</strong> {settings.billingDay ? (
+                      <>If fees are due on the {settings.billingDay}{getOrdinalSuffix(settings.billingDay)} at 11:59 PM, payments will be marked as LATE after the {Math.min(settings.billingDay + 2, 31)}{getOrdinalSuffix(Math.min(settings.billingDay + 2, 31))} at 11:59 PM, and OVERDUE after the {Math.min(settings.billingDay + 4, 31)}{getOrdinalSuffix(Math.min(settings.billingDay + 4, 31))} at 11:59 PM.</>
+                    ) : (
+                      <>Set a billing day to see payment status calculation examples.</>
+                    )}
                   </p>
                 </div>
               </div>

@@ -50,7 +50,7 @@ export default function ParentInvoicesPage() {
     bankAccountName: null as string | null,
     bankSortCode: null as string | null,
     bankAccountNumber: null as string | null,
-    billingDay: 1
+    billingDay: null
   })
   const [preferredPaymentMethod, setPreferredPaymentMethod] = useState<'CASH' | 'BANK_TRANSFER' | null>(null)
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
@@ -71,7 +71,7 @@ export default function ParentInvoicesPage() {
           bankAccountName: settings.bankAccountName || null,
           bankSortCode: settings.bankSortCode || null,
           bankAccountNumber: settings.bankAccountNumber || null,
-          billingDay: settings.billingDay || 1
+          billingDay: settings.billingDay ?? null
         })
         
         // Auto-select if only one method is available
@@ -380,7 +380,7 @@ export default function ParentInvoicesPage() {
                         {(() => {
                           // Calculate next payment date based on billing day
                           const today = new Date()
-                          const billingDay = paymentSettings.billingDay || 15
+                          const billingDay = paymentSettings.billingDay ?? null
                           
                           // Get next payment date (next occurrence of billing day)
                           let nextPaymentDate = new Date(today.getFullYear(), today.getMonth(), billingDay)
@@ -831,7 +831,11 @@ export default function ParentInvoicesPage() {
                       <div className="mt-3 p-3 bg-white border border-blue-200 rounded">
                         <p className="text-sm font-medium text-blue-900 mb-1">Payment Schedule:</p>
                         <p className="text-sm text-blue-800">
-                          <strong>Payment Date:</strong> The {paymentSettings.billingDay || 1}{paymentSettings.billingDay === 1 ? 'st' : paymentSettings.billingDay === 2 ? 'nd' : paymentSettings.billingDay === 3 ? 'rd' : 'th'} of each month
+                          <strong>Payment Date:</strong> {paymentSettings.billingDay ? (
+                            <>The {paymentSettings.billingDay}{paymentSettings.billingDay === 1 ? 'st' : paymentSettings.billingDay === 2 ? 'nd' : paymentSettings.billingDay === 3 ? 'rd' : 'th'} of each month</>
+                          ) : (
+                            <>Not set</>
+                          )}
                         </p>
                         <p className="text-sm text-blue-800 mt-1">
                           <strong>Amount:</strong> Your monthly fee amount (as shown in your invoices)

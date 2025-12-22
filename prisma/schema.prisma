@@ -340,12 +340,12 @@ model Org {
   bankAccountName        String?
   bankAccountNumber      String?
   bankSortCode           String?
-  feeDueDay              Int?                   @default(1)
+  feeDueDay              Int?
   stripeConnectAccountId String?
   acceptsCard            Boolean                @default(false)
   acceptsCash            Boolean                @default(false)
   acceptsBankTransfer    Boolean                @default(false)
-  billingDay             Int?                   @default(1)
+  billingDay             Int?
   Application            Application[]
   Attendance             Attendance[]
   AuditLog               AuditLog[]

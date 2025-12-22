@@ -56,7 +56,7 @@ async function handleGET(request: NextRequest) {
     const bankEnabled = Boolean(org.acceptsBankTransfer || org.bankTransferEnabled)
 
     // Return payment method settings (without sensitive keys)
-    const billingDay = org.billingDay ?? org.feeDueDay ?? 1
+    const billingDay = org.billingDay ?? org.feeDueDay ?? null
     
     return NextResponse.json({
       acceptsCard: cardPaymentsAvailable,

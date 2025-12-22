@@ -154,16 +154,23 @@ async function handlePUT(request: NextRequest) {
         if (data.acceptsBankTransfer !== undefined) {
           paymentUpdateData.acceptsBankTransfer = data.acceptsBankTransfer
         }
+        // Billing day is now platform-wide and set by admins, not during onboarding
         if (data.billingDay !== undefined) {
-          if (data.billingDay < 1 || data.billingDay > 28) {
-            return NextResponse.json(
-              { error: 'Billing day must be between 1 and 28' },
-              { status: 400 }
-            )
+          // Allow null/empty to clear billing day
+          if (data.billingDay === null || data.billingDay === '' || data.billingDay === undefined) {
+            paymentUpdateData.billingDay = null
+            paymentUpdateData.feeDueDay = null
+          } else {
+            const validBillingDay = Math.max(1, Math.min(28, Math.floor(Number(data.billingDay))))
+            if (isNaN(validBillingDay) || validBillingDay < 1 || validBillingDay > 28) {
+              return NextResponse.json(
+                { error: 'Billing day must be between 1 and 28' },
+                { status: 400 }
+              )
+            }
+            paymentUpdateData.billingDay = validBillingDay
+            paymentUpdateData.feeDueDay = validBillingDay // Keep in sync
           }
-          const validBillingDay = Math.max(1, Math.min(28, Number(data.billingDay) || 1))
-          paymentUpdateData.billingDay = validBillingDay
-          paymentUpdateData.feeDueDay = validBillingDay // Keep in sync
         }
         if (data.bankAccountName) {
           paymentUpdateData.bankAccountName = sanitizeText(data.bankAccountName, MAX_STRING_LENGTHS.name)

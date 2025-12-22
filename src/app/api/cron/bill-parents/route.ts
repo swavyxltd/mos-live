@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
         stripeConnectAccountId: { not: null },
         OR: [
           { billingDay: currentDay },
-          { feeDueDay: currentDay } // Fallback to feeDueDay if billingDay not set
+          { feeDueDay: currentDay } // Fallback for legacy data
         ]
       }
     })
@@ -40,8 +40,10 @@ export async function GET(request: NextRequest) {
     let totalFailed = 0
 
     for (const org of orgs) {
-      const billingDay = org.billingDay ?? org.feeDueDay ?? 1
-      if (billingDay !== currentDay) continue
+      const { getBillingDay } = await import('@/lib/billing-day')
+      const billingDay = getBillingDay(org)
+      // Skip if billing day is not set or doesn't match today
+      if (!billingDay || billingDay !== currentDay) continue
 
       try {
         // Get all students with CARD payment method in this org

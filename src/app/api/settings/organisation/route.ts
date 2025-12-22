@@ -104,10 +104,11 @@ async function handlePUT(request: NextRequest) {
       newSlug = finalSlug
     }
 
-    // Validate feeDueDay if provided
-    if (feeDueDay !== undefined && (feeDueDay < 1 || feeDueDay > 31)) {
+    // Validate feeDueDay if provided (but note: billingDay should be used instead)
+    // Allow null to clear
+    if (feeDueDay !== undefined && feeDueDay !== null && (feeDueDay < 1 || feeDueDay > 28)) {
       return NextResponse.json(
-        { error: 'Fee due day must be between 1 and 31' },
+        { error: 'Fee due day must be between 1 and 28, or null to clear' },
         { status: 400 }
       )
     }
@@ -120,8 +121,8 @@ async function handlePUT(request: NextRequest) {
         slug: newSlug,
         ...(timezone && { timezone }),
         ...(feeDueDay !== undefined && { 
-          feeDueDay,
-          billingDay: feeDueDay // Keep billingDay in sync with feeDueDay
+          feeDueDay: feeDueDay === null ? null : Math.max(1, Math.min(28, Math.floor(Number(feeDueDay)))),
+          billingDay: feeDueDay === null ? null : Math.max(1, Math.min(28, Math.floor(Number(feeDueDay)))) // Keep billingDay in sync with feeDueDay
         }),
         ...(sanitizedAddress !== undefined && { address: sanitizedAddress }),
         ...(sanitizedAddressLine1 !== undefined && { addressLine1: sanitizedAddressLine1 }),

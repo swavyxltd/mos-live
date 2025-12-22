@@ -550,6 +550,7 @@ export default function OwnerSettingsPage() {
                 </div>
               </div>
 
+
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                 <p className="text-sm text-gray-800">
                   <strong>Billing Email Notifications:</strong> Organisations will automatically receive email notifications after each billing attempt - both when payment succeeds and when it fails.

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -75,7 +75,7 @@ interface BillingRecord {
   invoiceId: string
 }
 
-export default function SettingsPage() {
+function SettingsPageContent() {
   const { data: session, update, status } = useSession()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -1475,5 +1475,13 @@ export default function SettingsPage() {
         onGenerateReport={handleGenerateReport}
       />
     </div>
+  )
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-[400px]"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+      <SettingsPageContent />
+    </Suspense>
   )
 }

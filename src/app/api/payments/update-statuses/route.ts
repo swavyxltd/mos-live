@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireRole, requireOrg } from '@/lib/roles'
 import { prisma } from '@/lib/prisma'
 import { calculatePaymentStatus } from '@/lib/payment-status'
+import { getBillingDay } from '@/lib/billing-day'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
 
@@ -19,12 +20,22 @@ async function handlePOST(request: NextRequest) {
     const orgId = await requireOrg(request)
     if (orgId instanceof NextResponse) return orgId
 
-    // Get org feeDueDay setting
+    // Get org billing day setting
     const org = await prisma.org.findUnique({
       where: { id: orgId },
-      select: { feeDueDay: true }
+      select: { billingDay: true, feeDueDay: true }
     })
-    const orgFeeDueDay = (org as any)?.feeDueDay || 1
+    const orgBillingDay = org ? getBillingDay(org) : null
+    
+    // If no billing day is set, skip status updates
+    if (!orgBillingDay) {
+      return NextResponse.json({
+        success: true,
+        message: 'Billing day not set - skipping status updates',
+        updated: 0,
+        total: 0
+      })
+    }
 
     // Get all unpaid payment records for this org
     const unpaidRecords = await prisma.monthlyPaymentRecord.findMany({
@@ -50,7 +61,7 @@ async function handlePOST(request: NextRequest) {
       const newStatus = calculatePaymentStatus(
         record.status,
         record.month,
-        orgFeeDueDay,
+        orgBillingDay,
         record.paidAt
       )
 
