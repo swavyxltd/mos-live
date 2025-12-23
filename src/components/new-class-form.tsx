@@ -24,7 +24,7 @@ export function NewClassForm() {
           description: data.description || null,
           schedule: scheduleString,
           teacherId: data.teacherId || null,
-          monthlyFeeP: data.monthlyFee || 0
+          monthlyFeeP: Math.round((data.monthlyFee || 0) * 100) // Convert pounds to pence
         })
       })
 

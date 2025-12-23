@@ -1047,13 +1047,14 @@ export function GiftAidPageClient() {
       {activeTab !== 'history' && activeTab !== 'analytics' && (
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="space-y-4">
+              {/* Title and Description */}
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="h-5 w-5" />
                   {activeTab === 'active' ? 'Gift Aid Preview' : activeTab === 'pending' ? 'Parents Pending Contact' : 'Parents Who Declined Gift Aid'}
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="mt-1">
                   {activeTab === 'active' 
                     ? 'Preview of payments that will be included in the submission file'
                     : activeTab === 'pending'
@@ -1061,28 +1062,32 @@ export function GiftAidPageClient() {
                     : 'Parents who have declined Gift Aid'}
                 </CardDescription>
               </div>
+
               {/* Search and Bulk Actions */}
               {activeTab === 'pending' && filteredData.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <div className="relative">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2 border-t border-[var(--border)]">
+                  {/* Search */}
+                  <div className="relative flex-1 sm:max-w-xs">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[var(--muted-foreground)]" />
                     <Input
                       placeholder="Search parents..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-8 w-64"
+                      className="pl-10"
                     />
                   </div>
+
+                  {/* Action Buttons */}
                   {selectedParents.size > 0 && (
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => handleBulkUpdate('YES')}
                         disabled={bulkUpdating || sendingReminders}
-                        className="text-green-600"
+                        className="border-emerald-300 text-emerald-700 hover:bg-emerald-50"
                       >
-                        <CheckCircle className="h-3 w-3 mr-1" />
+                        <CheckCircle className="h-3 w-3 mr-1.5" />
                         Approve Selected ({selectedParents.size})
                       </Button>
                       <Button
@@ -1090,16 +1095,17 @@ export function GiftAidPageClient() {
                         variant="outline"
                         onClick={handleSendReminders}
                         disabled={bulkUpdating || sendingReminders}
-                        className="text-blue-600"
+                        className="border-purple-300 text-purple-700 hover:bg-purple-50"
                       >
-                        <Mail className="h-3 w-3 mr-1" />
+                        <Mail className="h-3 w-3 mr-1.5" />
                         {sendingReminders ? 'Sending...' : `Send Reminders (${selectedParents.size})`}
                       </Button>
                       <Button
                         size="sm"
-                        variant="outline"
+                        variant="ghost"
                         onClick={() => setSelectedParents(new Set())}
                         disabled={bulkUpdating || sendingReminders}
+                        className="text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
                       >
                         Clear
                       </Button>
@@ -1129,21 +1135,6 @@ export function GiftAidPageClient() {
                 <table className="w-full border-collapse">
                   <thead>
                     <tr className="border-b border-[var(--border)]">
-                      {activeTab === 'pending' && (
-                        <th className="text-left p-2 font-semibold text-sm w-12">
-                          <button
-                            onClick={toggleSelectAll}
-                            className="p-1 hover:bg-muted rounded"
-                          >
-                            {selectedParents.size === filteredData.length ? (
-                              <CheckSquare className="h-4 w-4" />
-                            ) : (
-                              <Square className="h-4 w-4" />
-                            )}
-                          </button>
-                        </th>
-                      )}
-                      <th className="text-left p-2 font-semibold text-sm">Item</th>
                       {activeTab === 'active' && (
                         <>
                           <th className="text-left p-2 font-semibold text-sm">Title</th>
@@ -1172,21 +1163,6 @@ export function GiftAidPageClient() {
                   <tbody>
                     {filteredData.map((row, index) => (
                       <tr key={row.id} className="border-b border-[var(--border)] hover:bg-[var(--muted)]/50">
-                        {activeTab === 'pending' && row.parentUserId && (
-                          <td className="p-2">
-                            <button
-                              onClick={() => toggleSelectParent(row.parentUserId!)}
-                              className="p-1 hover:bg-muted rounded"
-                            >
-                              {selectedParents.has(row.parentUserId) ? (
-                                <CheckSquare className="h-4 w-4" />
-                              ) : (
-                                <Square className="h-4 w-4" />
-                              )}
-                            </button>
-                          </td>
-                        )}
-                        <td className="p-2 text-sm">{index + 1}</td>
                         {activeTab === 'active' && (
                           <>
                             <td className="p-2 text-sm">{row.title || ''}</td>

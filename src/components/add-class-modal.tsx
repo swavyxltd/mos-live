@@ -352,10 +352,10 @@ export function AddClassModal({ isOpen, onClose, onSave }: AddClassModalProps) {
                 step="0.01"
                 value={formData.monthlyFee}
                 onChange={(e) => handleInputChange('monthlyFee', parseFloat(e.target.value) || 0)}
-                placeholder="e.g., 25.00"
+                placeholder="e.g., 50"
                 required
               />
-              <p className="text-sm text-gray-500">Fixed monthly fee for this class. This will be used when creating payment records.</p>
+              <p className="text-sm text-[var(--muted-foreground)]">Enter the fee in pounds (e.g., type 50 for £50.00). Decimals allowed (e.g., 50.50 for £50.50).</p>
             </div>
         </div>
 

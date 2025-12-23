@@ -54,6 +54,19 @@ export function ClassForm({ initialData, isEditing = false, onSubmit, onCancel }
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [teachers, setTeachers] = React.useState<Teacher[]>([])
   const [isLoadingTeachers, setIsLoadingTeachers] = React.useState(false)
+  // Convert monthlyFee from pence to pounds if needed (for initialData that might have monthlyFeeP)
+  const getMonthlyFeeInPounds = () => {
+    if (initialData?.monthlyFee !== undefined) {
+      // If monthlyFee is already in pounds (from edit modal), use it directly
+      return initialData.monthlyFee
+    }
+    if (initialData?.monthlyFeeP !== undefined) {
+      // If monthlyFeeP is in pence, convert to pounds
+      return initialData.monthlyFeeP / 100
+    }
+    return 0
+  }
+
   const [formData, setFormData] = React.useState<ClassFormData>({
     name: initialData?.name || '',
     description: initialData?.description || '',
@@ -65,7 +78,7 @@ export function ClassForm({ initialData, isEditing = false, onSubmit, onCancel }
       endTime: initialData?.schedule?.endTime || '5:00 PM'
     },
     teacherId: initialData?.teacherId || '',
-    monthlyFee: initialData?.monthlyFee || 0
+    monthlyFee: getMonthlyFeeInPounds()
   })
 
   // Fetch teachers on mount
@@ -226,10 +239,10 @@ export function ClassForm({ initialData, isEditing = false, onSubmit, onCancel }
               step="0.01"
               value={formData.monthlyFee}
               onChange={(e) => handleInputChange('monthlyFee', parseFloat(e.target.value) || 0)}
-              placeholder="e.g., 25.00"
+              placeholder="e.g., 50"
               required
             />
-            <p className="text-sm text-gray-500">Fixed monthly fee for this class. This will be used when creating payment records.</p>
+            <p className="text-sm text-[var(--muted-foreground)]">Enter the fee in pounds (e.g., type 50 for £50.00). Decimals allowed (e.g., 50.50 for £50.50).</p>
           </div>
 
           {/* Schedule */}

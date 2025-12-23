@@ -15,7 +15,12 @@ import {
   XCircle, 
   Clock,
   Copy,
-  ExternalLink
+  ExternalLink,
+  User,
+  Mail,
+  Phone,
+  Users,
+  Calendar
 } from 'lucide-react'
 import { ApplicationDetailModal } from '@/components/application-detail-modal'
 import { CopyApplicationLinkModal } from '@/components/copy-application-link-modal'
@@ -312,54 +317,97 @@ export function ApplicationsPageClient({ orgSlug }: ApplicationsPageClientProps)
             </div>
           </Card>
         ) : (
-          <Card>
+          <div className="space-y-3">
             {filteredApplications.map((application, index) => (
-              <div key={application.id}>
-                <div 
-                  className="p-4 sm:p-6 cursor-pointer hover:bg-[var(--accent)]/30 transition-colors"
-                  onClick={() => handleApplicationClick(application)}
-                >
-              <div className="flex items-start sm:items-center justify-between gap-3 sm:gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start sm:items-center space-x-3 sm:space-x-4">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-base sm:text-lg font-semibold text-[var(--foreground)] truncate">
-                        {application.children.length > 0 
-                          ? application.children.map(c => `${c.firstName} ${c.lastName}`).join(', ')
-                          : 'No child name'}
-                      </h3>
-                      <p className="text-sm sm:text-sm text-[var(--muted-foreground)] mt-0.5 sm:mt-0 break-words">
-                        Parent: {application.guardianName}
-                      </p>
-                      <p className="text-sm sm:text-sm text-[var(--muted-foreground)] mt-0.5 break-words">
-                        <span className="sm:hidden">
+              <Card 
+                key={application.id}
+                className="cursor-pointer hover:shadow-md transition-all duration-200 border-[var(--border)]"
+                onClick={() => handleApplicationClick(application)}
+              >
+                <div className="p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0 space-y-4">
+                      {/* Child Name(s) */}
+                      <div>
+                        <h3 className="text-lg font-semibold text-[var(--foreground)] mb-2">
+                          {application.children.length > 0 
+                            ? application.children.map(c => `${c.firstName} ${c.lastName}`).join(', ')
+                            : 'No child name'}
+                        </h3>
+                      </div>
+
+                      {/* Parent Info */}
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:flex-wrap gap-2 sm:gap-4">
+                        <div className="flex items-center gap-2 text-sm text-[var(--muted-foreground)]">
+                          <div className="w-5 h-5 bg-[var(--muted)] rounded-md flex items-center justify-center flex-shrink-0">
+                            <User className="h-3 w-3 text-[var(--foreground)]" />
+                          </div>
+                          <span className="font-medium text-[var(--foreground)]">Parent:</span>
+                          <span>{application.guardianName}</span>
+                        </div>
+                        
+                        <div className="flex items-center gap-2 text-sm text-[var(--muted-foreground)]">
+                          <div className="w-5 h-5 bg-[var(--muted)] rounded-md flex items-center justify-center flex-shrink-0">
+                            <Mail className="h-3 w-3 text-[var(--foreground)]" />
+                          </div>
+                          <span>{application.guardianEmail}</span>
+                        </div>
+                        
+                        <div className="flex items-center gap-2 text-sm text-[var(--muted-foreground)]">
+                          <div className="w-5 h-5 bg-[var(--muted)] rounded-md flex items-center justify-center flex-shrink-0">
+                            <Phone className="h-3 w-3 text-[var(--foreground)]" />
+                          </div>
                           <PhoneLink phone={application.guardianPhone} />
-                        </span>
-                        <span className="hidden sm:inline">
-                          {application.guardianEmail} • <PhoneLink phone={application.guardianPhone} />
-                        </span>
-                      </p>
-                      <p className="text-sm sm:text-sm text-gray-500 mt-1.5 sm:mt-1">
-                        {application.children.length} child{application.children.length !== 1 ? 'ren' : ''} • 
-                        Submitted {new Date(application.submittedAt).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })}
-                      </p>
+                        </div>
+                      </div>
+
+                      {/* Metadata */}
+                      <div className="flex flex-wrap items-center gap-4 pt-2 border-t border-[var(--border)]">
+                        <div className="flex items-center gap-2 text-sm text-[var(--muted-foreground)]">
+                          <div className="w-5 h-5 bg-[var(--muted)] rounded-md flex items-center justify-center flex-shrink-0">
+                            <Users className="h-3 w-3 text-[var(--foreground)]" />
+                          </div>
+                          <span>
+                            {application.children.length} child{application.children.length !== 1 ? 'ren' : ''}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center gap-2 text-sm text-[var(--muted-foreground)]">
+                          <div className="w-5 h-5 bg-[var(--muted)] rounded-md flex items-center justify-center flex-shrink-0">
+                            <Calendar className="h-3 w-3 text-[var(--foreground)]" />
+                          </div>
+                          <span>
+                            Submitted {new Date(application.submittedAt).toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              day: 'numeric', 
+                              year: 'numeric' 
+                            })}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Status Badge and Action */}
+                    <div className="flex flex-col items-end gap-3 flex-shrink-0">
+                      {getStatusBadge(application.status)}
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="flex-shrink-0"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleApplicationClick(application)
+                        }}
+                      >
+                        <Eye className="h-4 w-4 mr-2 text-[var(--muted-foreground)]" />
+                        <span className="hidden sm:inline">View</span>
+                      </Button>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 sm:space-x-4 flex-shrink-0">
-                  {getStatusBadge(application.status)}
-                  <Button variant="ghost" size="sm" className="hidden sm:flex flex-shrink-0">
-                    <Eye className="h-4 w-4 sm:h-5 sm:w-5 text-[var(--muted-foreground)]" />
-                  </Button>
-                </div>
-              </div>
-                </div>
-                {index < filteredApplications.length - 1 && (
-                  <div className="border-b border-[var(--border)]" />
-                )}
-              </div>
+              </Card>
             ))}
-          </Card>
+          </div>
         )}
       </div>
 
