@@ -137,6 +137,11 @@ export async function createPlatformSubscription(orgId: string, studentCount: nu
     throw new Error('Payment method not set. Please add a card first.')
   }
   
+  // Validate STRIPE_PRICE_ID is set
+  if (!process.env.STRIPE_PRICE_ID) {
+    throw new Error('STRIPE_PRICE_ID environment variable is not set. Cannot create subscription.')
+  }
+  
   // Check if subscription already exists
   if (billing.stripeSubscriptionId) {
     // Update existing subscription quantity
@@ -147,6 +152,15 @@ export async function createPlatformSubscription(orgId: string, studentCount: nu
   const trialEnd = billing.trialEndDate 
     ? Math.floor(billing.trialEndDate.getTime() / 1000)
     : undefined
+  
+  // Log subscription creation for billing verification
+  const { logger } = await import('@/lib/logger')
+  logger.info('Creating platform subscription', {
+    orgId,
+    studentCount,
+    priceId: process.env.STRIPE_PRICE_ID,
+    expectedAmount: `£${studentCount.toFixed(2)}` // Assuming £1 per student
+  })
   
   // Create subscription with variable quantity
   const subscription = await stripe.subscriptions.create({
@@ -189,6 +203,15 @@ export async function updatePlatformSubscription(orgId: string, studentCount: nu
   if (!billing?.stripeSubscriptionId || !billing.stripeSubscriptionItemId) {
     throw new Error('Subscription not found')
   }
+  
+  // Log subscription update for billing verification
+  const { logger } = await import('@/lib/logger')
+  logger.info('Updating platform subscription quantity', {
+    orgId,
+    oldQuantity: billing.lastBilledStudentCount,
+    newQuantity: studentCount,
+    expectedAmount: `£${studentCount.toFixed(2)}` // Assuming £1 per student
+  })
   
   // Update subscription item quantity
   await stripe.subscriptionItems.update(billing.stripeSubscriptionItemId, {

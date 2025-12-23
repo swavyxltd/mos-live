@@ -62,6 +62,13 @@ async function handlePOST(request: NextRequest) {
       try {
         // Count active students on the day before anniversary
         const studentCount = await getActiveStudentCount(billing.orgId)
+        
+        logger.info('Processing billing for org', {
+          orgId: billing.orgId,
+          orgName: billing.org.name,
+          studentCount,
+          anniversaryDate: billing.billingAnniversaryDate
+        })
 
         if (billing.stripeSubscriptionId) {
           // Update existing subscription quantity
@@ -71,7 +78,8 @@ async function handlePOST(request: NextRequest) {
             orgId: billing.orgId,
             orgName: billing.org.name,
             studentCount,
-            status: 'updated'
+            status: 'updated',
+            expectedAmount: `£${studentCount.toFixed(2)}` // Assuming £1 per student
           })
         } else {
           // Create subscription if it doesn't exist (shouldn't happen, but just in case)
@@ -82,7 +90,8 @@ async function handlePOST(request: NextRequest) {
             orgId: billing.orgId,
             orgName: billing.org.name,
             studentCount,
-            status: 'created'
+            status: 'created',
+            expectedAmount: `£${studentCount.toFixed(2)}` // Assuming £1 per student
           })
         }
       } catch (error: any) {

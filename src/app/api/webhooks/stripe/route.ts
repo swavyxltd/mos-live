@@ -52,6 +52,10 @@ async function handlePOST(request: NextRequest) {
         await handleSubscriptionDeleted(event.data.object)
         break
       
+      case 'invoice.created':
+        await handleInvoiceCreated(event.data.object)
+        break
+      
       case 'invoice.payment_succeeded':
         await handleInvoicePaymentSucceeded(event.data.object)
         break
@@ -82,6 +86,7 @@ async function handleGET(request: NextRequest) {
       'customer.subscription.created',
       'customer.subscription.updated',
       'customer.subscription.deleted',
+      'invoice.created',
       'invoice.payment_succeeded',
       'invoice.payment_failed',
       'setup_intent.succeeded',
@@ -354,11 +359,67 @@ async function handleSetupIntentSucceeded(setupIntent: any) {
   }
 }
 
+// Helper function to get orgId from invoice (checks metadata or subscription)
+async function getOrgIdFromInvoice(invoice: any): Promise<string | null> {
+  // First check invoice metadata
+  if (invoice.metadata?.orgId) {
+    return invoice.metadata.orgId
+  }
+  
+  // If no metadata, check subscription metadata
+  if (invoice.subscription) {
+    try {
+      const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string)
+      if (subscription.metadata?.orgId && subscription.metadata?.type === 'platform') {
+        // Update invoice metadata for future reference
+        await stripe.invoices.update(invoice.id, {
+          metadata: {
+            orgId: subscription.metadata.orgId,
+            type: 'platform'
+          }
+        })
+        return subscription.metadata.orgId
+      }
+    } catch (error: any) {
+      logger.error('Error retrieving subscription for invoice', { invoiceId: invoice.id, error: error.message })
+    }
+  }
+  
+  return null
+}
+
+async function handleInvoiceCreated(invoice: any) {
+  // When an invoice is created from a subscription, ensure it has the orgId metadata
+  if (invoice.subscription && !invoice.metadata?.orgId) {
+    try {
+      const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string)
+      if (subscription.metadata?.orgId && subscription.metadata?.type === 'platform') {
+        // Set invoice metadata from subscription metadata
+        await stripe.invoices.update(invoice.id, {
+          metadata: {
+            orgId: subscription.metadata.orgId,
+            type: 'platform'
+          }
+        })
+        
+        logger.info('Set invoice metadata from subscription', {
+          invoiceId: invoice.id,
+          orgId: subscription.metadata.orgId
+        })
+      }
+    } catch (error: any) {
+      logger.error('Error setting invoice metadata', { invoiceId: invoice.id, error: error.message })
+    }
+  }
+}
+
 async function handleInvoicePaymentSucceeded(invoice: any) {
   // Handle platform billing invoice payment
-  if (invoice.metadata?.orgId) {
+  const orgId = await getOrgIdFromInvoice(invoice)
+  
+  if (orgId) {
     const org = await prisma.org.findUnique({
-      where: { id: invoice.metadata.orgId },
+      where: { id: orgId },
       include: {
         memberships: {
           where: { role: 'ADMIN' },
@@ -375,7 +436,7 @@ async function handleInvoicePaymentSucceeded(invoice: any) {
     // Reset retry tracking when payment succeeds
     await prisma.platformOrgBilling.updateMany({
       where: {
-        orgId: invoice.metadata.orgId
+        orgId: orgId
       },
       data: {
         subscriptionStatus: 'active',
@@ -390,7 +451,7 @@ async function handleInvoicePaymentSucceeded(invoice: any) {
     await prisma.auditLog.create({
       data: {
         id: crypto.randomUUID(),
-        orgId: invoice.metadata.orgId,
+        orgId: orgId,
         action: 'PLATFORM_BILLING_PAID',
         targetType: 'PlatformOrgBilling',
         data: {
@@ -405,7 +466,7 @@ async function handleInvoicePaymentSucceeded(invoice: any) {
       try {
         const { sendBillingSuccessEmail } = await import('@/lib/mail')
         const billing = await prisma.platformOrgBilling.findUnique({
-          where: { orgId: invoice.metadata.orgId }
+          where: { orgId: orgId }
         })
         const studentCount = billing?.lastBilledStudentCount || 0
         const invoiceUrl = invoice.hosted_invoice_url || undefined
@@ -488,13 +549,15 @@ async function handleSubscriptionDeleted(subscription: any) {
 
 async function handleInvoicePaymentFailed(invoice: any) {
   // Handle platform billing invoice payment failure
-  if (invoice.metadata?.orgId) {
+  const orgId = await getOrgIdFromInvoice(invoice)
+  
+  if (orgId) {
     const billing = await prisma.platformOrgBilling.findUnique({
-      where: { orgId: invoice.metadata.orgId }
+      where: { orgId: orgId }
     })
     
     const org = await prisma.org.findUnique({
-      where: { id: invoice.metadata.orgId },
+      where: { id: orgId },
       include: {
         memberships: {
           where: { role: 'OWNER' },
@@ -520,7 +583,7 @@ async function handleInvoicePaymentFailed(invoice: any) {
     
     await prisma.platformOrgBilling.updateMany({
       where: {
-        orgId: invoice.metadata.orgId
+        orgId: orgId
       },
       data: updateData
     })
@@ -545,7 +608,7 @@ async function handleInvoicePaymentFailed(invoice: any) {
     await prisma.auditLog.create({
       data: {
         id: crypto.randomUUID(),
-        orgId: invoice.metadata.orgId,
+        orgId: orgId,
         action: 'PLATFORM_BILLING_FAILED',
         targetType: 'PlatformOrgBilling',
         data: {
