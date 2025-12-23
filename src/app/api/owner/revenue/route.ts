@@ -37,8 +37,8 @@ async function handleGET(request: NextRequest) {
     const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
     const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0)
 
-    // Calculate MRR (Monthly Recurring Revenue) - sum of all active students * £1
-    const mrr = totalStudents * 1
+    // Calculate MRR (Monthly Recurring Revenue) - sum of all active students * £2
+    const mrr = totalStudents * 2
     
     // Calculate last month's MRR for growth calculation
     const lastMonthStudents = await prisma.student.count({
@@ -48,7 +48,7 @@ async function handleGET(request: NextRequest) {
         ...(demoOrg ? { orgId: { not: demoOrg.id } } : {})
       }
     })
-    const lastMonthMRR = lastMonthStudents * 1
+    const lastMonthMRR = lastMonthStudents * 2
     const mrrGrowth = lastMonthMRR > 0 ? ((mrr - lastMonthMRR) / lastMonthMRR) * 100 : 0
     
     const arr = mrr * 12

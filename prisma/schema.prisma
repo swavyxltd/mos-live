@@ -681,7 +681,7 @@ model platform_settings {
   maintenanceMode             Boolean   @default(false)
   maintenanceMessage          String?
   scheduledMaintenanceAt      DateTime?
-  basePricePerStudent         Int       @default(100)
+  basePricePerStudent         Int       @default(200)
   billingDayOfMonth           Int       @default(1)
   gracePeriodDays             Int       @default(14)
   autoBillingEnabled          Boolean   @default(true)

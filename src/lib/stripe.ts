@@ -159,7 +159,7 @@ export async function createPlatformSubscription(orgId: string, studentCount: nu
     orgId,
     studentCount,
     priceId: process.env.STRIPE_PRICE_ID,
-    expectedAmount: `£${studentCount.toFixed(2)}` // Assuming £1 per student
+    expectedAmount: `£${(studentCount * 2).toFixed(2)}` // Assuming £2 per student
   })
   
   // Create subscription with variable quantity
@@ -210,7 +210,7 @@ export async function updatePlatformSubscription(orgId: string, studentCount: nu
     orgId,
     oldQuantity: billing.lastBilledStudentCount,
     newQuantity: studentCount,
-    expectedAmount: `£${studentCount.toFixed(2)}` // Assuming £1 per student
+    expectedAmount: `£${(studentCount * 2).toFixed(2)}` // Assuming £2 per student
   })
   
   // Update subscription item quantity

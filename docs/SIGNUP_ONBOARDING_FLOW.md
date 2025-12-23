@@ -235,7 +235,7 @@ This document details the complete process from demo booking to active organisat
    - If no subscription exists:
      * Counts active students (currently 0)
      * Creates Stripe subscription:
-       - Price: STRIPE_PRICE_ID (£1 per unit)
+       - Price: STRIPE_PRICE_ID (£2 per unit)
        - Quantity: 0 (no students yet)
        - Trial End: 1 month from signup
        - Payment Method: card just added
@@ -284,9 +284,9 @@ This document details the complete process from demo booking to active organisat
 
 2. **Stripe Automatic Charging:**
    - On billing anniversary date, Stripe automatically charges:
-     - Amount = `student_count × £1`
+     - Amount = `student_count × £2`
      - Uses default payment method
-   - Example: 50 students = £50/month
+   - Example: 50 students = £100/month
 
 3. **Webhook Updates:**
    - `invoice.payment_succeeded` → Updates subscription status

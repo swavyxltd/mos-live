@@ -79,7 +79,7 @@ async function handlePOST(request: NextRequest) {
             orgName: billing.org.name,
             studentCount,
             status: 'updated',
-            expectedAmount: `£${studentCount.toFixed(2)}` // Assuming £1 per student
+            expectedAmount: `£${(studentCount * 2).toFixed(2)}` // Assuming £2 per student
           })
         } else {
           // Create subscription if it doesn't exist (shouldn't happen, but just in case)
@@ -91,7 +91,7 @@ async function handlePOST(request: NextRequest) {
             orgName: billing.org.name,
             studentCount,
             status: 'created',
-            expectedAmount: `£${studentCount.toFixed(2)}` // Assuming £1 per student
+            expectedAmount: `£${(studentCount * 2).toFixed(2)}` // Assuming £2 per student
           })
         }
       } catch (error: any) {

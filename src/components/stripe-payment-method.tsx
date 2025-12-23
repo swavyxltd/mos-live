@@ -250,7 +250,7 @@ export function StripePaymentMethodModal({ onSuccess, onCancel, clientSecret, is
                   </h2>
                 </div>
                 <p className="text-sm text-[var(--muted-foreground)]">
-                  Securely add a payment method for automatic billing of £1 per student monthly
+                  Securely add a payment method for automatic billing of £2 per student monthly
                 </p>
               </div>
               <button

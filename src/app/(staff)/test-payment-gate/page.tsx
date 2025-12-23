@@ -170,7 +170,7 @@ export default function TestPaymentGatePage() {
             <ul className="list-disc list-inside space-y-1 text-sm text-green-800">
               <li>Modal appears when clicking restricted buttons</li>
               <li>Modal shows specific action being blocked</li>
-              <li>Modal explains billing (£1 per student monthly)</li>
+              <li>Modal explains billing (£2 per student monthly)</li>
               <li>Modal shows list of blocked features</li>
               <li>Stripe payment setup works correctly</li>
               <li>After payment setup, actions work normally</li>

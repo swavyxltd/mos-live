@@ -57,7 +57,7 @@ async function handlePOST(request: NextRequest) {
         parentPhone: '+44 7700 900001',
         paymentMethod: 'Bank Transfer',
         paymentDate: `${year}-${String(month + 1).padStart(2, '0')}-01`,
-        amount: '1.00'
+        amount: '2.00'
       },
       {
         studentName: 'Aisha Khan',
@@ -66,7 +66,7 @@ async function handlePOST(request: NextRequest) {
         parentPhone: '+44 7700 900002',
         paymentMethod: 'Card Payment',
         paymentDate: `${year}-${String(month + 1).padStart(2, '0')}-01`,
-        amount: '1.00'
+        amount: '2.00'
       },
       {
         studentName: 'Fatima Ali',
@@ -75,7 +75,7 @@ async function handlePOST(request: NextRequest) {
         parentPhone: '+44 7700 900003',
         paymentMethod: 'Bank Transfer',
         paymentDate: `${year}-${String(month + 1).padStart(2, '0')}-01`,
-        amount: '1.00'
+        amount: '2.00'
       },
       {
         studentName: 'Yusuf Patel',
@@ -84,7 +84,7 @@ async function handlePOST(request: NextRequest) {
         parentPhone: '+44 7700 900004',
         paymentMethod: 'Cash',
         paymentDate: `${year}-${String(month + 1).padStart(2, '0')}-01`,
-        amount: '1.00'
+        amount: '2.00'
       },
       {
         studentName: 'Maryam Ali',
@@ -93,7 +93,7 @@ async function handlePOST(request: NextRequest) {
         parentPhone: '+44 7700 900005',
         paymentMethod: 'Bank Transfer',
         paymentDate: `${year}-${String(month + 1).padStart(2, '0')}-01`,
-        amount: '1.00'
+        amount: '2.00'
       },
       {
         studentName: 'Omar Ahmed',
@@ -102,7 +102,7 @@ async function handlePOST(request: NextRequest) {
         parentPhone: '+44 7700 900006',
         paymentMethod: 'Card Payment',
         paymentDate: `${year}-${String(month + 1).padStart(2, '0')}-01`,
-        amount: '1.00'
+        amount: '2.00'
       },
       {
         studentName: 'Zainab Patel',
@@ -111,7 +111,7 @@ async function handlePOST(request: NextRequest) {
         parentPhone: '+44 7700 900007',
         paymentMethod: 'Cash',
         paymentDate: `${year}-${String(month + 1).padStart(2, '0')}-01`,
-        amount: '1.00'
+        amount: '2.00'
       },
       {
         studentName: 'Ibrahim Khan',
@@ -120,7 +120,7 @@ async function handlePOST(request: NextRequest) {
         parentPhone: '+44 7700 900008',
         paymentMethod: 'Bank Transfer',
         paymentDate: `${year}-${String(month + 1).padStart(2, '0')}-01`,
-        amount: '1.00'
+        amount: '2.00'
       },
       {
         studentName: 'Amina Khan',
@@ -129,7 +129,7 @@ async function handlePOST(request: NextRequest) {
         parentPhone: '+44 7700 900009',
         paymentMethod: 'Card Payment',
         paymentDate: `${year}-${String(month + 1).padStart(2, '0')}-01`,
-        amount: '1.00'
+        amount: '2.00'
       },
       {
         studentName: 'Khalid Ahmed',
@@ -138,7 +138,7 @@ async function handlePOST(request: NextRequest) {
         parentPhone: '+44 7700 900010',
         paymentMethod: 'Bank Transfer',
         paymentDate: `${year}-${String(month + 1).padStart(2, '0')}-01`,
-        amount: '1.00'
+        amount: '2.00'
       }
     ]
 

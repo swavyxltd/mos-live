@@ -53,7 +53,7 @@ async function handleGET(request: NextRequest) {
 
     // Get platform settings to calculate expected revenue
     const settings = await prisma.platform_settings.findFirst()
-    const basePricePerStudent = settings?.basePricePerStudent || 100 // in pence
+    const basePricePerStudent = settings?.basePricePerStudent || 200 // in pence
     const expectedMonthlyRevenue = (totalStudents * basePricePerStudent) / 100 // convert to pounds
 
     // Format revenue with comma separators and 2 decimal places

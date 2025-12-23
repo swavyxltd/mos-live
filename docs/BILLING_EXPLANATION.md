@@ -8,7 +8,7 @@ This document explains how the automatic billing system works for organisations 
 
 ## Overview
 
-**Pricing Model**: £1 per student per month  
+**Pricing Model**: £2 per student per month  
 **Billing Method**: Variable Quantity Subscription (Stripe)  
 **Billing Frequency**: Monthly (on organisation's anniversary date)  
 **Trial Period**: 1 month free trial from signup
@@ -38,7 +38,7 @@ Before an organisation can add students/staff/attendance:
 
 When card is successfully added:
 - Subscription is created in Stripe with:
-  - **Price**: `STRIPE_PRICE_ID` (must be configured as £1 per unit)
+  - **Price**: `STRIPE_PRICE_ID` (must be configured as £2 per unit)
   - **Quantity**: Current active student count
   - **Trial End**: 1 month from signup
   - **Payment Method**: The card just added
@@ -64,7 +64,7 @@ Every day at midnight UTC, a cron job runs:
 **Example**:
 - Org signed up on 15th → Anniversary = 15th of each month
 - On 14th at midnight → Cron runs, counts students, updates quantity
-- On 15th → Stripe automatically charges: `quantity × £1`
+- On 15th → Stripe automatically charges: `quantity × £2`
 
 ### 5. **Stripe Webhooks (Status Updates)**
 
@@ -171,7 +171,7 @@ To ensure billing works properly:
 1. **Price Setup**:
    - Go to Stripe Dashboard → Products
    - Create product: "Madrasah OS Platform Fee"
-   - Create price: £1.00 per unit, recurring monthly
+   - Create price: £2.00 per unit, recurring monthly
    - Copy Price ID → Set as `STRIPE_PRICE_ID`
 
 2. **Webhook Setup**:
@@ -263,7 +263,7 @@ curl https://your-domain.com/api/cron/billing
 **Check**:
 1. Is student count correct? (only non-archived)
 2. Is subscription quantity updated? (check Stripe Dashboard)
-3. Is price configured as £1 per unit?
+3. Is price configured as £2 per unit?
 
 ### Issue: Payment Failures Not Handled
 

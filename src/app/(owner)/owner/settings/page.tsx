@@ -536,9 +536,9 @@ export default function OwnerSettingsPage() {
                   id="base-price"
                   type="number"
                   step="0.01"
-                  value={formData.basePricePerStudent ? (formData.basePricePerStudent / 100).toFixed(2) : '1.00'}
+                  value={formData.basePricePerStudent ? (formData.basePricePerStudent / 100).toFixed(2) : '2.00'}
                   onChange={(e) => handleInputChange('basePricePerStudent', Math.round(parseFloat(e.target.value) * 100))}
-                  placeholder="1.00"
+                  placeholder="2.00"
                 />
                 <p className="text-sm text-gray-500 mt-1">Amount charged per active student each month</p>
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-2">

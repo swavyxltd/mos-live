@@ -43,12 +43,12 @@ export default function FAQPage() {
         },
         {
           question: 'Do I need to add a payment method before using the platform?',
-          answer: 'Yes, you must add a payment method for platform billing before you can add students, staff, or use most features. This enables your 30-day free trial. After the trial, you\'ll be charged £1 per active student monthly. Go to Settings → Your Subscription to add your payment method.',
+          answer: 'Yes, you must add a payment method for platform billing before you can add students, staff, or use most features. This enables your 30-day free trial. After the trial, you\'ll be charged £2 per active student monthly. Go to Settings → Your Subscription to add your payment method.',
           tags: ['payment', 'subscription', 'trial']
         },
         {
           question: 'What happens during the free trial?',
-          answer: 'You get 30 days free from signup. During this time, you can use all features without being charged. After the trial ends, you\'ll be automatically charged £1 per active student per month. You can add as many students as you want during the trial.',
+          answer: 'You get 30 days free from signup. During this time, you can use all features without being charged. After the trial ends, you\'ll be automatically charged £2 per active student per month. You can add as many students as you want during the trial.',
           tags: ['trial', 'billing', 'subscription']
         }
       ]
@@ -128,7 +128,7 @@ export default function FAQPage() {
         },
         {
           question: 'How much does the platform cost?',
-          answer: 'The platform costs £1 per active student per month. You get a 30-day free trial when you first sign up. After the trial, you\'re automatically charged monthly on your billing anniversary date (the day of the month you signed up). Only non-archived students count toward your bill.',
+          answer: 'The platform costs £2 per active student per month. You get a 30-day free trial when you first sign up. After the trial, you\'re automatically charged monthly on your billing anniversary date (the day of the month you signed up). Only non-archived students count toward your bill.',
           tags: ['pricing', 'subscription', 'cost']
         }
       ]

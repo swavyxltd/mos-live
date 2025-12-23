@@ -35,7 +35,7 @@ async function handleGET(request: NextRequest) {
       }
     })
 
-    const currentMRR = totalStudents * 1
+    const currentMRR = totalStudents * 2
 
     // Get last month's students (excluding demo org)
     const lastMonthStudents = await prisma.student.count({
@@ -46,7 +46,7 @@ async function handleGET(request: NextRequest) {
       }
     })
 
-    const lastMonthMRR = lastMonthStudents * 1
+    const lastMonthMRR = lastMonthStudents * 2
     const growth = lastMonthMRR > 0 ? ((currentMRR - lastMonthMRR) / lastMonthMRR) * 100 : 0
 
     const arr = currentMRR * 12

@@ -45,7 +45,7 @@ export async function getPlatformSettings() {
       maintenanceMode: false,
       maintenanceMessage: null,
       scheduledMaintenanceAt: null,
-      basePricePerStudent: 100,
+      basePricePerStudent: 200,
       billingDayOfMonth: 1,
       autoBillingEnabled: true,
       stripePublishableKey: null,

@@ -613,7 +613,7 @@
    - Updates Stripe subscription quantity
    - Updates `lastBilledStudentCount`
 3. **Stripe Automatic Charge**: On anniversary date
-   - Charges: `student_count × £1`
+   - Charges: `student_count × £2`
    - Uses default payment method
 4. **Webhooks**: Update subscription status
    - `invoice.payment_succeeded` → `subscriptionStatus = 'active'`
@@ -748,7 +748,7 @@
 ## Integrations
 
 ### Stripe
-- **Platform Billing**: Variable quantity subscriptions (£1/student/month)
+- **Platform Billing**: Variable quantity subscriptions (£2/student/month)
 - **Parent Payments**: Payment Intents for invoice payments
 - **Payment Methods**: Setup Intents for saving cards
 - **Webhooks**: Handle payment events, subscription updates
@@ -774,7 +774,7 @@
 ## Payment Systems
 
 ### Platform Billing (Stripe Subscription)
-- **Model**: £1 per student per month
+- **Model**: £2 per student per month
 - **Trial**: 1 month free from signup
 - **Billing**: Monthly on anniversary date (day of month org created)
 - **Process**: 

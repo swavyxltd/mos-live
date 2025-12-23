@@ -351,7 +351,7 @@ function SettingsPageContent() {
         
         if (billingData.lastBilledAt && billingData.lastBilledStudentCount !== undefined) {
           const billedDate = new Date(billingData.lastBilledAt)
-          const billedAmount = billingData.lastBilledStudentCount // £1 per student, so amount = student count
+          const billedAmount = billingData.lastBilledStudentCount * 2 // £2 per student, so amount = student count * 2
           const status = billingData.subscriptionStatus === 'active' || billingData.subscriptionStatus === 'trialing' ? 'paid' : 'pending'
           
           records.push({
@@ -1283,7 +1283,7 @@ function SettingsPageContent() {
                 Payment Method
               </CardTitle>
               <CardDescription>
-                Automatic billing: £1 per active student monthly
+                Automatic billing: £2 per active student monthly
               </CardDescription>
             </CardHeader>
             <CardContent>

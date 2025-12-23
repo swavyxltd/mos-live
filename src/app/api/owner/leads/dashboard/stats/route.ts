@@ -171,7 +171,7 @@ async function handleGET(request: NextRequest) {
       }),
     ])
 
-    // Calculate potential MRR (sum of estimatedStudents * 1 for active + demo + interested leads)
+    // Calculate potential MRR (sum of estimatedStudents * £2 for active + demo + interested leads)
     const potentialMRRLeads = await prisma.lead.findMany({
       where: {
         status: { in: ['NEW', 'CONTACTED', 'FOLLOW_UP', 'DEMO_BOOKED', 'ON_HOLD'] },
@@ -183,7 +183,7 @@ async function handleGET(request: NextRequest) {
     })
 
     const potentialMRR = potentialMRRLeads.reduce((sum, lead) => {
-      return sum + (lead.estimatedStudents || 0)
+      return sum + ((lead.estimatedStudents || 0) * 2)
     }, 0)
 
     // Calculate conversion rate

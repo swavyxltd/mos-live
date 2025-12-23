@@ -123,7 +123,7 @@ To set your billing day:
 Before you can add students or use most features, you must:
 1. Add a payment method in **Settings** → **Your Subscription**
 2. This enables your 30-day free trial
-3. After trial, you'll be charged £1 per active student monthly
+3. After trial, you'll be charged £2 per active student monthly
 
 ### Subscription Management
 - View your current subscription status
@@ -1107,7 +1107,7 @@ Configure your madrasah's profile, contact information, and operational settings
 ### Payment Method
 - Add card for platform billing
 - Required before using most features
-- £1 per active student monthly
+- £2 per active student monthly
 - 30-day free trial
 
 ### Subscription Status
