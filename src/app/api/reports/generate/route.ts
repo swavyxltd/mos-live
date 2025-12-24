@@ -31,20 +31,39 @@ async function handlePOST(request: NextRequest) {
 
     // Parse request body for month and year
     const body = await request.json()
-    const { month, year } = body
+    let requestMonth: number
+    let requestYear: number
     
-    // Validate month and year
-    if (month === undefined || year === undefined) {
-      return NextResponse.json({ error: 'Month and year are required' }, { status: 400 })
+    // Safely extract and validate month
+    if (typeof body.month === 'number') {
+      requestMonth = body.month
+    } else if (typeof body.month === 'string') {
+      requestMonth = parseInt(body.month, 10)
+    } else {
+      return NextResponse.json({ error: 'Month is required and must be a number' }, { status: 400 })
     }
     
-    if (month < 0 || month > 11) {
-      return NextResponse.json({ error: 'Invalid month' }, { status: 400 })
+    // Safely extract and validate year
+    if (typeof body.year === 'number') {
+      requestYear = body.year
+    } else if (typeof body.year === 'string') {
+      requestYear = parseInt(body.year, 10)
+    } else {
+      return NextResponse.json({ error: 'Year is required and must be a number' }, { status: 400 })
     }
     
-    if (year < 2024 || year > new Date().getFullYear()) {
-      return NextResponse.json({ error: 'Invalid year' }, { status: 400 })
+    // Validate month and year ranges
+    if (isNaN(requestMonth) || requestMonth < 0 || requestMonth > 11) {
+      return NextResponse.json({ error: `Invalid month: ${requestMonth}. Month must be between 0 and 11` }, { status: 400 })
     }
+    
+    if (isNaN(requestYear) || requestYear < 2024 || requestYear > new Date().getFullYear()) {
+      return NextResponse.json({ error: `Invalid year: ${requestYear}. Year must be between 2024 and ${new Date().getFullYear()}` }, { status: 400 })
+    }
+    
+    // Use validated values
+    const month = requestMonth
+    const year = requestYear
     
     // Check if the requested month is in the future or not complete
     const currentDate = new Date()
@@ -1223,10 +1242,16 @@ async function handlePOST(request: NextRequest) {
         throw new Error('PDF buffer is empty')
       }
 
+      // Safely format month and year for filename
+      const monthNum = typeof month === 'number' ? month : parseInt(String(month || 0), 10)
+      const yearNum = typeof year === 'number' ? year : parseInt(String(year || new Date().getFullYear()), 10)
+      const monthStr = String(monthNum + 1).padStart ? String(monthNum + 1).padStart(2, '0') : (monthNum + 1 < 10 ? '0' : '') + String(monthNum + 1)
+      const filename = `madrasah-report-${yearNum}-${monthStr}.pdf`
+      
       return new NextResponse(pdfBuffer, {
         headers: {
           'Content-Type': 'application/pdf',
-          'Content-Disposition': `attachment; filename="madrasah-report-${year}-${String(month + 1).padStart(2, '0')}.pdf"`,
+          'Content-Disposition': `attachment; filename="${filename}"`,
           'Content-Length': pdfBuffer.length.toString(),
           'Cache-Control': 'no-cache'
         }
