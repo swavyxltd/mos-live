@@ -421,7 +421,19 @@ async function handlePOST(request: NextRequest) {
     // Create professional PDF report with design language
     try {
       const { jsPDF } = await import('jspdf')
+      if (!jsPDF) {
+        throw new Error('Failed to import jsPDF')
+      }
+      
       const doc = new jsPDF()
+      if (!doc) {
+        throw new Error('Failed to create jsPDF instance')
+      }
+      
+      // Ensure document has at least one page
+      if (doc.getNumberOfPages() === 0) {
+        throw new Error('PDF document has no pages')
+      }
       
       // Design system colors (matching your app's design)
       const colors = {
@@ -1185,12 +1197,37 @@ async function handlePOST(request: NextRequest) {
       if (!pdfOutput) {
         throw new Error('PDF output is null or undefined')
       }
+      
+      // Validate PDF output is an ArrayBuffer
+      if (!(pdfOutput instanceof ArrayBuffer)) {
+        throw new Error(`PDF output is not an ArrayBuffer, got: ${typeof pdfOutput}`)
+      }
+      
+      // Validate PDF has content (PDF files start with %PDF)
+      const pdfBytes = new Uint8Array(pdfOutput)
+      if (pdfBytes.length === 0) {
+        throw new Error('PDF output is empty')
+      }
+      
+      // Check PDF header (first 4 bytes should be %PDF)
+      const header = String.fromCharCode(pdfBytes[0], pdfBytes[1], pdfBytes[2], pdfBytes[3])
+      if (header !== '%PDF') {
+        logger.error('Invalid PDF header', { header, firstBytes: Array.from(pdfBytes.slice(0, 10)) })
+        throw new Error('Generated PDF has invalid header')
+      }
+      
       const pdfBuffer = Buffer.from(pdfOutput)
+      
+      // Validate buffer size
+      if (pdfBuffer.length === 0) {
+        throw new Error('PDF buffer is empty')
+      }
 
       return new NextResponse(pdfBuffer, {
         headers: {
           'Content-Type': 'application/pdf',
-          'Content-Disposition': `attachment; filename="madrasah-report-${new Date().toISOString().split('T')[0]}.pdf"`,
+          'Content-Disposition': `attachment; filename="madrasah-report-${year}-${String(month + 1).padStart(2, '0')}.pdf"`,
+          'Content-Length': pdfBuffer.length.toString(),
           'Cache-Control': 'no-cache'
         }
       })
@@ -1198,18 +1235,20 @@ async function handlePOST(request: NextRequest) {
       logger.error('PDF generation error', {
         error: pdfError,
         message: pdfError?.message,
-        stack: pdfError?.stack
+        stack: pdfError?.stack,
+        name: pdfError?.name
       })
       
-      // In development, return error details instead of falling back to HTML
+      // Always return error in JSON format for better debugging
       const isDevelopment = process.env.NODE_ENV === 'development'
-      if (isDevelopment) {
-        return NextResponse.json({ 
-          error: 'Failed to generate PDF report',
-          details: pdfError?.message || 'Unknown PDF generation error',
-          stack: pdfError?.stack
-        }, { status: 500 })
-      }
+      return NextResponse.json({ 
+        error: 'Failed to generate PDF report',
+        details: pdfError?.message || 'Unknown PDF generation error',
+        ...(isDevelopment && { 
+          stack: pdfError?.stack,
+          name: pdfError?.name
+        })
+      }, { status: 500 })
       
       // Fallback to HTML if PDF fails (production)
       const reportHtml = `
