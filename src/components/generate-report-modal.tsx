@@ -3,12 +3,12 @@
 import React, { useState, useEffect } from 'react'
 import { Button } from './ui/button'
 import { Modal, ModalContent, ModalHeader, ModalTitle } from './ui/modal'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 
 interface GenerateReportModalProps {
   isOpen: boolean
   onClose: () => void
-  onGenerateReport: (month: number, year: number) => void
+  onGenerateReport: (month: number, year: number) => Promise<void>
   orgCreatedAt?: Date
 }
 
@@ -27,6 +27,7 @@ export default function GenerateReportModal({
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null)
   const [orgCreatedAt, setOrgCreatedAt] = useState<Date | null>(propOrgCreatedAt ? new Date(propOrgCreatedAt) : null)
   const [isLoadingOrg, setIsLoadingOrg] = useState(false)
+  const [isGenerating, setIsGenerating] = useState(false)
   
   const currentDate = new Date()
   const currentYear = currentDate.getFullYear()
@@ -157,10 +158,18 @@ export default function GenerateReportModal({
     }
   }
 
-  const handleGenerate = () => {
-    if (selectedMonth !== null) {
-      onGenerateReport(selectedMonth, selectedYear)
-      onClose()
+  const handleGenerate = async () => {
+    if (selectedMonth !== null && !isGenerating) {
+      setIsGenerating(true)
+      try {
+        await onGenerateReport(selectedMonth, selectedYear)
+        onClose()
+      } catch (error) {
+        // Error is handled by the parent component
+        console.error('Error generating report:', error)
+      } finally {
+        setIsGenerating(false)
+      }
     }
   }
 
@@ -237,14 +246,25 @@ export default function GenerateReportModal({
 
         {/* Action Buttons */}
         <div className="flex justify-end space-x-2">
-          <Button variant="outline" onClick={onClose}>
+          <Button 
+            variant="outline" 
+            onClick={onClose}
+            disabled={isGenerating}
+          >
             Cancel
           </Button>
           <Button 
             onClick={handleGenerate}
-            disabled={selectedMonth === null}
+            disabled={selectedMonth === null || isGenerating}
           >
-            Generate Report
+            {isGenerating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              'Generate Report'
+            )}
           </Button>
         </div>
       </div>

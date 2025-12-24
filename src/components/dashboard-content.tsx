@@ -363,7 +363,7 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
   // Loading state is handled by loading.tsx file
 
   // Handle report generation
-  const handleGenerateReport = async (month: number, year: number) => {
+  const handleGenerateReport = async (month: number, year: number): Promise<void> => {
     try {
       const response = await fetch('/api/reports/generate', {
         method: 'POST',
@@ -387,13 +387,25 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
         // Clean up
         window.URL.revokeObjectURL(url)
         document.body.removeChild(a)
-                  } else {
-                    const errorData = await response.json()
-                    toast.error(`Failed to generate report: ${errorData.details || errorData.error}`)
-                  }
-                } catch (error) {
-                  toast.error(`Error generating report: ${error instanceof Error ? error.message : 'Unknown error'}`)
-                }
+        
+        toast.success('Report generated successfully')
+      } else {
+        let errorMessage = 'Failed to generate report'
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.details || errorData.error || errorMessage
+        } catch (parseError) {
+          // If response is not JSON, use status text
+          errorMessage = response.statusText || errorMessage
+        }
+        toast.error(`Failed to generate report: ${errorMessage}`)
+        throw new Error(errorMessage)
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      toast.error(`Error generating report: ${errorMessage}`)
+      throw error
+    }
   }
 
   // Dashboard type is determined by subrole template, not individual permissions

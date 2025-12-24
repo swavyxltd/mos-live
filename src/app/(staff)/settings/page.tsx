@@ -706,7 +706,7 @@ function SettingsPageContent() {
 
   // Handle CSV export generation with month/year filters for subscription payments
 
-  const handleGenerateReport = async (month: number, year: number) => {
+  const handleGenerateReport = async (month: number, year: number): Promise<void> => {
     try {
       // Calculate start and end dates for the selected month
       const startDate = new Date(year, month, 1).toISOString().split('T')[0]

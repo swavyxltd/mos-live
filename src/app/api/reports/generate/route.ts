@@ -1224,13 +1224,20 @@ async function handlePOST(request: NextRequest) {
     }
 
   } catch (error: any) {
-    logger.error('Error generating report', error)
+    logger.error('Error generating report', {
+      error,
+      message: error?.message,
+      stack: error?.stack,
+      name: error?.name
+    })
     const isDevelopment = process.env.NODE_ENV === 'development'
+    const errorMessage = error?.message || 'Unknown error occurred'
     return NextResponse.json({ 
       error: 'Failed to generate report',
+      details: isDevelopment ? errorMessage : 'An error occurred while generating the report. Please try again later.',
       ...(isDevelopment && { 
-        details: error?.message || 'Unknown error',
-        stack: error?.stack
+        stack: error?.stack,
+        name: error?.name
       })
     }, { status: 500 })
   }
