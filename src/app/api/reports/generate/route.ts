@@ -956,10 +956,8 @@ async function handlePOST(request: NextRequest) {
       })
       yPosition += 38
       
-      // Calculate overall attendance statistics (reuse the same calculation)
-      const totalStudentsHTML = classesWithStats.reduce((sum, cls) => sum + (cls.students || 0), 0)
-      const weightedAttendanceHTML = classesWithStats.reduce((sum, cls) => sum + ((cls.attendance || 0) * (cls.students || 0)), 0)
-      const averageAttendanceHTML = averageAttendance // Use the same value calculated earlier
+      // Reuse the same averageAttendance and totalStudentsHTML calculated earlier
+      const averageAttendanceHTML = averageAttendance
       const targetAttendance = 85
       
       
