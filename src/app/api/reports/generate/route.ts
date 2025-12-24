@@ -258,6 +258,110 @@ async function handlePOST(request: NextRequest) {
     const attendanceRecords: any[] = [] // Not used in current HTML report
     const invoices: any[] = monthInvoices // Now populated with real data
 
+    // Calculate previous month for comparison
+    const prevMonth = month === 0 ? 11 : month - 1
+    const prevYear = month === 0 ? year - 1 : year
+    const prevMonthStart = new Date(prevYear, prevMonth, 1)
+    const prevMonthEnd = new Date(prevYear, prevMonth + 1, 0, 23, 59, 59)
+    
+    // Fetch previous month data for percentage calculations
+    // Count students that existed at the end of the previous month (not archived at that time)
+    const prevMonthStudents = await prisma.student.count({
+      where: { 
+        orgId: org.id, 
+        createdAt: { lte: prevMonthEnd },
+        OR: [
+          { isArchived: false },
+          { isArchived: true, archivedAt: { gt: prevMonthEnd } }
+        ]
+      }
+    })
+    
+    // Count classes that existed at the end of the previous month
+    const prevMonthClasses = await prisma.class.count({
+      where: { 
+        orgId: org.id, 
+        createdAt: { lte: prevMonthEnd },
+        OR: [
+          { isArchived: false },
+          { isArchived: true, archivedAt: { gt: prevMonthEnd } }
+        ]
+      }
+    })
+    
+    // Count staff that existed at the end of the previous month
+    const prevMonthStaff = await prisma.userOrgMembership.count({
+      where: {
+        orgId: org.id,
+        role: { in: ['ADMIN', 'STAFF'] },
+        createdAt: { lte: prevMonthEnd }
+      }
+    })
+    
+    // Get previous month revenue
+    const prevMonthInvoices = await prisma.invoice.findMany({
+      where: {
+        orgId: org.id,
+        createdAt: {
+          gte: prevMonthStart,
+          lte: prevMonthEnd
+        }
+      },
+      select: {
+        amountP: true,
+        status: true,
+        paidAt: true
+      }
+    })
+    
+    const prevMonthPaidInvoices = prevMonthInvoices.filter(inv => inv.status === 'PAID' && inv.paidAt)
+    const prevMonthRevenue = prevMonthPaidInvoices.reduce((sum, inv) => sum + Number(inv.amountP || 0) / 100, 0)
+    
+    // Get previous month attendance data
+    const prevMonthClassesData = await prisma.class.findMany({
+      where: { orgId: org.id, isArchived: false },
+      select: { id: true }
+    })
+    
+    const prevMonthAttendanceRecords = await Promise.all(prevMonthClassesData.map(async (cls) => {
+      const records = await prisma.attendance.findMany({
+        where: {
+          classId: cls.id,
+          orgId: org.id,
+          date: {
+            gte: prevMonthStart,
+            lte: prevMonthEnd
+          }
+        }
+      })
+      return records
+    }))
+    
+    const prevMonthTotalRecords = prevMonthAttendanceRecords.flat().length
+    const prevMonthPresentCount = prevMonthAttendanceRecords.flat().filter(a => a.status === 'PRESENT').length
+    const prevMonthAverageAttendance = prevMonthTotalRecords > 0 
+      ? Math.round((prevMonthPresentCount / prevMonthTotalRecords) * 100) 
+      : 0
+    
+    // Calculate percentage changes
+    const calculatePercentageChange = (current: number, previous: number): { value: string, type: 'increase' | 'decrease' | 'neutral' } => {
+      if (previous === 0) {
+        if (current === 0) return { value: '0%', type: 'neutral' }
+        return { value: 'N/A', type: 'increase' }
+      }
+      const change = ((current - previous) / previous) * 100
+      const rounded = Math.round(change)
+      if (rounded === 0) return { value: '0%', type: 'neutral' }
+      if (rounded > 0) return { value: `+${rounded}%`, type: 'increase' }
+      return { value: `${rounded}%`, type: 'decrease' }
+    }
+    
+    const studentsChange = calculatePercentageChange(transformedStudents.length, prevMonthStudents)
+    const classesChange = calculatePercentageChange(classesWithStats.length, prevMonthClasses)
+    const staffChange = calculatePercentageChange(staff.length, prevMonthStaff)
+    const revenueChange = calculatePercentageChange(totalRevenue, prevMonthRevenue)
+    const attendanceChange = calculatePercentageChange(averageAttendance, prevMonthAverageAttendance)
+
     // Create professional PDF report with design language
     try {
       const { jsPDF } = await import('jspdf')
@@ -419,14 +523,10 @@ async function handlePOST(request: NextRequest) {
       addLine(margin, yPosition, pageWidth - margin, yPosition, { color: colors.primary, width: 2 })
       yPosition += 15
       
-      // Calculate average attendance rate
-      const totalAttendanceRecords = classesWithStats.reduce((sum, cls) => {
-        // We need to get total attendance records for calculation
-        return sum + (cls.attendance || 0)
-      }, 0)
-      const averageAttendance = classesWithStats.length > 0 
-        ? Math.round(totalAttendanceRecords / classesWithStats.length) 
-        : 0
+      // Calculate average attendance rate (weighted by class size)
+      const totalStudentsHTML = classesWithStats.reduce((sum, cls) => sum + (cls.students || 0), 0)
+      const weightedAttendanceHTML = classesWithStats.reduce((sum, cls) => sum + ((cls.attendance || 0) * (cls.students || 0)), 0)
+      const averageAttendance = totalStudentsHTML > 0 ? Math.round(weightedAttendanceHTML / totalStudentsHTML) : 0
       
       // Monthly Summary Paragraph for Trustees
       const summaryText = `${org.name} has demonstrated strong performance throughout ${selectedMonthName}, with ${transformedStudents.length} active students enrolled across ${classesWithStats.length} classes. Our dedicated team of ${staff.length} staff members continues to provide high-quality Islamic education, maintaining an average attendance rate of ${averageAttendance}% which ${averageAttendance >= 85 ? 'exceeds' : 'approaches'} our target of 85%. The madrasah has successfully collected £${totalRevenue.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} in monthly revenue${totalRevenue > 0 ? ', with a healthy growth trajectory' : ''}. Our comprehensive curriculum covers Quran recitation, Islamic studies, Arabic language, and Hadith studies, ensuring students receive a well-rounded Islamic education. The institution remains committed to academic excellence and community engagement, with ${exams.length} examination${exams.length !== 1 ? 's' : ''} and ${holidays.length} event${holidays.length !== 1 ? 's' : ''} scheduled to maintain our high educational standards.`
@@ -452,28 +552,28 @@ async function handlePOST(request: NextRequest) {
           title: 'Total Students', 
           value: transformedStudents.length.toString(), 
           subtitle: 'Active Enrollments',
-          change: { value: '+12%', type: 'increase' },
+          change: studentsChange,
           color: colors.primary
         },
         { 
           title: 'Active Classes', 
           value: classesWithStats.length.toString(), 
           subtitle: 'Currently Running',
-          change: { value: '+5%', type: 'increase' },
+          change: classesChange,
           color: colors.secondary
         },
         { 
           title: 'Staff Members', 
           value: staff.length.toString(), 
           subtitle: 'Teachers & Admin',
-          change: { value: '0%', type: 'neutral' },
+          change: staffChange,
           color: colors.accent
         },
         { 
           title: 'Monthly Revenue', 
           value: `£${totalRevenue.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`, 
           subtitle: 'Revenue Collected',
-          change: { value: totalRevenue > 0 ? '+0%' : '0%', type: totalRevenue > 0 ? 'increase' : 'neutral' },
+          change: revenueChange,
           color: colors.success
         }
       ]
@@ -856,18 +956,18 @@ async function handlePOST(request: NextRequest) {
       })
       yPosition += 38
       
-      // Calculate overall attendance statistics
+      // Calculate overall attendance statistics (reuse the same calculation)
       const totalStudentsHTML = classesWithStats.reduce((sum, cls) => sum + (cls.students || 0), 0)
       const weightedAttendanceHTML = classesWithStats.reduce((sum, cls) => sum + ((cls.attendance || 0) * (cls.students || 0)), 0)
-      const averageAttendanceHTML = totalStudentsHTML > 0 ? Math.round(weightedAttendanceHTML / totalStudentsHTML) : 0
+      const averageAttendanceHTML = averageAttendance // Use the same value calculated earlier
       const targetAttendance = 85
       
       
       // Attendance metrics
       const attendanceMetrics = [
-        { title: 'Average Attendance', value: `${averageAttendanceHTML}%`, change: { value: '+4%', type: 'increase' }, color: averageAttendanceHTML >= targetAttendance ? colors.success : colors.warning },
+        { title: 'Average Attendance', value: `${averageAttendanceHTML}%`, change: attendanceChange, color: averageAttendanceHTML >= targetAttendance ? colors.success : colors.warning },
         { title: 'Target Attendance', value: `${targetAttendance}%`, change: { value: '0%', type: 'neutral' }, color: colors.gray[600] },
-        { title: 'Total Students', value: totalStudentsHTML.toString(), change: { value: '+12%', type: 'increase' }, color: colors.primary },
+        { title: 'Total Students', value: totalStudentsHTML.toString(), change: studentsChange, color: colors.primary },
         { title: 'Classes Above Target', value: classesWithStats.filter(cls => (cls.attendance || 0) >= targetAttendance).length.toString(), change: { value: '0%', type: 'neutral' }, color: colors.success }
       ]
       
@@ -993,10 +1093,10 @@ async function handlePOST(request: NextRequest) {
         
         xPos = margin
         const eventData = [
-          event.title || event.name,
-          event.date ? event.date.toLocaleDateString('en-GB') : event.startDate.toLocaleDateString('en-GB'),
-          event.notes ? 'Exam' : 'Holiday',
-          event.notes || `${event.startDate.toLocaleDateString('en-GB')} - ${event.endDate.toLocaleDateString('en-GB')}`
+          event.title || 'Untitled Event',
+          event.startDate.toLocaleDateString('en-GB'),
+          event.type === 'EXAM' ? 'Exam' : 'Holiday',
+          event.description || `${event.startDate.toLocaleDateString('en-GB')} - ${event.endDate.toLocaleDateString('en-GB')}`
         ]
         
         eventData.forEach((data, colIndex) => {
@@ -1026,7 +1126,8 @@ async function handlePOST(request: NextRequest) {
       addFooter()
       
       // Generate PDF buffer
-      const pdfBuffer = Buffer.from(doc.output('arraybuffer'))
+      const pdfOutput = doc.output('uint8array')
+      const pdfBuffer = Buffer.from(pdfOutput)
 
       return new NextResponse(pdfBuffer, {
         headers: {
@@ -1036,9 +1137,23 @@ async function handlePOST(request: NextRequest) {
         }
       })
     } catch (pdfError: any) {
-      logger.error('PDF generation error', pdfError)
+      logger.error('PDF generation error', {
+        error: pdfError,
+        message: pdfError?.message,
+        stack: pdfError?.stack
+      })
       
-      // Fallback to HTML if PDF fails
+      // In development, return error details instead of falling back to HTML
+      const isDevelopment = process.env.NODE_ENV === 'development'
+      if (isDevelopment) {
+        return NextResponse.json({ 
+          error: 'Failed to generate PDF report',
+          details: pdfError?.message || 'Unknown PDF generation error',
+          stack: pdfError?.stack
+        }, { status: 500 })
+      }
+      
+      // Fallback to HTML if PDF fails (production)
       const reportHtml = `
       <!DOCTYPE html>
       <html>
@@ -1088,7 +1203,7 @@ async function handlePOST(request: NextRequest) {
                 <div class="metric-label">Staff Members</div>
               </div>
               <div class="metric-card">
-                <div class="metric-value">£8,500</div>
+                <div class="metric-value">£${totalRevenue.toLocaleString('en-GB', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>
                 <div class="metric-label">Monthly Revenue</div>
               </div>
             </div>
@@ -1115,7 +1230,10 @@ async function handlePOST(request: NextRequest) {
     const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json({ 
       error: 'Failed to generate report',
-      ...(isDevelopment && { details: error?.message })
+      ...(isDevelopment && { 
+        details: error?.message || 'Unknown error',
+        stack: error?.stack
+      })
     }, { status: 500 })
   }
 }
