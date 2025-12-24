@@ -235,18 +235,17 @@ async function handlePOST(request: NextRequest) {
     const monthEvents = await prisma.event.findMany({
       where: {
         orgId: org.id,
-        startDate: {
+        date: {
+          gte: monthStart,
           lte: monthEnd
-        },
-        endDate: {
-          gte: monthStart
         }
       },
       select: {
         id: true,
         title: true,
-        startDate: true,
-        endDate: true,
+        date: true,
+        startTime: true,
+        endTime: true,
         description: true,
         type: true
       }
@@ -1092,9 +1091,11 @@ async function handlePOST(request: NextRequest) {
         xPos = margin
         const eventData = [
           event.title || 'Untitled Event',
-          event.startDate.toLocaleDateString('en-GB'),
+          event.date.toLocaleDateString('en-GB'),
           event.type === 'EXAM' ? 'Exam' : 'Holiday',
-          event.description || `${event.startDate.toLocaleDateString('en-GB')} - ${event.endDate.toLocaleDateString('en-GB')}`
+          event.description || (event.startTime && event.endTime 
+            ? `${event.startTime} - ${event.endTime}` 
+            : event.date.toLocaleDateString('en-GB'))
         ]
         
         eventData.forEach((data, colIndex) => {
