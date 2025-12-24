@@ -1266,12 +1266,16 @@ async function handlePOST(request: NextRequest) {
       
       // Always return error in JSON format for better debugging
       const isDevelopment = process.env.NODE_ENV === 'development'
+      const errorMessage = pdfError?.message ? String(pdfError.message) : 'Unknown PDF generation error'
+      const errorStack = pdfError?.stack ? String(pdfError.stack) : undefined
+      const errorName = pdfError?.name ? String(pdfError.name) : undefined
+      
       return NextResponse.json({ 
         error: 'Failed to generate PDF report',
-        details: pdfError?.message || 'Unknown PDF generation error',
-        ...(isDevelopment && { 
-          stack: pdfError?.stack,
-          name: pdfError?.name
+        details: errorMessage,
+        ...(isDevelopment && errorStack && { 
+          stack: errorStack,
+          name: errorName
         })
       }, { status: 500 })
       
@@ -1355,13 +1359,26 @@ async function handlePOST(request: NextRequest) {
       name: error?.name
     })
     const isDevelopment = process.env.NODE_ENV === 'development'
-    const errorMessage = error?.message || 'Unknown error occurred'
+    
+    // Safely extract error message
+    let errorMessage = 'Unknown error occurred'
+    if (error?.message) {
+      errorMessage = String(error.message)
+    } else if (typeof error === 'string') {
+      errorMessage = error
+    } else if (error && typeof error === 'object' && 'message' in error) {
+      errorMessage = String(error.message)
+    }
+    
+    const errorStack = error?.stack ? String(error.stack) : undefined
+    const errorName = error?.name ? String(error.name) : undefined
+    
     return NextResponse.json({ 
       error: 'Failed to generate report',
       details: isDevelopment ? errorMessage : 'An error occurred while generating the report. Please try again later.',
-      ...(isDevelopment && { 
-        stack: error?.stack,
-        name: error?.name
+      ...(isDevelopment && errorStack && { 
+        stack: errorStack,
+        name: errorName
       })
     }, { status: 500 })
   }
