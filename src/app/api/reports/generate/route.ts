@@ -343,6 +343,11 @@ async function handlePOST(request: NextRequest) {
       ? Math.round((prevMonthPresentCount / prevMonthTotalRecords) * 100) 
       : 0
     
+    // Calculate current month average attendance (weighted by class size)
+    const totalStudentsForAttendance = classesWithStats.reduce((sum, cls) => sum + (cls.students || 0), 0)
+    const weightedAttendance = classesWithStats.reduce((sum, cls) => sum + ((cls.attendance || 0) * (cls.students || 0)), 0)
+    const averageAttendance = totalStudentsForAttendance > 0 ? Math.round(weightedAttendance / totalStudentsForAttendance) : 0
+    
     // Calculate percentage changes
     const calculatePercentageChange = (current: number, previous: number): { value: string, type: 'increase' | 'decrease' | 'neutral' } => {
       if (previous === 0) {
@@ -523,13 +528,12 @@ async function handlePOST(request: NextRequest) {
       addLine(margin, yPosition, pageWidth - margin, yPosition, { color: colors.primary, width: 2 })
       yPosition += 15
       
-      // Calculate average attendance rate (weighted by class size)
-      const totalStudentsHTML = classesWithStats.reduce((sum, cls) => sum + (cls.students || 0), 0)
-      const weightedAttendanceHTML = classesWithStats.reduce((sum, cls) => sum + ((cls.attendance || 0) * (cls.students || 0)), 0)
-      const averageAttendance = totalStudentsHTML > 0 ? Math.round(weightedAttendanceHTML / totalStudentsHTML) : 0
+      // Reuse averageAttendance calculated earlier
+      const totalStudentsHTML = totalStudentsForAttendance
+      const averageAttendanceHTML = averageAttendance
       
       // Monthly Summary Paragraph for Trustees
-      const summaryText = `${org.name} has demonstrated strong performance throughout ${selectedMonthName}, with ${transformedStudents.length} active students enrolled across ${classesWithStats.length} classes. Our dedicated team of ${staff.length} staff members continues to provide high-quality Islamic education, maintaining an average attendance rate of ${averageAttendance}% which ${averageAttendance >= 85 ? 'exceeds' : 'approaches'} our target of 85%. The madrasah has successfully collected £${totalRevenue.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} in monthly revenue${totalRevenue > 0 ? ', with a healthy growth trajectory' : ''}. Our comprehensive curriculum covers Quran recitation, Islamic studies, Arabic language, and Hadith studies, ensuring students receive a well-rounded Islamic education. The institution remains committed to academic excellence and community engagement, with ${exams.length} examination${exams.length !== 1 ? 's' : ''} and ${holidays.length} event${holidays.length !== 1 ? 's' : ''} scheduled to maintain our high educational standards.`
+      const summaryText = `${org.name} has demonstrated strong performance throughout ${selectedMonthName}, with ${transformedStudents.length} active students enrolled across ${classesWithStats.length} classes. Our dedicated team of ${staff.length} staff members continues to provide high-quality Islamic education, maintaining an average attendance rate of ${averageAttendanceHTML}% which ${averageAttendanceHTML >= 85 ? 'exceeds' : 'approaches'} our target of 85%. The madrasah has successfully collected £${totalRevenue.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} in monthly revenue${totalRevenue > 0 ? ', with a healthy growth trajectory' : ''}. Our comprehensive curriculum covers Quran recitation, Islamic studies, Arabic language, and Hadith studies, ensuring students receive a well-rounded Islamic education. The institution remains committed to academic excellence and community engagement, with ${exams.length} examination${exams.length !== 1 ? 's' : ''} and ${holidays.length} event${holidays.length !== 1 ? 's' : ''} scheduled to maintain our high educational standards.`
       
       addText('MONTHLY OVERVIEW', margin, yPosition, { 
         fontSize: 12, 
@@ -939,7 +943,7 @@ async function handlePOST(request: NextRequest) {
       const highestAttendanceAttendance = classesWithStats.length > 0 
         ? Math.max(...classesWithStats.map(cls => cls.attendance || 0))
         : 0
-      const attendanceSummary = `Our attendance performance this month demonstrates ${averageAttendance >= 85 ? 'excellent' : 'good'} student engagement and commitment to Islamic education. With an average attendance rate of ${averageAttendance}%, we have ${averageAttendance >= 85 ? `exceeded our target of 85% by ${averageAttendance - 85} percentage points` : `achieved ${85 - averageAttendance} percentage points below our target of 85%`}. ${classesAboveTargetAttendance} out of ${classesWithStats.length} class${classesWithStats.length !== 1 ? 'es' : ''} have achieved attendance rates above our target${highestAttendanceAttendance > 0 ? `, with our highest performing class reaching ${highestAttendanceAttendance}% attendance` : ''}. This ${averageAttendance >= 85 ? 'strong' : 'developing'} attendance record reflects the quality of our educational programs, dedicated teaching staff, and supportive family environment. Regular attendance is crucial for student progress in Quranic studies, Islamic knowledge, and Arabic language acquisition, and we are pleased to see such positive engagement from our student community.`
+      const attendanceSummary = `Our attendance performance this month demonstrates ${averageAttendanceHTML >= 85 ? 'excellent' : 'good'} student engagement and commitment to Islamic education. With an average attendance rate of ${averageAttendanceHTML}%, we have ${averageAttendanceHTML >= 85 ? `exceeded our target of 85% by ${averageAttendanceHTML - 85} percentage points` : `achieved ${85 - averageAttendanceHTML} percentage points below our target of 85%`}. ${classesAboveTargetAttendance} out of ${classesWithStats.length} class${classesWithStats.length !== 1 ? 'es' : ''} have achieved attendance rates above our target${highestAttendanceAttendance > 0 ? `, with our highest performing class reaching ${highestAttendanceAttendance}% attendance` : ''}. This ${averageAttendanceHTML >= 85 ? 'strong' : 'developing'} attendance record reflects the quality of our educational programs, dedicated teaching staff, and supportive family environment. Regular attendance is crucial for student progress in Quranic studies, Islamic knowledge, and Arabic language acquisition, and we are pleased to see such positive engagement from our student community.`
       
       addText('MONTHLY ATTENDANCE OVERVIEW', margin, yPosition, { 
         fontSize: 12, 
@@ -956,8 +960,7 @@ async function handlePOST(request: NextRequest) {
       })
       yPosition += 38
       
-      // Reuse the same averageAttendance and totalStudentsHTML calculated earlier
-      const averageAttendanceHTML = averageAttendance
+      // Reuse the same averageAttendanceHTML calculated earlier
       const targetAttendance = 85
       
       
