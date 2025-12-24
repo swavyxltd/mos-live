@@ -397,7 +397,9 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
         // Validate month and year before using
         const validMonth = typeof month === 'number' ? month : parseInt(String(month), 10)
         const validYear = typeof year === 'number' ? year : parseInt(String(year), 10)
-        const monthStr = String((validMonth || 0) + 1).padStart(2, '0')
+        const monthNumber = (validMonth || 0) + 1
+        // Use padStart with fallback for older browsers
+        const monthStr = String(monthNumber).padStart ? String(monthNumber).padStart(2, '0') : (monthNumber < 10 ? '0' : '') + String(monthNumber)
         a.download = `madrasah-report-${validYear}-${monthStr}.pdf`
         document.body.appendChild(a)
         a.click()
@@ -410,19 +412,45 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
       } else {
         let errorMessage = 'Failed to generate report'
         try {
-          const errorData = await response.json()
-          errorMessage = errorData.details || errorData.error || errorMessage
+          const contentType = response.headers.get('content-type')
+          if (contentType && contentType.includes('application/json')) {
+            const errorData = await response.json()
+            // Safely extract error message
+            if (errorData && typeof errorData === 'object') {
+              errorMessage = String(errorData.details || errorData.error || errorMessage)
+            } else if (typeof errorData === 'string') {
+              errorMessage = errorData
+            }
+          } else {
+            // Try to get text response
+            const text = await response.text()
+            errorMessage = text || response.statusText || errorMessage
+          }
         } catch (parseError) {
-          // If response is not JSON, use status text
-          errorMessage = response.statusText || errorMessage
+          // If response parsing fails, use status text
+          errorMessage = response.statusText || 'Failed to generate report'
         }
-        toast.error(`Failed to generate report: ${errorMessage}`)
-        throw new Error(errorMessage)
+        
+        // Ensure errorMessage is a string
+        const safeErrorMessage = typeof errorMessage === 'string' ? errorMessage : String(errorMessage || 'Failed to generate report')
+        toast.error(`Failed to generate report: ${safeErrorMessage}`)
+        throw new Error(safeErrorMessage)
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-      toast.error(`Error generating report: ${errorMessage}`)
-      throw error
+      // Safely extract error message
+      let errorMessage = 'Unknown error occurred'
+      if (error instanceof Error) {
+        errorMessage = error.message || 'Unknown error occurred'
+      } else if (typeof error === 'string') {
+        errorMessage = error
+      } else if (error && typeof error === 'object' && 'message' in error) {
+        errorMessage = String(error.message)
+      }
+      
+      // Ensure errorMessage is a string and doesn't contain function calls
+      const safeErrorMessage = typeof errorMessage === 'string' ? errorMessage : String(errorMessage || 'Unknown error occurred')
+      toast.error(`Error generating report: ${safeErrorMessage}`)
+      throw new Error(safeErrorMessage)
     }
   }
 
