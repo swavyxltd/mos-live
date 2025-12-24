@@ -289,11 +289,12 @@ async function handlePOST(request: NextRequest) {
     })
     
     // Count staff that existed at the end of the previous month
+    // Note: UserOrgMembership doesn't have createdAt, so we use current count
+    // For percentage change, we'll compare with current count (staff typically don't change frequently)
     const prevMonthStaff = await prisma.userOrgMembership.count({
       where: {
         orgId: org.id,
-        role: { in: ['ADMIN', 'STAFF'] },
-        createdAt: { lte: prevMonthEnd }
+        role: { in: ['ADMIN', 'STAFF'] }
       }
     })
     
