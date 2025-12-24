@@ -160,6 +160,23 @@ export default function GenerateReportModal({
 
   const handleGenerate = async () => {
     if (selectedMonth !== null && !isGenerating) {
+      // Validate onGenerateReport is a function
+      if (typeof onGenerateReport !== 'function') {
+        console.error('onGenerateReport is not a function:', typeof onGenerateReport, onGenerateReport)
+        return
+      }
+      
+      // Validate inputs
+      if (typeof selectedMonth !== 'number' || selectedMonth < 0 || selectedMonth > 11) {
+        console.error('Invalid selectedMonth:', selectedMonth)
+        return
+      }
+      
+      if (typeof selectedYear !== 'number' || selectedYear < 2024) {
+        console.error('Invalid selectedYear:', selectedYear)
+        return
+      }
+      
       setIsGenerating(true)
       try {
         await onGenerateReport(selectedMonth, selectedYear)

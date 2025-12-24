@@ -364,6 +364,19 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
 
   // Handle report generation
   const handleGenerateReport = async (month: number, year: number): Promise<void> => {
+    // Validate inputs
+    if (typeof month !== 'number' || month < 0 || month > 11) {
+      const errorMsg = `Invalid month: ${month}. Month must be a number between 0 and 11.`
+      toast.error(errorMsg)
+      throw new Error(errorMsg)
+    }
+    
+    if (typeof year !== 'number' || year < 2024 || year > new Date().getFullYear()) {
+      const errorMsg = `Invalid year: ${year}. Year must be a number between 2024 and ${new Date().getFullYear()}.`
+      toast.error(errorMsg)
+      throw new Error(errorMsg)
+    }
+    
     try {
       const response = await fetch('/api/reports/generate', {
         method: 'POST',
@@ -380,7 +393,12 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
         // Create download link for PDF
         const a = document.createElement('a')
         a.href = url
-        a.download = `madrasah-report-${year}-${String(month + 1).padStart(2, '0')}.pdf`
+        
+        // Validate month and year before using
+        const validMonth = typeof month === 'number' ? month : parseInt(String(month), 10)
+        const validYear = typeof year === 'number' ? year : parseInt(String(year), 10)
+        const monthStr = String((validMonth || 0) + 1).padStart(2, '0')
+        a.download = `madrasah-report-${validYear}-${monthStr}.pdf`
         document.body.appendChild(a)
         a.click()
         
