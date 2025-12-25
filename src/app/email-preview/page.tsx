@@ -185,7 +185,14 @@ export default function EmailPreviewPage() {
     setLoading(true)
     setSelectedEmail(type)
     try {
-      const response = await fetch(`/api/email-preview?type=${type}`)
+      // Add timestamp to prevent caching
+      const timestamp = Date.now()
+      const response = await fetch(`/api/email-preview?type=${type}&_t=${timestamp}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+        },
+      })
       if (response.ok) {
         const html = await response.text()
         setEmailHtml(html)

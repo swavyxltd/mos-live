@@ -613,6 +613,9 @@ export async function GET(request: NextRequest) {
     return new NextResponse(previewHtml, {
       headers: {
         'Content-Type': 'text/html',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
       },
     })
   } catch (error: any) {
