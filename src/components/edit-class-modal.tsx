@@ -59,7 +59,7 @@ export function EditClassModal({ classId, isOpen, onClose, onSave }: EditClassMo
       startTime: '5:00 PM',
       endTime: '7:00 PM'
     },
-    monthlyFee: 0
+    monthlyFee: '' as number | string
   })
   const [originalFormData, setOriginalFormData] = useState(formData)
 
@@ -79,7 +79,7 @@ export function EditClassModal({ classId, isOpen, onClose, onSave }: EditClassMo
           startTime: '5:00 PM',
           endTime: '7:00 PM'
         },
-        monthlyFee: 0
+        monthlyFee: '' as number | string
       }
       setFormData(resetData)
       setOriginalFormData(resetData)
@@ -117,7 +117,7 @@ export function EditClassModal({ classId, isOpen, onClose, onSave }: EditClassMo
             startTime: parsedSchedule.startTime || '5:00 PM',
             endTime: parsedSchedule.endTime || '7:00 PM'
           },
-          monthlyFee: data.monthlyFeeP ? data.monthlyFeeP / 100 : 0
+          monthlyFee: data.monthlyFeeP ? data.monthlyFeeP / 100 : ''
         }
         setFormData(initialData)
         setOriginalFormData(initialData)
@@ -233,7 +233,7 @@ export function EditClassModal({ classId, isOpen, onClose, onSave }: EditClassMo
         description: formData.description || null,
         schedule: scheduleString,
         teacherId: formData.teacherId || null,
-        monthlyFeeP: Math.round(formData.monthlyFee * 100) // Convert to pence
+        monthlyFeeP: Math.round((typeof formData.monthlyFee === 'number' ? formData.monthlyFee : parseFloat(String(formData.monthlyFee)) || 0) * 100) // Convert to pence
       }
 
       console.log('Updating class with:', requestBody)
@@ -425,8 +425,8 @@ export function EditClassModal({ classId, isOpen, onClose, onSave }: EditClassMo
                   type="number"
                   min="0"
                   step="0.01"
-                  value={formData.monthlyFee}
-                  onChange={(e) => handleInputChange('monthlyFee', parseFloat(e.target.value) || 0)}
+                  value={formData.monthlyFee === 0 || formData.monthlyFee === '' ? '' : formData.monthlyFee}
+                  onChange={(e) => handleInputChange('monthlyFee', e.target.value === '' ? '' : parseFloat(e.target.value) || '')}
                   placeholder="e.g., 50"
                   required
                 />

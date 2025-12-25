@@ -25,8 +25,13 @@ interface Class {
   students: Student[]
 }
 
-export function AttendanceMarking() {
-  const [isOpen, setIsOpen] = useState(false)
+interface AttendanceMarkingProps {
+  initialOpen?: boolean
+  onClose?: () => void
+}
+
+export function AttendanceMarking({ initialOpen = false, onClose }: AttendanceMarkingProps) {
+  const [isOpen, setIsOpen] = useState(initialOpen)
   const [selectedClass, setSelectedClass] = useState<Class | null>(null)
   const [classes, setClasses] = useState<Class[]>([])
   const [loading, setLoading] = useState(false)
@@ -190,6 +195,13 @@ export function AttendanceMarking() {
       setLoading(false)
     }
   }, [])
+
+  // Sync with external initialOpen prop
+  useEffect(() => {
+    if (initialOpen !== undefined && initialOpen !== isOpen) {
+      setIsOpen(initialOpen)
+    }
+  }, [initialOpen])
 
   // Fetch classes and students when modal opens
   useEffect(() => {
@@ -371,6 +383,9 @@ export function AttendanceMarking() {
         onClose={() => {
           setIsOpen(false)
           setSelectedClass(null)
+          if (onClose) {
+            onClose()
+          }
         }}
         title={selectedClass ? selectedClass.name : 'Mark Attendance'}
         className="max-w-5xl"

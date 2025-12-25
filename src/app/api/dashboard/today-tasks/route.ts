@@ -50,15 +50,6 @@ async function handleGET(request: NextRequest) {
       }
     })
 
-    // Get pending invoices
-    const pendingInvoices = await prisma.invoice.count({
-      where: {
-        orgId: org.id,
-        status: 'PENDING',
-        dueDate: { lte: tomorrow }
-      }
-    })
-
     // Get today's classes that need attendance
     const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][today.getDay()]
     const allClasses = await prisma.class.findMany({
@@ -146,18 +137,6 @@ async function handleGET(request: NextRequest) {
       })
     }
 
-    if (pendingInvoices > 0) {
-      tasks.push({
-        id: 'pending-invoices',
-        title: 'Send Pending Invoices',
-        description: `${pendingInvoices} invoice${pendingInvoices !== 1 ? 's' : ''} due today or overdue`,
-        count: pendingInvoices,
-        priority: 'medium',
-        link: '/invoices?status=PENDING',
-        icon: 'DollarSign'
-      })
-    }
-
     if (classesNeedingAttendance.length > 0) {
       tasks.push({
         id: 'attendance',
@@ -181,6 +160,12 @@ async function handleGET(request: NextRequest) {
         icon: 'Calendar'
       })
     }
+
+    // Sort tasks by priority: high > medium > low
+    tasks.sort((a, b) => {
+      const priorityOrder = { high: 0, medium: 1, low: 2 }
+      return priorityOrder[a.priority as keyof typeof priorityOrder] - priorityOrder[b.priority as keyof typeof priorityOrder]
+    })
 
     return NextResponse.json({ tasks })
   } catch (error: any) {

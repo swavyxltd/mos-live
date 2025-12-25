@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { AttendanceMarking } from '@/components/attendance-marking'
 import { ClassAttendanceOverview } from '@/components/class-attendance-overview'
 import { DetailedClassAttendance } from '@/components/detailed-class-attendance'
@@ -38,12 +39,31 @@ interface AttendancePageClientProps {
 }
 
 export function AttendancePageClient({ attendanceData }: AttendancePageClientProps) {
+  const searchParams = useSearchParams()
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null)
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null)
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false)
   const [currentWeek, setCurrentWeek] = useState(new Date())
   const [filterType, setFilterType] = useState<'week' | 'month' | 'year'>('week')
   const [dateRange, setDateRange] = useState<{ start: Date; end: Date } | null>(null)
+
+  // Handle student query parameter from URL
+  useEffect(() => {
+    const studentId = searchParams.get('student')
+    if (studentId) {
+      // Find which class this student belongs to by searching attendance data
+      const studentClass = attendanceData.find(classData => 
+        classData.students.some(s => s.id === studentId)
+      )
+      if (studentClass) {
+        setSelectedClassId(studentClass.classId)
+        setSelectedStudentId(studentId)
+        setIsStudentModalOpen(true)
+        // Clean up URL
+        window.history.replaceState({}, '', '/attendance')
+      }
+    }
+  }, [searchParams, attendanceData])
 
   // Filter data based on selected filter type and date range
   const filteredData = useMemo(() => {

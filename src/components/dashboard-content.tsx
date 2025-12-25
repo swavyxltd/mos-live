@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Modal } from '@/components/ui/modal'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { QuickAddMenu } from '@/components/quick-add-menu'
@@ -28,6 +29,15 @@ const AddClassModal = dynamic(() => import('@/components/add-class-modal').then(
   ssr: false,
 })
 const ActivityModal = dynamic(() => import('@/components/activity-modal').then(mod => ({ default: mod.ActivityModal })), {
+  ssr: false,
+})
+const AttendanceMarking = dynamic(() => import('@/components/attendance-marking').then(mod => ({ default: mod.AttendanceMarking })), {
+  ssr: false,
+})
+const ApplicationsModal = dynamic(() => import('@/components/applications-modal').then(mod => ({ default: mod.ApplicationsModal })), {
+  ssr: false,
+})
+const PaymentsReminderModal = dynamic(() => import('@/components/payments-reminder-modal').then(mod => ({ default: mod.PaymentsReminderModal })), {
   ssr: false,
 })
 
@@ -83,6 +93,9 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
   const [isAddTeacherModalOpen, setIsAddTeacherModalOpen] = useState(false)
   const [isAddClassModalOpen, setIsAddClassModalOpen] = useState(false)
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false)
+  const [isApplicationsModalOpen, setIsApplicationsModalOpen] = useState(false)
+  const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false)
+  const [isPaymentsModalOpen, setIsPaymentsModalOpen] = useState(false)
   const [quickActionLoading, setQuickActionLoading] = useState<string | null>(null)
   const [classes, setClasses] = useState<Array<{ id: string; name: string }>>([])
   const [recentActivity, setRecentActivity] = useState<any[]>([])
@@ -467,46 +480,22 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
   const isTeacher = staffSubrole === 'TEACHER'
   const isAdmin = userRole === 'ADMIN' || staffSubrole === 'ADMIN'
 
-  // Quick action handlers
+  // Quick action handlers - open modals instead of navigating
   const handleQuickAction = async (taskId: string, action: string) => {
     setQuickActionLoading(taskId)
     try {
       switch (taskId) {
         case 'applications':
-          // Quick review - navigate to applications with NEW filter
-          window.location.href = '/applications?status=NEW'
+          // Open applications modal
+          setIsApplicationsModalOpen(true)
           break
         case 'overdue-payments':
-          // Send reminder to all overdue payments
-          const response = await fetch('/api/payments/send-reminders', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ filter: 'overdue' })
-          })
-          if (response.ok) {
-            toast.success('Payment reminders sent successfully!')
-            fetchTodaysTasks() // Refresh tasks
-          } else {
-            toast.error('Failed to send reminders. Please try again.')
-          }
-          break
-        case 'pending-invoices':
-          // Send all pending invoices
-          const invoiceResponse = await fetch('/api/invoices/send-all', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: 'PENDING' })
-          })
-          if (invoiceResponse.ok) {
-            toast.success('Invoices sent successfully!')
-            fetchTodaysTasks() // Refresh tasks
-          } else {
-            toast.error('Failed to send invoices. Please try again.')
-          }
+          // Open payments modal for confirmation
+          setIsPaymentsModalOpen(true)
           break
         case 'attendance':
-          // Navigate to attendance page for today
-          window.location.href = '/attendance?date=today'
+          // Open attendance marking modal
+          setIsAttendanceModalOpen(true)
           break
         default:
           break
@@ -516,6 +505,27 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
       toast.error('An error occurred. Please try again.')
     } finally {
       setQuickActionLoading(null)
+    }
+  }
+
+  // Handle sending payment reminders from modal
+  const handleSendPaymentReminders = async () => {
+    try {
+      const response = await fetch('/api/payments/send-reminders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filter: 'overdue' })
+      })
+      if (response.ok) {
+        toast.success('Payment reminders sent successfully!')
+        setIsPaymentsModalOpen(false)
+        fetchTodaysTasks() // Refresh tasks
+      } else {
+        toast.error('Failed to send reminders. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error sending reminders:', error)
+      toast.error('An error occurred. Please try again.')
     }
   }
 
@@ -671,8 +681,6 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
                         return { label: 'Quick Review', icon: Eye, action: 'review' }
                       case 'overdue-payments':
                         return { label: 'Send Reminder', icon: Send, action: 'remind' }
-                      case 'pending-invoices':
-                        return { label: 'Send All', icon: Send, action: 'send' }
                       case 'attendance':
                         return { label: 'Mark Now', icon: Zap, action: 'mark' }
                       default:
@@ -1036,6 +1044,26 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
       <ActivityModal
         isOpen={isActivityModalOpen}
         onClose={() => setIsActivityModalOpen(false)}
+      />
+
+      {/* Applications Modal */}
+      <ApplicationsModal
+        isOpen={isApplicationsModalOpen}
+        onClose={() => setIsApplicationsModalOpen(false)}
+      />
+
+      {/* Attendance Modal */}
+      <AttendanceMarking
+        initialOpen={isAttendanceModalOpen}
+        onClose={() => setIsAttendanceModalOpen(false)}
+      />
+
+      {/* Payments Modal */}
+      <PaymentsReminderModal
+        isOpen={isPaymentsModalOpen}
+        onClose={() => setIsPaymentsModalOpen(false)}
+        onConfirm={handleSendPaymentReminders}
+        overdueCount={todaysTasks.find(t => t.id === 'overdue-payments')?.count || 0}
       />
     </div>
   )

@@ -143,6 +143,63 @@ export async function GET(request: NextRequest) {
         break
       }
 
+      case 'application-rejection': {
+        const childrenList = demoData.childrenNames.length === 1 
+          ? demoData.childrenNames[0]
+          : demoData.childrenNames.length === 2
+          ? `${demoData.childrenNames[0]} and ${demoData.childrenNames[1]}`
+          : `${demoData.childrenNames.slice(0, -1).join(', ')}, and ${demoData.childrenNames[demoData.childrenNames.length - 1]}`
+        
+        const headerHtml = `
+          <div style="max-width: 360px; margin: 8px auto 48px auto; text-align: center;">
+            <div style="display: inline-block; text-align: left; border-left: 4px solid #dc2626; padding: 0 24px 0 16px;">
+              <div style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 18px; font-weight: 700; color: #111827; margin-bottom: 2px;">
+                ${demoData.orgName}
+              </div>
+              <div style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em; color: #6b7280;">
+                Official Communication
+              </div>
+            </div>
+          </div>
+        `
+
+        const content = `
+          <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-left: 4px solid #dc2626; border-radius: 8px; padding: 20px; margin-bottom: 24px; text-align: center;">
+            <p style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: #991b1b;">Application Update</p>
+            <p style="margin: 0; font-size: 16px; color: #7f1d1d; line-height: 1.6;">We regret to inform you that your application has been <strong>rejected</strong>.</p>
+          </div>
+          <p style="margin: 0 0 16px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">Assalamu'alaikum <strong>${demoData.parentName}</strong>,</p>
+          <p style="margin: 0 0 24px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">Thank you for your interest in enrolling <strong>${childrenList}</strong> at <strong>${demoData.orgName}</strong>. After careful consideration, we are unable to accept your application at this time.</p>
+          <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 24px 0;">
+            <h2 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600; color: #111827; text-align: center;">Additional Information</h2>
+            <p style="margin: 0; font-size: 15px; color: #374151; line-height: 1.6; text-align: left; white-space: pre-wrap;">Unfortunately, we are currently at capacity for the requested class. We encourage you to reapply in the future when spaces become available.</p>
+          </div>
+          <div style="margin: 32px 0;">
+            <h2 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 600; color: #111827; text-align: center;">What You Can Do</h2>
+            <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+              <tr>
+                <td style="padding: 16px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center;">
+                  <div style="font-size: 24px; margin-bottom: 8px;">📞</div>
+                  <h3 style="margin: 0 0 6px 0; font-size: 14px; font-weight: 600; color: #111827;">Contact Us</h3>
+                  <p style="margin: 0; font-size: 12px; color: #6b7280; line-height: 1.4;">If you have questions, please don't hesitate to reach out</p>
+                </td>
+              </tr>
+            </table>
+          </div>
+          <p style="margin: 32px 0 0 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">We appreciate your understanding and wish you and your family all the best in your search for Islamic education, inshallah.</p>
+        `
+        
+        html = await generateEmailTemplate({
+          title: `Application Update - ${demoData.orgName}`,
+          description: '',
+          headerHtml,
+          content,
+          footerText: `If you have any questions, please don't hesitate to contact us.`,
+          showLogo: false
+        })
+        break
+      }
+
       case 'payment-confirmation': {
         const amountFormatted = `£${(demoData.amount / 100).toFixed(2)}`
         const methodLabel = demoData.paymentMethod === 'CASH' ? 'Cash' 
@@ -208,6 +265,67 @@ export async function GET(request: NextRequest) {
           headerHtml,
           content,
           showLogo: false
+        })
+        break
+      }
+
+      case 'payment-link': {
+        const amountFormatted = `£${(demoData.amount / 100).toFixed(2)}`
+        const invoiceId = 'INV-12345678'
+        html = await generateEmailTemplate({
+          title: 'Payment Due',
+          description: `Invoice #${invoiceId.slice(-8)} for <strong>${amountFormatted}</strong> is due. Click below to pay securely.`,
+          buttonText: 'Pay Now',
+          buttonUrl: 'https://app.madrasah.io/pay/invoice-123',
+          footerText: 'If you have any questions, please contact your madrasah administrator.'
+        })
+        break
+      }
+
+      case 'billing-success': {
+        const amountFormatted = `£${(demoData.amount / 100).toFixed(2)}`
+        const studentCount = 45
+        const content = `
+          <div style="margin-bottom: 24px;">
+            <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #22c55e; border-radius: 8px; padding: 20px; margin-bottom: 24px; text-align: center;">
+              <p style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: #166534;">
+                Payment Successful ✓
+              </p>
+              <p style="margin: 0; font-size: 16px; color: #15803d; line-height: 1.6;">
+                Your monthly subscription payment has been processed successfully.
+              </p>
+            </div>
+            
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+              <tr>
+                <td style="padding: 0 0 12px 0; font-size: 14px; color: #6b7280; text-align: left;">Organisation:</td>
+                <td align="right" style="padding: 0 0 12px 0; font-size: 14px; font-weight: 600; color: #111827; text-align: right;">${demoData.orgName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 0 0 12px 0; font-size: 14px; color: #6b7280; text-align: left;">Active Students:</td>
+                <td align="right" style="padding: 0 0 12px 0; font-size: 14px; font-weight: 600; color: #111827; text-align: right;">${studentCount}</td>
+              </tr>
+              <tr>
+                <td style="padding: 16px 0 0 0; border-top: 2px solid #e5e7eb; font-size: 16px; font-weight: 600; color: #111827; text-align: left;">Amount Charged:</td>
+                <td align="right" style="padding: 16px 0 0 0; border-top: 2px solid #e5e7eb; font-size: 20px; font-weight: 700; color: #059669; text-align: right;">${amountFormatted}</td>
+              </tr>
+            </table>
+            
+            <p style="margin: 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">
+              Thank you for your continued support. Your account remains active and you can continue using all features.
+            </p>
+          </div>
+        `
+        html = await generateEmailTemplate({
+          title: 'Billing Successful',
+          description: [
+            "Assalamu'alaikum!",
+            'Your monthly subscription payment has been processed successfully.'
+          ],
+          content,
+          buttonText: 'View Invoice',
+          buttonUrl: 'https://app.madrasah.io/invoices/latest',
+          footerText: 'If you have any questions about this charge, please contact our support team.'
         })
         break
       }

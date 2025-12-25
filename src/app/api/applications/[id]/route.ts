@@ -4,7 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { getActiveOrg } from '@/lib/org'
 import { prisma } from '@/lib/prisma'
-import { sendApplicationAcceptanceEmail } from '@/lib/mail'
+import { sendApplicationAcceptanceEmail, sendApplicationRejectionEmail } from '@/lib/mail'
 import { logger } from '@/lib/logger'
 import crypto from 'crypto'
 
@@ -76,8 +76,43 @@ export async function PATCH(
     })
 
     // If status is ACCEPTED, create student records and send email
+    // If status is REJECTED, send rejection email
     let emailSent = false
-    if (status === 'ACCEPTED') {
+    if (status === 'REJECTED') {
+      // Send rejection email to parent
+      try {
+        const childrenNames = application.ApplicationChild.map(
+          child => `${child.firstName} ${child.lastName}`
+        )
+
+        logger.info('Sending application rejection email', {
+          to: application.guardianEmail,
+          orgName: org.name
+        })
+        
+        const emailResult = await sendApplicationRejectionEmail({
+          to: application.guardianEmail,
+          orgName: org.name,
+          parentName: application.guardianName,
+          childrenNames,
+          adminNotes: adminNotes || null
+        })
+        
+        emailSent = !!emailResult
+        if (emailResult) {
+          logger.info('Application rejection email sent successfully', {
+            emailId: emailResult.id
+          })
+        } else {
+          logger.warn('Email function returned no result')
+        }
+      } catch (emailError: any) {
+        logger.error('Failed to send application rejection email', emailError, {
+          to: application.guardianEmail
+        })
+        // Don't fail the request if email fails, but log it
+      }
+    } else if (status === 'ACCEPTED') {
       // Check billing day before creating students
       const { checkBillingDay } = await import('@/lib/payment-check')
       const hasBillingDay = await checkBillingDay()
@@ -204,9 +239,9 @@ export async function PATCH(
       }
     }
 
-    // Include email status in response if application was accepted
+    // Include email status in response if application was accepted or rejected
     const response: any = { ...updatedApplication }
-    if (status === 'ACCEPTED') {
+    if (status === 'ACCEPTED' || status === 'REJECTED') {
       response.emailSent = emailSent
       response.emailRecipient = application.guardianEmail
     }

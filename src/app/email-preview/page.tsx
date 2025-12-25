@@ -27,10 +27,31 @@ const emailTypes: EmailPreview[] = [
     category: 'automatic'
   },
   {
+    id: 'application-rejection',
+    name: 'Application Rejection',
+    description: 'Sent automatically when admin rejects an application',
+    type: 'application-rejection',
+    category: 'automatic'
+  },
+  {
     id: 'payment-confirmation',
     name: 'Payment Confirmation',
     description: 'Sent automatically when admin marks a payment as paid',
     type: 'payment-confirmation',
+    category: 'automatic'
+  },
+  {
+    id: 'payment-link',
+    name: 'Payment Link',
+    description: 'Sent automatically when a payment link is generated for an invoice',
+    type: 'payment-link',
+    category: 'automatic'
+  },
+  {
+    id: 'billing-success',
+    name: 'Billing Success',
+    description: 'Sent automatically when platform subscription payment succeeds',
+    type: 'billing-success',
     category: 'automatic'
   },
   {

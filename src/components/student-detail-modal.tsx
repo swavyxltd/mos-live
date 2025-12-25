@@ -9,6 +9,7 @@ import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { 
   X,
   User,
@@ -454,6 +455,21 @@ export function StudentDetailModal({
     }
   }
 
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'PAID':
+        return <Badge variant="secondary" className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" />Paid</Badge>
+      case 'PENDING':
+        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800"><Clock className="h-3 w-3 mr-1" />Pending</Badge>
+      case 'LATE':
+        return <Badge variant="secondary" className="bg-orange-100 text-orange-800"><AlertTriangle className="h-3 w-3 mr-1" />Late</Badge>
+      case 'OVERDUE':
+        return <Badge variant="secondary" className="bg-red-100 text-red-800"><XCircle className="h-3 w-3 mr-1" />Overdue</Badge>
+      default:
+        return <Badge variant="secondary">{status}</Badge>
+    }
+  }
+
   return (
     <>
       <div 
@@ -876,19 +892,6 @@ export function StudentDetailModal({
                             </p>
                           )}
                         </div>
-
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            router.push(`/students/${studentData.id}/attendance`)
-                            onClose()
-                          }}
-                          className="w-full"
-                        >
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          View Full Attendance
-                        </Button>
                       </div>
                     </TabsContent>
 
@@ -897,63 +900,69 @@ export function StudentDetailModal({
                       <div className="border border-[var(--border)] rounded-lg p-4">
                         {canViewFees ? (
                           <>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                               <div className="p-4 bg-[var(--muted)]/50 rounded-lg">
-                                <div className="text-xs text-[var(--muted-foreground)] mb-1">Current Balance</div>
-                                <div className="text-2xl font-bold text-[var(--foreground)]">
+                                <div className="text-xs text-[var(--muted-foreground)] mb-1">Outstanding Balance</div>
+                                <div className={`text-2xl font-bold ${studentData.fees.currentBalance > 0 ? 'text-red-600' : 'text-[var(--foreground)]'}`}>
                                   £{studentData.fees.currentBalance.toFixed(2)}
                                 </div>
+                                {studentData.fees.currentBalance > 0 && (
+                                  <div className="text-xs text-[var(--muted-foreground)] mt-1">Amount owed</div>
+                                )}
                               </div>
                               <div className="p-4 bg-[var(--muted)]/50 rounded-lg">
-                                <div className="text-xs text-[var(--muted-foreground)] mb-1">Paid This Year</div>
+                                <div className="text-xs text-[var(--muted-foreground)] mb-1">Total Paid This Year</div>
                                 <div className="text-2xl font-bold text-green-600">
                                   £{studentData.fees.totalPaidThisYear.toFixed(2)}
                                 </div>
                               </div>
                             </div>
 
-                            <div className="mb-4">
-                              <h4 className="text-sm font-semibold text-[var(--foreground)] mb-3">Recent Payments</h4>
+                            <div>
+                              <h4 className="text-sm font-semibold text-[var(--foreground)] mb-3">Payment History</h4>
                               {studentData.fees.paymentRecords && studentData.fees.paymentRecords.length > 0 ? (
-                                <div className="space-y-2 max-h-64 overflow-y-auto">
-                                  {studentData.fees.paymentRecords.slice(0, 10).map((record) => (
-                                    <div 
-                                      key={record.id}
-                                      className="flex items-center justify-between p-3 border border-[var(--border)] rounded-lg bg-[var(--card)]"
-                                    >
-                                      <div className="min-w-0 flex-1">
-                                        <div className="text-sm font-medium text-[var(--foreground)]">
-                                          {record.month} • {record.class?.name || 'N/A'}
-                                        </div>
-                                        <div className="text-xs text-[var(--muted-foreground)]">
-                                          £{(record.amountP / 100).toFixed(2)} • {record.method || 'N/A'}
-                                        </div>
-                                      </div>
-                                      <Badge className={`${getPaymentStatusColor(record.status)} justify-center text-xs px-2 py-0.5`}>
-                                        {record.status}
-                                      </Badge>
-                                    </div>
-                                  ))}
+                                <div className="overflow-x-auto">
+                                  <Table>
+                                    <TableHeader>
+                                      <TableRow>
+                                        <TableHead>Date</TableHead>
+                                        <TableHead>Class</TableHead>
+                                        <TableHead>Amount</TableHead>
+                                        <TableHead>Method</TableHead>
+                                        <TableHead>Status</TableHead>
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {studentData.fees.paymentRecords.slice(0, 10).map((record) => {
+                                        const paymentMethod = record.method === 'STRIPE' ? 'Card' : 
+                                                             record.method === 'BANK_TRANSFER' ? 'Bank Transfer' :
+                                                             record.method === 'CASH' ? 'Cash' :
+                                                             record.method || 'Not specified'
+                                        const date = record.paidAt 
+                                          ? new Date(record.paidAt).toLocaleDateString()
+                                          : record.createdAt 
+                                          ? new Date(record.createdAt).toLocaleDateString()
+                                          : record.month
+                                        return (
+                                          <TableRow key={record.id}>
+                                            <TableCell className="font-medium">{date}</TableCell>
+                                            <TableCell>{record.class?.name || 'N/A'}</TableCell>
+                                            <TableCell className="font-medium">£{(record.amountP / 100).toFixed(2)}</TableCell>
+                                            <TableCell>{paymentMethod}</TableCell>
+                                            <TableCell>{getStatusBadge(record.status)}</TableCell>
+                                          </TableRow>
+                                        )
+                                      })}
+                                    </TableBody>
+                                  </Table>
                                 </div>
                               ) : (
-                                <p className="text-sm text-[var(--muted-foreground)] text-center py-4">
-                                  No payment records
-                                </p>
+                                <div className="text-center py-8">
+                                  <DollarSign className="h-12 w-12 text-gray-400 mx-auto mb-4" strokeWidth={1.5} />
+                                  <p className="text-muted-foreground">No payment records yet</p>
+                                </div>
                               )}
                             </div>
-
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                router.push(`/payments?studentId=${studentData.id}`)
-                                onClose()
-                              }}
-                              className="w-full"
-                            >
-                              <ExternalLink className="h-4 w-4 mr-2" />
-                              Open Finance Page
-                            </Button>
                           </>
                         ) : (
                           <p className="text-sm text-[var(--muted-foreground)] text-center py-4">

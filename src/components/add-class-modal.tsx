@@ -60,7 +60,7 @@ export function AddClassModal({ isOpen, onClose, onSave }: AddClassModalProps) {
       startTime: '5:00 PM',
       endTime: '7:00 PM'
     },
-    monthlyFee: 0
+    monthlyFee: '' as number | string
   })
 
   // Fetch teachers when modal opens
@@ -147,7 +147,7 @@ export function AddClassModal({ isOpen, onClose, onSave }: AddClassModalProps) {
           description: formData.description || null,
           schedule: scheduleString,
           teacherId: formData.teacherId || null,
-          monthlyFeeP: Math.round(formData.monthlyFee * 100) // Convert to pence
+          monthlyFeeP: Math.round((typeof formData.monthlyFee === 'number' ? formData.monthlyFee : parseFloat(String(formData.monthlyFee)) || 0) * 100) // Convert to pence
         })
       })
 
@@ -350,8 +350,8 @@ export function AddClassModal({ isOpen, onClose, onSave }: AddClassModalProps) {
                 type="number"
                 min="0"
                 step="0.01"
-                value={formData.monthlyFee}
-                onChange={(e) => handleInputChange('monthlyFee', parseFloat(e.target.value) || 0)}
+                value={formData.monthlyFee === 0 || formData.monthlyFee === '' ? '' : formData.monthlyFee}
+                onChange={(e) => handleInputChange('monthlyFee', e.target.value === '' ? '' : parseFloat(e.target.value) || '')}
                 placeholder="e.g., 50"
                 required
               />

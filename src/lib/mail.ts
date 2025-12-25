@@ -1192,3 +1192,145 @@ The ${orgName} Team`
     text
   })
 }
+
+export async function sendApplicationRejectionEmail({
+  to,
+  orgName,
+  parentName,
+  childrenNames,
+  adminNotes
+}: {
+  to: string
+  orgName: string
+  parentName: string
+  childrenNames: string[]
+  adminNotes?: string | null
+}) {
+  const childrenList = childrenNames.length === 1 
+    ? childrenNames[0]
+    : childrenNames.length === 2
+    ? `${childrenNames[0]} and ${childrenNames[1]}`
+    : `${childrenNames.slice(0, -1).join(', ')}, and ${childrenNames[childrenNames.length - 1]}`
+  
+  const headerHtml = `
+    <div style="max-width: 360px; margin: 8px auto 48px auto; text-align: center;">
+      <div style="
+        display: inline-block;
+        text-align: left;
+        border-left: 4px solid #dc2626;
+        padding: 0 24px 0 16px;
+      ">
+        <div style="
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          font-size: 18px;
+          font-weight: 700;
+          color: #111827;
+          margin-bottom: 2px;
+        ">
+          ${orgName}
+        </div>
+        <div style="
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          font-size: 12px;
+          text-transform: uppercase;
+          letter-spacing: 0.12em;
+          color: #6b7280;
+        ">
+          Official Communication
+        </div>
+      </div>
+    </div>
+  `
+
+  const content = `
+    <!-- Rejection Message -->
+    <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-left: 4px solid #dc2626; border-radius: 8px; padding: 20px; margin-bottom: 24px; text-align: center;">
+      <p style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: #991b1b;">
+        Application Update
+      </p>
+      <p style="margin: 0; font-size: 16px; color: #7f1d1d; line-height: 1.6;">
+        We regret to inform you that your application has been <strong>rejected</strong>.
+      </p>
+    </div>
+    
+    <!-- Welcome Message -->
+    <p style="margin: 0 0 16px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">
+      Assalamu'alaikum <strong>${parentName}</strong>,
+    </p>
+    
+    <p style="margin: 0 0 24px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">
+      Thank you for your interest in enrolling <strong>${childrenList}</strong> at <strong>${orgName}</strong>. After careful consideration, we are unable to accept your application at this time.
+    </p>
+    
+    ${adminNotes ? `
+    <!-- Admin Notes -->
+    <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 24px 0;">
+      <h2 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600; color: #111827; text-align: center;">
+        Additional Information
+      </h2>
+      <p style="margin: 0; font-size: 15px; color: #374151; line-height: 1.6; text-align: left; white-space: pre-wrap;">
+        ${adminNotes.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+      </p>
+    </div>
+    ` : ''}
+    
+    <!-- Next Steps -->
+    <div style="margin: 32px 0;">
+      <h2 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 600; color: #111827; text-align: center;">
+        What You Can Do
+      </h2>
+      
+      <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+        <tr>
+          <td style="padding: 16px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center;">
+            <div style="font-size: 24px; margin-bottom: 8px;">📞</div>
+            <h3 style="margin: 0 0 6px 0; font-size: 14px; font-weight: 600; color: #111827;">Contact Us</h3>
+            <p style="margin: 0; font-size: 12px; color: #6b7280; line-height: 1.4;">If you have questions, please don't hesitate to reach out</p>
+          </td>
+        </tr>
+      </table>
+    </div>
+    
+    <!-- Closing Message -->
+    <p style="margin: 32px 0 0 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">
+      We appreciate your understanding and wish you and your family all the best in your search for Islamic education, inshallah.
+    </p>
+  `
+  
+  const html = await generateEmailTemplate({
+    title: `Application Update - ${orgName}`,
+    description: '',
+    headerHtml,
+    content,
+    footerText: `If you have any questions, please don't hesitate to contact us.`,
+    showLogo: false
+  })
+  
+  const text = `Application Update - ${orgName}
+
+Application Update
+
+We regret to inform you that your application has been REJECTED.
+
+Assalamu'alaikum ${parentName},
+
+Thank you for your interest in enrolling ${childrenList} at ${orgName}. After careful consideration, we are unable to accept your application at this time.
+
+${adminNotes ? `Additional Information:\n\n${adminNotes}\n\n` : ''}What You Can Do:
+
+📞 Contact Us - If you have questions, please don't hesitate to reach out
+
+We appreciate your understanding and wish you and your family all the best in your search for Islamic education, inshallah.
+
+If you have any questions, please don't hesitate to contact us.
+
+Best regards,
+The ${orgName} Team`
+  
+  return sendEmail({
+    to,
+    subject: `Application Update - ${orgName}`,
+    html,
+    text
+  })
+}

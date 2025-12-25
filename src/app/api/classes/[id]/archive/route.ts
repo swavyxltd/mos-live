@@ -30,6 +30,18 @@ async function handlePOST(
       return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
     }
     
+    // First check if class exists
+    const existingClass = await prisma.class.findFirst({
+      where: {
+        id,
+        orgId
+      }
+    })
+    
+    if (!existingClass) {
+      return NextResponse.json({ error: 'Class not found' }, { status: 404 })
+    }
+    
     const isArchived = action === 'archive'
     const archivedAt = isArchived ? new Date() : null
     
@@ -41,7 +53,8 @@ async function handlePOST(
       },
       data: {
         isArchived,
-        archivedAt
+        archivedAt,
+        updatedAt: new Date()
       },
       include: {
         teacher: true,
@@ -62,11 +75,11 @@ async function handlePOST(
         action: isArchived ? 'CLASS_ARCHIVED' : 'CLASS_UNARCHIVED',
         targetType: 'Class',
         targetId: id,
-        data: {
+        data: JSON.stringify({
           className: classData.name,
           action,
           timestamp: new Date().toISOString()
-        }
+        })
       }
     })
     
