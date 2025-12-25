@@ -395,12 +395,10 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
         a.href = url
         
         // Validate month and year before using
-        const validMonth = typeof month === 'number' ? month : parseInt(String(month), 10)
-        const validYear = typeof year === 'number' ? year : parseInt(String(year), 10)
-        const monthNumber = (validMonth || 0) + 1
-        // Use padStart with fallback for older browsers
-        const monthStr = String(monthNumber).padStart ? String(monthNumber).padStart(2, '0') : (monthNumber < 10 ? '0' : '') + String(monthNumber)
-        a.download = `madrasah-report-${validYear}-${monthStr}.pdf`
+        // month is 0-11, we need 1-12 for filename
+        const monthForFilename = (month + 1)
+        const monthPadded = monthForFilename < 10 ? `0${monthForFilename}` : `${monthForFilename}`
+        a.download = `madrasah-report-${year}-${monthPadded}.pdf`
         document.body.appendChild(a)
         a.click()
         
@@ -415,9 +413,20 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
           const contentType = response.headers.get('content-type')
           if (contentType && contentType.includes('application/json')) {
             const errorData = await response.json()
-            // Safely extract error message
+            // Safely extract error message - ensure it's always a string, never a number
             if (errorData && typeof errorData === 'object') {
-              errorMessage = String(errorData.details || errorData.error || errorMessage)
+              const details = errorData.details
+              const error = errorData.error
+              // Ensure we never use a number as an error message
+              if (typeof details === 'string') {
+                errorMessage = details
+              } else if (typeof error === 'string') {
+                errorMessage = error
+              } else if (details && typeof details === 'object' && 'message' in details) {
+                errorMessage = String(details.message)
+              } else {
+                errorMessage = 'Failed to generate report'
+              }
             } else if (typeof errorData === 'string') {
               errorMessage = errorData
             }

@@ -64,6 +64,7 @@
     "clsx": "^2.1.1",
     "cron": "^3.2.0",
     "csv-parse": "^6.1.0",
+    "culori": "^4.0.2",
     "date-fns": "^4.1.0",
     "exceljs": "^4.4.0",
     "fast-xml-parser": "^5.3.2",

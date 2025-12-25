@@ -1,5 +1,17 @@
-import { StaffSubrole, hasStaffPermission, canPerformAction, StaffPermissionKey, SIDEBAR_PAGE_PERMISSIONS, LEGACY_PERMISSION_MAP } from '@/types/staff-roles'
-import { getStaffPermissionsFromDb, hasStaffPermissionInOrg } from './staff-permissions-db'
+import { StaffSubrole, hasStaffPermission, canPerformAction, StaffPermissionKey, SIDEBAR_PAGE_PERMISSIONS, LEGACY_PERMISSION_MAP, getStaffPermissionKeys } from '@/types/staff-roles'
+
+// Lazy import for database functions - only load on server side
+let getStaffPermissionsFromDb: ((userId: string, orgId: string) => Promise<StaffPermissionKey[]>) | null = null
+let hasStaffPermissionInOrg: ((userId: string, orgId: string, permissionKey: StaffPermissionKey) => Promise<boolean>) | null = null
+
+async function loadDbFunctions() {
+  if (typeof window === 'undefined' && !getStaffPermissionsFromDb) {
+    const dbModule = await import('./staff-permissions-db')
+    getStaffPermissionsFromDb = dbModule.getStaffPermissionsFromDb
+    hasStaffPermissionInOrg = dbModule.hasStaffPermissionInOrg
+  }
+  return { getStaffPermissionsFromDb, hasStaffPermissionInOrg }
+}
 
 // Extended user session type with staff subrole
 export interface StaffUser {
@@ -37,13 +49,21 @@ export class StaffPermissionChecker {
       return this.permissions
     }
 
-    if (this.orgId && this.user.id) {
-      this.permissions = await getStaffPermissionsFromDb(this.user.id, this.orgId)
-      return this.permissions
+    // Only try to load from DB on server side
+    if (typeof window === 'undefined' && this.orgId && this.user.id) {
+      try {
+        const dbFunctions = await loadDbFunctions()
+        if (dbFunctions.getStaffPermissionsFromDb) {
+          this.permissions = await dbFunctions.getStaffPermissionsFromDb(this.user.id, this.orgId)
+          return this.permissions
+        }
+      } catch (error) {
+        // If DB import fails (e.g., in client), fall through to preset
+        console.warn('Could not load permissions from DB, using preset:', error)
+      }
     }
 
-    // Fallback to preset permissions
-    const { getStaffPermissionKeys } = await import('@/types/staff-roles')
+    // Fallback to preset permissions - use already imported function
     this.permissions = getStaffPermissionKeys(this.subrole)
     return this.permissions
   }
@@ -89,8 +109,7 @@ export class StaffPermissionChecker {
     }
 
     if (!this.permissions) {
-      // Fallback to subrole check
-      const { getStaffPermissionKeys } = require('@/types/staff-roles')
+      // Fallback to subrole check - use already imported function
       const rolePermissions = getStaffPermissionKeys(this.subrole)
       return rolePermissions.includes(permissionKey)
     }
@@ -204,8 +223,7 @@ export class StaffPermissionChecker {
       return this.permissions
     }
     
-    // Fallback to preset
-    const { getStaffPermissionKeys } = require('@/types/staff-roles')
+    // Fallback to preset permissions
     return getStaffPermissionKeys(this.subrole)
   }
 
