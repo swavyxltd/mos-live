@@ -279,10 +279,28 @@ export default function EmailPreviewPage() {
               ) : (
                 <div className="w-full h-screen" style={{ minHeight: '800px' }}>
                   <iframe
-                    srcDoc={emailHtml}
+                    srcDoc={emailHtml.replace(
+                      '</head>',
+                      `<style>
+                        * {
+                          -webkit-user-select: text !important;
+                          -moz-user-select: text !important;
+                          -ms-user-select: text !important;
+                          user-select: text !important;
+                          -webkit-touch-callout: default !important;
+                        }
+                        body {
+                          -webkit-user-select: text !important;
+                          -moz-user-select: text !important;
+                          -ms-user-select: text !important;
+                          user-select: text !important;
+                        }
+                      </style></head>`
+                    )}
                     className="w-full h-full border-0"
                     title="Email Preview"
-                    sandbox="allow-same-origin"
+                    sandbox="allow-same-origin allow-scripts"
+                    style={{ userSelect: 'text' }}
                   />
                 </div>
               )}

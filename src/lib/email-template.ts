@@ -11,45 +11,52 @@ interface EmailTemplateOptions {
   description: string | string[]
   content?: string
   headerHtml?: string
+  orgHeaderHtml?: string
   buttonText?: string
   buttonUrl?: string
   footerText?: string
   showLogo?: boolean
   features?: FeatureCard[]
   calendlyUrl?: string | null
+  icon?: string
+  iconBgColor?: string
 }
 
 /**
- * Generate a unified email template matching the auth page design
+ * Generate a modern, professional email template matching the app UI design
+ * Inspired by the payment required modal - clean, modern, professional
  */
 export async function generateEmailTemplate({
   title,
   description,
   content,
   headerHtml,
+  orgHeaderHtml,
   buttonText,
   buttonUrl,
   footerText,
   showLogo = true,
   features,
-  calendlyUrl
+  calendlyUrl,
+  icon,
+  iconBgColor = '#f3f4f6'
 }: EmailTemplateOptions): Promise<string> {
   const logoUrl = await getLogoUrlForEmail()
   
   // Handle description as string or array
   const descriptionHtml = Array.isArray(description)
-    ? description.map(desc => `<p style="margin: 0 0 12px 0; font-size: 16px; color: #6b7280; line-height: 1.6; text-align: center; max-width: 480px; margin-left: auto; margin-right: auto;">${desc}</p>`).join('')
-    : `<p style="margin: 0 0 24px 0; font-size: 16px; color: #6b7280; line-height: 1.6; text-align: center; max-width: 480px; margin-left: auto; margin-right: auto;">${description}</p>`
+    ? description.map(desc => `<p style="margin: 0 0 12px 0; font-size: 15px; color: #6b7280; line-height: 1.6; text-align: left; max-width: 100%;">${desc}</p>`).join('')
+    : `<p style="margin: 0 0 16px 0; font-size: 15px; color: #6b7280; line-height: 1.6; text-align: left; max-width: 100%;">${description}</p>`
   
   // Escape button URL
   const escapedButtonUrl = buttonUrl ? buttonUrl.replace(/&/g, '&amp;') : ''
   
-  // Button HTML
+  // Modern button HTML - matching UI design
   const buttonHtml = buttonText && buttonUrl ? `
-    <table width="100%" cellpadding="0" cellspacing="0">
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin: 16px 0 24px 0;">
       <tr>
-        <td align="center" style="padding: 0 0 40px 0;">
-          <a href="${escapedButtonUrl}" style="display: inline-block; background-color: #111827; color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+        <td align="left" style="padding: 0;">
+          <a href="${escapedButtonUrl}" style="display: inline-block; background-color: #111827; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 15px; line-height: 1.5;">
             ${buttonText}
           </a>
         </td>
@@ -60,10 +67,10 @@ export async function generateEmailTemplate({
   // Book Demo CTA Button (if Calendly URL is provided)
   const escapedCalendlyUrl = calendlyUrl ? calendlyUrl.replace(/&/g, '&amp;') : ''
   const bookDemoButtonHtml = calendlyUrl ? `
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 40px 0;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin: 16px 0 24px 0;">
       <tr>
-        <td align="center" style="padding: 0;">
-          <a href="${escapedCalendlyUrl}" style="display: inline-block; background-color: #0069ff; color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+        <td align="left" style="padding: 0;">
+          <a href="${escapedCalendlyUrl}" style="display: inline-block; background-color: #0069ff; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 15px; line-height: 1.5;">
             Book Demo
           </a>
         </td>
@@ -73,22 +80,21 @@ export async function generateEmailTemplate({
   
   // Content HTML
   const contentHtml = content ? `
-    <div style="margin: 0 0 40px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center; max-width: 480px; margin-left: auto; margin-right: auto;">
+    <div style="margin: 0 0 24px 0; font-size: 15px; color: #374151; line-height: 1.6; text-align: left; max-width: 100%;">
       ${content}
     </div>
   ` : ''
 
-  // Features grid HTML (3x2 layout)
+  // Features grid HTML (modern card design)
   const featuresHtml = features && features.length > 0 ? `
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 40px 0;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 32px 0;">
       <tr>
-        <td align="center" style="padding: 0;">
-          <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 520px;">
-            <!-- First Row -->
-            <tr>
-              ${features.slice(0, 3).map((feature) => `
-                <td align="left" valign="top" style="padding: 0 8px 16px 8px; width: 33.33%;">
-                  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);">
+        <td align="left" style="padding: 0;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 100%;">
+            ${features.map((feature, index) => `
+              <tr>
+                <td align="left" valign="top" style="padding: ${index < features.length - 1 ? '0 0 16px 0' : '0'};">
+                  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
                     <tr>
                       <td align="left" style="padding: 0 0 12px 0;">
                         <div style="font-size: 24px; line-height: 1;">${feature.icon}</div>
@@ -103,46 +109,15 @@ export async function generateEmailTemplate({
                     </tr>
                     <tr>
                       <td align="left" style="padding: 0;">
-                        <p style="margin: 0; font-size: 12px; color: #6b7280; line-height: 1.5;">
+                        <p style="margin: 0; font-size: 13px; color: #6b7280; line-height: 1.5;">
                           ${feature.description}
                         </p>
                       </td>
                     </tr>
                   </table>
                 </td>
-              `).join('')}
-            </tr>
-            <!-- Second Row -->
-            ${features.length > 3 ? `
-            <tr>
-              ${features.slice(3, 6).map((feature) => `
-                <td align="left" valign="top" style="padding: 0 8px 0 8px; width: 33.33%;">
-                  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);">
-                    <tr>
-                      <td align="left" style="padding: 0 0 12px 0;">
-                        <div style="font-size: 24px; line-height: 1;">${feature.icon}</div>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td align="left" style="padding: 0 0 8px 0;">
-                        <h3 style="margin: 0; font-size: 14px; font-weight: 600; color: #111827; line-height: 1.4;">
-                          ${feature.title}
-                        </h3>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td align="left" style="padding: 0;">
-                        <p style="margin: 0; font-size: 12px; color: #6b7280; line-height: 1.5;">
-                          ${feature.description}
-                        </p>
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              `).join('')}
-              ${features.length < 6 ? Array(6 - features.length).fill('<td style="width: 33.33%;"></td>').join('') : ''}
-            </tr>
-            ` : ''}
+              </tr>
+            `).join('')}
           </table>
         </td>
       </tr>
@@ -151,23 +126,48 @@ export async function generateEmailTemplate({
   
   // Footer text HTML
   const footerTextHtml = footerText ? `
-    <p style="margin: 0 0 40px 0; font-size: 14px; color: #9ca3af; line-height: 1.6; text-align: center;">
+    <p style="margin: 32px 0 0 0; font-size: 13px; color: #9ca3af; line-height: 1.6; text-align: left;">
       ${footerText}
     </p>
   ` : ''
   
   // Logo HTML
-  // For preview mode, use a data URL or local path
   const isPreview = process.env.NODE_ENV === 'development' && logoUrl.includes('localhost')
   const logoSrc = isPreview ? '/madrasah-logo.png' : logoUrl
   
   const logoHtml = showLogo ? `
     <tr>
-      <td align="center" style="padding: 48px 40px 27px 40px;">
-        <img src="${logoSrc}" alt="Madrasah OS" style="max-width: 198px; height: auto; display: block;" onerror="this.style.display='none';" />
+      <td align="center" style="padding: 40px 40px 24px 40px; background-color: #ffffff;">
+        <img src="${logoSrc}" alt="Madrasah OS" style="max-width: 180px; height: auto; display: block;" onerror="this.style.display='none';" />
       </td>
     </tr>
   ` : ''
+
+  // Icon HTML (if provided)
+  const iconHtml = icon ? `
+    <div style="width: 48px; height: 48px; background-color: ${iconBgColor}; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+      <div style="font-size: 24px; line-height: 1;">${icon}</div>
+    </div>
+  ` : ''
+
+  // Header section with icon and title
+  const headerSectionHtml = `
+    <tr>
+      <td style="padding: 0 40px 16px 40px; background-color: #ffffff; border-bottom: 1px solid #e5e7eb;">
+        <table width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td align="left" style="padding: 0;">
+              ${iconHtml}
+              <h1 style="margin: 0 0 8px 0; font-size: 20px; font-weight: 600; color: #111827; line-height: 1.4; text-align: left;">
+                ${title}
+              </h1>
+              ${descriptionHtml}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  `
   
   return `
     <!DOCTYPE html>
@@ -180,53 +180,57 @@ export async function generateEmailTemplate({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
       </head>
-      <body style="margin: 0; padding: 0; background-color: transparent; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
-        <table width="100%" cellpadding="0" cellspacing="0" style="padding: 60px 20px;">
+      <body style="margin: 0; padding: 0; background-color: #f9fafb; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="padding: 40px 20px;">
           <tr>
             <td align="center">
-              <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); overflow: hidden; max-width: 600px;">
+              <!-- Main Card Container -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); overflow: hidden; max-width: 600px;">
                 ${logoHtml}
-                
-                <!-- Content -->
+                ${orgHeaderHtml ? `
                 <tr>
-                  <td align="center" style="padding: 48px 40px 48px 40px;">
-                    ${headerHtml || ''}
-                    <h1 style="margin: 0 0 12px 0; font-size: 20px; font-weight: 600; color: #111827; line-height: 1.4; text-align: center;">
-                      ${title}
-                    </h1>
-                    ${descriptionHtml}
+                  <td align="center" style="padding: 0 40px 24px 40px; background-color: #ffffff;">
+                    ${orgHeaderHtml}
+                  </td>
+                </tr>
+                ` : ''}
+                
+                ${headerHtml ? `
+                <tr>
+                  <td style="padding: 0 40px 24px 40px; background-color: #ffffff;">
+                    ${headerHtml}
+                  </td>
+                </tr>
+                ` : ''}
+                
+                ${headerSectionHtml}
+                
+                <!-- Content Section -->
+                <tr>
+                  <td style="padding: 24px 40px; background-color: #ffffff;">
                     ${featuresHtml}
                     ${contentHtml}
                     ${bookDemoButtonHtml}
                     ${buttonHtml}
                     ${footerTextHtml}
-                    
-                    <!-- Divider -->
-                    ${(buttonHtml || contentHtml) ? `
+                  </td>
+                </tr>
+                
+                <!-- Footer -->
+                <tr>
+                  <td style="padding: 24px 40px; background-color: #f9fafb; border-top: 1px solid #e5e7eb;">
                     <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
-                        <td align="center" style="padding: 0 0 40px 0;">
-                          <div style="border-top: 1px solid #e5e7eb; width: 100%; max-width: 520px;"></div>
+                        <td align="center" style="padding: 0 0 12px 0;">
+                          <a href="https://madrasah.io" style="font-size: 13px; color: #6b7280; text-decoration: none; line-height: 1.6;">
+                            madrasah.io
+                          </a>
                         </td>
                       </tr>
-                    </table>
-                    ` : ''}
-                    
-                    <!-- Footer Links -->
-                    <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
-                        <td align="center" style="padding: 0; border-top: 1px solid #e5e7eb;">
-                          <table cellpadding="0" cellspacing="0" style="margin: 32px auto 0 auto;">
-                            <tr>
-                              <td align="center" style="padding: 0 16px;">
-                                <a href="https://madrasah.io" style="font-size: 12px; color: #6b7280; text-decoration: none; line-height: 1.6;">
-                                  madrasah.io
-                                </a>
-                              </td>
-                            </tr>
-                          </table>
-                          <p style="margin: 24px 0 0 0; font-size: 11px; color: #9ca3af; text-align: center;">
-                            © Madrasah OS. All rights reserved.
+                        <td align="center" style="padding: 0;">
+                          <p style="margin: 0; font-size: 12px; color: #9ca3af; text-align: center; line-height: 1.5;">
+                            © ${new Date().getFullYear()} Madrasah OS. All rights reserved.
                           </p>
                         </td>
                       </tr>
@@ -241,4 +245,3 @@ export async function generateEmailTemplate({
     </html>
   `
 }
-

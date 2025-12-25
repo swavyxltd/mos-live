@@ -162,29 +162,29 @@ export async function sendParentInvite({
   orgName: string
   inviteUrl: string
 }) {
-  const headerHtml = `
-    <div style="max-width: 360px; margin: 8px auto 48px auto; text-align: center;">
+  const orgHeaderHtml = `
+    <div style="max-width: 100%; margin: 0 auto;">
       <div style="
         display: inline-block;
         text-align: left;
         border-left: 4px solid #22c55e;
-        padding: 0 24px 0 16px;
+        padding: 0 0 0 16px;
       ">
         <div style="
-          font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          font-size: 18px;
-          font-weight: 700;
+          font-size: 16px;
+          font-weight: 600;
           color: #111827;
-          margin-bottom: 2px;
+          margin-bottom: 4px;
+          line-height: 1.4;
         ">
           ${orgName}
         </div>
         <div style="
-          font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          font-size: 12px;
+          font-size: 11px;
           text-transform: uppercase;
-          letter-spacing: 0.12em;
+          letter-spacing: 0.1em;
           color: #6b7280;
+          font-weight: 500;
         ">
           Official Communication
         </div>
@@ -195,11 +195,11 @@ export async function sendParentInvite({
   const html = await generateEmailTemplate({
     title: "Assalamu'alaikum!",
     description: `You've been invited to join <strong>${orgName}</strong> on Madrasah OS. Click below to complete your account setup.`,
-    headerHtml,
+    orgHeaderHtml,
     buttonText: 'Complete Setup',
     buttonUrl: inviteUrl,
     footerText: 'If you have any questions, please contact your madrasah administrator.',
-    showLogo: false
+    showLogo: true
   })
   
   return sendEmail({
@@ -223,12 +223,33 @@ export async function sendPaymentLink({
   amount: number
   paymentUrl: string
 }) {
+  const orgHeaderHtml = `
+    <div style="max-width: 100%; margin: 0 auto;">
+      <div style="display: inline-block; text-align: left; border-left: 4px solid #22c55e; padding: 0 0 0 16px;">
+        <div style="font-size: 16px; font-weight: 600; color: #111827; margin-bottom: 4px; line-height: 1.4;">
+          ${orgName}
+        </div>
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #6b7280; font-weight: 500;">
+          Official Communication
+        </div>
+      </div>
+    </div>
+  `
+  
+  const content = `
+    <p style="margin: 0 0 16px 0; font-size: 15px; color: #374151; line-height: 1.6;">Assalamu'alaikum,</p>
+    <p style="margin: 0 0 24px 0; font-size: 15px; color: #374151; line-height: 1.6;">Invoice #${invoiceId.slice(-8)} for <strong>£${(amount / 100).toFixed(2)}</strong> is due. Please click the button below to pay securely online.</p>
+  `
+  
   const html = await generateEmailTemplate({
     title: 'Payment Due',
-    description: `Invoice #${invoiceId.slice(-8)} for <strong>£${(amount / 100).toFixed(2)}</strong> is due. Click below to pay securely.`,
+    description: `You have an outstanding invoice for £${(amount / 100).toFixed(2)}. Click below to pay securely.`,
+    orgHeaderHtml,
+    content,
     buttonText: 'Pay Now',
     buttonUrl: paymentUrl,
-    footerText: 'If you have any questions, please contact your madrasah administrator.'
+    footerText: 'If you have any questions, please contact your madrasah administrator.',
+    showLogo: true
   })
   
   return sendEmail({
@@ -249,22 +270,20 @@ export async function sendSupportNotification({
   message: string
 }) {
   const content = `
-    <div style="margin-bottom: 16px;">
-      <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280; font-weight: 500;">Subject:</p>
-      <p style="margin: 0 0 16px 0; font-size: 16px; color: #111827; font-weight: 600;">${subject}</p>
-    </div>
-    <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-top: 16px;">
-      <p style="margin: 0; font-size: 14px; color: #6b7280; font-weight: 500; margin-bottom: 8px;">Message:</p>
-      <div style="font-size: 15px; color: #374151; line-height: 1.6;">
-        ${message}
-      </div>
+    <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+      <p style="margin: 0 0 8px 0; font-size: 13px; color: #6b7280; font-weight: 500;">Subject:</p>
+      <p style="margin: 0 0 16px 0; font-size: 15px; color: #111827; font-weight: 600;">${subject}</p>
+      <p style="margin: 0 0 8px 0; font-size: 13px; color: #6b7280; font-weight: 500;">Message:</p>
+      <div style="font-size: 15px; color: #374151; line-height: 1.6;">${message}</div>
     </div>
   `
   
   const html = await generateEmailTemplate({
     title: 'Support Ticket Update',
     description: 'You have received an update on your support ticket.',
-    content
+    content,
+    footerText: 'If you need further assistance, please reply to this email or contact our support team.',
+    showLogo: true
   })
   
   return sendEmail({
@@ -292,32 +311,25 @@ export async function sendPaymentFailedPlatform({
   const reasonText = failureReason || 'Payment could not be processed'
   
   const content = `
-    <div style="margin-bottom: 24px;">
-      <p style="margin: 0 0 16px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">
-        We were unable to process your payment for <strong>${amountText}</strong> for <strong>${orgName}</strong>.
-      </p>
-      <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-left: 4px solid #dc2626; border-radius: 8px; padding: 16px; margin: 16px 0;">
-        <p style="margin: 0 0 8px 0; font-size: 14px; color: #991b1b; font-weight: 600; text-align: center;">Reason:</p>
-        <p style="margin: 0; font-size: 14px; color: #7f1d1d; line-height: 1.6; text-align: center;">
-          ${reasonText}
-        </p>
+    <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-left: 4px solid #dc2626; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+      <p style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600; color: #991b1b;">Payment Failed</p>
+      <p style="margin: 0 0 12px 0; font-size: 15px; color: #7f1d1d; line-height: 1.6;">We were unable to process your payment for <strong>${amountText}</strong> for <strong>${orgName}</strong>.</p>
+      <div style="background-color: #fee2e2; border-radius: 6px; padding: 12px; margin-top: 12px;">
+        <p style="margin: 0 0 4px 0; font-size: 13px; color: #991b1b; font-weight: 600;">Reason:</p>
+        <p style="margin: 0; font-size: 14px; color: #7f1d1d; line-height: 1.5;">${reasonText}</p>
       </div>
-      <p style="margin: 16px 0 0 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">
-        Don't worry - we'll automatically retry your payment in a few days. In the meantime, you can update your payment method if needed.
-      </p>
     </div>
+    <p style="margin: 0 0 16px 0; font-size: 15px; color: #374151; line-height: 1.6;">Don't worry - we'll automatically retry your payment in a few days. In the meantime, you can update your payment method if needed.</p>
   `
   
   const html = await generateEmailTemplate({
     title: 'Payment Update',
-    description: [
-      "Assalamu'alaikum!",
-      'We wanted to let you know that we were unable to process your monthly subscription payment. We\'ll automatically retry the payment in a few days.'
-    ],
+    description: "Assalamu'alaikum! We wanted to let you know that we were unable to process your monthly subscription payment. We'll automatically retry the payment in a few days.",
     content,
     buttonText: 'Update Payment Method',
     buttonUrl: updateUrl,
-    footerText: 'If you have any questions or need assistance, please contact our support team.'
+    footerText: 'If you have any questions or need assistance, please contact our support team.',
+    showLogo: true
   })
   
   return sendEmail({
@@ -606,99 +618,33 @@ export async function sendParentOnboardingEmail({
     safeSetupUrl = protocolDomain + cleanPath
   }
   
+  const orgHeaderHtml = `
+    <div style="max-width: 100%; margin: 0 auto;">
+      <div style="display: inline-block; text-align: left; border-left: 4px solid #22c55e; padding: 0 0 0 16px;">
+        <div style="font-size: 16px; font-weight: 600; color: #111827; margin-bottom: 4px; line-height: 1.4;">
+          ${orgName}
+        </div>
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #6b7280; font-weight: 500;">
+          Official Communication
+        </div>
+      </div>
+    </div>
+  `
+  
   const content = `
-    <!-- Welcome Message -->
-    <p style="margin: 0 0 16px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">
-      We're delighted to welcome you and <strong>${studentName}</strong> to <strong>${orgName}</strong>!
-    </p>
-    
-    <p style="margin: 0 0 24px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">
-      Your child's madrasah is now using <strong>Madrasah OS</strong> to enhance their Islamic education experience. Inshallah, this platform will help us work together to support your child's journey in learning the Quran and Islamic knowledge.
-    </p>
-    
-    <!-- Button - Moved Higher -->
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin: 0 0 32px 0;">
-      <tr>
-        <td align="center" style="padding: 0;">
-          <a href="${safeSetupUrl.replace(/&/g, '&amp;')}" style="display: inline-block; background-color: #111827; color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 16px;">
-            Complete Account Setup
-          </a>
-        </td>
-      </tr>
-    </table>
-    
-    <!-- Introduction Section -->
-    <div style="margin: 32px 0; padding: 24px; background-color: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
-      <h2 style="margin: 0 0 12px 0; font-size: 18px; font-weight: 600; color: #111827; text-align: center;">
-        What is Madrasah OS?
-      </h2>
-      <p style="margin: 0; font-size: 15px; color: #374151; line-height: 1.6; text-align: center;">
-        Madrasah OS is a comprehensive platform designed specifically for Islamic education. It helps parents stay connected with their child's learning journey, making it easier to track progress, manage payments, and communicate with teachers—all in one place.
-      </p>
-    </div>
-    
-    <!-- Features Grid (3x2) -->
-    <div style="margin: 32px 0;">
-      <h2 style="margin: 0 0 20px 0; font-size: 18px; font-weight: 600; color: #111827; text-align: center;">
-        How We Support Your Child's Education
-      </h2>
-      
-      <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
-        <!-- Row 1 -->
-        <tr>
-          <td style="padding: 16px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center; width: 33.33%;">
-            <div style="font-size: 24px; margin-bottom: 8px;">📚</div>
-            <h3 style="margin: 0 0 6px 0; font-size: 14px; font-weight: 600; color: #111827;">Track Progress</h3>
-            <p style="margin: 0; font-size: 12px; color: #6b7280; line-height: 1.4;">Monitor your child's academic progress and achievements</p>
-          </td>
-          <td style="width: 8px;"></td>
-          <td style="padding: 16px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center; width: 33.33%;">
-            <div style="font-size: 24px; margin-bottom: 8px;">💬</div>
-            <h3 style="margin: 0 0 6px 0; font-size: 14px; font-weight: 600; color: #111827;">Stay Connected</h3>
-            <p style="margin: 0; font-size: 12px; color: #6b7280; line-height: 1.4;">Direct communication with teachers and staff</p>
-          </td>
-          <td style="width: 8px;"></td>
-          <td style="padding: 16px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center; width: 33.33%;">
-            <div style="font-size: 24px; margin-bottom: 8px;">📅</div>
-            <h3 style="margin: 0 0 6px 0; font-size: 14px; font-weight: 600; color: #111827;">View Schedule</h3>
-            <p style="margin: 0; font-size: 12px; color: #6b7280; line-height: 1.4;">See class timings and important dates</p>
-          </td>
-        </tr>
-        <tr style="height: 8px;"><td colspan="5"></td></tr>
-        <!-- Row 2 -->
-        <tr>
-          <td style="padding: 16px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center; width: 33.33%;">
-            <div style="font-size: 24px; margin-bottom: 8px;">💰</div>
-            <h3 style="margin: 0 0 6px 0; font-size: 14px; font-weight: 600; color: #111827;">Easy Payments</h3>
-            <p style="margin: 0; font-size: 12px; color: #6b7280; line-height: 1.4;">Pay fees securely online anytime</p>
-          </td>
-          <td style="width: 8px;"></td>
-          <td style="padding: 16px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center; width: 33.33%;">
-            <div style="font-size: 24px; margin-bottom: 8px;">✅</div>
-            <h3 style="margin: 0 0 6px 0; font-size: 14px; font-weight: 600; color: #111827;">Attendance</h3>
-            <p style="margin: 0; font-size: 12px; color: #6b7280; line-height: 1.4;">Real-time attendance tracking</p>
-          </td>
-          <td style="width: 8px;"></td>
-          <td style="padding: 16px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center; width: 33.33%;">
-            <div style="font-size: 24px; margin-bottom: 8px;">📊</div>
-            <h3 style="margin: 0 0 6px 0; font-size: 14px; font-weight: 600; color: #111827;">Reports</h3>
-            <p style="margin: 0; font-size: 12px; color: #6b7280; line-height: 1.4;">Access detailed progress reports</p>
-          </td>
-        </tr>
-      </table>
-    </div>
-    
-    <!-- Closing Message -->
-    <p style="margin: 32px 0 0 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">
-      Jazakallahu Khairan for entrusting us with your child's Islamic education. We're here to support you every step of the way, inshallah.
-    </p>
+    <p style="margin: 0 0 16px 0; font-size: 15px; color: #374151; line-height: 1.6;">We're delighted to welcome you and <strong>${studentName}</strong> to <strong>${orgName}</strong>!</p>
+    <p style="margin: 0 0 24px 0; font-size: 15px; color: #374151; line-height: 1.6;">Your child's madrasah is now using <strong>Madrasah OS</strong> to enhance their Islamic education experience. Inshallah, this platform will help us work together to support your child's journey in learning the Quran and Islamic knowledge.</p>
   `
   
   const html = await generateEmailTemplate({
     title: "Assalamu'alaikum!",
-    description: '',
+    description: 'Welcome to our madrasah! Complete your account setup to get started.',
+    orgHeaderHtml,
     content,
-    footerText: `This link will expire in 7 days. If you have any questions, please contact ${orgName} directly.`
+    buttonText: 'Complete Account Setup',
+    buttonUrl: safeSetupUrl,
+    footerText: `This link will expire in 7 days. If you have any questions, please contact ${orgName} directly.`,
+    showLogo: true
   })
   
   return sendEmail({
@@ -730,14 +676,27 @@ export async function sendStaffInvitation({
   
   const roleLabel = role === 'ADMIN' ? 'Administrator' : role === 'STAFF' ? 'Staff Member' : role
   
+  const orgHeaderHtml = `
+    <div style="max-width: 100%; margin: 0 auto;">
+      <div style="display: inline-block; text-align: left; border-left: 4px solid #22c55e; padding: 0 0 0 16px;">
+        <div style="font-size: 16px; font-weight: 600; color: #111827; margin-bottom: 4px; line-height: 1.4;">
+          ${orgName}
+        </div>
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #6b7280; font-weight: 500;">
+          Official Communication
+        </div>
+      </div>
+    </div>
+  `
+  
   const html = await generateEmailTemplate({
     title: "You've Been Invited",
-    description: [
-      "Assalamu'alaikum!",
-      `You've been invited to join <strong>${orgName}</strong> as a <strong>${roleLabel}</strong>. Click below to create your account and get started.`
-    ],
+    description: `Assalamu'alaikum! You've been invited to join <strong>${orgName}</strong> as an <strong>${roleLabel}</strong>. Click below to create your account and get started.`,
+    orgHeaderHtml,
     buttonText: 'Create Account',
-    buttonUrl: safeSignupUrl
+    buttonUrl: safeSignupUrl,
+    footerText: 'If you have any questions, please contact your organisation administrator.',
+    showLogo: true
   })
   
   return sendEmail({
@@ -781,30 +740,13 @@ export async function sendPaymentConfirmationEmail({
       })
     : '—'
 
-  const headerHtml = `
-    <div style="max-width: 360px; margin: 8px auto 48px auto; text-align: center;">
-      <div style="
-        display: inline-block;
-        text-align: left;
-        border-left: 4px solid #22c55e;
-        padding: 0 24px 0 16px;
-      ">
-        <div style="
-          font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          font-size: 18px;
-          font-weight: 700;
-          color: #111827;
-          margin-bottom: 2px;
-        ">
+  const orgHeaderHtml = `
+    <div style="max-width: 100%; margin: 0 auto;">
+      <div style="display: inline-block; text-align: left; border-left: 4px solid #22c55e; padding: 0 0 0 16px;">
+        <div style="font-size: 16px; font-weight: 600; color: #111827; margin-bottom: 4px; line-height: 1.4;">
           ${orgName}
         </div>
-        <div style="
-          font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          font-size: 12px;
-          text-transform: uppercase;
-          letter-spacing: 0.12em;
-          color: #6b7280;
-        ">
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #6b7280; font-weight: 500;">
           Official Communication
         </div>
       </div>
@@ -845,21 +787,19 @@ export async function sendPaymentConfirmationEmail({
       </tr>
     </table>
     <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #22c55e; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
-      <p style="margin: 0; font-size: 16px; font-weight: 600; color: #166534; text-align: center;">
-        Jazakallahu Khairan
-      </p>
-      <p style="margin: 8px 0 0 0; font-size: 14px; color: #15803d; text-align: center;">
-        Thank you for your payment. We appreciate your continued support.
-      </p>
+      <p style="margin: 0; font-size: 15px; font-weight: 600; color: #166534;">Jazakallahu Khairan</p>
+      <p style="margin: 8px 0 0 0; font-size: 15px; color: #15803d; line-height: 1.6;">Thank you for your payment. We appreciate your continued support.</p>
     </div>
   `
   
   const html = await generateEmailTemplate({
     title: 'Payment Confirmation',
     description: "Assalamu'alaikum! This email confirms that your payment has been received and processed.",
-    headerHtml,
+    orgHeaderHtml,
     content,
-    showLogo: false
+    footerText: `Best regards,<br>The ${orgName} Team`,
+    showLogo: true,
+    icon: '✓'
   })
   
   return sendEmail({
@@ -898,30 +838,13 @@ export async function sendApplicationAcceptanceEmail({
     ? `${childrenNames[0]} and ${childrenNames[1]}`
     : `${childrenNames.slice(0, -1).join(', ')}, and ${childrenNames[childrenNames.length - 1]}`
   
-  const headerHtml = `
-    <div style="max-width: 360px; margin: 8px auto 48px auto; text-align: center;">
-      <div style="
-        display: inline-block;
-        text-align: left;
-        border-left: 4px solid #22c55e;
-        padding: 0 24px 0 16px;
-      ">
-        <div style="
-          font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          font-size: 18px;
-          font-weight: 700;
-          color: #111827;
-          margin-bottom: 2px;
-        ">
+  const orgHeaderHtml = `
+    <div style="max-width: 100%; margin: 0 auto;">
+      <div style="display: inline-block; text-align: left; border-left: 4px solid #22c55e; padding: 0 0 0 16px;">
+        <div style="font-size: 16px; font-weight: 600; color: #111827; margin-bottom: 4px; line-height: 1.4;">
           ${orgName}
         </div>
-        <div style="
-          font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          font-size: 12px;
-          text-transform: uppercase;
-          letter-spacing: 0.12em;
-          color: #6b7280;
-        ">
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #6b7280; font-weight: 500;">
           Official Communication
         </div>
       </div>
@@ -1020,12 +943,15 @@ export async function sendApplicationAcceptanceEmail({
   `
   
   const html = await generateEmailTemplate({
-    title: 'Application Accepted - Alhamdulillah!',
-    description: '',
-    headerHtml,
+    title: 'Application Accepted',
+    description: 'Alhamdulillah! Your application has been accepted. Welcome to our madrasah.',
+    orgHeaderHtml,
     content,
+    buttonText: 'Sign Up Now',
+    buttonUrl: safeSignupUrl,
     footerText: `If you have any questions, please don't hesitate to contact us. We're here to help!`,
-    showLogo: false
+    showLogo: true,
+    icon: '🎉'
   })
   
   const text = `Application Accepted - ${orgName}
@@ -1079,88 +1005,32 @@ export async function sendApplicationSubmissionConfirmation({
   parentName: string
   applicationId: string
 }) {
-  const headerHtml = `
-    <div style="max-width: 360px; margin: 0 auto 24px auto; text-align: left;">
-      <div style="
-        border-left: 4px solid #22c55e;
-        padding-left: 12px;
-      ">
-        <div style="
-          font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          font-size: 18px;
-          font-weight: 700;
-          color: #111827;
-          margin-bottom: 2px;
-        ">
+  const orgHeaderHtml = `
+    <div style="max-width: 100%; margin: 0 auto;">
+      <div style="display: inline-block; text-align: left; border-left: 4px solid #22c55e; padding: 0 0 0 16px;">
+        <div style="font-size: 16px; font-weight: 600; color: #111827; margin-bottom: 4px; line-height: 1.4;">
           ${orgName}
         </div>
-        <div style="
-          font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          font-size: 12px;
-          text-transform: uppercase;
-          letter-spacing: 0.12em;
-          color: #6b7280;
-        ">
-          Parent Communication
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #6b7280; font-weight: 500;">
+          Official Communication
         </div>
       </div>
     </div>
   `
 
   const content = `
-    <!-- Confirmation Message -->
-    <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #22c55e; border-radius: 8px; padding: 20px; margin-bottom: 24px; text-align: center;">
-      <p style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: #166534;">
-        Application Received ✓
-      </p>
-      <p style="margin: 0; font-size: 16px; color: #15803d; line-height: 1.6;">
-        Thank you for submitting your application to <strong>${orgName}</strong>
-      </p>
+    <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-left: 4px solid #22c55e; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+      <p style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600; color: #166534;">Application Received ✓</p>
+      <p style="margin: 0; font-size: 15px; color: #15803d; line-height: 1.6;">Thank you for submitting your application to <strong>${orgName}</strong></p>
     </div>
-    
-    <!-- Welcome Message -->
-    <p style="margin: 0 0 16px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">
-      Assalamu'alaikum <strong>${parentName}</strong>,
-    </p>
-    
-    <p style="margin: 0 0 24px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">
-      We have successfully received your application. Our team will review it and get back to you shortly, inshallah.
-    </p>
-    
-    <!-- Important Note -->
-    <div style="background-color: #fef3c7; border: 1px solid #fde68a; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 16px; margin: 24px 0;">
-      <p style="margin: 0; font-size: 15px; color: #92400e; line-height: 1.6; text-align: center;">
-        <strong>Important:</strong> If your application is accepted, you will receive an email with a link to create your Parent Portal account.
-      </p>
-    </div>
-    
-    <!-- Next Steps -->
-    <div style="margin: 32px 0;">
-      <h2 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 600; color: #111827; text-align: center;">
-        What Happens Next?
-      </h2>
-      
-      <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
-        <tr>
-          <td style="padding: 16px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center;">
-            <div style="font-size: 24px; margin-bottom: 8px;">📋</div>
-            <h3 style="margin: 0 0 6px 0; font-size: 14px; font-weight: 600; color: #111827;">Review</h3>
-            <p style="margin: 0; font-size: 12px; color: #6b7280; line-height: 1.4;">Our team will review your application</p>
-          </td>
-        </tr>
-      </table>
-    </div>
-    
-    <!-- Closing Message -->
-    <p style="margin: 32px 0 0 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">
-      If you have any questions, please don't hesitate to contact us. We're here to help!
-    </p>
+    <p style="margin: 0 0 16px 0; font-size: 15px; color: #374151; line-height: 1.6;">Assalamu'alaikum <strong>${parentName}</strong>,</p>
+    <p style="margin: 0 0 24px 0; font-size: 15px; color: #374151; line-height: 1.6;">We have successfully received your application. Our team will review it and get back to you shortly, inshallah.</p>
   `
   
   const html = await generateEmailTemplate({
-    title: 'Application Received - Thank You!',
-    description: '',
-    headerHtml,
+    title: 'Application Received',
+    description: 'Thank you for submitting your application. We\'ll review it and get back to you shortly.',
+    orgHeaderHtml,
     content,
     footerText: `Best regards,<br>The ${orgName} Team`,
     showLogo: false
@@ -1212,30 +1082,13 @@ export async function sendApplicationRejectionEmail({
     ? `${childrenNames[0]} and ${childrenNames[1]}`
     : `${childrenNames.slice(0, -1).join(', ')}, and ${childrenNames[childrenNames.length - 1]}`
   
-  const headerHtml = `
-    <div style="max-width: 360px; margin: 8px auto 48px auto; text-align: center;">
-      <div style="
-        display: inline-block;
-        text-align: left;
-        border-left: 4px solid #dc2626;
-        padding: 0 24px 0 16px;
-      ">
-        <div style="
-          font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          font-size: 18px;
-          font-weight: 700;
-          color: #111827;
-          margin-bottom: 2px;
-        ">
+  const orgHeaderHtml = `
+    <div style="max-width: 100%; margin: 0 auto;">
+      <div style="display: inline-block; text-align: left; border-left: 4px solid #22c55e; padding: 0 0 0 16px;">
+        <div style="font-size: 16px; font-weight: 600; color: #111827; margin-bottom: 4px; line-height: 1.4;">
           ${orgName}
         </div>
-        <div style="
-          font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          font-size: 12px;
-          text-transform: uppercase;
-          letter-spacing: 0.12em;
-          color: #6b7280;
-        ">
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #6b7280; font-weight: 500;">
           Official Communication
         </div>
       </div>
@@ -1243,48 +1096,20 @@ export async function sendApplicationRejectionEmail({
   `
 
   const content = `
-    <!-- Rejection Message -->
-    <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-left: 4px solid #dc2626; border-radius: 8px; padding: 20px; margin-bottom: 24px; text-align: center;">
-      <p style="margin: 0 0 8px 0; font-size: 18px; font-weight: 600; color: #991b1b;">
-        Application Update
-      </p>
-      <p style="margin: 0; font-size: 16px; color: #7f1d1d; line-height: 1.6;">
-        We regret to inform you that your application has been <strong>rejected</strong>.
-      </p>
+    <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-left: 4px solid #dc2626; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+      <p style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600; color: #991b1b;">Application Update</p>
+      <p style="margin: 0; font-size: 15px; color: #7f1d1d; line-height: 1.6;">We regret to inform you that your application has been <strong>rejected</strong>.</p>
     </div>
-    
-    <!-- Welcome Message -->
-    <p style="margin: 0 0 16px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">
-      Assalamu'alaikum <strong>${parentName}</strong>,
-    </p>
-    
-    <p style="margin: 0 0 24px 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">
-      Thank you for your interest in enrolling <strong>${childrenList}</strong> at <strong>${orgName}</strong>. After careful consideration, we are unable to accept your application at this time.
-    </p>
-    
+    <p style="margin: 0 0 16px 0; font-size: 15px; color: #374151; line-height: 1.6;">Assalamu'alaikum <strong>${parentName}</strong>,</p>
+    <p style="margin: 0 0 24px 0; font-size: 15px; color: #374151; line-height: 1.6;">Thank you for your interest in enrolling <strong>${childrenList}</strong> at <strong>${orgName}</strong>. After careful consideration, we are unable to accept your application at this time.</p>
     ${adminNotes ? `
-    <!-- Admin Notes -->
-    <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 24px 0;">
-      <h2 style="margin: 0 0 12px 0; font-size: 16px; font-weight: 600; color: #111827; text-align: center;">
-        Additional Information
-      </h2>
-      <p style="margin: 0; font-size: 15px; color: #374151; line-height: 1.6; text-align: left; white-space: pre-wrap;">
-        ${adminNotes.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
-      </p>
+    <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin: 24px 0;">
+      <h2 style="margin: 0 0 12px 0; font-size: 15px; font-weight: 600; color: #111827;">Additional Information</h2>
+      <p style="margin: 0; font-size: 15px; color: #374151; line-height: 1.6;">${adminNotes.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>
     </div>
     ` : ''}
-    
-    <!-- Next Steps -->
-    <div style="margin: 32px 0;">
-      <h2 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 600; color: #111827; text-align: center;">
-        What You Can Do
-      </h2>
-      
-      <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
-        <tr>
-          <td style="padding: 16px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; text-align: center;">
-            <div style="font-size: 24px; margin-bottom: 8px;">📞</div>
-            <h3 style="margin: 0 0 6px 0; font-size: 14px; font-weight: 600; color: #111827;">Contact Us</h3>
+    <p style="margin: 24px 0 0 0; font-size: 15px; color: #374151; line-height: 1.6;">We appreciate your understanding and wish you and your family all the best in your search for Islamic education, inshallah.</p>
+  `
             <p style="margin: 0; font-size: 12px; color: #6b7280; line-height: 1.4;">If you have questions, please don't hesitate to reach out</p>
           </td>
         </tr>
@@ -1298,10 +1123,13 @@ export async function sendApplicationRejectionEmail({
   `
   
   const html = await generateEmailTemplate({
-    title: `Application Update - ${orgName}`,
-    description: '',
-    headerHtml,
+    title: 'Application Update',
+    description: 'We wanted to update you on the status of your application.',
+    orgHeaderHtml,
     content,
+    footerText: `If you have any questions, please don't hesitate to contact us.`,
+    showLogo: true
+  })
     footerText: `If you have any questions, please don't hesitate to contact us.`,
     showLogo: false
   })

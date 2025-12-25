@@ -277,3 +277,10 @@ input[type="radio"]:checked:hover {
 input[type="radio"]:checked::before {
   background-color: #15803d;
 }
+
+/* Hide Next.js dev tools portals */
+nextjs-portal {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
