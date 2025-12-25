@@ -1110,17 +1110,6 @@ export async function sendApplicationRejectionEmail({
     ` : ''}
     <p style="margin: 24px 0 0 0; font-size: 15px; color: #374151; line-height: 1.6;">We appreciate your understanding and wish you and your family all the best in your search for Islamic education, inshallah.</p>
   `
-            <p style="margin: 0; font-size: 12px; color: #6b7280; line-height: 1.4;">If you have questions, please don't hesitate to reach out</p>
-          </td>
-        </tr>
-      </table>
-    </div>
-    
-    <!-- Closing Message -->
-    <p style="margin: 32px 0 0 0; font-size: 16px; color: #374151; line-height: 1.6; text-align: center;">
-      We appreciate your understanding and wish you and your family all the best in your search for Islamic education, inshallah.
-    </p>
-  `
   
   const html = await generateEmailTemplate({
     title: 'Application Update',
@@ -1129,9 +1118,6 @@ export async function sendApplicationRejectionEmail({
     content,
     footerText: `If you have any questions, please don't hesitate to contact us.`,
     showLogo: true
-  })
-    footerText: `If you have any questions, please don't hesitate to contact us.`,
-    showLogo: false
   })
   
   const text = `Application Update - ${orgName}
