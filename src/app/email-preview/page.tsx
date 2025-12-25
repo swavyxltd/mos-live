@@ -179,6 +179,7 @@ export default function EmailPreviewPage() {
   const [selectedEmail, setSelectedEmail] = useState<string | null>(null)
   const [emailHtml, setEmailHtml] = useState<string>('')
   const [loading, setLoading] = useState(false)
+  const [viewMode, setViewMode] = useState<'mobile' | 'desktop'>('mobile')
 
   const loadEmail = async (type: string) => {
     setLoading(true)
@@ -277,31 +278,124 @@ export default function EmailPreviewPage() {
                   <p className="text-gray-500">Loading email preview...</p>
                 </div>
               ) : (
-                <div className="w-full h-screen" style={{ minHeight: '800px' }}>
-                  <iframe
-                    srcDoc={emailHtml.replace(
-                      '</head>',
-                      `<style>
-                        * {
-                          -webkit-user-select: text !important;
-                          -moz-user-select: text !important;
-                          -ms-user-select: text !important;
-                          user-select: text !important;
-                          -webkit-touch-callout: default !important;
-                        }
-                        body {
-                          -webkit-user-select: text !important;
-                          -moz-user-select: text !important;
-                          -ms-user-select: text !important;
-                          user-select: text !important;
-                        }
-                      </style></head>`
-                    )}
-                    className="w-full h-full border-0"
-                    title="Email Preview"
-                    sandbox="allow-same-origin allow-scripts"
-                    style={{ userSelect: 'text' }}
-                  />
+                <div className="p-4">
+                  {/* View Mode Toggle */}
+                  <div className="mb-4 flex justify-center">
+                    <div className="inline-flex rounded-lg border border-gray-300 bg-gray-100 p-1">
+                      <button
+                        onClick={() => setViewMode('mobile')}
+                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                          viewMode === 'mobile'
+                            ? 'bg-white text-gray-900 shadow-sm'
+                            : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                      >
+                        📱 Mobile
+                      </button>
+                      <button
+                        onClick={() => setViewMode('desktop')}
+                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                          viewMode === 'desktop'
+                            ? 'bg-white text-gray-900 shadow-sm'
+                            : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                      >
+                        💻 Desktop
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Mobile Preview */}
+                  {viewMode === 'mobile' ? (
+                    <div className="flex justify-center">
+                      <div className="relative" style={{ width: '375px', maxWidth: '100%' }}>
+                        {/* Device Frame */}
+                        <div className="bg-black rounded-[2.5rem] p-2 shadow-2xl">
+                          <div className="bg-white rounded-[2rem] overflow-hidden">
+                            {/* Status Bar */}
+                            <div className="bg-white px-6 pt-3 pb-1 flex justify-between items-center text-xs text-gray-900">
+                              <span>9:41</span>
+                              <div className="flex gap-1">
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                  <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+                                </svg>
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M17.778 8.222c-4.296-4.296-11.26-4.296-15.556 0A1 1 0 01.808 6.808c5.076-5.076 13.308-5.076 18.384 0a1 1 0 01-1.414 1.414zM14.95 11.05a7 7 0 00-9.9 0 1 1 0 01-1.414-1.414 9 9 0 0112.728 0 1 1 0 01-1.414 1.414zM12.12 13.88a3 3 0 00-4.242 0 1 1 0 01-1.415-1.415 5 5 0 017.072 0 1 1 0 01-1.415 1.415zM9 16a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" clipRule="evenodd" />
+                                </svg>
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                  <path d="M2 4a2 2 0 012-2h12a2 2 0 012 2v12a2 2 0 01-2 2H4a2 2 0 01-2-2V4zm14 12V6H4v10h12z" />
+                                </svg>
+                              </div>
+                            </div>
+                            {/* Email Content */}
+                            <div className="bg-gray-50" style={{ height: '667px', overflow: 'auto' }}>
+                              <iframe
+                                srcDoc={emailHtml.replace(
+                                  '</head>',
+                                  `<style>
+                                    * {
+                                      -webkit-user-select: text !important;
+                                      -moz-user-select: text !important;
+                                      -ms-user-select: text !important;
+                                      user-select: text !important;
+                                      -webkit-touch-callout: default !important;
+                                    }
+                                    body {
+                                      -webkit-user-select: text !important;
+                                      -moz-user-select: text !important;
+                                      -ms-user-select: text !important;
+                                      user-select: text !important;
+                                      margin: 0 !important;
+                                      padding: 0 !important;
+                                    }
+                                    table[width="100%"] {
+                                      max-width: 375px !important;
+                                    }
+                                  </style></head>`
+                                )}
+                                className="w-full h-full border-0"
+                                title="Email Preview"
+                                sandbox="allow-same-origin allow-scripts"
+                                style={{ userSelect: 'text', width: '375px', height: '667px' }}
+                              />
+                            </div>
+                            {/* Home Indicator */}
+                            <div className="bg-white pb-2">
+                              <div className="w-32 h-1 bg-gray-400 rounded-full mx-auto"></div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Desktop Preview */
+                    <div className="w-full" style={{ minHeight: '800px' }}>
+                      <iframe
+                        srcDoc={emailHtml.replace(
+                          '</head>',
+                          `<style>
+                            * {
+                              -webkit-user-select: text !important;
+                              -moz-user-select: text !important;
+                              -ms-user-select: text !important;
+                              user-select: text !important;
+                              -webkit-touch-callout: default !important;
+                            }
+                            body {
+                              -webkit-user-select: text !important;
+                              -moz-user-select: text !important;
+                              -ms-user-select: text !important;
+                              user-select: text !important;
+                            }
+                          </style></head>`
+                        )}
+                        className="w-full border-0 rounded-lg"
+                        title="Email Preview"
+                        sandbox="allow-same-origin allow-scripts"
+                        style={{ userSelect: 'text', minHeight: '800px' }}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </div>
