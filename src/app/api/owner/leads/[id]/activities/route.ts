@@ -57,7 +57,7 @@ async function handlePOST(
         createdByUserId: session.user.id,
       },
       include: {
-        CreatedBy: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -78,7 +78,13 @@ async function handlePOST(
       })
     }
 
-    return NextResponse.json({ activity }, { status: 201 })
+    // Map User relation to CreatedBy to match frontend expectations
+    const mappedActivity = {
+      ...activity,
+      CreatedBy: activity.User,
+    }
+
+    return NextResponse.json({ activity: mappedActivity }, { status: 201 })
   } catch (error: any) {
     console.error('Error creating activity:', error)
     const errorMessage = error?.message || 'Failed to create activity'
