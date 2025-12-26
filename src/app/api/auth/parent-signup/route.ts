@@ -18,6 +18,7 @@ async function handlePOST(request: NextRequest) {
       password, 
       studentId, 
       applicationId,
+      token, // Token from parent invitation
       // Parent details
       name,
       title,
@@ -41,8 +42,46 @@ async function handlePOST(request: NextRequest) {
 
     let matchingStudents: any[] = []
     let org
+    let parentInvitation: any = null
 
-    if (applicationId) {
+    if (token) {
+      // Token-based invitation flow - get student from invitation
+      parentInvitation = await prisma.parentInvitation.findUnique({
+        where: { token },
+        include: {
+          Student: {
+            include: {
+              Org: true
+            }
+          },
+          Org: true
+        }
+      })
+
+      if (!parentInvitation) {
+        return NextResponse.json(
+          { error: 'Invalid invitation token' },
+          { status: 404 }
+        )
+      }
+
+      if (parentInvitation.acceptedAt) {
+        return NextResponse.json(
+          { error: 'This invitation has already been used' },
+          { status: 400 }
+        )
+      }
+
+      if (new Date() > parentInvitation.expiresAt) {
+        return NextResponse.json(
+          { error: 'This invitation has expired' },
+          { status: 400 }
+        )
+      }
+
+      matchingStudents = [parentInvitation.Student]
+      org = parentInvitation.Org
+    } else if (applicationId) {
       // Application flow - get students from application
       const application = await prisma.application.findUnique({
         where: { id: applicationId },
@@ -107,6 +146,14 @@ async function handlePOST(request: NextRequest) {
     if (!isValidEmail(sanitizedEmail)) {
       return NextResponse.json(
         { error: 'Invalid email format' },
+        { status: 400 }
+      )
+    }
+
+    // If using token, validate email matches invitation
+    if (parentInvitation && sanitizedEmail !== parentInvitation.parentEmail.toLowerCase().trim()) {
+      return NextResponse.json(
+        { error: 'Email does not match the invitation' },
         { status: 400 }
       )
     }
@@ -300,6 +347,16 @@ async function handlePOST(request: NextRequest) {
           },
           update: {
             updatedAt: new Date()
+          }
+        })
+      }
+
+      // Mark parent invitation as accepted if token was used
+      if (parentInvitation) {
+        await tx.parentInvitation.update({
+          where: { id: parentInvitation.id },
+          data: {
+            acceptedAt: new Date()
           }
         })
       }

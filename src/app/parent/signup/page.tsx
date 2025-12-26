@@ -52,6 +52,7 @@ function ParentSignupForm() {
   const router = useRouter()
   const applicationId = searchParams.get('applicationId')
   const orgSlug = searchParams.get('org') // Get orgSlug from URL query param
+  const token = searchParams.get('token') // Get token from URL query param
 
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -62,6 +63,7 @@ function ParentSignupForm() {
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null)
   const [applicationData, setApplicationData] = useState<ApplicationData | null>(null)
   const [orgName, setOrgName] = useState<string | null>(null)
+  const [invitationData, setInvitationData] = useState<any>(null)
 
   // Verify child form data (only shown when no applicationId)
   const [verifyFormData, setVerifyFormData] = useState({
@@ -113,6 +115,9 @@ function ParentSignupForm() {
     if (applicationId) {
       // Case A: Application flow - skip verification
       fetchApplicationData()
+    } else if (token) {
+      // Case C: Token-based invitation flow - fetch invitation and pre-fill
+      fetchInvitationData()
     } else {
       // Case B: Normal flow - need to verify child first
       // orgSlug should be provided as query param: /parent/signup?org=org-slug
@@ -125,7 +130,7 @@ function ParentSignupForm() {
       fetchOrgName()
       setLoading(false)
     }
-  }, [applicationId, orgSlug])
+  }, [applicationId, orgSlug, token])
 
   const fetchOrgName = async () => {
     if (!orgSlug) return
@@ -137,6 +142,73 @@ function ParentSignupForm() {
       }
     } catch (err) {
       // Silently fail - org name is not critical
+    }
+  }
+
+  const fetchInvitationData = async () => {
+    if (!token) return
+    
+    try {
+      const response = await fetch(`/api/auth/parent-invitation?token=${token}`)
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || 'Invalid or expired invitation link')
+        setLoading(false)
+        return
+      }
+
+      setInvitationData(data)
+      setOrgName(data.org?.name || null)
+      
+      // Pre-fill form with invitation data
+      setFormData(prev => ({
+        ...prev,
+        email: data.invitation?.parentEmail || prev.email,
+        firstName: data.parent?.name?.split(' ')[0] || prev.firstName,
+        lastName: data.parent?.name?.split(' ').slice(1).join(' ') || prev.lastName,
+        phone: data.parent?.phone || prev.phone
+      }))
+
+      // Set verified student from invitation
+      if (data.student) {
+        setVerifiedStudent({
+          id: data.student.id,
+          firstName: data.student.firstName,
+          lastName: data.student.lastName,
+          dob: data.student.dob,
+          classes: data.class ? [{
+            id: data.class.id,
+            name: data.class.name
+          }] : [],
+          claimStatus: 'VERIFIED'
+        })
+        setSelectedStudentId(data.student.id)
+      }
+
+      // Fetch payment settings - we need org slug, so try to get it from org name
+      // For now, we'll use the payment methods from the invitation data
+      if (data.paymentMethods) {
+        setPaymentSettings({
+          acceptsCard: data.paymentMethods.card || false,
+          acceptsCash: data.paymentMethods.cash ?? true,
+          acceptsBankTransfer: data.paymentMethods.bankTransfer ?? true,
+          hasStripeConfigured: data.paymentMethods.stripe || false,
+          hasStripeConnect: data.paymentMethods.card || false,
+          stripeEnabled: data.paymentMethods.stripe || false,
+          bankAccountName: data.bankDetails?.accountName || null,
+          bankSortCode: data.bankDetails?.sortCode || null,
+          bankAccountNumber: data.bankDetails?.accountNumber || null,
+          paymentInstructions: null,
+          billingDay: 1
+        })
+      }
+      
+      setShowSignupForm(true) // Skip verification, show signup form directly
+      setLoading(false)
+    } catch (err) {
+      setError('Failed to load invitation details')
+      setLoading(false)
     }
   }
 
@@ -512,7 +584,10 @@ function ParentSignupForm() {
         giftAidStatus: formData.giftAidStatus
       }
 
-      if (applicationId && applicationData) {
+      if (token && invitationData) {
+        // Token-based invitation flow - use token
+        signupData.token = token
+      } else if (applicationId && applicationData) {
         // Application flow - link to all students from application
         signupData.applicationId = applicationId
       } else if (selectedStudentId && verifiedStudent) {
