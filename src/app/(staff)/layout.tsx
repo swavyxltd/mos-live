@@ -214,7 +214,10 @@ export default async function StaffLayout({
           const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(secondSegment)
           const isKnownNestedRoute = ['new', 'edit', 'create', 'update'].includes(secondSegment)
           
-          if (isUUID || isKnownNestedRoute) {
+          // Support routes (docs, faq) should use /support for permission check
+          if (pathSegments[0] === 'support' && ['docs', 'faq'].includes(secondSegment)) {
+            normalizedPath = '/support'
+          } else if (isUUID || isKnownNestedRoute) {
             // Use the base route for permission check (e.g., /classes)
             normalizedPath = `/${pathSegments[0]}`
           }
