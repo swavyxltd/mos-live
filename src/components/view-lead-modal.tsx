@@ -262,14 +262,19 @@ export function ViewLeadModal({ isOpen, onClose, onUpdate, leadId, onEdit, autoO
           updateLastContactAt: ['CALL', 'WHATSAPP', 'EMAIL', 'MEETING'].includes(activityType),
         }),
       })
-      if (!res.ok) throw new Error('Failed to add activity')
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}))
+        const errorMessage = errorData.message || errorData.error || 'Failed to add activity'
+        console.error('Error adding activity:', errorData)
+        throw new Error(errorMessage)
+      }
       setActivityDescription('')
       await loadLead()
       onUpdate({})
       toast.success('Activity added')
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding activity:', error)
-      toast.error('Failed to add activity')
+      toast.error(error?.message || 'Failed to add activity')
     } finally {
       setIsAddingActivity(false)
     }

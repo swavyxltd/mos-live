@@ -81,8 +81,15 @@ async function handlePOST(
     return NextResponse.json({ activity }, { status: 201 })
   } catch (error: any) {
     console.error('Error creating activity:', error)
+    const errorMessage = error?.message || 'Failed to create activity'
+    const isDevelopment = process.env.NODE_ENV === 'development'
+    
     return NextResponse.json(
-      { error: 'Failed to create activity' },
+      { 
+        error: 'Failed to create activity',
+        message: errorMessage,
+        ...(isDevelopment && { details: error?.stack, code: error?.code })
+      },
       { status: 500 }
     )
   }
