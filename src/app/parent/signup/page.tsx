@@ -1374,6 +1374,58 @@ function ParentSignupForm() {
           <p className="text-sm text-neutral-600 mt-1">{pageSubtitle}</p>
         </div>
 
+        {/* Prominent Student Information Banner */}
+        {(verifiedStudent && selectedStudentId) || (applicationId && applicationData) || (token && invitationData) ? (
+          <div className="bg-gradient-to-r from-emerald-50 to-green-50 border-2 border-emerald-200 rounded-lg p-5 shadow-md">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0">
+                <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
+                  <User className="h-6 w-6 text-emerald-600" />
+                </div>
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <CheckCircle className="h-5 w-5 text-emerald-600" />
+                  <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wide">Signing up for</span>
+                </div>
+                {applicationId && applicationData ? (
+                  <div>
+                    <h3 className="text-lg font-bold text-emerald-900">
+                      {applicationData.application.children.map((child, idx) => (
+                        <span key={idx}>
+                          {child.firstName} {child.lastName}
+                          {idx < applicationData.application.children.length - 1 && ', '}
+                        </span>
+                      ))}
+                    </h3>
+                    {applicationData.org.name && (
+                      <p className="text-sm text-emerald-700 mt-1">
+                        at {applicationData.org.name}
+                      </p>
+                    )}
+                  </div>
+                ) : (verifiedStudent || invitationData?.student) ? (
+                  <div>
+                    <h3 className="text-lg font-bold text-emerald-900">
+                      {verifiedStudent?.firstName || invitationData?.student?.firstName} {verifiedStudent?.lastName || invitationData?.student?.lastName}
+                    </h3>
+                    {(verifiedStudent?.classes.length > 0 || invitationData?.class) && (
+                      <p className="text-sm text-emerald-700 mt-1">
+                        Class: {verifiedStudent?.classes.map(c => c.name).join(', ') || invitationData?.class?.name}
+                      </p>
+                    )}
+                    {(orgName || invitationData?.org?.name) && (
+                      <p className="text-sm text-emerald-700 mt-1">
+                        at {orgName || invitationData?.org?.name}
+                      </p>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        ) : null}
+
         {/* Student Verification Form - Shown BEFORE signup form */}
         {showVerificationForm && (
           <div className="bg-white border border-neutral-200 rounded-lg p-6 shadow-sm">
