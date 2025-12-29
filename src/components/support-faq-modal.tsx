@@ -5,10 +5,15 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Search, ArrowLeft, ChevronDown, ChevronUp, HelpCircle, Rocket, Users, CreditCard, MessageSquare, Settings, FileText, Calendar, DollarSign } from 'lucide-react'
-import Link from 'next/link'
+import { Modal } from '@/components/ui/modal'
+import { Search, ChevronDown, ChevronUp, HelpCircle, Rocket, Users, CreditCard, MessageSquare, Settings, FileText, Calendar, DollarSign } from 'lucide-react'
 
-export default function FAQPage() {
+interface FAQModalProps {
+  isOpen: boolean
+  onClose: () => void
+}
+
+export function FAQModal({ isOpen, onClose }: FAQModalProps) {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
   const [searchTerm, setSearchTerm] = useState('')
 
@@ -315,133 +320,99 @@ export default function FAQPage() {
   })).filter(category => category.questions.length > 0)
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center space-x-4">
-        <Link href="/support">
-          <Button variant="outline" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Support
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--foreground)]">Frequently Asked Questions</h1>
-          <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-            Find answers to common questions about Madrasah OS
-          </p>
+    <Modal 
+      isOpen={isOpen} 
+      onClose={onClose} 
+      title="Frequently Asked Questions"
+      className="max-w-4xl"
+    >
+      <div className="space-y-6">
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--muted-foreground)] h-4 w-4" />
+          <Input
+            placeholder="Search FAQ..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
         </div>
-      </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--muted-foreground)] h-4 w-4" />
-        <Input
-          placeholder="Search FAQ..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
-      </div>
-
-      {/* FAQ Categories */}
-      <div className="space-y-8">
-        {filteredCategories.map((category) => {
-          const IconComponent = category.icon
-          return (
-            <div key={category.id} className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 ${category.bgColor} rounded-lg flex items-center justify-center flex-shrink-0`}>
-                  <IconComponent className={`h-5 w-5 ${category.color}`} />
+        {/* FAQ Categories */}
+        <div className="space-y-8 max-h-[60vh] overflow-y-auto">
+          {filteredCategories.map((category) => {
+            const IconComponent = category.icon
+            return (
+              <div key={category.id} className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 ${category.bgColor} rounded-lg flex items-center justify-center flex-shrink-0`}>
+                    <IconComponent className={`h-5 w-5 ${category.color}`} />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-semibold text-[var(--foreground)]">{category.title}</h2>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-xl font-semibold text-[var(--foreground)]">{category.title}</h2>
-                </div>
-              </div>
-              
-              <div className="space-y-3">
-                {category.questions.map((faq, index) => {
-                  const itemId = `${category.id}-${index}`
-                  const isExpanded = expandedItems.has(itemId)
-                  
-                  return (
-                    <Card 
-                      key={index} 
-                      className={`p-4 border-[var(--border)] hover:shadow-md transition-all ${isExpanded ? category.borderColor : ''}`}
-                    >
-                      <div className="space-y-3">
-                        <div 
-                          className="flex items-start justify-between cursor-pointer group"
-                          onClick={() => toggleExpanded(itemId)}
-                        >
-                          <h3 className="font-medium text-[var(--foreground)] pr-4 flex-1 group-hover:text-[var(--foreground)] transition-colors">{faq.question}</h3>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="p-1 h-auto flex-shrink-0 text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              toggleExpanded(itemId)
-                            }}
+                
+                <div className="space-y-3">
+                  {category.questions.map((faq, index) => {
+                    const itemId = `${category.id}-${index}`
+                    const isExpanded = expandedItems.has(itemId)
+                    
+                    return (
+                      <Card 
+                        key={index} 
+                        className={`p-4 border-[var(--border)] hover:shadow-md transition-all ${isExpanded ? category.borderColor : ''}`}
+                      >
+                        <div className="space-y-3">
+                          <div 
+                            className="flex items-start justify-between cursor-pointer group"
+                            onClick={() => toggleExpanded(itemId)}
                           >
-                            {isExpanded ? (
-                              <ChevronUp className="h-4 w-4" />
-                            ) : (
-                              <ChevronDown className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </div>
-                        
-                        {isExpanded && (
-                          <div className="space-y-3 pt-2 border-t border-[var(--border)]">
-                            <p className="text-sm text-[var(--foreground)] leading-relaxed">{faq.answer}</p>
-                            <div className="flex flex-wrap gap-2">
-                              {faq.tags.map((tag) => (
-                                <Badge 
-                                  key={tag} 
-                                  variant="secondary" 
-                                  className={`text-xs ${category.bgColor} ${category.color} border ${category.borderColor}`}
-                                >
-                                  {tag}
-                                </Badge>
-                              ))}
-                            </div>
+                            <h3 className="font-medium text-[var(--foreground)] pr-4 flex-1 group-hover:text-[var(--foreground)] transition-colors">{faq.question}</h3>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="p-1 h-auto flex-shrink-0 text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                toggleExpanded(itemId)
+                              }}
+                            >
+                              {isExpanded ? (
+                                <ChevronUp className="h-4 w-4" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4" />
+                              )}
+                            </Button>
                           </div>
-                        )}
-                      </div>
-                    </Card>
-                  )
-                })}
+                          
+                          {isExpanded && (
+                            <div className="space-y-3 pt-2 border-t border-[var(--border)]">
+                              <p className="text-sm text-[var(--foreground)] leading-relaxed">{faq.answer}</p>
+                              <div className="flex flex-wrap gap-2">
+                                {faq.tags.map((tag) => (
+                                  <Badge 
+                                    key={tag} 
+                                    variant="secondary" 
+                                    className={`text-xs ${category.bgColor} ${category.color} border ${category.borderColor}`}
+                                  >
+                                    {tag}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </Card>
+                    )
+                  })}
+                </div>
               </div>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Still need help? */}
-      <Card className={`p-6 bg-emerald-50 border-emerald-200`}>
-        <div className="text-center">
-          <div className="flex items-center justify-center mb-3">
-            <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
-              <HelpCircle className="h-5 w-5 text-emerald-600" />
-            </div>
-          </div>
-          <h3 className="text-lg font-semibold text-emerald-900 mb-2">Still need help?</h3>
-          <p className="text-emerald-700 mb-4">
-            Can't find the answer you're looking for? Our support team is here to help.
-          </p>
-          <div className="flex justify-center space-x-4">
-            <Link href="/support">
-              <Button variant="outline" className="border-emerald-300 text-emerald-700 hover:bg-emerald-100">
-                Contact Support
-              </Button>
-            </Link>
-            <Link href="/support">
-              <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                Create Support Ticket
-              </Button>
-            </Link>
-          </div>
+            )
+          })}
         </div>
-      </Card>
-    </div>
+      </div>
+    </Modal>
   )
 }
+

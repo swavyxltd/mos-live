@@ -16,6 +16,8 @@ import Link from 'next/link'
 import { format } from 'date-fns'
 import { PageSkeleton } from '@/components/loading/skeleton'
 import { UserSupportTicketDetailModal } from '@/components/user-support-ticket-detail-modal'
+import { DocumentationModal } from '@/components/support-documentation-modal'
+import { FAQModal } from '@/components/support-faq-modal'
 
 interface SupportTicket {
   id: string
@@ -55,6 +57,8 @@ export default function SupportPage() {
   const [showCreateTicket, setShowCreateTicket] = useState(false)
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null)
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
+  const [showDocsModal, setShowDocsModal] = useState(false)
+  const [showFAQModal, setShowFAQModal] = useState(false)
   const [newTicket, setNewTicket] = useState({
     subject: '',
     body: '',
@@ -171,33 +175,35 @@ export default function SupportPage() {
 
       {/* Quick Actions Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Link href="/support/docs" className="block h-full">
-          <Card className="p-6 hover:shadow-lg transition-all duration-200 cursor-pointer group h-full">
-            <div className="flex items-center space-x-4 h-full">
-              <div className="p-3 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors flex-shrink-0">
-                <BookOpen className="h-6 w-6 text-blue-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-[var(--foreground)]">Documentation</h3>
-                <p className="text-sm text-[var(--muted-foreground)]">Guides & tutorials</p>
-              </div>
+        <Card 
+          className="p-6 hover:shadow-lg transition-all duration-200 cursor-pointer group h-full"
+          onClick={() => setShowDocsModal(true)}
+        >
+          <div className="flex items-center space-x-4 h-full">
+            <div className="p-3 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors flex-shrink-0">
+              <BookOpen className="h-6 w-6 text-blue-600" />
             </div>
-          </Card>
-        </Link>
+            <div className="flex-1">
+              <h3 className="font-semibold text-[var(--foreground)]">Documentation</h3>
+              <p className="text-sm text-[var(--muted-foreground)]">Guides & tutorials</p>
+            </div>
+          </div>
+        </Card>
 
-        <Link href="/support/faq">
-          <Card className="p-6 hover:shadow-lg transition-all duration-200 cursor-pointer group h-full">
-            <div className="flex items-center space-x-4 h-full">
-              <div className="p-3 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors flex-shrink-0">
-                <HelpCircle className="h-6 w-6 text-green-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-[var(--foreground)]">FAQ</h3>
-                <p className="text-sm text-[var(--muted-foreground)]">Common questions</p>
-              </div>
+        <Card 
+          className="p-6 hover:shadow-lg transition-all duration-200 cursor-pointer group h-full"
+          onClick={() => setShowFAQModal(true)}
+        >
+          <div className="flex items-center space-x-4 h-full">
+            <div className="p-3 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors flex-shrink-0">
+              <HelpCircle className="h-6 w-6 text-green-600" />
             </div>
-          </Card>
-        </Link>
+            <div className="flex-1">
+              <h3 className="font-semibold text-[var(--foreground)]">FAQ</h3>
+              <p className="text-sm text-[var(--muted-foreground)]">Common questions</p>
+            </div>
+          </div>
+        </Card>
 
         <Card className="p-6 hover:shadow-lg transition-all duration-200 cursor-pointer group h-full">
           <div className="flex items-center space-x-4 h-full">
@@ -329,6 +335,18 @@ export default function SupportPage() {
           }}
           ticketId={selectedTicketId}
           onUpdate={fetchTickets}
+        />
+
+        {/* Documentation Modal */}
+        <DocumentationModal
+          isOpen={showDocsModal}
+          onClose={() => setShowDocsModal(false)}
+        />
+
+        {/* FAQ Modal */}
+        <FAQModal
+          isOpen={showFAQModal}
+          onClose={() => setShowFAQModal(false)}
         />
 
         {/* Contact & Help Section */}

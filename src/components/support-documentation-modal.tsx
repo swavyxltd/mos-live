@@ -5,11 +5,16 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Search, BookOpen, Video, HelpCircle, ArrowLeft, X, Users, GraduationCap, CreditCard, Calendar, MessageSquare, FileText, Settings, BarChart3, ClipboardList, DollarSign, Gift, Bell } from 'lucide-react'
-import Link from 'next/link'
+import { Modal } from '@/components/ui/modal'
+import { Search, BookOpen, Video, HelpCircle, X, Users, GraduationCap, CreditCard, Calendar, MessageSquare, FileText, Settings, BarChart3, ClipboardList, DollarSign, Gift, Bell } from 'lucide-react'
 import { sanitizeHtml } from '@/lib/input-validation'
 
-export default function DocumentationPage() {
+interface DocumentationModalProps {
+  isOpen: boolean
+  onClose: () => void
+}
+
+export function DocumentationModal({ isOpen, onClose }: DocumentationModalProps) {
   const [selectedArticle, setSelectedArticle] = useState<any>(null)
   const [searchTerm, setSearchTerm] = useState('')
 
@@ -1149,179 +1154,110 @@ Configure your madrasah's profile, contact information, and operational settings
   })).filter(section => section.articles.length > 0)
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center space-x-4">
-        <Link href="/support">
-          <Button variant="outline" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Support
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--foreground)]">Documentation</h1>
-          <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-            Comprehensive guides and tutorials for using Madrasah OS
-          </p>
+    <Modal 
+      isOpen={isOpen} 
+      onClose={onClose} 
+      title="Documentation"
+      className="max-w-6xl"
+    >
+      <div className="space-y-6">
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--muted-foreground)] h-4 w-4" />
+          <Input
+            placeholder="Search documentation..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
         </div>
-      </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--muted-foreground)] h-4 w-4" />
-        <Input
-          placeholder="Search documentation..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
-      </div>
-
-      {/* Quick Links */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Link href="/support/faq">
-          <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer border-[var(--border)]">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                <HelpCircle className="h-5 w-5 text-emerald-600" />
-              </div>
-              <div>
-                <h3 className="font-medium text-[var(--foreground)]">FAQ</h3>
-                <p className="text-sm text-[var(--muted-foreground)]">Common questions</p>
-              </div>
+        {selectedArticle ? (
+          <div className="space-y-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedArticle(null)}
+              className="mb-4"
+            >
+              <X className="h-4 w-4 mr-2" />
+              Back to Documentation
+            </Button>
+            <div className="border-b border-[var(--border)] pb-4">
+              <h2 className="text-xl font-semibold text-[var(--foreground)] mb-1">{selectedArticle.title}</h2>
+              <p className="text-sm text-[var(--muted-foreground)]">{selectedArticle.description}</p>
             </div>
-          </Card>
-        </Link>
-        <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer border-[var(--border)]">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Video className="h-5 w-5 text-purple-600" />
-            </div>
-            <div>
-              <h3 className="font-medium text-[var(--foreground)]">Video Tutorials</h3>
-              <p className="text-sm text-[var(--muted-foreground)]">Step-by-step guides</p>
-            </div>
+            <div 
+              className="prose prose-sm max-w-none"
+              dangerouslySetInnerHTML={{
+                __html: (() => {
+                  const sanitized = sanitizeHtml(selectedArticle.content)
+                  return sanitized
+                    .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-semibold mb-4 text-[var(--foreground)] border-b border-[var(--border)] pb-2">$1</h1>')
+                    .replace(/^## (.*$)/gim, '<h2 class="text-xl font-semibold mb-3 mt-6 text-[var(--foreground)]">$1</h2>')
+                    .replace(/^### (.*$)/gim, '<h3 class="text-lg font-medium mb-2 mt-4 text-[var(--foreground)]">$1</h3>')
+                    .replace(/^#### (.*$)/gim, '<h4 class="text-base font-medium mb-2 mt-3 text-[var(--foreground)]">$1</h4>')
+                    .replace(/^- (.*$)/gim, '<li class="mb-1 text-sm text-[var(--foreground)] leading-relaxed">$1</li>')
+                    .replace(/^\* (.*$)/gim, '<li class="mb-1 text-sm text-[var(--foreground)] leading-relaxed">$1</li>')
+                    .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-[var(--foreground)]">$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em class="italic text-[var(--muted-foreground)]">$1</em>')
+                    .replace(/\n\n/g, '</p><p class="mb-4 text-sm text-[var(--foreground)] leading-relaxed">')
+                    .replace(/^(?!<[h|l])/gm, '<p class="mb-4 text-sm text-[var(--foreground)] leading-relaxed">')
+                    .replace(/(<li.*<\/li>)/g, '<ul class="list-disc ml-6 mb-4 space-y-1">$1</ul>')
+                    .replace(/^(\d+\.) (.*$)/gim, '<li class="mb-1 text-sm text-[var(--foreground)] leading-relaxed"><span class="font-medium">$1</span> $2</li>')
+                    .replace(/(<li class="mb-1 text-sm text-\[var\(--foreground\)\] leading-relaxed"><span class="font-medium">\d+\.<\/span>.*<\/li>)/g, '<ol class="list-decimal ml-6 mb-4 space-y-1">$1</ol>')
+                })()
+              }}
+            />
           </div>
-        </Card>
-      </div>
-
-      {/* Documentation Sections */}
-      <div className="space-y-8">
-        {filteredSections.map((section) => {
-          const IconComponent = section.icon
-          return (
-            <div key={section.id} className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 ${section.bgColor} rounded-lg flex items-center justify-center flex-shrink-0`}>
-                  <IconComponent className={`h-5 w-5 ${section.color}`} />
-                </div>
-                <div>
-                  <h2 className="text-xl font-semibold text-[var(--foreground)]">{section.title}</h2>
-                  <p className="text-sm text-[var(--muted-foreground)]">{section.description}</p>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {section.articles.map((article, index) => (
-                  <Card 
-                    key={index} 
-                    className={`p-4 hover:shadow-md transition-all cursor-pointer group border-[var(--border)] hover:${section.borderColor}`}
-                    onClick={() => setSelectedArticle(article)}
-                  >
-                    <div className="space-y-2">
-                      <div className="flex items-start justify-between">
-                        <h3 className="font-medium text-[var(--foreground)] group-hover:text-[var(--foreground)] transition-colors">{article.title}</h3>
-                        <Badge variant="secondary" className="text-xs">
-                          {article.readTime}
-                        </Badge>
+        ) : (
+          <>
+            {/* Documentation Sections */}
+            <div className="space-y-8 max-h-[60vh] overflow-y-auto">
+              {filteredSections.map((section) => {
+                const IconComponent = section.icon
+                return (
+                  <div key={section.id} className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 ${section.bgColor} rounded-lg flex items-center justify-center flex-shrink-0`}>
+                        <IconComponent className={`h-5 w-5 ${section.color}`} />
                       </div>
-                      <p className="text-sm text-[var(--muted-foreground)]">{article.description}</p>
-                      <div className={`${section.color} group-hover:opacity-80 text-sm font-medium transition-opacity`}>
-                        Read more →
+                      <div>
+                        <h2 className="text-xl font-semibold text-[var(--foreground)]">{section.title}</h2>
+                        <p className="text-sm text-[var(--muted-foreground)]">{section.description}</p>
                       </div>
                     </div>
-                  </Card>
-                ))}
-              </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {section.articles.map((article, index) => (
+                        <Card 
+                          key={index} 
+                          className={`p-4 hover:shadow-md transition-all cursor-pointer group border-[var(--border)] hover:${section.borderColor}`}
+                          onClick={() => setSelectedArticle(article)}
+                        >
+                          <div className="space-y-2">
+                            <div className="flex items-start justify-between">
+                              <h3 className="font-medium text-[var(--foreground)] group-hover:text-[var(--foreground)] transition-colors">{article.title}</h3>
+                              <Badge variant="secondary" className="text-xs">
+                                {article.readTime}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-[var(--muted-foreground)]">{article.description}</p>
+                            <div className={`${section.color} group-hover:opacity-80 text-sm font-medium transition-opacity`}>
+                              Read more →
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
-          )
-        })}
+          </>
+        )}
       </div>
-
-      {/* Contact Support */}
-      <Card className={`p-6 bg-emerald-50 border-emerald-200`}>
-        <div className="text-center">
-          <h3 className="text-lg font-semibold text-emerald-900 mb-2">Need more help?</h3>
-          <p className="text-emerald-700 mb-4">
-            Can't find what you're looking for? Our support team is here to help.
-          </p>
-          <div className="flex justify-center space-x-4">
-            <Link href="/support">
-              <Button variant="outline" className="border-emerald-300 text-emerald-700 hover:bg-emerald-100">
-                Contact Support
-              </Button>
-            </Link>
-            <Link href="/support">
-              <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                Create Support Ticket
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </Card>
-
-      {/* Article Modal */}
-      {selectedArticle && (
-        <div 
-          className="fixed inset-0 bg-white/80 backdrop-blur-md flex items-center justify-center z-50 p-4"
-          onClick={() => setSelectedArticle(null)}
-        >
-          <div 
-            className="bg-[var(--card)] border border-[var(--border)] rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between p-6 border-b border-[var(--border)] bg-[var(--muted)]/30">
-              <div className="flex-1">
-                <h2 className="text-xl font-semibold text-[var(--foreground)] mb-1">{selectedArticle.title}</h2>
-                <p className="text-sm text-[var(--muted-foreground)]">{selectedArticle.description}</p>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSelectedArticle(null)}
-                className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--accent)] p-2 rounded-full"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-              <div className="max-w-3xl mx-auto">
-                <div 
-                  className="prose prose-sm max-w-none"
-                  dangerouslySetInnerHTML={{
-                    __html: (() => {
-                      const sanitized = sanitizeHtml(selectedArticle.content)
-                      return sanitized
-                        .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-semibold mb-4 text-[var(--foreground)] border-b border-[var(--border)] pb-2">$1</h1>')
-                        .replace(/^## (.*$)/gim, '<h2 class="text-xl font-semibold mb-3 mt-6 text-[var(--foreground)]">$1</h2>')
-                        .replace(/^### (.*$)/gim, '<h3 class="text-lg font-medium mb-2 mt-4 text-[var(--foreground)]">$1</h3>')
-                        .replace(/^#### (.*$)/gim, '<h4 class="text-base font-medium mb-2 mt-3 text-[var(--foreground)]">$1</h4>')
-                        .replace(/^- (.*$)/gim, '<li class="mb-1 text-sm text-[var(--foreground)] leading-relaxed">$1</li>')
-                        .replace(/^\* (.*$)/gim, '<li class="mb-1 text-sm text-[var(--foreground)] leading-relaxed">$1</li>')
-                        .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-[var(--foreground)]">$1</strong>')
-                        .replace(/\*(.*?)\*/g, '<em class="italic text-[var(--muted-foreground)]">$1</em>')
-                        .replace(/\n\n/g, '</p><p class="mb-4 text-sm text-[var(--foreground)] leading-relaxed">')
-                        .replace(/^(?!<[h|l])/gm, '<p class="mb-4 text-sm text-[var(--foreground)] leading-relaxed">')
-                        .replace(/(<li.*<\/li>)/g, '<ul class="list-disc ml-6 mb-4 space-y-1">$1</ul>')
-                        .replace(/^(\d+\.) (.*$)/gim, '<li class="mb-1 text-sm text-[var(--foreground)] leading-relaxed"><span class="font-medium">$1</span> $2</li>')
-                        .replace(/(<li class="mb-1 text-sm text-\[var\(--foreground\)\] leading-relaxed"><span class="font-medium">\d+\.<\/span>.*<\/li>)/g, '<ol class="list-decimal ml-6 mb-4 space-y-1">$1</ol>')
-                    })()
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    </Modal>
   )
 }
+
