@@ -205,14 +205,31 @@ async function handlePOST(request: NextRequest) {
   
   if (!saveOnly && recipients.length > 0) {
     if (channel === 'EMAIL') {
+      // Create org header HTML for branding (org is already fetched above)
+      const orgHeaderHtml = org ? `
+        <div style="max-width: 100%; margin: 0 auto;">
+          <div style="display: inline-block; text-align: left; border-left: 4px solid #22c55e; padding: 0 0 0 16px;">
+            <div style="font-size: 16px; font-weight: 600; color: #111827; margin-bottom: 4px; line-height: 1.4;">
+              ${org.name}
+            </div>
+            <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #6b7280; font-weight: 500;">
+              Official Communication
+            </div>
+          </div>
+        </div>
+      ` : ''
+
       // Generate email template once (all emails have same content)
       // This is a significant optimization - template generation includes DB calls for logo
+      const orgName = org?.name || 'The Madrasah'
       const html = await generateEmailTemplate({
         title,
         description: body,
-        footerText: 'Best regards, The Madrasah Team'
+        orgHeaderHtml,
+        footerText: `Best regards,<br>The ${orgName} Team`,
+        showLogo: true
       })
-      const textContent = `${title}\n\n${body}\n\nBest regards,\nThe Madrasah Team`
+      const textContent = `${title}\n\n${body}\n\nBest regards,\nThe ${orgName} Team`
       
       // Send all emails in parallel using Promise.allSettled
       // This ensures all emails are attempted even if some fail
