@@ -537,6 +537,7 @@ export default function ParentSupportPage() {
         ticketId={selectedTicketId}
         onUpdate={fetchTickets}
       />
+      </div>
     </div>
   )
 }
