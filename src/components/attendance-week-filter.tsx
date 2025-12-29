@@ -283,7 +283,7 @@ export function AttendanceWeekFilter({
               size="sm"
               onClick={handleCurrent}
             >
-              <Calendar className="h-4 w-4" />
+              Current
             </Button>
 
             <Button

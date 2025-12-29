@@ -5,7 +5,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Download, Calendar, FileText, AlertCircle, CheckCircle, XCircle, Clock, History, Search, TrendingUp, Users, Mail, Filter, CheckSquare, Square, FileDown, Loader2, FileSpreadsheet, Info, ChevronDown, ChevronUp } from 'lucide-react'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
+import { StatCard } from '@/components/ui/stat-card'
+import { Download, Calendar, FileText, AlertCircle, CheckCircle, XCircle, Clock, History, Search, TrendingUp, Users, Mail, Filter, CheckSquare, Square, FileDown, Loader2, FileSpreadsheet, Info, ChevronDown, ChevronUp, Gift, DollarSign, FileCheck } from 'lucide-react'
 import { toast } from 'sonner'
 import { Modal } from '@/components/ui/modal'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
@@ -371,7 +374,10 @@ export function GiftAidPageClient() {
       toast.success(`Gift Aid status updated to ${status === 'YES' ? 'Yes' : 'No'}`)
       
       if (status === 'YES') {
-        setActiveTab('active')
+        // Switch to active tab if updating from pending or declined
+        if (activeTab === 'pending' || activeTab === 'declined') {
+          setActiveTab('active')
+        }
         setTimeout(() => {
           fetchAllData()
         }, 500)
@@ -548,13 +554,19 @@ export function GiftAidPageClient() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-[var(--foreground)]">
-          Gift Aid Management
-        </h1>
-        <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-          Generate HMRC-compliant Gift Aid submissions and manage parent declarations
-        </p>
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--foreground)]">
+            Gift Aid Management
+          </h1>
+          <p className="mt-1 text-sm sm:text-base text-[var(--muted-foreground)]">
+            Generate HMRC-compliant Gift Aid submissions and manage parent declarations
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Gift className="h-5 w-5 text-[var(--muted-foreground)]" />
+        </div>
       </div>
 
       {/* Date Range Selector with Quick Presets */}
@@ -629,25 +641,57 @@ export function GiftAidPageClient() {
                 />
               </div>
             </div>
-            <div className="flex gap-2 flex-wrap">
-              <Button onClick={fetchAllData} disabled={loading || !startDate || !endDate}>
-                {loading ? 'Loading...' : 'Refresh Data'}
+            <div className="flex flex-wrap gap-2">
+              <Button 
+                onClick={fetchAllData} 
+                disabled={loading || !startDate || !endDate}
+                variant="outline"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  <>
+                    <Filter className="h-4 w-4 mr-2" />
+                    Refresh Data
+                  </>
+                )}
               </Button>
               <Button 
                 onClick={handleDownloadTemplate} 
                 disabled={downloadingTemplate}
                 variant="outline"
               >
-                <FileSpreadsheet className="h-4 w-4 mr-2" />
-                {downloadingTemplate ? 'Downloading...' : 'Download HMRC Template'}
+                {downloadingTemplate ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Downloading...
+                  </>
+                ) : (
+                  <>
+                    <FileSpreadsheet className="h-4 w-4 mr-2" />
+                    Download HMRC Template
+                  </>
+                )}
               </Button>
               <Button 
                 onClick={handleDownload} 
                 disabled={downloading || !startDate || !endDate || data.length === 0 || activeTab !== 'active'}
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-green-600 hover:bg-green-700 text-white"
               >
-                <Download className="h-4 w-4 mr-2" />
-                {downloading ? 'Generating...' : 'Download CSV Data'}
+                {downloading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-4 w-4 mr-2" />
+                    Download CSV Data
+                  </>
+                )}
               </Button>
             </div>
             
@@ -837,147 +881,178 @@ export function GiftAidPageClient() {
 
       {/* Summary Stats */}
       {data.length > 0 && activeTab === 'active' && (
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Total Payments</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalPaymentCount}</div>
-              <p className="text-sm text-muted-foreground mt-1">{totalCount} unique parents</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Total Amount</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">£{totalAmount.toFixed(2)}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Gift Aid Value (25%)</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">£{(totalAmount * 0.25).toFixed(2)}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Data Completeness</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{validationStats.complete}/{validationStats.total}</div>
-              <p className="text-sm text-muted-foreground mt-1">
-                {validationStats.missingBoth > 0 && `${validationStats.missingBoth} missing both`}
-              </p>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+          <StatCard
+            title="Total Payments"
+            value={totalPaymentCount}
+            description={`${totalCount} unique parents`}
+            icon={<FileCheck className="h-4 w-4" />}
+          />
+          <StatCard
+            title="Total Amount"
+            value={`£${totalAmount.toFixed(2)}`}
+            icon={<DollarSign className="h-4 w-4" />}
+          />
+          <StatCard
+            title="Gift Aid Value"
+            value={`£${(totalAmount * 0.25).toFixed(2)}`}
+            description="25% claimable"
+            icon={<Gift className="h-4 w-4 text-green-600" />}
+          />
+          <StatCard
+            title="Data Complete"
+            value={`${validationStats.complete}/${validationStats.total}`}
+            description={validationStats.missingBoth > 0 ? `${validationStats.missingBoth} missing data` : 'All complete'}
+            icon={<FileText className="h-4 w-4" />}
+          />
         </div>
       )}
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b border-[var(--border)] overflow-x-auto">
+      <div className="flex gap-1 sm:gap-2 border-b border-[var(--border)] overflow-x-auto pb-0">
         <button
           onClick={() => setActiveTab('active')}
-          className={`px-4 py-2 font-medium text-sm transition-colors whitespace-nowrap ${
+          className={`px-3 sm:px-4 py-2.5 font-medium text-sm transition-all whitespace-nowrap flex items-center gap-2 relative ${
             activeTab === 'active'
-              ? 'border-b-2 border-[var(--primary)] text-[var(--primary)]'
+              ? 'text-[var(--primary)]'
               : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
           }`}
         >
-          <CheckCircle className="h-4 w-4 inline mr-2" />
-          Active Gift Aid
+          <CheckCircle className={`h-4 w-4 ${activeTab === 'active' ? 'text-green-600' : ''}`} />
+          <span>Active Gift Aid</span>
+          {activeTab === 'active' && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--primary)] rounded-t" />
+          )}
         </button>
         <button
           onClick={() => setActiveTab('pending')}
-          className={`px-4 py-2 font-medium text-sm transition-colors whitespace-nowrap ${
+          className={`px-3 sm:px-4 py-2.5 font-medium text-sm transition-all whitespace-nowrap flex items-center gap-2 relative ${
             activeTab === 'pending'
-              ? 'border-b-2 border-[var(--primary)] text-[var(--primary)]'
+              ? 'text-[var(--primary)]'
               : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
           }`}
         >
-          <Clock className="h-4 w-4 inline mr-2" />
-          Pending Contact ({pendingData.length})
+          <Clock className={`h-4 w-4 ${activeTab === 'pending' ? 'text-yellow-600' : ''}`} />
+          <span>Pending Contact</span>
+          {pendingData.length > 0 && (
+            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+              {pendingData.length}
+            </Badge>
+          )}
+          {activeTab === 'pending' && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--primary)] rounded-t" />
+          )}
         </button>
         <button
           onClick={() => setActiveTab('declined')}
-          className={`px-4 py-2 font-medium text-sm transition-colors whitespace-nowrap ${
+          className={`px-3 sm:px-4 py-2.5 font-medium text-sm transition-all whitespace-nowrap flex items-center gap-2 relative ${
             activeTab === 'declined'
-              ? 'border-b-2 border-[var(--primary)] text-[var(--primary)]'
+              ? 'text-[var(--primary)]'
               : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
           }`}
         >
-          <XCircle className="h-4 w-4 inline mr-2" />
-          Declined ({declinedData.length})
+          <XCircle className={`h-4 w-4 ${activeTab === 'declined' ? 'text-red-600' : ''}`} />
+          <span>Declined</span>
+          {declinedData.length > 0 && (
+            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+              {declinedData.length}
+            </Badge>
+          )}
+          {activeTab === 'declined' && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--primary)] rounded-t" />
+          )}
         </button>
         <button
           onClick={() => setActiveTab('analytics')}
-          className={`px-4 py-2 font-medium text-sm transition-colors whitespace-nowrap ${
+          className={`px-3 sm:px-4 py-2.5 font-medium text-sm transition-all whitespace-nowrap flex items-center gap-2 relative ${
             activeTab === 'analytics'
-              ? 'border-b-2 border-[var(--primary)] text-[var(--primary)]'
+              ? 'text-[var(--primary)]'
               : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
           }`}
         >
-          <TrendingUp className="h-4 w-4 inline mr-2" />
-          Analytics
+          <TrendingUp className={`h-4 w-4 ${activeTab === 'analytics' ? 'text-blue-600' : ''}`} />
+          <span>Analytics</span>
+          {activeTab === 'analytics' && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--primary)] rounded-t" />
+          )}
         </button>
         <button
           onClick={() => setActiveTab('history')}
-          className={`px-4 py-2 font-medium text-sm transition-colors whitespace-nowrap ${
+          className={`px-3 sm:px-4 py-2.5 font-medium text-sm transition-all whitespace-nowrap flex items-center gap-2 relative ${
             activeTab === 'history'
-              ? 'border-b-2 border-[var(--primary)] text-[var(--primary)]'
+              ? 'text-[var(--primary)]'
               : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
           }`}
         >
-          <History className="h-4 w-4 inline mr-2" />
-          History
+          <History className={`h-4 w-4 ${activeTab === 'history' ? 'text-purple-600' : ''}`} />
+          <span>History</span>
+          {activeTab === 'history' && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--primary)] rounded-t" />
+          )}
         </button>
       </div>
 
       {/* Validation Warning */}
       {data.length > 0 && activeTab === 'active' && validationStats.missingBoth > 0 && (
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
-          <div className="text-sm text-yellow-800 dark:text-yellow-200">
-            <p className="font-medium mb-1">Data Validation Warning</p>
-            <p>
-              {validationStats.missingBoth} entry{validationStats.missingBoth > 1 ? 'ies' : 'y'} {validationStats.missingBoth > 1 ? 'are' : 'is'} missing address or postcode information. 
-              {validationStats.missingAddress > validationStats.missingBoth && ` ${validationStats.missingAddress - validationStats.missingBoth} additional entries are missing addresses.`}
-              {validationStats.missingPostcode > validationStats.missingBoth && ` ${validationStats.missingPostcode - validationStats.missingBoth} additional entries are missing postcodes.`}
-              Please review and complete these fields before submitting to HMRC.
-            </p>
-          </div>
-        </div>
+        <Card className="border-yellow-200 bg-yellow-50/50">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                <AlertCircle className="h-5 w-5 text-yellow-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-yellow-900 mb-1">Data Validation Warning</h3>
+                <p className="text-sm text-yellow-800">
+                  {validationStats.missingBoth} entry{validationStats.missingBoth > 1 ? 'ies' : 'y'} {validationStats.missingBoth > 1 ? 'are' : 'is'} missing address or postcode information. 
+                  {validationStats.missingAddress > validationStats.missingBoth && ` ${validationStats.missingAddress - validationStats.missingBoth} additional entries are missing addresses.`}
+                  {validationStats.missingPostcode > validationStats.missingBoth && ` ${validationStats.missingPostcode - validationStats.missingBoth} additional entries are missing postcodes.`}
+                  Please review and complete these fields before submitting to HMRC.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Pending tab info */}
       {activeTab === 'pending' && pendingData.length > 0 && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 flex items-start gap-3">
-          <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-          <div className="text-sm text-blue-800 dark:text-blue-200">
-            <p className="font-medium mb-1">Contact Parents for Gift Aid</p>
-            <p>
-              These parents selected "Not Sure" during setup. Contact them to provide more information 
-              about Gift Aid and update their status. Once updated to "Yes", their payments will appear 
-              in the Active Gift Aid tab.
-            </p>
-          </div>
-        </div>
+        <Card className="border-[var(--border)] bg-[var(--card)] mt-6">
+          <CardContent className="p-4 sm:p-5 lg:p-5">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-10 h-10 bg-[var(--muted)] rounded-lg flex items-center justify-center">
+                <Clock className="h-5 w-5 text-[var(--foreground)]" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-[var(--foreground)] mb-1">Contact Parents for Gift Aid</h3>
+                <p className="text-sm text-[var(--muted-foreground)]">
+                  These parents selected "Not Sure" during setup. Contact them to provide more information 
+                  about Gift Aid and update their status. Once updated to "Yes", their payments will appear 
+                  in the Active Gift Aid tab.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Declined tab info */}
       {activeTab === 'declined' && declinedData.length > 0 && (
-        <div className="bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800 rounded-lg p-4 flex items-start gap-3">
-          <XCircle className="h-5 w-5 text-gray-600 dark:text-gray-400 flex-shrink-0 mt-0.5" />
-          <div className="text-sm text-gray-800 dark:text-gray-200">
-            <p className="font-medium mb-1">Parents Who Declined Gift Aid</p>
-            <p>
-              These parents have declined Gift Aid. Their payments will not be included in Gift Aid submissions.
-            </p>
-          </div>
-        </div>
+        <Card className="border-gray-200 bg-gray-50/50">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                <XCircle className="h-5 w-5 text-gray-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-gray-900 mb-1">Parents Who Declined Gift Aid</h3>
+                <p className="text-sm text-gray-800">
+                  These parents have declined Gift Aid. Their payments will not be included in Gift Aid submissions. 
+                  If their situation changes, you can approve them using the action button.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Analytics Tab */}
@@ -1132,103 +1207,129 @@ export function GiftAidPageClient() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="border-b border-[var(--border)]">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
                       {activeTab === 'active' && (
                         <>
-                          <th className="text-left p-2 font-semibold text-sm">Title</th>
-                          <th className="text-left p-2 font-semibold text-sm">First Name</th>
-                          <th className="text-left p-2 font-semibold text-sm">Last Name</th>
-                          <th className="text-left p-2 font-semibold text-sm">House Name/Number</th>
-                          <th className="text-left p-2 font-semibold text-sm">Postcode</th>
-                          <th className="text-left p-2 font-semibold text-sm">Date</th>
-                          <th className="text-right p-2 font-semibold text-sm">Amount</th>
+                          <TableHead>Title</TableHead>
+                          <TableHead>First Name</TableHead>
+                          <TableHead>Last Name</TableHead>
+                          <TableHead>House Name/Number</TableHead>
+                          <TableHead>Postcode</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead className="text-right">Amount</TableHead>
                         </>
                       )}
                       {(activeTab === 'pending' || activeTab === 'declined') && (
                         <>
-                          <th className="text-left p-2 font-semibold text-sm">Parent Name</th>
-                          <th className="text-left p-2 font-semibold text-sm">Email</th>
-                          <th className="text-left p-2 font-semibold text-sm">Phone</th>
-                          <th className="text-left p-2 font-semibold text-sm">Address</th>
-                          <th className="text-left p-2 font-semibold text-sm">Postcode</th>
-                          {activeTab === 'pending' && (
-                            <th className="text-center p-2 font-semibold text-sm">Actions</th>
+                          <TableHead>Parent Name</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Phone</TableHead>
+                          <TableHead>Address</TableHead>
+                          <TableHead>Postcode</TableHead>
+                          {(activeTab === 'pending' || activeTab === 'declined') && (
+                            <TableHead className="text-center">Actions</TableHead>
                           )}
                         </>
                       )}
-                    </tr>
-                  </thead>
-                  <tbody>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {filteredData.map((row, index) => (
-                      <tr key={row.id} className="border-b border-[var(--border)] hover:bg-[var(--muted)]/50">
+                      <TableRow key={row.id}>
                         {activeTab === 'active' && (
                           <>
-                            <td className="p-2 text-sm">{row.title || ''}</td>
-                            <td className="p-2 text-sm">{row.firstName || ''}</td>
-                            <td className="p-2 text-sm">{row.lastName || ''}</td>
-                            <td className="p-2 text-sm text-[var(--foreground)]">
-                              {row.houseNameOrNumber || <span className="text-yellow-600 dark:text-yellow-400">Missing</span>}
-                            </td>
-                            <td className="p-2 text-sm text-[var(--foreground)]">
-                              {row.postcode || <span className="text-yellow-600 dark:text-yellow-400">Missing</span>}
-                            </td>
-                            <td className="p-2 text-sm">
+                            <TableCell className="font-medium">{row.title || '-'}</TableCell>
+                            <TableCell>{row.firstName || '-'}</TableCell>
+                            <TableCell>{row.lastName || '-'}</TableCell>
+                            <TableCell>
+                              {row.houseNameOrNumber ? (
+                                row.houseNameOrNumber
+                              ) : (
+                                <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300">
+                                  Missing
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {row.postcode ? (
+                                row.postcode
+                              ) : (
+                                <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300">
+                                  Missing
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
                               {row.donationDate ? (() => {
                                 const date = new Date(row.donationDate)
                                 const day = String(date.getDate()).padStart(2, '0')
                                 const month = String(date.getMonth() + 1).padStart(2, '0')
                                 const year = String(date.getFullYear()).slice(-2)
                                 return `${day}/${month}/${year}`
-                              })() : 'N/A'}
-                            </td>
-                            <td className="p-2 text-sm text-right">£{row.amount.toFixed(2)}</td>
+                              })() : '-'}
+                            </TableCell>
+                            <TableCell className="text-right font-semibold">£{row.amount.toFixed(2)}</TableCell>
                           </>
                         )}
                         {(activeTab === 'pending' || activeTab === 'declined') && row.parentUserId && (
                           <>
-                            <td className="p-2 text-sm">{row.parentName || 'N/A'}</td>
-                            <td className="p-2 text-sm">{row.parentEmail || 'N/A'}</td>
-                            <td className="p-2 text-sm">{row.parentPhone || 'N/A'}</td>
-                            <td className="p-2 text-sm text-[var(--foreground)]">
-                              {row.houseNameOrNumber || <span className="text-yellow-600 dark:text-yellow-400">Missing</span>}
-                            </td>
-                            <td className="p-2 text-sm text-[var(--foreground)]">
-                              {row.postcode || <span className="text-yellow-600 dark:text-yellow-400">Missing</span>}
-                            </td>
-                            {activeTab === 'pending' && (
-                              <td className="p-2 text-sm text-center">
+                            <TableCell className="font-medium">{row.parentName || 'N/A'}</TableCell>
+                            <TableCell>{row.parentEmail || 'N/A'}</TableCell>
+                            <TableCell>{row.parentPhone || 'N/A'}</TableCell>
+                            <TableCell>
+                              {row.houseNameOrNumber ? (
+                                row.houseNameOrNumber
+                              ) : (
+                                <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300">
+                                  Missing
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {row.postcode ? (
+                                row.postcode
+                              ) : (
+                                <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300">
+                                  Missing
+                                </Badge>
+                              )}
+                            </TableCell>
+                            {(activeTab === 'pending' || activeTab === 'declined') && (
+                              <TableCell>
                                 <div className="flex gap-2 justify-center">
                                   <Button
                                     size="sm"
                                     variant="outline"
                                     onClick={() => handleUpdateStatus(row.parentUserId!, 'YES')}
                                     disabled={updatingStatus === row.parentUserId}
-                                    className="text-green-600 border-green-600 hover:bg-green-50"
+                                    className="border-green-600 text-green-700 hover:bg-green-50 hover:border-green-700"
                                   >
                                     <CheckCircle className="h-3 w-3 mr-1" />
-                                    Yes
+                                    Approve
                                   </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleUpdateStatus(row.parentUserId!, 'NO')}
-                                    disabled={updatingStatus === row.parentUserId}
-                                    className="text-red-600 border-red-600 hover:bg-red-50"
-                                  >
-                                    <XCircle className="h-3 w-3 mr-1" />
-                                    No
-                                  </Button>
+                                  {activeTab === 'pending' && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleUpdateStatus(row.parentUserId!, 'NO')}
+                                      disabled={updatingStatus === row.parentUserId}
+                                      className="border-red-600 text-red-700 hover:bg-red-50 hover:border-red-700"
+                                    >
+                                      <XCircle className="h-3 w-3 mr-1" />
+                                      Decline
+                                    </Button>
+                                  )}
                                 </div>
-                              </td>
+                              </TableCell>
                             )}
                           </>
                         )}
-                      </tr>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             )}
           </CardContent>
@@ -1258,22 +1359,22 @@ export function GiftAidPageClient() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="border-b border-[var(--border)]">
-                      <th className="text-left p-2 font-semibold text-sm">Date Generated</th>
-                      <th className="text-left p-2 font-semibold text-sm">Period</th>
-                      <th className="text-left p-2 font-semibold text-sm">Filename</th>
-                      <th className="text-right p-2 font-semibold text-sm">Total Count</th>
-                      <th className="text-right p-2 font-semibold text-sm">Total Amount</th>
-                      <th className="text-right p-2 font-semibold text-sm">Gift Aid Value</th>
-                      <th className="text-left p-2 font-semibold text-sm">Generated By</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date Generated</TableHead>
+                      <TableHead>Period</TableHead>
+                      <TableHead>Filename</TableHead>
+                      <TableHead className="text-right">Total Count</TableHead>
+                      <TableHead className="text-right">Total Amount</TableHead>
+                      <TableHead className="text-right">Gift Aid Value</TableHead>
+                      <TableHead>Generated By</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {history.map((submission) => (
-                      <tr key={submission.id} className="border-b border-[var(--border)] hover:bg-[var(--muted)]/50">
-                        <td className="p-2 text-sm">
+                      <TableRow key={submission.id}>
+                        <TableCell>
                           {new Date(submission.createdAt).toLocaleDateString('en-GB', {
                             day: '2-digit',
                             month: 'short',
@@ -1281,27 +1382,33 @@ export function GiftAidPageClient() {
                             hour: '2-digit',
                             minute: '2-digit'
                           })}
-                        </td>
-                        <td className="p-2 text-sm">
-                          {new Date(submission.startDate).toLocaleDateString('en-GB', {
-                            day: '2-digit',
-                            month: 'short',
-                            year: 'numeric'
-                          })} - {new Date(submission.endDate).toLocaleDateString('en-GB', {
-                            day: '2-digit',
-                            month: 'short',
-                            year: 'numeric'
-                          })}
-                        </td>
-                        <td className="p-2 text-sm font-mono text-sm">{submission.filename}</td>
-                        <td className="p-2 text-sm text-right">{submission.totalCount}</td>
-                        <td className="p-2 text-sm text-right">£{submission.totalAmount.toFixed(2)}</td>
-                        <td className="p-2 text-sm text-right">£{(submission.totalAmount * 0.25).toFixed(2)}</td>
-                        <td className="p-2 text-sm">{submission.generatedBy.name || submission.generatedBy.email}</td>
-                      </tr>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span>{new Date(submission.startDate).toLocaleDateString('en-GB', {
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric'
+                            })}</span>
+                            <span className="text-xs text-[var(--muted-foreground)]">to</span>
+                            <span>{new Date(submission.endDate).toLocaleDateString('en-GB', {
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric'
+                            })}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <code className="text-xs bg-[var(--muted)] px-2 py-1 rounded">{submission.filename}</code>
+                        </TableCell>
+                        <TableCell className="text-right font-medium">{submission.totalCount}</TableCell>
+                        <TableCell className="text-right font-semibold">£{submission.totalAmount.toFixed(2)}</TableCell>
+                        <TableCell className="text-right font-semibold text-green-600">£{(submission.totalAmount * 0.25).toFixed(2)}</TableCell>
+                        <TableCell>{submission.generatedBy.name || submission.generatedBy.email}</TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             )}
           </CardContent>

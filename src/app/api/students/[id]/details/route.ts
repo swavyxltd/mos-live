@@ -190,7 +190,7 @@ async function handleGET(
     const [
       attendanceStats,
       totalPaidThisYearResult,
-      currentBalanceResult,
+      allPendingRecords,
       activityLog
     ] = await Promise.all([
       // Get attendance counts using groupBy for better performance
@@ -216,15 +216,17 @@ async function handleGET(
           amountP: true
         }
       }),
-      // Current balance
-      prisma.monthlyPaymentRecord.aggregate({
+      // Get all pending/overdue records for current balance calculation
+      prisma.monthlyPaymentRecord.findMany({
         where: {
           studentId: id,
           orgId: finalOrgId,
           status: { in: ['PENDING', 'OVERDUE'] }
         },
-        _sum: {
-          amountP: true
+        select: {
+          amountP: true,
+          month: true,
+          status: true
         }
       }),
       // Activity log
@@ -262,7 +264,26 @@ async function handleGET(
       : 0
     
     const totalPaidThisYear = totalPaidThisYearResult._sum.amountP || 0
-    const currentBalance = currentBalanceResult._sum.amountP || 0
+    
+    // Calculate current balance - only include overdue or past month pending payments
+    // Get current month in YYYY-MM format
+    const now = new Date()
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    
+    // Filter to only include overdue or past month pending payments
+    const outstandingRecords = allPendingRecords.filter(record => {
+      // Always include OVERDUE
+      if (record.status === 'OVERDUE') {
+        return true
+      }
+      // For PENDING, only include if month is in the past (not current or future)
+      if (record.status === 'PENDING') {
+        return record.month < currentMonth
+      }
+      return false
+    })
+    
+    const currentBalance = outstandingRecords.reduce((sum, r) => sum + r.amountP, 0)
 
     // Get all parents (if there are multiple ways to link parents, expand this)
     const parents = []

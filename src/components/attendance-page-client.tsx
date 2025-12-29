@@ -47,6 +47,19 @@ export function AttendancePageClient({ attendanceData }: AttendancePageClientPro
   const [filterType, setFilterType] = useState<'week' | 'month' | 'year'>('week')
   const [dateRange, setDateRange] = useState<{ start: Date; end: Date } | null>(null)
 
+  // Listen for attendance saved event to refresh page
+  useEffect(() => {
+    const handleAttendanceSaved = () => {
+      window.location.reload()
+    }
+    
+    window.addEventListener('attendance-saved', handleAttendanceSaved)
+    
+    return () => {
+      window.removeEventListener('attendance-saved', handleAttendanceSaved)
+    }
+  }, [])
+
   // Handle student query parameter from URL
   useEffect(() => {
     const studentId = searchParams.get('student')

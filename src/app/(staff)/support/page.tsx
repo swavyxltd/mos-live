@@ -171,7 +171,7 @@ export default function SupportPage() {
 
       {/* Quick Actions Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Link href="/support/docs">
+        <Link href="/support/docs" className="block h-full">
           <Card className="p-6 hover:shadow-lg transition-all duration-200 cursor-pointer group h-full">
             <div className="flex items-center space-x-4 h-full">
               <div className="p-3 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors flex-shrink-0">

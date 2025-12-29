@@ -307,6 +307,15 @@ export function AttendanceMarking({ initialOpen = false, onClose }: AttendanceMa
       // Refresh classes to get updated attendance
       await fetchClasses(true)
       
+      // Trigger page refresh to update attendance page
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('attendance-saved'))
+        // Also refresh the page if we're on the attendance page
+        if (window.location.pathname.includes('/attendance')) {
+          window.location.reload()
+        }
+      }
+      
       // Close modal after refresh completes
       setIsOpen(false)
       setSelectedClass(null)

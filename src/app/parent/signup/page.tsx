@@ -550,6 +550,24 @@ function ParentSignupForm() {
       return
     }
 
+    if (!formData.title || formData.title.trim().length === 0) {
+      setError('Please select a title')
+      setSubmitting(false)
+      return
+    }
+
+    if (!formData.address || formData.address.trim().length === 0) {
+      setError('Please enter your address')
+      setSubmitting(false)
+      return
+    }
+
+    if (!formData.postcode || !isValidUKPostcode(formData.postcode)) {
+      setError('Please enter a valid UK postcode')
+      setSubmitting(false)
+      return
+    }
+
     if (!formData.phone || !isValidPhone(formData.phone)) {
       setError('Please enter a valid phone number')
       setSubmitting(false)
@@ -562,11 +580,6 @@ function ParentSignupForm() {
       return
     }
 
-    if (formData.postcode && !isValidUKPostcode(formData.postcode)) {
-      setError('Please enter a valid UK postcode')
-      setSubmitting(false)
-      return
-    }
 
     try {
       const signupData: any = {
@@ -835,16 +848,17 @@ function ParentSignupForm() {
           {/* Title */}
           <div>
             <label htmlFor="title" className="block text-sm font-medium text-neutral-700 mb-1">
-              Title
+              Title *
             </label>
             <select
               id="title"
               name="title"
+              required
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               className="w-full h-10 text-sm rounded-md border border-neutral-200/70 bg-transparent text-neutral-900 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors px-3"
             >
-              <option value="">None</option>
+              <option value="">Select title</option>
               <option value="Mr">Mr</option>
               <option value="Mrs">Mrs</option>
               <option value="Miss">Miss</option>
@@ -965,7 +979,7 @@ function ParentSignupForm() {
           {/* Address - One Line */}
           <div>
             <label htmlFor="address" className="block text-sm font-medium text-neutral-700 mb-1">
-              Address
+              Address Line 1 *
             </label>
             <div className="relative">
               <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
@@ -973,6 +987,7 @@ function ParentSignupForm() {
                 id="address"
                 name="address"
                 type="text"
+                required
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 className="w-full pl-9 pr-3 h-10 text-sm rounded-md border border-neutral-200/70 bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"
@@ -985,7 +1000,7 @@ function ParentSignupForm() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label htmlFor="postcode" className="block text-sm font-medium text-neutral-700 mb-1">
-                Postcode
+                Postcode *
               </label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
@@ -993,6 +1008,7 @@ function ParentSignupForm() {
                   id="postcode"
                   name="postcode"
                   type="text"
+                  required
                   value={formData.postcode}
                   onChange={(e) => setFormData({ ...formData, postcode: e.target.value.toUpperCase() })}
                   className="w-full pl-9 pr-3 h-10 text-sm rounded-md border border-neutral-200/70 bg-transparent text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:border-neutral-400 focus:ring-0 transition-colors"

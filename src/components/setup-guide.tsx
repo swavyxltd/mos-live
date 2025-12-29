@@ -25,23 +25,21 @@ interface SetupStatus {
 export function SetupGuide() {
   const [setupStatus, setSetupStatus] = useState<SetupStatus | null>(null)
   const [loading, setLoading] = useState(true)
-  // Initialize dismissed state from localStorage immediately to prevent flash
-  const [dismissed, setDismissed] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('setup-guide-dismissed') === 'true'
-    }
-    return false
-  })
+  // Initialize dismissed state - only dismiss if setup is complete AND user has dismissed
+  const [dismissed, setDismissed] = useState(false)
   const [copiedLink, setCopiedLink] = useState(false)
   const router = useRouter()
 
-  // Also check on mount to ensure we have the latest value
+  // Check on mount if user has permanently dismissed (only after completion)
   useEffect(() => {
-    const dismissedPermanently = localStorage.getItem('setup-guide-dismissed')
-    if (dismissedPermanently === 'true') {
-      setDismissed(true)
+    if (typeof window !== 'undefined') {
+      const dismissedPermanently = localStorage.getItem('setup-guide-dismissed')
+      // Only respect dismissal if setup is actually complete
+      if (dismissedPermanently === 'true' && setupStatus?.completionPercentage === 100) {
+        setDismissed(true)
+      }
     }
-  }, [])
+  }, [setupStatus?.completionPercentage])
 
   const fetchSetupStatus = async () => {
     try {
@@ -96,13 +94,13 @@ export function SetupGuide() {
     toast.success('Setup guide dismissed')
   }
 
-  // Don't show if dismissed - check this FIRST before anything else
-  if (dismissed) {
+  // Don't show if still loading or no status
+  if (loading || !setupStatus) {
     return null
   }
 
-  // Don't show if still loading or no status
-  if (loading || !setupStatus) {
+  // Don't show if dismissed (only after completion) - check this after loading
+  if (dismissed && setupStatus.completionPercentage === 100) {
     return null
   }
 

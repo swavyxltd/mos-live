@@ -221,7 +221,13 @@ async function handlePOST(request: NextRequest) {
       const sanitizedAddress = address ? sanitizeText(address.trim(), MAX_STRING_LENGTHS.address) : null
       const sanitizedCity = city ? sanitizeText(city.trim(), MAX_STRING_LENGTHS.city || 100) : null
       const sanitizedPostcode = postcode ? postcode.trim().toUpperCase() : null
-      const sanitizedGiftAidStatus = giftAidStatus || 'NOT_DECLARED'
+      // Map ELIGIBLE to YES for gift aid status
+      let sanitizedGiftAidStatus = giftAidStatus || 'NOT_DECLARED'
+      if (sanitizedGiftAidStatus === 'ELIGIBLE') {
+        sanitizedGiftAidStatus = 'YES'
+      } else if (sanitizedGiftAidStatus === 'NOT_ELIGIBLE') {
+        sanitizedGiftAidStatus = 'NO'
+      }
 
       // Validate phone if provided
       if (sanitizedPhone && !isValidPhone(sanitizedPhone)) {
@@ -239,10 +245,26 @@ async function handlePOST(request: NextRequest) {
         )
       }
 
-      // Validate postcode if provided
-      if (sanitizedPostcode && !isValidUKPostcode(sanitizedPostcode)) {
+      // Validate postcode - now required
+      if (!sanitizedPostcode || !isValidUKPostcode(sanitizedPostcode)) {
         return NextResponse.json(
-          { error: 'Invalid UK postcode format' },
+          { error: 'Valid UK postcode is required' },
+          { status: 400 }
+        )
+      }
+
+      // Validate address - now required
+      if (!sanitizedAddress || sanitizedAddress.trim().length === 0) {
+        return NextResponse.json(
+          { error: 'Address is required' },
+          { status: 400 }
+        )
+      }
+
+      // Validate title - now required
+      if (!sanitizedTitle || sanitizedTitle.trim().length === 0) {
+        return NextResponse.json(
+          { error: 'Title is required' },
           { status: 400 }
         )
       }
