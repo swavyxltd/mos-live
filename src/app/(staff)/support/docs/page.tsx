@@ -9,9 +9,6 @@ import { Search, BookOpen, Video, HelpCircle, ArrowLeft, X, Users, GraduationCap
 import Link from 'next/link'
 import { sanitizeHtml } from '@/lib/input-validation'
 
-// Ensure this route is dynamic
-export const dynamic = 'force-dynamic'
-
 export default function DocumentationPage() {
   const [selectedArticle, setSelectedArticle] = useState<any>(null)
   const [searchTerm, setSearchTerm] = useState('')

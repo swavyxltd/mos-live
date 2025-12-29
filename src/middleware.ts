@@ -97,6 +97,25 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/auth/signin', request.url))
   }
   
+  // Allow /support routes for all authenticated staff users (handled by layout permissions)
+  // This ensures /support/docs and /support/faq are accessible
+  // Must be checked BEFORE portal redirects to prevent unintended redirects
+  if (pathname.startsWith('/support')) {
+    // Only allow if user has staff access (admin, staff, or super admin)
+    // Parents should not access support routes
+    if (roleHints?.orgAdminOf?.length || roleHints?.orgStaffOf?.length || token.isSuperAdmin) {
+      const response = NextResponse.next()
+      response.headers.set('x-pathname', pathname)
+      return response
+    }
+    // If parent or unauthorized user tries to access support, redirect them
+    if (roleHints?.isParent) {
+      return NextResponse.redirect(new URL('/parent/dashboard', request.url))
+    }
+    // Fallback: redirect to sign in if no clear role
+    return NextResponse.redirect(new URL('/auth/signin', request.url))
+  }
+  
   // Check if user is trying to access the wrong portal
   if (pathname === '/') {
     // Redirect to the correct portal root
