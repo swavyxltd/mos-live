@@ -355,7 +355,7 @@ export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent, initi
           <Input
             id="title"
             value={formData.title}
-            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+            onChange={(e) => setFormData(prev => ({ ...prev, title: autoCapitalize(e.target.value) }))}
             placeholder="Enter message title"
             required
           />
@@ -366,7 +366,7 @@ export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent, initi
           <Textarea
             id="message"
             value={formData.message}
-            onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
+            onChange={(e) => setFormData(prev => ({ ...prev, message: autoCapitalize(e.target.value) }))}
             placeholder="Enter your message..."
             rows={6}
             required

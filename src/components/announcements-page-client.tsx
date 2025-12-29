@@ -31,21 +31,18 @@ export function AnnouncementsPageClient({ messages }: AnnouncementsPageClientPro
           </div>
         </div>
       ) : (
-        <div className="bg-[var(--card)] shadow rounded-lg border border-[var(--border)]">
-          {messages.map((message, index) => (
-            <div key={message.id}>
-              <div className="px-4 py-5 sm:p-6">
-                <div className="flex justify-between items-start mb-3">
-                  <h3 className="text-lg font-medium text-gray-900">{message.title}</h3>
-                  <span className="text-sm text-gray-500">{formatDate(new Date(message.createdAt))}</span>
+        <div className="bg-[var(--card)] shadow rounded-lg border border-[var(--border)] overflow-hidden">
+          <div className="divide-y divide-[var(--border)]">
+            {messages.map((message) => (
+              <div key={message.id} className="px-4 py-5 sm:p-6 hover:bg-[var(--accent)]/30 transition-colors">
+                <div className="flex justify-between items-start mb-3 gap-4">
+                  <h3 className="text-lg font-semibold text-[var(--foreground)] flex-1">{message.title}</h3>
+                  <span className="text-sm text-[var(--muted-foreground)] whitespace-nowrap flex-shrink-0">{formatDate(new Date(message.createdAt))}</span>
                 </div>
-                <div className="text-gray-700 whitespace-pre-wrap">{message.body}</div>
+                <div className="text-[var(--foreground)] whitespace-pre-wrap leading-relaxed">{message.body}</div>
               </div>
-              {index < messages.length - 1 && (
-                <div className="border-b border-[var(--border)]" />
-              )}
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
     </div>

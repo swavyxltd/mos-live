@@ -60,3 +60,12 @@ export function getInitials(name: string): string {
     .toUpperCase()
     .slice(0, 2)
 }
+
+// Auto-capitalize text: capitalize first letter of each word
+export function autoCapitalize(text: string): string {
+  if (!text) return text
+  return text
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ')
+}

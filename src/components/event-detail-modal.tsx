@@ -11,6 +11,7 @@ import { Modal } from '@/components/ui/modal'
 import { Badge } from '@/components/ui/badge'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
 import { Calendar, Clock, MapPin, Users, Edit, Trash2, X } from 'lucide-react'
+import { autoCapitalize } from '@/lib/utils'
 
 interface CalendarEvent {
   id: string
@@ -118,7 +119,7 @@ export function EventDetailModal({
         onEventUpdated?.(updatedEvent)
         setIsEditing(false)
       } else {
-        const response = await fetch(`/api/calendar/${event.id}`, {
+        const response = await fetch(`/api/events/${event.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -156,7 +157,7 @@ export function EventDetailModal({
         onEventDeleted?.(event.id)
         onOpenChange(false)
       } else {
-        const response = await fetch(`/api/calendar/${event.id}`, {
+        const response = await fetch(`/api/events/${event.id}`, {
           method: 'DELETE',
         })
 
@@ -172,6 +173,10 @@ export function EventDetailModal({
   }
 
   const handleInputChange = (field: string, value: any) => {
+    // Auto-capitalize text fields
+    if (field === 'title' || field === 'description' || field === 'location') {
+      value = autoCapitalize(value)
+    }
     setFormData(prev => ({
       ...prev,
       [field]: value

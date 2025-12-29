@@ -307,9 +307,11 @@ export function AttendanceMarking({ initialOpen = false, onClose }: AttendanceMa
       // Refresh classes to get updated attendance
       await fetchClasses(true)
       
-      // Trigger page refresh to update attendance page
+      // Trigger page refresh to update attendance page and dashboard
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('attendance-saved'))
+        // Trigger dashboard refresh to update to-do list
+        window.dispatchEvent(new CustomEvent('refresh-dashboard'))
         // Also refresh the page if we're on the attendance page
         if (window.location.pathname.includes('/attendance')) {
           window.location.reload()

@@ -24,12 +24,13 @@ async function handlePOST(request: NextRequest) {
       )
     }
 
+    // Read body once
+    const body = await request.json()
+    const { orgId } = body
+
     // Verify user has permission (super admin or org admin)
     if (!session.user.isSuperAdmin) {
       // For non-super-admin, verify they have ADMIN role in the org they're creating user for
-      const body = await request.json()
-      const { orgId } = body
-      
       if (orgId) {
         const membership = await prisma.userOrgMembership.findUnique({
           where: {
@@ -48,8 +49,6 @@ async function handlePOST(request: NextRequest) {
         }
       }
     }
-
-    const body = await request.json()
     const { email, name, password, phone, isSuperAdmin, orgId, role, sendInvitation, staffSubrole, permissionKeys } = body
 
     // Only check payment for non-owner accounts (staff/teachers)

@@ -50,6 +50,11 @@ interface ChildAttendance {
   teacher: string
   overallAttendance: number
   weeklyAttendance: AttendanceDay[]
+  allAttendanceRecords?: Array<{
+    date: string
+    status: string
+    time?: string
+  }>
   monthlyAttendance: WeeklyAttendance[]
   yearlyAttendance: MonthlyAttendance[]
 }
@@ -162,14 +167,74 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
     setCurrentDate(new Date())
   }
 
+  // Rebuild weekly attendance for the selected week
+  const getWeeklyAttendanceForWeek = (child: ChildAttendance, weekDate: Date) => {
+    if (!child.allAttendanceRecords) {
+      // Fallback to default weeklyAttendance if allAttendanceRecords not available
+      return child.weeklyAttendance
+    }
+
+    // Calculate week start (Monday) for the selected week
+    const weekStart = getWeekStart(weekDate)
+    weekStart.setHours(0, 0, 0, 0)
+    
+    // Generate weekdays (Monday to Friday)
+    const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
+    const weeklyData: Array<{
+      day: string
+      date: string
+      status: 'PRESENT' | 'ABSENT' | 'LATE' | 'NOT_SCHEDULED'
+      time?: string
+    }> = []
+    
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const todayDateString = today.toISOString().split('T')[0]
+    
+    // Build attendance map for quick lookup
+    const attendanceMap = new Map<string, { status: string; time?: string }>()
+    child.allAttendanceRecords.forEach(record => {
+      attendanceMap.set(record.date, { status: record.status, time: record.time })
+    })
+    
+    for (let i = 0; i < 5; i++) {
+      const dayDate = new Date(weekStart)
+      dayDate.setDate(weekStart.getDate() + i)
+      const dateKey = dayDate.toISOString().split('T')[0]
+      const isFuture = dateKey > todayDateString
+      
+      const attendance = attendanceMap.get(dateKey)
+      
+      if (attendance && !isFuture) {
+        weeklyData.push({
+          day: dayNames[i],
+          date: dateKey,
+          status: attendance.status as 'PRESENT' | 'ABSENT' | 'LATE' | 'NOT_SCHEDULED',
+          time: attendance.time
+        })
+      } else {
+        weeklyData.push({
+          day: dayNames[i],
+          date: dateKey,
+          status: 'NOT_SCHEDULED',
+          time: undefined
+        })
+      }
+    }
+    
+    return weeklyData
+  }
+
   const calculatePeriodAttendance = (child: ChildAttendance, view: ViewType) => {
     switch (view) {
       case 'week':
+        // Use the selected week's attendance data
+        const weeklyData = getWeeklyAttendanceForWeek(child, currentDate)
         const today = new Date()
         today.setHours(0, 0, 0, 0)
         const todayDateString = today.toISOString().split('T')[0]
         
-        const daysSoFar = child.weeklyAttendance.filter(day => {
+        const daysSoFar = weeklyData.filter(day => {
           const hasOccurred = day.date <= todayDateString
           const hasAttendanceRecord = day.status !== 'NOT_SCHEDULED'
           return hasOccurred && hasAttendanceRecord
@@ -211,20 +276,22 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
   }
 
   const renderWeekView = (child: ChildAttendance) => {
+    // Get weekly attendance for the selected week
+    const weeklyData = getWeeklyAttendanceForWeek(child, currentDate)
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     const todayDateString = today.toISOString().split('T')[0]
     
-    const presentDays = child.weeklyAttendance.filter(d => 
+    const presentDays = weeklyData.filter(d => 
       (d.status === 'PRESENT' || d.status === 'LATE') && d.date <= todayDateString
     ).length
-    const absentDays = child.weeklyAttendance.filter(d => 
+    const absentDays = weeklyData.filter(d => 
       d.status === 'ABSENT' && d.date <= todayDateString
     ).length
-    const lateDays = child.weeklyAttendance.filter(d => 
+    const lateDays = weeklyData.filter(d => 
       d.status === 'LATE' && d.date <= todayDateString
     ).length
-    const totalDays = child.weeklyAttendance.filter(d => 
+    const totalDays = weeklyData.filter(d => 
       d.status !== 'NOT_SCHEDULED' && d.date <= todayDateString
     ).length
 
@@ -270,7 +337,7 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
         <div className="border border-[var(--border)] rounded-lg p-3 sm:p-4 bg-[var(--card)]">
           <h3 className="text-xs sm:text-sm font-semibold text-[var(--foreground)] mb-3 sm:mb-4">Daily Breakdown</h3>
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3">
-            {child.weeklyAttendance.map((day, index) => {
+            {getWeeklyAttendanceForWeek(child, currentDate).map((day, index) => {
               const isToday = day.date === todayDateString
               const isFuture = day.date > todayDateString
               

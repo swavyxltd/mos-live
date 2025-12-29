@@ -184,13 +184,21 @@ export default async function ParentAttendancePage() {
         ? Math.round((presentDays / totalDaysSoFar) * 100)
         : 0
 
+      // Store all attendance records for this student (for client-side week filtering)
+      const allAttendanceRecords = studentAttendance.map(att => ({
+        date: new Date(att.date).toISOString().split('T')[0],
+        status: att.status,
+        time: att.time || undefined
+      }))
+
       attendanceData.push({
         id: student.id,
         name: `${student.firstName} ${student.lastName}`,
         class: className,
         teacher: teacherName,
         overallAttendance,
-        weeklyAttendance: weeklyData,
+        weeklyAttendance: weeklyData, // Current week (default)
+        allAttendanceRecords, // All records for client-side filtering
         monthlyAttendance,
         yearlyAttendance
       })

@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Modal } from '@/components/ui/modal'
 import { Calendar, Clock, GraduationCap, User, Search } from 'lucide-react'
+import { autoCapitalize } from '@/lib/utils'
 
 interface AddEventModalProps {
   onEventAdded?: (event: any) => void
@@ -283,6 +284,10 @@ export function AddEventModal({ onEventAdded, trigger }: AddEventModalProps) {
   }
 
   const handleInputChange = (field: string, value: any) => {
+    // Auto-capitalize text fields
+    if (field === 'title' || field === 'description' || field === 'location') {
+      value = autoCapitalize(value)
+    }
     setFormData(prev => ({
       ...prev,
       [field]: value

@@ -138,27 +138,26 @@ export default async function AttendancePage() {
     if (!acc[key].studentIds.has(record.Student.id)) {
       acc[key].studentIds.add(record.Student.id)
       
-      // Get weekly attendance for this student
+      // Get weekly attendance for this student - always use current week
       const studentAttendanceMap = attendanceByStudentAndDate.get(record.Student.id)
+      
+      // Calculate current week start (Monday)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      const currentDay = today.getDay()
+      const daysFromMonday = currentDay === 0 ? 6 : currentDay - 1
+      const weekStart = new Date(today)
+      weekStart.setDate(today.getDate() - daysFromMonday)
+      weekStart.setHours(0, 0, 0, 0)
+      
+      // Generate weekdays (Monday to Friday) for current week
+      const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
       const weeklyAttendance: Array<{
         day: string
         date: string
         status: 'PRESENT' | 'ABSENT' | 'LATE' | 'NOT_SCHEDULED'
         time?: string
       }> = []
-      
-      // Calculate week start (Monday) for the record's date
-      const recordDate = new Date(record.date)
-      const dayOfWeek = recordDate.getDay()
-      const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1
-      const weekStart = new Date(recordDate)
-      weekStart.setDate(recordDate.getDate() - daysFromMonday)
-      weekStart.setHours(0, 0, 0, 0)
-      
-      // Generate weekdays (Monday to Friday)
-      const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
       
       for (let i = 0; i < 5; i++) {
         const dayDate = new Date(weekStart)
