@@ -482,7 +482,7 @@ export default function ParentSupportPage() {
             )}
           </div>
         </Card>
-      </div>
+        )}
 
       {/* Create Ticket Modal */}
       <Modal 

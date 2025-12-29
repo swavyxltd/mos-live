@@ -26,7 +26,7 @@ async function handlePOST(request: NextRequest) {
 
     // Read body once
     const body = await request.json()
-    const { orgId } = body
+    const { email, name, password, phone, isSuperAdmin, orgId, role, sendInvitation, staffSubrole, permissionKeys } = body
 
     // Verify user has permission (super admin or org admin)
     if (!session.user.isSuperAdmin) {
@@ -49,7 +49,6 @@ async function handlePOST(request: NextRequest) {
         }
       }
     }
-    const { email, name, password, phone, isSuperAdmin, orgId, role, sendInvitation, staffSubrole, permissionKeys } = body
 
     // Only check payment for non-owner accounts (staff/teachers)
     if (!isSuperAdmin && (role === 'STAFF' || role === 'ADMIN')) {
