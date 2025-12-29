@@ -226,10 +226,10 @@ async function handlePOST(request: NextRequest) {
         title,
         description: body,
         orgHeaderHtml,
-        footerText: `Best regards,<br>The ${orgName} Team`,
+        footerText: `Jazakallahu Khairan,<br>The ${orgName} Team`,
         showLogo: true
       })
-      const textContent = `${title}\n\n${body}\n\nBest regards,\nThe ${orgName} Team`
+      const textContent = `${title}\n\n${body}\n\nJazakallahu Khairan,\nThe ${orgName} Team`
       
       // Send all emails in parallel using Promise.allSettled
       // This ensures all emails are attempted even if some fail

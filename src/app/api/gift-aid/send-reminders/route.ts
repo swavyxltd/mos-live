@@ -102,7 +102,7 @@ The ${org.name} Team`
         const html = await generateEmailTemplate({
           title: 'Gift Aid Reminder',
           description: emailBody.replace(/\n/g, '<br>'),
-          footerText: `Best regards,<br>The ${org.name} Team`
+          footerText: `Jazakallahu Khairan,<br>The ${org.name} Team`
         })
 
         await sendEmail({

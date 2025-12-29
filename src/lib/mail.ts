@@ -561,7 +561,7 @@ export async function sendOrgSetupInvitation({
     to,
     subject: `Set up ${orgName} on Madrasah OS`,
     html,
-    text: `Welcome to Madrasah OS\n\nYou've been invited to set up ${orgName} on Madrasah OS. Click below to create your account:\n\n${safeSignupUrl}\n\nBest regards,\nThe Madrasah OS Team`
+    text: `Welcome to Madrasah OS\n\nYou've been invited to set up ${orgName} on Madrasah OS. Click below to create your account:\n\n${safeSignupUrl}\n\nJazakallahu Khairan,\nThe Madrasah OS Team`
   })
 }
 
@@ -594,7 +594,7 @@ export async function sendOrgSetupConfirmation({
     to,
     subject: `${orgName} is ready on Madrasah OS`,
     html,
-    text: `Organisation Setup Complete\n\n${orgName} has been successfully set up on Madrasah OS. You can now start using all features.\n\nAccess your dashboard: ${safeDashboardUrl}\n\nBest regards,\nThe Madrasah OS Team`
+    text: `Organisation Setup Complete\n\n${orgName} has been successfully set up on Madrasah OS. You can now start using all features.\n\nAccess your dashboard: ${safeDashboardUrl}\n\nJazakallahu Khairan,\nThe Madrasah OS Team`
   })
 }
 
@@ -703,7 +703,7 @@ export async function sendStaffInvitation({
     to,
     subject: `Join ${orgName} on Madrasah OS`,
     html,
-    text: `You've Been Invited\n\nYou've been invited to join ${orgName} as a ${roleLabel} on Madrasah OS. Click below to create your account:\n\n${safeSignupUrl}\n\nBest regards,\nThe Madrasah OS Team`
+    text: `You've Been Invited\n\nYou've been invited to join ${orgName} as a ${roleLabel} on Madrasah OS. Click below to create your account:\n\n${safeSignupUrl}\n\nJazakallahu Khairan,\nThe Madrasah OS Team`
   })
 }
 
@@ -797,7 +797,7 @@ export async function sendPaymentConfirmationEmail({
     description: "Assalamu'alaikum! This email confirms that your payment has been received and processed.",
     orgHeaderHtml,
     content,
-    footerText: `Best regards,<br>The ${orgName} Team`,
+    footerText: `Jazakallahu Khairan,<br>The ${orgName} Team`,
     showLogo: true,
     icon: '✓'
   })
@@ -806,7 +806,7 @@ export async function sendPaymentConfirmationEmail({
     to,
     subject: `Payment Confirmation - ${orgName}`,
     html,
-    text: `Payment Confirmation - ${orgName}\n\nAssalamu'alaikum!\n\nThis email confirms that your payment has been received and processed.\n\nStudent: ${studentName}\nClass: ${className}\nMonth: ${month}\nPayment Method: ${methodLabel}\nDate Paid: ${paidDateText}\nAmount Paid: ${amountFormatted}\n\nJazakallahu Khairan\nThank you for your payment. We appreciate your continued support.\n\nBest regards,\n${orgName}`
+    text: `Payment Confirmation - ${orgName}\n\nAssalamu'alaikum!\n\nThis email confirms that your payment has been received and processed.\n\nStudent: ${studentName}\nClass: ${className}\nMonth: ${month}\nPayment Method: ${methodLabel}\nDate Paid: ${paidDateText}\nAmount Paid: ${amountFormatted}\n\nJazakallahu Khairan\nThank you for your payment. We appreciate your continued support.\n\nJazakallahu Khairan,\nThe ${orgName} Team`
   })
 }
 
@@ -983,7 +983,7 @@ Jazakallahu Khairan for choosing ${orgName}. We're excited to begin this journey
 
 If you have any questions, please don't hesitate to contact us. We're here to help!
 
-Best regards,
+Jazakallahu Khairan,
 The ${orgName} Team`
   
   return sendEmail({
@@ -1032,7 +1032,7 @@ export async function sendApplicationSubmissionConfirmation({
     description: 'Thank you for submitting your application. We\'ll review it and get back to you shortly.',
     orgHeaderHtml,
     content,
-    footerText: `Best regards,<br>The ${orgName} Team`,
+    footerText: `Jazakallahu Khairan,<br>The ${orgName} Team`,
     showLogo: false
   })
   
@@ -1052,7 +1052,7 @@ What Happens Next?
 
 If you have any questions, please don't hesitate to contact us. We're here to help!
 
-Best regards,
+Jazakallahu Khairan,
 The ${orgName} Team`
   
   return sendEmail({
@@ -1138,7 +1138,7 @@ We appreciate your understanding and wish you and your family all the best in yo
 
 If you have any questions, please don't hesitate to contact us.
 
-Best regards,
+Jazakallahu Khairan,
 The ${orgName} Team`
   
   return sendEmail({

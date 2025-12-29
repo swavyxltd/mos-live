@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
           description: 'Thank you for submitting your application. We\'ll review it and get back to you shortly.',
           orgHeaderHtml,
           content,
-          footerText: `Best regards,<br>The ${demoData.orgName} Team`,
+          footerText: `Jazakallahu Khairan,<br>The ${demoData.orgName} Team`,
           showLogo: true,
           icon: '✓'
         })
@@ -184,7 +184,7 @@ export async function GET(request: NextRequest) {
           description: "Assalamu'alaikum! This email confirms that your payment has been received and processed.",
           orgHeaderHtml,
           content,
-          footerText: `Best regards,<br>The ${demoData.orgName} Team`,
+          footerText: `Jazakallahu Khairan,<br>The ${demoData.orgName} Team`,
           showLogo: true,
           icon: '✓'
         })
@@ -454,7 +454,7 @@ export async function GET(request: NextRequest) {
           description: 'We have an important update to share with you.',
           orgHeaderHtml,
           content,
-          footerText: `Best regards,<br>The ${demoData.orgName} Team`,
+          footerText: `Jazakallahu Khairan,<br>The ${demoData.orgName} Team`,
           showLogo: true
         })
         break
@@ -473,7 +473,7 @@ export async function GET(request: NextRequest) {
           description: 'Help us maximize the impact of your donations with Gift Aid.',
           orgHeaderHtml,
           content,
-          footerText: `Best regards,<br>The ${demoData.orgName} Team`,
+          footerText: `Jazakallahu Khairan,<br>The ${demoData.orgName} Team`,
           showLogo: true
         })
         break
@@ -495,7 +495,7 @@ export async function GET(request: NextRequest) {
           description: 'You have a parent-teacher meeting scheduled.',
           orgHeaderHtml,
           content,
-          footerText: `Best regards,<br>The ${demoData.orgName} Team`,
+          footerText: `Jazakallahu Khairan,<br>The ${demoData.orgName} Team`,
           showLogo: true
         })
         break

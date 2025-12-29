@@ -222,7 +222,7 @@ async function handlePOST(request: NextRequest) {
           const emailHtml = await generateEmailTemplate({
             title: `Meeting Scheduled: ${title}`,
             description: messageBody,
-            footerText: 'Best regards, The Madrasah Team'
+            footerText: 'Jazakallahu Khairan, The Madrasah Team'
           })
 
           await sendEmail({

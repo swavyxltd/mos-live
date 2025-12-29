@@ -286,7 +286,7 @@ export function LeadEmailComposerModal({
         description: bodyWithoutFeatures.replace(/\n/g, '<br>'),
         features: features,
         calendlyUrl: calendlyUrl,
-        footerText: `Best regards,<br>${ownerName}<br>Madrasah OS`
+        footerText: `Jazakallahu Khairan,<br>${ownerName}<br>Madrasah OS`
       })
       
       // Replace absolute logo URLs with relative paths for preview
