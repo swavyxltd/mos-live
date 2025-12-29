@@ -37,6 +37,10 @@ export function SetupGuide() {
       // Only respect dismissal if setup is actually complete
       if (dismissedPermanently === 'true' && setupStatus?.completionPercentage === 100) {
         setDismissed(true)
+      } else {
+        // If setup is not complete, always reset dismissed to ensure it shows
+        // This ensures it always appears on first sign-in after signup
+        setDismissed(false)
       }
     }
   }, [setupStatus?.completionPercentage])
@@ -100,6 +104,8 @@ export function SetupGuide() {
   }
 
   // Don't show if dismissed (only after completion) - check this after loading
+  // IMPORTANT: Always show until setup is 100% complete, regardless of temporary dismiss
+  // This ensures it always appears on first sign-in after signup
   if (dismissed && setupStatus.completionPercentage === 100) {
     return null
   }
@@ -221,13 +227,15 @@ export function SetupGuide() {
               </div>
             </div>
           </div>
-          <button
-            onClick={() => setDismissed(true)}
-            className="p-1 rounded-md hover:bg-gray-100 transition-colors flex-shrink-0"
-            aria-label="Dismiss setup guide"
-          >
-            <X className="h-4 w-4 text-gray-500" />
-          </button>
+          {setupStatus.completionPercentage === 100 ? (
+            <button
+              onClick={handleDismissPermanently}
+              className="p-1 rounded-md hover:bg-gray-100 transition-colors flex-shrink-0"
+              aria-label="Dismiss setup guide"
+            >
+              <X className="h-4 w-4 text-gray-500" />
+            </button>
+          ) : null}
         </div>
       </CardHeader>
       <CardContent>
