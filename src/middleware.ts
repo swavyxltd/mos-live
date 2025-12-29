@@ -120,6 +120,7 @@ export async function middleware(request: NextRequest) {
   
   // Block parents from accessing staff routes (dashboard, classes, etc.)
   // These routes are under /(staff) layout, so check if user is trying to access them
+  // Note: /support routes are accessible to all staff (handled in layout), so exclude them from parent blocking
   if ((pathname.startsWith('/dashboard') || 
        pathname.startsWith('/classes') || 
        pathname.startsWith('/students') || 
@@ -133,6 +134,7 @@ export async function middleware(request: NextRequest) {
        pathname.startsWith('/calendar') ||
        pathname.startsWith('/fees') ||
        pathname.startsWith('/gift-aid')) && 
+      !pathname.startsWith('/support') && // Exclude /support routes from parent blocking
       roleHints?.isParent && 
       !roleHints?.orgAdminOf?.length && 
       !roleHints?.orgStaffOf?.length) {
