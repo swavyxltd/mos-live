@@ -86,6 +86,33 @@ export default async function PaymentsPage() {
   // Get org billing day setting (can be null)
   const orgBillingDay = getBillingDay(org)
 
+  // Fetch all parent billing profiles for students in this org to get preferred payment methods
+  const parentUserIds = new Set<string>()
+  classes.forEach(cls => {
+    cls.StudentClass.forEach(sc => {
+      if (sc.Student.User?.id) {
+        parentUserIds.add(sc.Student.User.id)
+      }
+    })
+  })
+
+  const billingProfiles = parentUserIds.size > 0
+    ? await prisma.parentBillingProfile.findMany({
+        where: {
+          orgId: org.id,
+          parentUserId: { in: Array.from(parentUserIds) }
+        },
+        select: {
+          parentUserId: true,
+          preferredPaymentMethod: true
+        }
+      })
+    : []
+
+  const billingProfileMap = new Map(
+    billingProfiles.map(bp => [bp.parentUserId, bp.preferredPaymentMethod])
+  )
+
   const classesWithStats = classes.map(cls => {
     // Include all payment records (no filtering by date)
     const recentRecords = cls.MonthlyPaymentRecord
@@ -98,7 +125,12 @@ export default async function PaymentsPage() {
         orgBillingDay,
         record.paidAt
       )
-      return { ...record, status: newStatus }
+      // Get parent's preferred payment method as fallback if record.method is null
+      const parentPreferredMethod = record.Student.User?.id
+        ? billingProfileMap.get(record.Student.User.id) || null
+        : null
+      const displayMethod = record.method || parentPreferredMethod
+      return { ...record, status: newStatus, displayMethod }
     })
 
     // Calculate stats
@@ -135,7 +167,7 @@ export default async function PaymentsPage() {
           lastName: record.Student.lastName,
           month: record.month,
           amountP: record.amountP,
-          method: record.method,
+          method: (record as any).displayMethod || record.method,
           status: record.status,
           paidAt: record.paidAt?.toISOString() || null,
           notes: record.notes,

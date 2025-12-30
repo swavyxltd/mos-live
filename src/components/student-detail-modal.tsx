@@ -72,6 +72,7 @@ interface StudentDetailsData {
     email: string
     phone: string | null
     backupPhone: string | null
+    preferredPaymentMethod: string | null
     isPrimary: boolean
   }>
   attendance: {
@@ -789,6 +790,39 @@ export function StudentDetailModal({
                                       )}
                                     </div>
                                   </div>
+                                  {parent.preferredPaymentMethod && (
+                                    <div>
+                                      <label className="text-xs text-[var(--muted-foreground)] mb-2 block">Payment Method</label>
+                                      <Badge 
+                                        variant="outline" 
+                                        className={
+                                          parent.preferredPaymentMethod === 'CARD' || parent.preferredPaymentMethod === 'STRIPE'
+                                            ? 'bg-blue-50 text-blue-700 border-blue-300'
+                                            : parent.preferredPaymentMethod === 'BANK_TRANSFER'
+                                            ? 'bg-green-50 text-green-700 border-green-300'
+                                            : parent.preferredPaymentMethod === 'CASH'
+                                            ? 'bg-amber-50 text-amber-700 border-amber-300'
+                                            : 'bg-gray-50 text-gray-700 border-gray-300'
+                                        }
+                                      >
+                                        {parent.preferredPaymentMethod === 'CARD' || parent.preferredPaymentMethod === 'STRIPE'
+                                          ? 'Card'
+                                          : parent.preferredPaymentMethod === 'BANK_TRANSFER'
+                                          ? 'Bank Transfer'
+                                          : parent.preferredPaymentMethod === 'CASH'
+                                          ? 'Cash'
+                                          : parent.preferredPaymentMethod}
+                                      </Badge>
+                                    </div>
+                                  )}
+                                  {!parent.preferredPaymentMethod && (
+                                    <div>
+                                      <label className="text-xs text-[var(--muted-foreground)] mb-2 block">Payment Method</label>
+                                      <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-300">
+                                        Not Set
+                                      </Badge>
+                                    </div>
+                                  )}
                                   <div className="flex items-center gap-2">
                                     {parent.phone && (
                                       <Button 

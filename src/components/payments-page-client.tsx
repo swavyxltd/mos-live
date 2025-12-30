@@ -371,13 +371,18 @@ export function PaymentsPageClient({ classes }: PaymentsPageClientProps) {
   }
 
   const getMethodLabel = (method: string | null) => {
+    if (!method) return 'Not set'
+    
     switch (method) {
       case 'CASH':
         return 'Cash'
       case 'BANK_TRANSFER':
         return 'Bank Transfer'
+      case 'CARD':
+      case 'STRIPE':
+        return 'Card'
       default:
-        return 'Not set'
+        return method
     }
   }
 

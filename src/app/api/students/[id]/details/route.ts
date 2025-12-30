@@ -288,12 +288,26 @@ async function handleGET(
     // Get all parents (if there are multiple ways to link parents, expand this)
     const parents = []
     if (student.User) {
+      // Fetch parent billing profile to get preferred payment method
+      const billingProfile = await prisma.parentBillingProfile.findUnique({
+        where: {
+          orgId_parentUserId: {
+            orgId: finalOrgId,
+            parentUserId: student.User.id
+          }
+        },
+        select: {
+          preferredPaymentMethod: true
+        }
+      })
+
       parents.push({
         id: student.User.id,
         name: student.User.name || '',
         email: student.User.email || '',
         phone: student.User.phone || '',
         backupPhone: student.User.backupPhone || '',
+        preferredPaymentMethod: billingProfile?.preferredPaymentMethod || null,
         isPrimary: true
       })
     }
