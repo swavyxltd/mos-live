@@ -199,8 +199,8 @@ function ParentSignupForm() {
           bankAccountName: data.bankDetails?.accountName || null,
           bankSortCode: data.bankDetails?.sortCode || null,
           bankAccountNumber: data.bankDetails?.accountNumber || null,
-          paymentInstructions: null,
-          billingDay: 1
+          paymentInstructions: data.paymentInstructions || null,
+          billingDay: data.billingDay ?? null
         })
       }
       

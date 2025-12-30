@@ -55,7 +55,10 @@ async function handleGET(request: NextRequest) {
             stripeConnectAccountId: true,
             bankAccountName: true,
             bankSortCode: true,
-            bankAccountNumber: true
+            bankAccountNumber: true,
+            billingDay: true,
+            feeDueDay: true,
+            paymentInstructions: true
           }
         }
       }
@@ -128,7 +131,9 @@ async function handleGET(request: NextRequest) {
         accountName: invitation.Org.bankAccountName,
         sortCode: invitation.Org.bankSortCode,
         accountNumber: invitation.Org.bankAccountNumber
-      }
+      },
+      billingDay: invitation.Org.billingDay ?? invitation.Org.feeDueDay ?? null,
+      paymentInstructions: invitation.Org.paymentInstructions
     })
   } catch (error: any) {
     logger.error('Error fetching parent invitation', error)
