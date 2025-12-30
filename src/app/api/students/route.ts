@@ -16,6 +16,7 @@ async function handleGET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
+    const parentId = searchParams.get('parentId')
 
     const whereClause: any = {
       orgId,
@@ -24,6 +25,10 @@ async function handleGET(request: NextRequest) {
 
     if (status === 'ACTIVE') {
       whereClause.isArchived = false
+    }
+
+    if (parentId) {
+      whereClause.primaryParentId = parentId
     }
 
     const students = await prisma.student.findMany({

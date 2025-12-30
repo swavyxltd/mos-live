@@ -70,9 +70,11 @@ async function handleGET(request: NextRequest) {
     
     // Get query param for status filter
     const statusFilter = searchParams.get('status') // 'YES', 'NOT_SURE', 'NO', or null for all
+    const parentsOnly = searchParams.get('parentsOnly') === 'true'
     
     // For NOT_SURE or NO status, return unique parents instead of payments
-    if (statusFilter === 'NOT_SURE' || statusFilter === 'NO') {
+    // Also return parents only if parentsOnly flag is set (for eligible parents tab)
+    if (statusFilter === 'NOT_SURE' || statusFilter === 'NO' || (statusFilter === 'YES' && parentsOnly)) {
       // First get parent user IDs in this org
       const parentMemberships = await prisma.userOrgMembership.findMany({
         where: {
@@ -119,8 +121,10 @@ async function handleGET(request: NextRequest) {
         const firstName = nameParts[0] || ''
         const lastName = nameParts.slice(1).join(' ') || ''
         
+        const idPrefix = statusFilter === 'YES' ? 'eligible' : statusFilter === 'NOT_SURE' ? 'pending' : 'declined'
+        
         return {
-          id: `pending-${parent.id}`,
+          id: `${idPrefix}-${parent.id}`,
           title: (parent.title || '').substring(0, 4),
           firstName: firstName.substring(0, 35),
           lastName: lastName.substring(0, 35),
@@ -221,6 +225,10 @@ async function handleGET(request: NextRequest) {
       const firstName = nameParts[0] || ''
       const lastName = nameParts.slice(1).join(' ') || ''
       
+      // Get the first student ID from the payments for this parent
+      const firstPayment = aggregated.payments[0]
+      const studentId = firstPayment?.Invoice?.Student?.id || null
+
       return {
         id: `aggregated-${parent.id}-${index}`, // Unique ID for aggregated entry
         title: (parent.title || '').substring(0, 4), // Max 4 chars for title
@@ -237,6 +245,7 @@ async function handleGET(request: NextRequest) {
         parentPhone: parent.phone || '',
         giftAidStatus: parent.giftAidStatus || null,
         parentUserId: parent.id,
+        studentId: studentId, // Include student ID for direct access
         paymentCount: aggregated.payments.length // Track number of payments aggregated
       }
     }).filter((item): item is NonNullable<typeof item> => item !== null)

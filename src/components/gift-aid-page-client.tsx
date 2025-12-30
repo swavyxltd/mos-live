@@ -12,6 +12,7 @@ import { Download, Calendar, FileText, AlertCircle, CheckCircle, XCircle, Clock,
 import { toast } from 'sonner'
 import { Modal } from '@/components/ui/modal'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
+import { StudentDetailModal } from '@/components/student-detail-modal'
 
 interface GiftAidRow {
   id: string
@@ -29,16 +30,18 @@ interface GiftAidRow {
   parentPhone: string
   giftAidStatus?: string | null
   parentUserId?: string
+  studentId?: string
   paymentCount?: number
 }
 
 export function GiftAidPageClient() {
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
-  const [activeTab, setActiveTab] = useState<'active' | 'pending' | 'declined' | 'history' | 'analytics'>('active')
+  const [activeTab, setActiveTab] = useState<'active' | 'eligible' | 'pending' | 'declined' | 'history' | 'analytics'>('active')
   const [data, setData] = useState<GiftAidRow[]>([])
   const [showMissingDataConfirm, setShowMissingDataConfirm] = useState(false)
   const [pendingDownload, setPendingDownload] = useState<{ data: GiftAidRow[], missingCount: number } | null>(null)
+  const [eligibleData, setEligibleData] = useState<GiftAidRow[]>([])
   const [pendingData, setPendingData] = useState<GiftAidRow[]>([])
   const [declinedData, setDeclinedData] = useState<GiftAidRow[]>([])
   const [loading, setLoading] = useState(false)
@@ -60,6 +63,9 @@ export function GiftAidPageClient() {
   const [sendingReminders, setSendingReminders] = useState(false)
   const [analytics, setAnalytics] = useState<any>(null)
   const [loadingAnalytics, setLoadingAnalytics] = useState(false)
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null)
+  const [isStudentModalOpen, setIsStudentModalOpen] = useState(false)
+  const [initialStudentTab, setInitialStudentTab] = useState<string>('overview')
 
   // Set default date range to last 12 months
   useEffect(() => {
@@ -157,6 +163,48 @@ export function GiftAidPageClient() {
     }
   }
 
+  const fetchEligibleParents = async () => {
+    try {
+      // Fetch eligible parents using the same API but with a flag to return parents only
+      // Use a wide date range to get all eligible parents
+      const end = new Date()
+      const start = new Date()
+      start.setFullYear(start.getFullYear() - 10) // 10 years back to get all parents
+      
+      const startDateStr = start.toISOString().split('T')[0]
+      const endDateStr = end.toISOString().split('T')[0]
+      
+      const response = await fetch(`/api/gift-aid?startDate=${startDateStr}&endDate=${endDateStr}&status=YES&parentsOnly=true`)
+      if (response.ok) {
+        const result = await response.json()
+        setEligibleData(result.data || [])
+      } else {
+        // Fallback: fetch payment data and extract unique parents
+        const paymentResponse = await fetch(`/api/gift-aid?startDate=${startDateStr}&endDate=${endDateStr}&status=YES`)
+        if (paymentResponse.ok) {
+          const paymentResult = await paymentResponse.json()
+          // Extract unique parents from payment data
+          const uniqueParents = new Map<string, GiftAidRow>()
+          if (paymentResult.data) {
+            paymentResult.data.forEach((row: GiftAidRow) => {
+              if (row.parentUserId && !uniqueParents.has(row.parentUserId)) {
+                uniqueParents.set(row.parentUserId, {
+                  ...row,
+                  amount: 0,
+                  paymentCount: 0
+                })
+              }
+            })
+          }
+          setEligibleData(Array.from(uniqueParents.values()))
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch eligible parents', error)
+      setEligibleData([])
+    }
+  }
+
   const fetchAllData = async (customStartDate?: string, customEndDate?: string) => {
     const start = customStartDate || startDate
     const end = customEndDate || endDate
@@ -170,7 +218,8 @@ export function GiftAidPageClient() {
       await Promise.all([
         fetchData('YES', start, end),
         fetchData('NOT_SURE', start, end),
-        fetchData('NO', start, end)
+        fetchData('NO', start, end),
+        fetchEligibleParents()
       ])
     } finally {
       setLoading(false)
@@ -487,7 +536,7 @@ export function GiftAidPageClient() {
 
   // Filtered data based on search
   const filteredData = useMemo(() => {
-    const currentData = activeTab === 'active' ? data : activeTab === 'pending' ? pendingData : declinedData
+    const currentData = activeTab === 'active' ? data : activeTab === 'eligible' ? eligibleData : activeTab === 'pending' ? pendingData : declinedData
     
     if (!searchQuery.trim()) return currentData
     
@@ -499,7 +548,7 @@ export function GiftAidPageClient() {
       row.houseNameOrNumber?.toLowerCase().includes(query) ||
       row.postcode?.toLowerCase().includes(query)
     )
-  }, [data, pendingData, declinedData, activeTab, searchQuery])
+  }, [data, eligibleData, pendingData, declinedData, activeTab, searchQuery])
 
   // Calculate validation stats
   const validationStats = useMemo(() => {
@@ -532,6 +581,61 @@ export function GiftAidPageClient() {
       fetchAnalytics()
     }
   }, [activeTab])
+
+  // Fetch eligible parents when eligible tab is active
+  useEffect(() => {
+    if (activeTab === 'eligible' && eligibleData.length === 0) {
+      fetchEligibleParents()
+    }
+  }, [activeTab])
+
+  // Function to open student modal with a specific tab
+  const openStudentModal = async (row: GiftAidRow, tab: string = 'overview') => {
+    // If we have studentId directly (from active tab payment records), use it
+    if (row.studentId) {
+      setInitialStudentTab(tab)
+      setSelectedStudentId(row.studentId)
+      setIsStudentModalOpen(true)
+      return
+    }
+
+    // Otherwise, find student by parent ID
+    if (!row.parentUserId) {
+      toast.error('No parent information available')
+      return
+    }
+
+    try {
+      // Fetch students for this parent
+      const response = await fetch(`/api/students?parentId=${row.parentUserId}`)
+      if (response.ok) {
+        const students = await response.json()
+        if (students && students.length > 0) {
+          setInitialStudentTab(tab)
+          setSelectedStudentId(students[0].id)
+          setIsStudentModalOpen(true)
+        } else {
+          toast.error('No students found for this parent')
+        }
+      } else {
+        toast.error('Unable to find student information')
+      }
+    } catch (error) {
+      console.error('Error fetching students:', error)
+      toast.error('Failed to load student information')
+    }
+  }
+
+  // Function to handle row click - find and open student profile with Parents tab
+  const handleRowClick = async (row: GiftAidRow) => {
+    await openStudentModal(row, 'parents')
+  }
+
+  // Function to handle parent name click - open parents tab (same as row click)
+  const handleParentNameClick = async (e: React.MouseEvent, row: GiftAidRow) => {
+    e.stopPropagation() // Prevent row click from firing twice
+    await openStudentModal(row, 'parents')
+  }
 
   const toggleSelectParent = (userId: string) => {
     const newSelected = new Set(selectedParents)
@@ -919,8 +1023,27 @@ export function GiftAidPageClient() {
           }`}
         >
           <CheckCircle className={`h-4 w-4 ${activeTab === 'active' ? 'text-green-600' : ''}`} />
-          <span>Active Gift Aid</span>
+          <span>Gift Aid Payment Records</span>
           {activeTab === 'active' && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--primary)] rounded-t" />
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab('eligible')}
+          className={`px-3 sm:px-4 py-2.5 font-medium text-sm transition-all whitespace-nowrap flex items-center gap-2 relative ${
+            activeTab === 'eligible'
+              ? 'text-[var(--primary)]'
+              : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
+          }`}
+        >
+          <Gift className={`h-4 w-4 ${activeTab === 'eligible' ? 'text-green-600' : ''}`} />
+          <span>Gift Aid Eligible</span>
+          {eligibleData.length > 0 && (
+            <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+              {eligibleData.length}
+            </Badge>
+          )}
+          {activeTab === 'eligible' && (
             <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--primary)] rounded-t" />
           )}
         </button>
@@ -1127,11 +1250,13 @@ export function GiftAidPageClient() {
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="h-5 w-5" />
-                  {activeTab === 'active' ? 'Gift Aid Preview' : activeTab === 'pending' ? 'Parents Pending Contact' : 'Parents Who Declined Gift Aid'}
+                  {activeTab === 'active' ? 'Gift Aid Preview' : activeTab === 'eligible' ? 'Gift Aid Eligible Parents' : activeTab === 'pending' ? 'Parents Pending Contact' : 'Parents Who Declined Gift Aid'}
                 </CardTitle>
                 <CardDescription className="mt-1">
                   {activeTab === 'active' 
                     ? 'Preview of payments that will be included in the submission file'
+                    : activeTab === 'eligible'
+                    ? 'Parents who are eligible for Gift Aid'
                     : activeTab === 'pending'
                     ? 'Parents who need to be contacted about Gift Aid'
                     : 'Parents who have declined Gift Aid'}
@@ -1139,7 +1264,7 @@ export function GiftAidPageClient() {
               </div>
 
               {/* Search and Bulk Actions */}
-              {activeTab === 'pending' && filteredData.length > 0 && (
+              {(activeTab === 'pending' || activeTab === 'eligible') && filteredData.length > 0 && (
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2 border-t border-[var(--border)]">
                   {/* Search */}
                   <div className="relative flex-1 sm:max-w-xs">
@@ -1200,6 +1325,8 @@ export function GiftAidPageClient() {
                 {searchQuery ? 'No results found for your search.' : (
                   activeTab === 'active' 
                     ? 'No payments found for the selected date range. Adjust your date range and try again.'
+                    : activeTab === 'eligible'
+                    ? 'No eligible parents found.'
                     : activeTab === 'pending'
                     ? 'No parents pending contact for the selected date range.'
                     : 'No parents have declined Gift Aid.'
@@ -1215,13 +1342,14 @@ export function GiftAidPageClient() {
                           <TableHead>Title</TableHead>
                           <TableHead>First Name</TableHead>
                           <TableHead>Last Name</TableHead>
+                          <TableHead>Parent Name</TableHead>
                           <TableHead>House Name/Number</TableHead>
                           <TableHead>Postcode</TableHead>
                           <TableHead>Date</TableHead>
                           <TableHead className="text-right">Amount</TableHead>
                         </>
                       )}
-                      {(activeTab === 'pending' || activeTab === 'declined') && (
+                      {(activeTab === 'eligible' || activeTab === 'pending' || activeTab === 'declined') && (
                         <>
                           <TableHead>Parent Name</TableHead>
                           <TableHead>Email</TableHead>
@@ -1238,12 +1366,26 @@ export function GiftAidPageClient() {
                   </TableHeader>
                   <TableBody>
                     {filteredData.map((row, index) => (
-                      <TableRow key={row.id}>
+                      <TableRow 
+                        key={row.id}
+                        className="cursor-pointer hover:bg-[var(--muted)]/50 transition-colors"
+                        onClick={() => handleRowClick(row)}
+                      >
                         {activeTab === 'active' && (
                           <>
                             <TableCell className="font-medium">{row.title || '-'}</TableCell>
                             <TableCell>{row.firstName || '-'}</TableCell>
                             <TableCell>{row.lastName || '-'}</TableCell>
+                            <TableCell 
+                              className="font-medium cursor-pointer hover:text-[var(--primary)] hover:underline transition-colors"
+                              onClick={(e) => {
+                                if (row.parentUserId) {
+                                  handleParentNameClick(e, row)
+                                }
+                              }}
+                            >
+                              {row.parentName || 'N/A'}
+                            </TableCell>
                             <TableCell>
                               {row.houseNameOrNumber ? (
                                 row.houseNameOrNumber
@@ -1274,9 +1416,14 @@ export function GiftAidPageClient() {
                             <TableCell className="text-right font-semibold">£{row.amount.toFixed(2)}</TableCell>
                           </>
                         )}
-                        {(activeTab === 'pending' || activeTab === 'declined') && row.parentUserId && (
+                        {(activeTab === 'eligible' || activeTab === 'pending' || activeTab === 'declined') && row.parentUserId && (
                           <>
-                            <TableCell className="font-medium">{row.parentName || 'N/A'}</TableCell>
+                            <TableCell 
+                              className="font-medium cursor-pointer hover:text-[var(--primary)] hover:underline transition-colors"
+                              onClick={(e) => handleParentNameClick(e, row)}
+                            >
+                              {row.parentName || 'N/A'}
+                            </TableCell>
                             <TableCell>{row.parentEmail || 'N/A'}</TableCell>
                             <TableCell>{row.parentPhone || 'N/A'}</TableCell>
                             <TableCell>
@@ -1324,12 +1471,15 @@ export function GiftAidPageClient() {
                               )}
                             </TableCell>
                             {(activeTab === 'pending' || activeTab === 'declined') && (
-                              <TableCell>
+                              <TableCell onClick={(e) => e.stopPropagation()}>
                                 <div className="flex gap-2 justify-center">
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    onClick={() => handleUpdateStatus(row.parentUserId!, 'YES')}
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      handleUpdateStatus(row.parentUserId!, 'YES')
+                                    }}
                                     disabled={updatingStatus === row.parentUserId}
                                     className="border-green-600 text-green-700 hover:bg-green-50 hover:border-green-700"
                                   >
@@ -1340,7 +1490,10 @@ export function GiftAidPageClient() {
                                     <Button
                                       size="sm"
                                       variant="outline"
-                                      onClick={() => handleUpdateStatus(row.parentUserId!, 'NO')}
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        handleUpdateStatus(row.parentUserId!, 'NO')
+                                      }}
                                       disabled={updatingStatus === row.parentUserId}
                                       className="border-red-600 text-red-700 hover:bg-red-50 hover:border-red-700"
                                     >
@@ -1362,6 +1515,18 @@ export function GiftAidPageClient() {
           </CardContent>
         </Card>
       )}
+
+      {/* Student Detail Modal */}
+      <StudentDetailModal
+        studentId={selectedStudentId}
+        isOpen={isStudentModalOpen}
+        initialTab={initialStudentTab}
+        onClose={() => {
+          setIsStudentModalOpen(false)
+          setSelectedStudentId(null)
+          setInitialStudentTab('overview') // Reset to default
+        }}
+      />
 
       {/* History Tab */}
       {activeTab === 'history' && (

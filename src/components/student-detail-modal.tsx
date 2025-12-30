@@ -154,6 +154,7 @@ interface StudentDetailModalProps {
   onClose: () => void
   onEdit?: (studentId: string) => void
   onArchive?: (studentId: string, isArchived: boolean) => void
+  initialTab?: string // Optional: initial tab to open (default: 'overview')
 }
 
 export function StudentDetailModal({ 
@@ -162,13 +163,14 @@ export function StudentDetailModal({
   isOpen, 
   onClose, 
   onEdit,
-  onArchive
+  onArchive,
+  initialTab = 'overview'
 }: StudentDetailModalProps) {
   const { data: session } = useSession()
   const router = useRouter()
   const [studentData, setStudentData] = useState<StudentDetailsData | null>(null)
   const [loading, setLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState('overview')
+  const [activeTab, setActiveTab] = useState(initialTab)
   const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false)
   const [isUnarchiveDialogOpen, setIsUnarchiveDialogOpen] = useState(false)
   const [isArchiving, setIsArchiving] = useState(false)
@@ -195,6 +197,13 @@ export function StudentDetailModal({
   const isOrgAdmin = userRole?.orgAdminOf && userRole.orgAdminOf.length > 0
   // Show fees for: super admins, org admins, staff with admin subrole, finance officers, or users with fees permission
   const canViewFees = session?.user?.isSuperAdmin || isOrgAdmin || isAdmin() || isFinanceOfficer() || canViewSection('fees')
+
+  // Update active tab when initialTab prop changes or modal opens
+  useEffect(() => {
+    if (isOpen && initialTab) {
+      setActiveTab(initialTab)
+    }
+  }, [isOpen, initialTab])
 
   // Fetch student data
   useEffect(() => {
