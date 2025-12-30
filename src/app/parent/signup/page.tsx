@@ -90,7 +90,7 @@ function ParentSignupForm() {
     relationshipToStudent: 'PARENT',
     // Payment & Gift Aid
     preferredPaymentMethod: '',
-    giftAidStatus: 'NOT_SURE'
+    giftAidStatus: ''
   })
 
   const [paymentSettings, setPaymentSettings] = useState<{
@@ -580,6 +580,11 @@ function ParentSignupForm() {
       return
     }
 
+    if (!formData.giftAidStatus || formData.giftAidStatus.trim() === '') {
+      setError('Please select a Gift Aid declaration option')
+      setSubmitting(false)
+      return
+    }
 
     try {
       const signupData: any = {

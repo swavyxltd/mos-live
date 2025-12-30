@@ -1228,6 +1228,7 @@ export function GiftAidPageClient() {
                           <TableHead>Phone</TableHead>
                           <TableHead>Address</TableHead>
                           <TableHead>Postcode</TableHead>
+                          <TableHead>Gift Aid Status</TableHead>
                           {(activeTab === 'pending' || activeTab === 'declined') && (
                             <TableHead className="text-center">Actions</TableHead>
                           )}
@@ -1293,6 +1294,32 @@ export function GiftAidPageClient() {
                               ) : (
                                 <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300">
                                   Missing
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {row.giftAidStatus ? (
+                                <Badge 
+                                  variant="outline" 
+                                  className={
+                                    row.giftAidStatus === 'ELIGIBLE' || row.giftAidStatus === 'YES'
+                                      ? 'bg-green-50 text-green-700 border-green-300'
+                                      : row.giftAidStatus === 'NOT_ELIGIBLE' || row.giftAidStatus === 'NO'
+                                      ? 'bg-red-50 text-red-700 border-red-300'
+                                      : 'bg-yellow-50 text-yellow-700 border-yellow-300'
+                                  }
+                                >
+                                  {row.giftAidStatus === 'ELIGIBLE' || row.giftAidStatus === 'YES' 
+                                    ? 'Eligible' 
+                                    : row.giftAidStatus === 'NOT_ELIGIBLE' || row.giftAidStatus === 'NO'
+                                    ? 'Not Eligible'
+                                    : row.giftAidStatus === 'NOT_SURE'
+                                    ? 'Not Sure'
+                                    : row.giftAidStatus}
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-300">
+                                  Not Set
                                 </Badge>
                               )}
                             </TableCell>
