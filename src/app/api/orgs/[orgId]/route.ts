@@ -210,6 +210,83 @@ async function handleDELETE(
       }
     }
 
+    // Delete ALL users associated with this org (emails are unique, users can't belong to multiple orgs)
+    // This must happen BEFORE deleting the org
+    try {
+      // Get all user IDs that belonged to this org
+      const orgMemberships = await prisma.userOrgMembership.findMany({
+        where: { orgId },
+        select: { userId: true }
+      })
+      
+      const orgUserIds = orgMemberships.map(m => m.userId)
+      
+      if (orgUserIds.length > 0) {
+        // Get all users associated with this org (excluding super admins)
+        const usersToDelete = await prisma.user.findMany({
+          where: {
+            id: { in: orgUserIds },
+            isSuperAdmin: false // Never delete super admin accounts
+          },
+          select: {
+            id: true,
+            email: true
+          }
+        })
+
+        if (usersToDelete.length > 0) {
+          logger.info(`Found ${usersToDelete.length} user(s) to delete (all users associated with this org)`)
+          
+          const userIdsToDelete = usersToDelete.map(u => u.id)
+          
+          // Delete all users' related data
+          await Promise.all([
+            prisma.account.deleteMany({ where: { userId: { in: userIdsToDelete } } }),
+            prisma.session.deleteMany({ where: { userId: { in: userIdsToDelete } } }),
+            prisma.passwordResetToken.deleteMany({ where: { userId: { in: userIdsToDelete } } }),
+            prisma.supportTicketResponse.deleteMany({ where: { userId: { in: userIdsToDelete } } }),
+            prisma.supportTicket.deleteMany({ where: { userId: { in: userIdsToDelete } } }),
+            prisma.giftAidSubmission.deleteMany({ where: { createdById: { in: userIdsToDelete } } }),
+            prisma.progressLog.deleteMany({ where: { userId: { in: userIdsToDelete } } }),
+            prisma.leadActivity.deleteMany({ where: { createdByUserId: { in: userIdsToDelete } } }),
+            prisma.lead.deleteMany({ where: { assignedToUserId: { in: userIdsToDelete } } }),
+            prisma.application.updateMany({
+              where: { reviewedById: { in: userIdsToDelete } },
+              data: { reviewedById: null }
+            }),
+            prisma.class.updateMany({
+              where: { teacherId: { in: userIdsToDelete } },
+              data: { teacherId: null }
+            }),
+            prisma.student.updateMany({
+              where: { primaryParentId: { in: userIdsToDelete } },
+              data: { primaryParentId: null }
+            }),
+            prisma.parentBillingProfile.deleteMany({ where: { parentUserId: { in: userIdsToDelete } } }),
+            prisma.auditLog.updateMany({
+              where: { actorUserId: { in: userIdsToDelete } },
+              data: { actorUserId: null }
+            })
+          ])
+          
+          // Delete all users associated with this org
+          await prisma.user.deleteMany({
+            where: { id: { in: userIdsToDelete } }
+          })
+          
+          logger.info(`Deleted ${usersToDelete.length} user(s): ${usersToDelete.map(u => u.email).join(', ')}`)
+        } else {
+          logger.info('No users found to delete (only super admin accounts associated with this org)')
+        }
+      }
+    } catch (orphanedUserError: any) {
+      logger.error('Error deleting orphaned users', {
+        error: orphanedUserError?.message,
+        code: orphanedUserError?.code
+      })
+      // Continue with org deletion even if orphaned user deletion fails
+    }
+
     // Delete the organisation
     // Prisma will cascade delete all related records (students, classes, invoices, memberships, etc.)
     await prisma.org.delete({
