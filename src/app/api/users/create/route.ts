@@ -179,6 +179,7 @@ async function handlePOST(request: NextRequest) {
       )
     }
 
+    let user: any
     try {
       user = await prisma.user.create({
         data: {
@@ -203,70 +204,84 @@ async function handlePOST(request: NextRequest) {
     }
 
     // If orgId and role provided, create membership
+    let membership = null
     if (targetOrgId && role && !isSuperAdmin) {
-      // Determine if this is the initial admin (first ADMIN in the org)
-      const existingAdmins = await prisma.userOrgMembership.findMany({
-        where: {
-          orgId: targetOrgId,
-          role: 'ADMIN',
-        },
-      })
-      const isInitialAdmin = role === 'ADMIN' && existingAdmins.length === 0
+      try {
+        // Determine if this is the initial admin (first ADMIN in the org)
+        const existingAdmins = await prisma.userOrgMembership.findMany({
+          where: {
+            orgId: targetOrgId,
+            role: 'ADMIN',
+          },
+        })
+        const isInitialAdmin = role === 'ADMIN' && existingAdmins.length === 0
 
-      const membership = await prisma.userOrgMembership.upsert({
-        where: {
-          userId_orgId: {
+        membership = await prisma.userOrgMembership.upsert({
+          where: {
+            userId_orgId: {
+              userId: user.id,
+              orgId: targetOrgId
+            }
+          },
+          update: {
+            role,
+            ...(staffSubrole !== undefined && { staffSubrole }),
+            ...(isInitialAdmin && { isInitialAdmin: true }),
+          },
+          create: {
+            id: crypto.randomUUID(),
             userId: user.id,
-            orgId: targetOrgId
+            orgId: targetOrgId,
+            role,
+            staffSubrole: staffSubrole || null,
+            isInitialAdmin,
           }
-        },
-        update: {
-          role,
-          ...(staffSubrole !== undefined && { staffSubrole }),
-          ...(isInitialAdmin && { isInitialAdmin: true }),
-        },
-        create: {
-          id: crypto.randomUUID(),
-          userId: user.id,
-          orgId: targetOrgId,
-          role,
-          staffSubrole: staffSubrole || null,
-          isInitialAdmin,
-        }
-      })
+        })
+      } catch (membershipError: any) {
+        logger.error('Failed to create membership', membershipError)
+        // If membership creation fails, we should still try to continue
+        // but log the error
+        throw membershipError // Re-throw to be caught by outer catch
+      }
+    }
 
       // Set permissions if provided
-      if (role === 'STAFF' || role === 'ADMIN') {
-        const { setStaffPermissions, ensurePermissionsExist } = await import('@/lib/staff-permissions-db')
-        const { getStaffPermissionKeys, StaffSubrole } = await import('@/types/staff-roles')
-        
-        await ensurePermissionsExist()
-        
-        let finalPermissionKeys = permissionKeys || []
-        
-        // If ADMIN role, give all permissions
-        if (role === 'ADMIN') {
-          const { PERMISSION_DEFINITIONS } = await import('@/types/staff-roles')
-          finalPermissionKeys = Object.keys(PERMISSION_DEFINITIONS) as any[]
-        } else if (!permissionKeys && staffSubrole) {
-          // Use preset permissions based on subrole (base permissions)
-          finalPermissionKeys = getStaffPermissionKeys(staffSubrole as StaffSubrole)
-        } else if (permissionKeys && staffSubrole) {
-          // Ensure base permissions are always included
-          const basePermissions = getStaffPermissionKeys(staffSubrole as StaffSubrole)
-          finalPermissionKeys = [...new Set([...basePermissions, ...permissionKeys])]
-        }
-        
-        if (finalPermissionKeys.length > 0) {
-          await setStaffPermissions(membership.id, finalPermissionKeys, staffSubrole)
+      if ((role === 'STAFF' || role === 'ADMIN') && membership) {
+        try {
+          const { setStaffPermissions, ensurePermissionsExist } = await import('@/lib/staff-permissions-db')
+          const { getStaffPermissionKeys, StaffSubrole } = await import('@/types/staff-roles')
+          
+          await ensurePermissionsExist()
+          
+          let finalPermissionKeys = permissionKeys || []
+          
+          // If ADMIN role, give all permissions
+          if (role === 'ADMIN') {
+            const { PERMISSION_DEFINITIONS } = await import('@/types/staff-roles')
+            finalPermissionKeys = Object.keys(PERMISSION_DEFINITIONS) as any[]
+          } else if (!permissionKeys && staffSubrole) {
+            // Use preset permissions based on subrole (base permissions)
+            finalPermissionKeys = getStaffPermissionKeys(staffSubrole as StaffSubrole)
+          } else if (permissionKeys && staffSubrole) {
+            // Ensure base permissions are always included
+            const basePermissions = getStaffPermissionKeys(staffSubrole as StaffSubrole)
+            finalPermissionKeys = [...new Set([...basePermissions, ...permissionKeys])]
+          }
+          
+          if (finalPermissionKeys.length > 0 && membership) {
+            await setStaffPermissions(membership.id, finalPermissionKeys, staffSubrole)
+          }
+        } catch (permError: any) {
+          logger.error('Failed to set staff permissions', permError)
+          // Don't fail user creation if permission setting fails - permissions can be set later
         }
       }
 
       // Send invitation email if requested
-      if (shouldSendInvitation) {
+      if (shouldSendInvitation && targetOrgId) {
         try {
           const org = await prisma.org.findUnique({
-            where: { id: targetOrgId || orgId },
+            where: { id: targetOrgId },
             select: { name: true }
           })
 
@@ -280,7 +295,7 @@ async function handlePOST(request: NextRequest) {
             await prisma.invitation.create({
               data: {
                 id: crypto.randomUUID(),
-                orgId: targetOrgId || orgId,
+                orgId: targetOrgId,
                 email: sanitizedEmail,
                 role,
                 token,
@@ -319,7 +334,14 @@ async function handlePOST(request: NextRequest) {
     })
 
   } catch (error: any) {
-    logger.error('Error creating user', error)
+    // Always log full error details to server logs (even in production)
+    logger.error('Error creating user', {
+      message: error?.message,
+      code: error?.code,
+      name: error?.name,
+      stack: error?.stack,
+      ...(error?.meta && { meta: error.meta })
+    })
     
     // Handle unique constraint violation
     if (error.code === 'P2002') {
