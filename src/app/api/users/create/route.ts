@@ -245,80 +245,79 @@ async function handlePOST(request: NextRequest) {
       }
     }
 
-      // Set permissions if provided
-      if ((role === 'STAFF' || role === 'ADMIN') && membership) {
-        try {
-          const { setStaffPermissions, ensurePermissionsExist } = await import('@/lib/staff-permissions-db')
-          const { getStaffPermissionKeys, StaffSubrole } = await import('@/types/staff-roles')
-          
-          await ensurePermissionsExist()
-          
-          let finalPermissionKeys = permissionKeys || []
-          
-          // If ADMIN role, give all permissions
-          if (role === 'ADMIN') {
-            const { PERMISSION_DEFINITIONS } = await import('@/types/staff-roles')
-            finalPermissionKeys = Object.keys(PERMISSION_DEFINITIONS) as any[]
-          } else if (!permissionKeys && staffSubrole) {
-            // Use preset permissions based on subrole (base permissions)
-            finalPermissionKeys = getStaffPermissionKeys(staffSubrole as StaffSubrole)
-          } else if (permissionKeys && staffSubrole) {
-            // Ensure base permissions are always included
-            const basePermissions = getStaffPermissionKeys(staffSubrole as StaffSubrole)
-            finalPermissionKeys = [...new Set([...basePermissions, ...permissionKeys])]
-          }
-          
-          if (finalPermissionKeys.length > 0 && membership) {
-            await setStaffPermissions(membership.id, finalPermissionKeys, staffSubrole)
-          }
-        } catch (permError: any) {
-          logger.error('Failed to set staff permissions', permError)
-          // Don't fail user creation if permission setting fails - permissions can be set later
+    // Set permissions if provided
+    if ((role === 'STAFF' || role === 'ADMIN') && membership) {
+      try {
+        const { setStaffPermissions, ensurePermissionsExist } = await import('@/lib/staff-permissions-db')
+        const { getStaffPermissionKeys, StaffSubrole } = await import('@/types/staff-roles')
+        
+        await ensurePermissionsExist()
+        
+        let finalPermissionKeys = permissionKeys || []
+        
+        // If ADMIN role, give all permissions
+        if (role === 'ADMIN') {
+          const { PERMISSION_DEFINITIONS } = await import('@/types/staff-roles')
+          finalPermissionKeys = Object.keys(PERMISSION_DEFINITIONS) as any[]
+        } else if (!permissionKeys && staffSubrole) {
+          // Use preset permissions based on subrole (base permissions)
+          finalPermissionKeys = getStaffPermissionKeys(staffSubrole as StaffSubrole)
+        } else if (permissionKeys && staffSubrole) {
+          // Ensure base permissions are always included
+          const basePermissions = getStaffPermissionKeys(staffSubrole as StaffSubrole)
+          finalPermissionKeys = [...new Set([...basePermissions, ...permissionKeys])]
         }
+        
+        if (finalPermissionKeys.length > 0 && membership) {
+          await setStaffPermissions(membership.id, finalPermissionKeys, staffSubrole)
+        }
+      } catch (permError: any) {
+        logger.error('Failed to set staff permissions', permError)
+        // Don't fail user creation if permission setting fails - permissions can be set later
       }
+    }
 
-      // Send invitation email if requested
-      if (shouldSendInvitation && targetOrgId) {
-        try {
-          const org = await prisma.org.findUnique({
-            where: { id: targetOrgId },
-            select: { name: true }
+    // Send invitation email if requested
+    if (shouldSendInvitation && targetOrgId) {
+      try {
+        const org = await prisma.org.findUnique({
+          where: { id: targetOrgId },
+          select: { name: true }
+        })
+
+        if (org) {
+          // Create invitation token
+          const token = crypto.randomBytes(32).toString('hex')
+          const expiresAt = new Date()
+          expiresAt.setDate(expiresAt.getDate() + 7) // 7 days
+
+          // Create invitation
+          await prisma.invitation.create({
+            data: {
+              id: crypto.randomUUID(),
+              orgId: targetOrgId,
+              email: sanitizedEmail,
+              role,
+              token,
+              expiresAt
+            }
           })
 
-          if (org) {
-            // Create invitation token
-            const token = crypto.randomBytes(32).toString('hex')
-            const expiresAt = new Date()
-            expiresAt.setDate(expiresAt.getDate() + 7) // 7 days
-
-            // Create invitation
-            await prisma.invitation.create({
-              data: {
-                id: crypto.randomUUID(),
-                orgId: targetOrgId,
-                email: sanitizedEmail,
-                role,
-                token,
-                expiresAt
-              }
-            })
-
-            // Send invitation email
-            const baseUrl = process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'https://app.madrasah.io'
-            const cleanBaseUrl = baseUrl.trim().replace(/\/+$/, '')
-            const signupUrl = `${cleanBaseUrl}/auth/signup?token=${token}`
-            
-            await sendStaffInvitation({
-              to: sanitizedEmail,
-              orgName: org.name,
-              role,
-              signupUrl
-            })
-          }
-        } catch (emailError: any) {
-          logger.error('Failed to send invitation email', emailError)
-          // Don't fail user creation if email fails
+          // Send invitation email
+          const baseUrl = process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'https://app.madrasah.io'
+          const cleanBaseUrl = baseUrl.trim().replace(/\/+$/, '')
+          const signupUrl = `${cleanBaseUrl}/auth/signup?token=${token}`
+          
+          await sendStaffInvitation({
+            to: sanitizedEmail,
+            orgName: org.name,
+            role,
+            signupUrl
+          })
         }
+      } catch (emailError: any) {
+        logger.error('Failed to send invitation email', emailError)
+        // Don't fail user creation if email fails
       }
     }
 
