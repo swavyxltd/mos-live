@@ -50,13 +50,48 @@ async function handleDELETE(
 
     logger.info(`Deleting organisation: ${org.name} (${org.slug})`)
 
+    // Get counts before deletion for logging
+    const [
+      students,
+      classes,
+      invoices,
+      memberships,
+      applications,
+      invitations,
+      leads
+    ] = await Promise.all([
+      prisma.student.count({ where: { orgId } }),
+      prisma.class.count({ where: { orgId } }),
+      prisma.invoice.count({ where: { orgId } }),
+      prisma.userOrgMembership.count({ where: { orgId } }),
+      prisma.application.count({ where: { orgId } }),
+      prisma.invitation.count({ where: { orgId } }),
+      prisma.lead.count({ where: { convertedOrgId: orgId } })
+    ])
+
+    logger.info(`Deleting organisation with related data: ${students} students, ${classes} classes, ${invoices} invoices, ${memberships} memberships, ${applications} applications, ${invitations} invitations, ${leads} leads`)
+
+    // Delete leads that reference this org (if any)
+    if (leads > 0) {
+      await prisma.leadActivity.deleteMany({
+        where: {
+          lead: {
+            convertedOrgId: orgId
+          }
+        }
+      })
+      await prisma.lead.deleteMany({
+        where: { convertedOrgId: orgId }
+      })
+    }
+
     // Delete the organisation
-    // Prisma will cascade delete all related records (students, classes, invoices, etc.)
+    // Prisma will cascade delete all related records (students, classes, invoices, memberships, etc.)
     await prisma.org.delete({
       where: { id: orgId }
     })
 
-    logger.info(`Organisation ${org.name} deleted successfully`)
+    logger.info(`Organisation ${org.name} deleted successfully with all associated data`)
 
     return NextResponse.json({
       success: true,

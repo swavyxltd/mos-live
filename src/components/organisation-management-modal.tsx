@@ -39,6 +39,8 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog'
+import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog'
+import { Trash2 } from 'lucide-react'
 
 interface OrgWithStats {
   id: string
@@ -116,6 +118,8 @@ export function OrganisationManagementModal({ isOpen, onClose, organisation, ini
   const [statusChangeReason, setStatusChangeReason] = useState('')
   const [showReactivateConfirm, setShowReactivateConfirm] = useState(false)
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   // Update active tab when initialTab prop changes
   useEffect(() => {
@@ -403,6 +407,34 @@ export function OrganisationManagementModal({ isOpen, onClose, organisation, ini
     }
   }
 
+  const handleDeleteOrg = async () => {
+    if (!organisation?.id) return
+
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/orgs/${organisation.id}`, {
+        method: 'DELETE',
+      })
+
+      const result = await response.json()
+
+      if (response.ok && result.success) {
+        toast.success(result.message || 'Organisation deleted successfully')
+        onClose()
+        if (onRefresh) {
+          onRefresh()
+        }
+      } else {
+        toast.error(result.error || 'Failed to delete organisation')
+      }
+    } catch (error: any) {
+      toast.error('Error deleting organisation. Please try again.')
+      console.error('Error deleting organisation:', error)
+    } finally {
+      setIsDeleting(false)
+      setShowDeleteConfirm(false)
+    }
+  }
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Manage ${organisation.name}`}>
@@ -1108,6 +1140,21 @@ export function OrganisationManagementModal({ isOpen, onClose, organisation, ini
                       </Button>
                     </div>
 
+                    <div className="flex items-center justify-between p-4 border-2 border-red-300 rounded-lg bg-red-50">
+                      <div>
+                        <h3 className="font-medium text-red-900">Delete Organisation</h3>
+                        <p className="text-sm text-red-700">Permanently delete this organisation and ALL associated data. This action cannot be undone.</p>
+                      </div>
+                      <Button 
+                        variant="destructive" 
+                        onClick={() => setShowDeleteConfirm(true)}
+                        disabled={isDeleting || isChangingStatus}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </Button>
+                    </div>
+
                   </div>
                 </div>
 
@@ -1157,6 +1204,18 @@ export function OrganisationManagementModal({ isOpen, onClose, organisation, ini
         cancelText="Cancel"
         variant="warning"
         isLoading={isChangingStatus}
+      />
+
+      <DeleteConfirmationDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDeleteOrg}
+        title="Delete Organisation"
+        message={`Are you absolutely sure you want to delete "${organisation?.name}"?`}
+        confirmText="Delete Organisation"
+        cancelText="Cancel"
+        isLoading={isDeleting}
+        itemName={organisation?.name}
       />
     </Modal>
   )
