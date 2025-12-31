@@ -355,7 +355,19 @@ export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent, initi
           <Input
             id="title"
             value={formData.title}
-            onChange={(e) => setFormData(prev => ({ ...prev, title: autoCapitalize(e.target.value) }))}
+            onChange={(e) => {
+              const value = e.target.value
+              // Auto-capitalize first letter of each word
+              if (value.length > 0) {
+                const capitalized = value.split(' ').map(word => {
+                  if (word.length === 0) return word
+                  return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                }).join(' ')
+                setFormData(prev => ({ ...prev, title: capitalized }))
+              } else {
+                setFormData(prev => ({ ...prev, title: value }))
+              }
+            }}
             placeholder="Enter message title"
             required
           />
@@ -366,7 +378,16 @@ export function SendMessageModal({ isOpen, onClose, onSend, onMessageSent, initi
           <Textarea
             id="message"
             value={formData.message}
-            onChange={(e) => setFormData(prev => ({ ...prev, message: autoCapitalize(e.target.value) }))}
+            onChange={(e) => {
+              const value = e.target.value
+              // Auto-capitalize first letter only
+              if (value.length > 0) {
+                const capitalized = value.charAt(0).toUpperCase() + value.slice(1)
+                setFormData(prev => ({ ...prev, message: capitalized }))
+              } else {
+                setFormData(prev => ({ ...prev, message: value }))
+              }
+            }}
             placeholder="Enter your message..."
             rows={6}
             required

@@ -63,9 +63,12 @@ export function getInitials(name: string): string {
 
 // Auto-capitalize text: capitalize first letter of each word
 export function autoCapitalize(text: string): string {
-  if (!text) return text
+  if (!text || typeof text !== 'string') return text || ''
   return text
     .split(' ')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .map(word => {
+      if (!word) return word
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    })
     .join(' ')
 }
