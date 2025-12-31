@@ -28,6 +28,7 @@ import {
   FileText,
   Activity,
   CheckCircle,
+  CheckCircle2,
   XCircle,
   Clock,
   ExternalLink,
@@ -41,6 +42,7 @@ import { useStaffPermissions } from '@/lib/staff-permissions'
 import { toast } from 'sonner'
 import { formatDate } from '@/lib/utils'
 import { SendMessageModal } from './send-message-modal'
+import { AttendanceWeekFilter } from './attendance-week-filter'
 
 // Comprehensive student data interface
 interface StudentDetailsData {
@@ -84,6 +86,16 @@ interface StudentDetailsData {
       total: number
     }
     recent: Array<{
+      id: string
+      date: string
+      status: string
+      time: string | null
+      class: {
+        id: string
+        name: string
+      } | null
+    }>
+    allRecords?: Array<{
       id: string
       date: string
       status: string
@@ -178,6 +190,9 @@ export function StudentDetailModal({
   const [isSavingNote, setIsSavingNote] = useState(false)
   const [isMessageModalOpen, setIsMessageModalOpen] = useState(false)
   const [selectedParentId, setSelectedParentId] = useState<string | null>(null)
+  const [attendanceFilterType, setAttendanceFilterType] = useState<'week' | 'month' | 'year'>('week')
+  const [attendanceCurrentDate, setAttendanceCurrentDate] = useState(new Date())
+  const [attendanceDateRange, setAttendanceDateRange] = useState<{ start: Date; end: Date } | null>(null)
 
   // Get user permissions
   const staffSubrole = (session?.user?.staffSubrole || 'TEACHER') as any
@@ -244,6 +259,17 @@ export function StudentDetailModal({
             invoices: []
           }
         }
+        // Ensure attendance.allRecords exists (fallback to recent if not)
+        if (data.attendance && !data.attendance.allRecords) {
+          data.attendance.allRecords = data.attendance.recent || []
+        }
+        console.log('Student data fetched:', {
+          attendance: {
+            allRecords: data.attendance?.allRecords?.length,
+            recent: data.attendance?.recent?.length,
+            stats: data.attendance?.stats
+          }
+        })
         setStudentData(data)
       } else {
         toast.error('Failed to load student details')
@@ -883,57 +909,453 @@ export function StudentDetailModal({
 
                     {/* Attendance Tab */}
                     <TabsContent value="attendance" className="mt-4">
-                      <div className="border border-[var(--border)] rounded-lg p-4">
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
-                          <div className="p-3 bg-[var(--muted)]/50 rounded-lg">
+                      <div className="space-y-4 sm:space-y-6">
+                        {/* Filter */}
+                        <AttendanceWeekFilter
+                          currentWeek={attendanceCurrentDate}
+                          onWeekChange={setAttendanceCurrentDate}
+                          onDateRangeChange={(start, end) => setAttendanceDateRange({ start, end })}
+                          filterType={attendanceFilterType}
+                          onFilterTypeChange={setAttendanceFilterType}
+                        />
+                        
+                        <div className="border border-[var(--border)] rounded-lg p-4 sm:p-5 lg:p-5">
+                          {/* Summary Cards */}
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                          <div className="p-3 sm:p-4 !pt-3 sm:!pt-4 bg-[var(--muted)]/50 rounded-lg">
                             <div className="text-xs text-[var(--muted-foreground)] mb-1">Present</div>
-                            <div className="text-2xl font-bold text-green-600">{studentData.attendance.stats.present}</div>
+                            <div className="text-xl sm:text-2xl font-bold text-green-600">
+                              {studentData.attendance.stats.present}
+                            </div>
+                            {studentData.attendance.stats.total > 0 && (
+                              <div className="text-xs text-[var(--muted-foreground)] mt-1">
+                                {Math.round((studentData.attendance.stats.present / studentData.attendance.stats.total) * 100)}% of records
+                              </div>
+                            )}
                           </div>
-                          <div className="p-3 bg-[var(--muted)]/50 rounded-lg">
+                          <div className="p-3 sm:p-4 !pt-3 sm:!pt-4 bg-[var(--muted)]/50 rounded-lg">
                             <div className="text-xs text-[var(--muted-foreground)] mb-1">Absent</div>
-                            <div className="text-2xl font-bold text-red-600">{studentData.attendance.stats.absent}</div>
+                            <div className="text-xl sm:text-2xl font-bold text-red-600">
+                              {studentData.attendance.stats.absent}
+                            </div>
+                            {studentData.attendance.stats.total > 0 && (
+                              <div className="text-xs text-[var(--muted-foreground)] mt-1">
+                                {Math.round((studentData.attendance.stats.absent / studentData.attendance.stats.total) * 100)}% of records
+                              </div>
+                            )}
                           </div>
-                          <div className="p-3 bg-[var(--muted)]/50 rounded-lg">
+                          <div className="p-3 sm:p-4 !pt-3 sm:!pt-4 bg-[var(--muted)]/50 rounded-lg col-span-2 sm:col-span-1">
                             <div className="text-xs text-[var(--muted-foreground)] mb-1">Late</div>
-                            <div className="text-2xl font-bold text-yellow-600">{studentData.attendance.stats.late}</div>
-                          </div>
-                          <div className="p-3 bg-[var(--muted)]/50 rounded-lg">
-                            <div className="text-xs text-[var(--muted-foreground)] mb-1">Total</div>
-                            <div className="text-2xl font-bold text-[var(--foreground)]">{studentData.attendance.stats.total}</div>
+                            <div className="text-xl sm:text-2xl font-bold text-yellow-600">
+                              {studentData.attendance.stats.late}
+                            </div>
+                            {studentData.attendance.stats.total > 0 && (
+                              <div className="text-xs text-[var(--muted-foreground)] mt-1">
+                                {Math.round((studentData.attendance.stats.late / studentData.attendance.stats.total) * 100)}% of records
+                              </div>
+                            )}
                           </div>
                         </div>
 
-                        <div className="mb-4">
-                          <h4 className="text-sm font-semibold text-[var(--foreground)] mb-3">Recent Attendance</h4>
-                          {studentData.attendance.recent.length > 0 ? (
-                            <div className="space-y-2 max-h-64 overflow-y-auto">
-                              {studentData.attendance.recent.map((att) => (
-                                <div 
-                                  key={att.id}
-                                  className="flex items-center justify-between p-3 border border-[var(--border)] rounded-lg bg-[var(--card)] hover:bg-[var(--accent)] transition-colors"
-                                >
-                                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                                    {getStatusIcon(att.status)}
-                                    <div className="min-w-0 flex-1">
-                                      <div className="text-sm font-medium text-[var(--foreground)]">
-                                        {formatDate(att.date)}
-                                      </div>
-                                      {att.class && (
-                                        <div className="text-xs text-[var(--muted-foreground)]">{att.class.name}</div>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <Badge className={`${getStatusColor(att.status)} justify-center text-xs px-2 py-0.5`}>
-                                    {att.status}
-                                  </Badge>
-                                </div>
-                              ))}
+                        {/* Attendance Table */}
+                        {(() => {
+                          // Use allRecords if available, otherwise fall back to recent
+                          const allAttendanceRecords = studentData.attendance.allRecords || studentData.attendance.recent || []
+                          
+                          // Filter records based on date range if available
+                          let filteredRecords = allAttendanceRecords
+                          if (attendanceDateRange && allAttendanceRecords.length > 0) {
+                            const start = attendanceDateRange.start instanceof Date ? attendanceDateRange.start : new Date(attendanceDateRange.start)
+                            const end = attendanceDateRange.end instanceof Date ? attendanceDateRange.end : new Date(attendanceDateRange.end)
+                            // Normalize dates to midnight for comparison
+                            start.setHours(0, 0, 0, 0)
+                            end.setHours(23, 59, 59, 999)
+                            
+                            filteredRecords = allAttendanceRecords.filter(record => {
+                              const recordDate = new Date(record.date)
+                              recordDate.setHours(0, 0, 0, 0)
+                              return recordDate >= start && recordDate <= end
+                            })
+                          }
+                          
+                          // Determine which records to use for the table
+                          const recordsToUse = attendanceDateRange ? filteredRecords : allAttendanceRecords
+                          
+                          console.log('Attendance records - Total:', allAttendanceRecords.length, 'Filtered:', filteredRecords.length, 'Using:', recordsToUse.length, 'filterType:', attendanceFilterType, 'dateRange:', attendanceDateRange)
+                          // Show table if we have records to display
+                          if (!recordsToUse || recordsToUse.length === 0) {
+                            return (
+                              <div className="text-center py-12">
+                                <Calendar className="h-16 w-16 text-[var(--muted-foreground)] mx-auto mb-4 opacity-50" />
+                                <h3 className="text-lg font-semibold text-[var(--foreground)] mb-2">No Attendance Data</h3>
+                                <p className="text-sm text-[var(--muted-foreground)]">No attendance records available for the selected period.</p>
+                              </div>
+                            )
+                          }
+                          
+                          return (
+                          <div className="overflow-x-auto -mx-4 sm:mx-0">
+                            <div className="inline-block min-w-full align-middle px-4 sm:px-0">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow className="hover:bg-transparent">
+                                    <TableHead className="font-semibold sticky left-0 bg-[var(--card)] z-10 min-w-[120px] sm:min-w-[150px]">Student Name</TableHead>
+                                    <TableHead className="font-semibold text-center min-w-[60px] sm:min-w-[80px]">Average</TableHead>
+                                    {(() => {
+                                      if (attendanceFilterType === 'year') {
+                                        const currentYear = attendanceDateRange?.start ? new Date(attendanceDateRange.start).getFullYear() : new Date().getFullYear()
+                                        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                                        return monthNames.map((month, index) => {
+                                          const today = new Date()
+                                          const isCurrentMonth = index === today.getMonth() && currentYear === today.getFullYear()
+                                          return (
+                                            <TableHead 
+                                              key={index}
+                                              className={`text-center min-w-[50px] sm:min-w-[80px] ${isCurrentMonth ? 'bg-[var(--primary)]/5' : ''}`}
+                                            >
+                                              <div className="flex flex-col items-center gap-0.5 sm:gap-1">
+                                                <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wide">{month}</span>
+                                              </div>
+                                            </TableHead>
+                                          )
+                                        })
+                                      } else if (attendanceFilterType === 'month' && attendanceDateRange) {
+                                        const days: { day: string; date: Date; shortDay: string }[] = []
+                                        const start = attendanceDateRange.start instanceof Date ? attendanceDateRange.start : new Date(attendanceDateRange.start)
+                                        const end = attendanceDateRange.end instanceof Date ? attendanceDateRange.end : new Date(attendanceDateRange.end)
+                                        const current = new Date(start)
+                                        const today = new Date()
+                                        today.setHours(0, 0, 0, 0)
+                                        
+                                        while (current <= end) {
+                                          const dayOfWeek = current.getDay()
+                                          if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+                                            const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+                                            const shortDayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+                                            const currentDate = new Date(current)
+                                            currentDate.setHours(0, 0, 0, 0)
+                                            days.push({
+                                              day: dayNames[dayOfWeek],
+                                              date: currentDate,
+                                              shortDay: shortDayNames[dayOfWeek]
+                                            })
+                                          }
+                                          current.setDate(current.getDate() + 1)
+                                        }
+                                        
+                                        return days.map((day) => {
+                                          const isToday = day.date.toISOString().split('T')[0] === today.toISOString().split('T')[0]
+                                          return (
+                                            <TableHead 
+                                              key={day.date.toISOString()}
+                                              className={`text-center min-w-[50px] sm:min-w-[80px] ${isToday ? 'bg-[var(--primary)]/5' : ''}`}
+                                            >
+                                              <div className="flex flex-col items-center gap-0.5 sm:gap-1">
+                                                <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wide">{day.shortDay}</span>
+                                                <span className="text-[10px] sm:text-xs text-[var(--muted-foreground)]">
+                                                  {day.date.getDate()}/{day.date.getMonth() + 1}
+                                                </span>
+                                              </div>
+                                            </TableHead>
+                                          )
+                                        })
+                                      } else if (attendanceFilterType === 'week' && attendanceDateRange) {
+                                        const days: { day: string; date: Date; shortDay: string }[] = []
+                                        const start = attendanceDateRange.start instanceof Date ? attendanceDateRange.start : new Date(attendanceDateRange.start)
+                                        const end = attendanceDateRange.end instanceof Date ? attendanceDateRange.end : new Date(attendanceDateRange.end)
+                                        const current = new Date(start)
+                                        const today = new Date()
+                                        today.setHours(0, 0, 0, 0)
+                                        
+                                        while (current <= end) {
+                                          const dayOfWeek = current.getDay()
+                                          if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+                                            const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+                                            const shortDayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+                                            const currentDate = new Date(current)
+                                            currentDate.setHours(0, 0, 0, 0)
+                                            days.push({
+                                              day: dayNames[dayOfWeek],
+                                              date: currentDate,
+                                              shortDay: shortDayNames[dayOfWeek]
+                                            })
+                                          }
+                                          current.setDate(current.getDate() + 1)
+                                        }
+                                        
+                                        return days.map((day) => {
+                                          const isToday = day.date.toISOString().split('T')[0] === today.toISOString().split('T')[0]
+                                          return (
+                                            <TableHead 
+                                              key={day.date.toISOString()}
+                                              className={`text-center min-w-[50px] sm:min-w-[80px] ${isToday ? 'bg-[var(--primary)]/5' : ''}`}
+                                            >
+                                              <div className="flex flex-col items-center gap-0.5 sm:gap-1">
+                                                <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wide">{day.shortDay}</span>
+                                                <span className="text-[10px] sm:text-xs text-[var(--muted-foreground)]">
+                                                  {day.date.getDate()}/{day.date.getMonth() + 1}
+                                                </span>
+                                              </div>
+                                            </TableHead>
+                                          )
+                                        })
+                                      }
+                                      return null
+                                    })()}
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {(() => {
+                                    // Build attendance map from records (recordsToUse is from outer scope)
+                                    const attendanceMap = new Map<string, { status: string; time?: string | null }>()
+                                    recordsToUse.forEach(record => {
+                                      const dateKey = new Date(record.date).toISOString().split('T')[0]
+                                      attendanceMap.set(dateKey, {
+                                        status: record.status,
+                                        time: record.time
+                                      })
+                                    })
+
+                                    // Calculate monthly attendance
+                                    const getMonthAttendance = (monthIndex: number, year: number) => {
+                                      const monthAttendance: { present: number; absent: number; late: number; total: number } = {
+                                        present: 0,
+                                        absent: 0,
+                                        late: 0,
+                                        total: 0
+                                      }
+                                      
+                                      attendanceMap.forEach((attendance, dateKey) => {
+                                        const [yearStr, monthStr, dayStr] = dateKey.split('-')
+                                        const date = new Date(parseInt(yearStr), parseInt(monthStr) - 1, parseInt(dayStr))
+                                        
+                                        if (date.getMonth() === monthIndex && date.getFullYear() === year) {
+                                          monthAttendance.total++
+                                          if (attendance.status === 'PRESENT') {
+                                            monthAttendance.present++
+                                          } else if (attendance.status === 'ABSENT') {
+                                            monthAttendance.absent++
+                                          } else if (attendance.status === 'LATE') {
+                                            monthAttendance.late++
+                                          }
+                                        }
+                                      })
+                                      
+                                      return monthAttendance
+                                    }
+
+                                    // Helper functions
+                                    const getDayStatus = (dayDate: Date) => {
+                                      const dateKey = dayDate.toISOString().split('T')[0]
+                                      const attendance = attendanceMap.get(dateKey)
+                                      return attendance?.status || 'NOT_SCHEDULED'
+                                    }
+                                    
+                                    const getDayAttendance = (dayDate: Date) => {
+                                      const dateKey = dayDate.toISOString().split('T')[0]
+                                      return attendanceMap.get(dateKey)
+                                    }
+                                    
+                                    const getWeeklyStatusDot = (status: string, shortDay: string, time?: string | null) => {
+                                      if (status === 'PRESENT') {
+                                        return <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+                                      } else if (status === 'ABSENT') {
+                                        return <XCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
+                                      } else if (status === 'LATE') {
+                                        return <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600" />
+                                      }
+                                      return <div className="h-4 w-4 sm:h-5 sm:w-5 rounded-full border-2 border-[var(--muted-foreground)]/30" />
+                                    }
+
+                                    // Calculate average attendance for the period
+                                    const calculateAverageAttendance = () => {
+                                      if (!attendanceDateRange) {
+                                        // Fallback to year if no date range
+                                        const currentYear = new Date().getFullYear()
+                                        const yearStart = new Date(currentYear, 0, 1)
+                                        const today = new Date()
+                                        today.setHours(0, 0, 0, 0)
+                                        
+                                        let totalScheduled = 0
+                                        let presentOrLate = 0
+                                        
+                                        const current = new Date(yearStart)
+                                        while (current <= today && current.getFullYear() === currentYear) {
+                                          const dayOfWeek = current.getDay()
+                                          if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+                                            const currentDate = new Date(current)
+                                            currentDate.setHours(0, 0, 0, 0)
+                                            
+                                            if (currentDate <= today) {
+                                              totalScheduled++
+                                              const dateKey = currentDate.toISOString().split('T')[0]
+                                              const attendance = attendanceMap.get(dateKey)
+                                              if (attendance && (attendance.status === 'PRESENT' || attendance.status === 'LATE')) {
+                                                presentOrLate++
+                                              }
+                                            }
+                                          }
+                                          current.setDate(current.getDate() + 1)
+                                        }
+                                        return totalScheduled > 0 ? Math.round((presentOrLate / totalScheduled) * 100) : 0
+                                      }
+                                      
+                                      const start = attendanceDateRange.start instanceof Date ? attendanceDateRange.start : new Date(attendanceDateRange.start)
+                                      const end = attendanceDateRange.end instanceof Date ? attendanceDateRange.end : new Date(attendanceDateRange.end)
+                                      const today = new Date()
+                                      today.setHours(0, 0, 0, 0)
+                                      
+                                      let totalScheduled = 0
+                                      let presentOrLate = 0
+                                      
+                                      const current = new Date(start)
+                                      while (current <= end) {
+                                        const dayOfWeek = current.getDay()
+                                        if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+                                          const currentDate = new Date(current)
+                                          currentDate.setHours(0, 0, 0, 0)
+                                          
+                                          if (currentDate <= today) {
+                                            totalScheduled++
+                                            const dateKey = currentDate.toISOString().split('T')[0]
+                                            const attendance = attendanceMap.get(dateKey)
+                                            if (attendance && (attendance.status === 'PRESENT' || attendance.status === 'LATE')) {
+                                              presentOrLate++
+                                            }
+                                          }
+                                        }
+                                        current.setDate(current.getDate() + 1)
+                                      }
+                                      
+                                      return totalScheduled > 0 ? Math.round((presentOrLate / totalScheduled) * 100) : 0
+                                    }
+                                    
+                                    const averageAttendance = calculateAverageAttendance()
+                                    
+                                    // Color coordination for average
+                                    const getAverageColor = (percentage: number) => {
+                                      if (percentage >= 95) return 'text-green-600 font-bold'
+                                      if (percentage >= 90) return 'text-green-500 font-semibold'
+                                      if (percentage >= 85) return 'text-yellow-600 font-semibold'
+                                      if (percentage >= 80) return 'text-yellow-500'
+                                      if (percentage >= 75) return 'text-orange-500'
+                                      return 'text-red-500'
+                                    }
+
+                                    // Color coordination for monthly percentages
+                                    const getPercentageColor = (percentage: number) => {
+                                      if (percentage >= 95) return 'text-green-600'
+                                      if (percentage >= 90) return 'text-green-500'
+                                      if (percentage >= 85) return 'text-yellow-600'
+                                      if (percentage >= 80) return 'text-yellow-500'
+                                      if (percentage >= 75) return 'text-orange-500'
+                                      return 'text-red-500'
+                                    }
+
+                                    return (
+                                      <TableRow className="hover:bg-[var(--muted)]/30 transition-colors">
+                                        <TableCell className="sticky left-0 bg-[var(--card)] z-10">
+                                          <div className="flex items-center gap-1.5 sm:gap-2">
+                                            <div className="h-6 w-6 sm:h-8 sm:w-8 rounded-full bg-[var(--muted)] flex items-center justify-center flex-shrink-0">
+                                              <User className="h-3 w-3 sm:h-4 sm:w-4 text-[var(--foreground)]" />
+                                            </div>
+                                            <span className="font-medium text-[var(--foreground)] text-sm sm:text-base truncate max-w-[100px] sm:max-w-none">
+                                              {studentData.name}
+                                            </span>
+                                          </div>
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                          <div className={`text-xs sm:text-sm ${getAverageColor(averageAttendance)}`}>
+                                            {averageAttendance}%
+                                          </div>
+                                        </TableCell>
+                                        {(() => {
+                                          if (attendanceFilterType === 'year') {
+                                            const currentYear = attendanceDateRange?.start ? new Date(attendanceDateRange.start).getFullYear() : new Date().getFullYear()
+                                            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                                            return monthNames.map((month, index) => {
+                                              const monthAttendance = getMonthAttendance(index, currentYear)
+                                              const attendancePercentage = monthAttendance.total > 0
+                                                ? Math.round(((monthAttendance.present + monthAttendance.late) / monthAttendance.total) * 100)
+                                                : 0
+                                              const today = new Date()
+                                              const isCurrentMonth = index === today.getMonth() && currentYear === today.getFullYear()
+                                              const percentageColor = getPercentageColor(attendancePercentage)
+                                              
+                                              return (
+                                                <TableCell 
+                                                  key={index}
+                                                  className={`text-center ${isCurrentMonth ? 'bg-[var(--primary)]/5' : ''}`}
+                                                >
+                                                  <div className="flex flex-col items-center gap-1">
+                                                    {monthAttendance.total > 0 ? (
+                                                      <div className={`text-sm font-bold ${percentageColor}`}>
+                                                        {attendancePercentage}%
+                                                      </div>
+                                                    ) : (
+                                                      <span className="text-xs text-[var(--muted-foreground)]">-</span>
+                                                    )}
+                                                  </div>
+                                                </TableCell>
+                                              )
+                                            })
+                                          } else if ((attendanceFilterType === 'week' || attendanceFilterType === 'month') && attendanceDateRange) {
+                                            const days: { day: string; date: Date; shortDay: string }[] = []
+                                            const start = attendanceDateRange.start instanceof Date ? attendanceDateRange.start : new Date(attendanceDateRange.start)
+                                            const end = attendanceDateRange.end instanceof Date ? attendanceDateRange.end : new Date(attendanceDateRange.end)
+                                            const current = new Date(start)
+                                            const today = new Date()
+                                            today.setHours(0, 0, 0, 0)
+                                            
+                                            while (current <= end) {
+                                              const dayOfWeek = current.getDay()
+                                              if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+                                                const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+                                                const shortDayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+                                                const currentDate = new Date(current)
+                                                currentDate.setHours(0, 0, 0, 0)
+                                                days.push({
+                                                  day: dayNames[dayOfWeek],
+                                                  date: currentDate,
+                                                  shortDay: shortDayNames[dayOfWeek]
+                                                })
+                                              }
+                                              current.setDate(current.getDate() + 1)
+                                            }
+                                            
+                                            return days.map((day) => {
+                                              const dayStatus = getDayStatus(day.date)
+                                              const dayAttendance = getDayAttendance(day.date)
+                                              const isToday = day.date.toISOString().split('T')[0] === today.toISOString().split('T')[0]
+                                              
+                                              return (
+                                                <TableCell 
+                                                  key={day.date.toISOString()}
+                                                  className={`text-center ${isToday ? 'bg-[var(--primary)]/5' : ''}`}
+                                                >
+                                                  <div className="flex flex-col items-center gap-1.5">
+                                                    {getWeeklyStatusDot(dayStatus, day.shortDay, dayAttendance?.time)}
+                                                    {dayAttendance?.time && (
+                                                      <span className="text-xs text-[var(--muted-foreground)] font-medium">
+                                                        {dayAttendance.time}
+                                                      </span>
+                                                    )}
+                                                  </div>
+                                                </TableCell>
+                                              )
+                                            })
+                                          }
+                                          return null
+                                        })()}
+                                      </TableRow>
+                                    )
+                                  })()}
+                                </TableBody>
+                              </Table>
                             </div>
-                          ) : (
-                            <p className="text-sm text-[var(--muted-foreground)] text-center py-4">
-                              No attendance records yet
-                            </p>
-                          )}
+                          </div>
+                          )
+                        })()}
                         </div>
                       </div>
                     </TabsContent>

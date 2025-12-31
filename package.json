@@ -17,6 +17,7 @@
     "add:owner": "tsx scripts/add-owner.ts",
     "add:gift-aid-demo": "tsx scripts/add-gift-aid-demo-data.ts",
     "add:demo-data": "tsx scripts/add-demo-data-for-test-accounts.ts",
+    "add:demo-attendance-boys": "tsx scripts/add-demo-attendance-boys.ts",
     "setup:all-demo": "tsx scripts/add-demo-data-for-test-accounts.ts && tsx scripts/add-gift-aid-demo-data.ts",
     "audit:passwords": "tsx scripts/audit-passwords.ts",
     "setup:owner": "tsx setup-owner.ts",

@@ -444,50 +444,6 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
             </div>
           </div>
         </div>
-        
-        {/* Daily Dots */}
-        <div className="border border-[var(--border)] rounded-lg p-4 bg-[var(--card)]">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-semibold text-[var(--foreground)]">Daily Attendance</h4>
-            <Badge variant="outline" className="text-xs">
-              {totalDays} days
-            </Badge>
-          </div>
-          
-          <div className="flex gap-1.5 flex-wrap">
-            {monthDays.map((day, index) => {
-              const dayDate = day.date ? new Date(day.date) : null
-              const dayLabel = dayDate ? dayDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : `Day ${index + 1}`
-              
-              if (day.status === 'PRESENT') {
-                return (
-                  <div 
-                    key={index}
-                    className="w-3.5 h-3.5 rounded-full bg-green-500 hover:bg-green-600 transition-colors cursor-pointer border border-green-600"
-                    title={`${dayLabel}: Present${day.time ? ` (${day.time})` : ''}`}
-                  />
-                )
-              } else if (day.status === 'LATE') {
-                return (
-                  <div 
-                    key={index}
-                    className="w-3.5 h-3.5 rounded-full bg-yellow-500 hover:bg-yellow-600 transition-colors cursor-pointer border border-yellow-600"
-                    title={`${dayLabel}: Late${day.time ? ` (${day.time})` : ''}`}
-                  />
-                )
-              } else if (day.status === 'ABSENT') {
-                return (
-                  <div 
-                    key={index}
-                    className="w-3.5 h-3.5 rounded-full bg-red-500 hover:bg-red-600 transition-colors cursor-pointer border border-red-600"
-                    title={`${dayLabel}: Absent`}
-                  />
-                )
-              }
-              return null
-            })}
-          </div>
-        </div>
       </div>
     )
   }
@@ -522,6 +478,13 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
             </div>
           </div>
           
+          <div className="w-full bg-[var(--card)] rounded-full h-2 mb-4">
+            <div 
+              className="h-full bg-green-500 rounded-full transition-all duration-500"
+              style={{ width: `${yearAverage}%` }}
+            />
+          </div>
+          
           <div className="grid grid-cols-3 gap-3">
             <div className="text-center p-3 bg-[var(--card)] rounded-lg border border-[var(--border)]">
               <div className="text-lg font-bold text-[var(--foreground)]">{totalPresent}</div>
@@ -536,61 +499,6 @@ export function ParentAttendancePageClient({ attendanceData }: ParentAttendanceP
               <div className="text-xs text-[var(--muted-foreground)] font-medium">Absent</div>
             </div>
           </div>
-        </div>
-        
-        {/* Monthly Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
-          {yearMonths.map((month, index) => {
-            const averagePercentage = month.averagePercentage || 0
-            
-            const getDotColor = (percentage: number) => {
-              if (percentage >= 95) return 'bg-green-500 border-green-600'
-              if (percentage >= 90) return 'bg-yellow-500 border-yellow-600'
-              if (percentage >= 85) return 'bg-orange-500 border-orange-600'
-              return 'bg-red-500 border-red-600'
-            }
-            
-            return (
-              <div 
-                key={index} 
-                className="border border-[var(--border)] rounded-lg p-4 bg-[var(--card)] hover:bg-[var(--accent)] transition-colors"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="text-sm font-semibold text-[var(--foreground)]">{month.month}</div>
-                  <div className="text-sm font-bold text-[var(--foreground)]">{averagePercentage}%</div>
-                </div>
-                
-                <div className="flex justify-center mb-3">
-                  <div 
-                    className={`w-10 h-10 rounded-full ${getDotColor(averagePercentage)} border-2 flex items-center justify-center`}
-                    title={`${month.month}: ${averagePercentage}% average`}
-                  >
-                    <span className="text-xs font-bold text-white">{averagePercentage}%</span>
-                  </div>
-                </div>
-                
-                <div className="pt-3 border-t border-[var(--border)]">
-                  <div className="flex items-center justify-center gap-2 text-xs text-[var(--muted-foreground)] mb-2">
-                    <span>{((month.present || 0) + (month.absent || 0) + (month.late || 0))} days</span>
-                  </div>
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="flex items-center gap-1">
-                      <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-                      <span className="text-xs text-[var(--muted-foreground)]">{month.present || 0}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-1.5 h-1.5 rounded-full bg-yellow-500"></div>
-                      <span className="text-xs text-[var(--muted-foreground)]">{month.late || 0}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
-                      <span className="text-xs text-[var(--muted-foreground)]">{month.absent || 0}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )
-          })}
         </div>
       </div>
     )

@@ -56,13 +56,11 @@ async function handlePOST(
         archivedAt,
         updatedAt: new Date()
       },
-      include: {
-        teacher: true,
-        studentClasses: {
-          include: {
-            student: true
-          }
-        }
+      select: {
+        id: true,
+        name: true,
+        isArchived: true,
+        archivedAt: true
       }
     })
     

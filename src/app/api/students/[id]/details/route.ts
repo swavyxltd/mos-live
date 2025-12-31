@@ -88,11 +88,12 @@ async function handleGET(
             }
           }
         },
-        // Recent attendance records (last 7 days, limit to 10 for faster loading)
+        // All attendance records for the current year
         Attendance: {
           where: {
             date: {
-              gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // Last 7 days
+              gte: new Date(new Date().getFullYear(), 0, 1, 0, 0, 0, 0), // Start of current year
+              lte: new Date(new Date().getFullYear(), 11, 31, 23, 59, 59, 999) // End of current year
             }
           },
           include: {
@@ -105,8 +106,7 @@ async function handleGET(
           },
           orderBy: {
             date: 'desc'
-          },
-          take: 10
+          }
         },
         // Payment records (last 3 months, limit to 10 for faster loading)
         MonthlyPaymentRecord: {
@@ -323,8 +323,8 @@ async function handleGET(
       } : null
     }))
 
-    // Format recent attendance
-    const recentAttendance = student.Attendance.map(att => ({
+    // Format all attendance records for the year
+    const allAttendance = student.Attendance.map(att => ({
       id: att.id,
       date: att.date.toISOString(),
       status: att.status,
@@ -334,6 +334,9 @@ async function handleGET(
         name: att.Class.name
       } : null
     }))
+    
+    // Get recent attendance (last 10 records) for the recent list
+    const recentAttendance = allAttendance.slice(0, 10)
 
     // Format payment records
     const paymentRecords = student.MonthlyPaymentRecord.map(record => ({
@@ -415,13 +418,14 @@ async function handleGET(
       // Attendance
       attendance: {
         overall: attendanceRate,
-      stats: {
-        present: presentCount,
-        absent: absentCount,
-        late: lateCount,
-        total: totalCount
-      },
-        recent: recentAttendance
+        stats: {
+          present: presentCount,
+          absent: absentCount,
+          late: lateCount,
+          total: totalCount
+        },
+        recent: recentAttendance,
+        allRecords: allAttendance // All records for the year
       },
 
       // Fees (only if user has permission)

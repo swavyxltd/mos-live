@@ -14,24 +14,33 @@ export default async function AttendancePage() {
   // Always use real database data
   const { prisma } = await import('@/lib/prisma')
   
-  // Get attendance records from database - include last 90 days to support week/month/year filtering
+  // Get attendance records from database - include all of 2025 to support yearly view
   // Always exclude future dates
   const now = new Date()
   const today = new Date(now)
   today.setHours(23, 59, 59, 999)
   
-  const ninetyDaysAgo = new Date(now)
-  ninetyDaysAgo.setDate(now.getDate() - 90) // 90 days ago to support month/year views
-  ninetyDaysAgo.setHours(0, 0, 0, 0)
+  // Fetch all records from the start of 2025 to support yearly view
+  const yearStart = new Date(2025, 0, 1) // January 1, 2025
+  yearStart.setHours(0, 0, 0, 0)
   
-  // Get actual student counts per class from database
-  const classesWithStudentCounts = await prisma.class.findMany({
+  // Use the earlier of today or end of 2025
+  const endDate = today < new Date(2025, 11, 31, 23, 59, 59, 999) 
+    ? today 
+    : new Date(2025, 11, 31, 23, 59, 59, 999)
+  
+  // Get all active classes with their details
+  const allActiveClasses = await prisma.class.findMany({
     where: {
       orgId: org.id,
       isArchived: false
     },
-    select: {
-      id: true,
+    include: {
+      User: {
+        select: {
+          name: true
+        }
+      },
       _count: {
         select: {
           StudentClass: {
@@ -47,16 +56,41 @@ export default async function AttendancePage() {
   })
   
   const classStudentCounts = new Map<string, number>()
-  classesWithStudentCounts.forEach(cls => {
+  const classDetailsMap = new Map<string, {
+    id: string
+    name: string
+    teacher: string
+    totalStudents: number
+  }>()
+  
+  allActiveClasses.forEach(cls => {
     classStudentCounts.set(cls.id, cls._count.StudentClass)
+    classDetailsMap.set(cls.id, {
+      id: cls.id,
+      name: cls.name,
+      teacher: cls.User?.name || 'No Teacher',
+      totalStudents: cls._count.StudentClass
+    })
   })
   
+  // Debug: Check total count
+  const totalCount = await prisma.attendance.count({
+    where: {
+      orgId: org.id,
+      date: {
+        gte: yearStart,
+        lte: endDate
+      }
+    }
+  })
+  console.log(`[Server] Total attendance records for org ${org.id}: ${totalCount}`)
+
   const attendanceRecords = await prisma.attendance.findMany({
     where: {
       orgId: org.id,
       date: {
-        gte: ninetyDaysAgo,
-        lte: today // Exclude future dates
+        gte: yearStart,
+        lte: endDate // Exclude future dates
       }
     },
     include: {
@@ -72,6 +106,7 @@ export default async function AttendancePage() {
         select: {
           id: true,
           name: true,
+          isArchived: true,
           User: {
             select: {
               name: true
@@ -84,6 +119,18 @@ export default async function AttendancePage() {
       date: 'desc'
     }
   })
+
+  // Debug: Log how many records were fetched
+  console.log(`[Server] Fetched ${attendanceRecords.length} attendance records from database`)
+  const boysTestClassId = '6f8a777a-d6da-457e-924a-75510db99c17'
+  const boysTestClassRecords = attendanceRecords.filter(r => r.classId === boysTestClassId)
+  console.log(`[Server] Boys Test Class (${boysTestClassId}) records: ${boysTestClassRecords.length}`)
+  if (boysTestClassRecords.length > 0) {
+    const boysDates = [...new Set(boysTestClassRecords.map(r => r.date.toISOString().split('T')[0]))].sort()
+    console.log(`[Server] Boys Test Class unique dates: ${boysDates.length}, First: ${boysDates[0]}, Last: ${boysDates[boysDates.length - 1]}`)
+  }
+  const boysRecords = attendanceRecords.filter(r => r.Class?.name?.includes('Boys'))
+  console.log(`[Server] All Boys class records (by name): ${boysRecords.length}`)
 
   // Build attendance map by student and date for weekly breakdown
   const attendanceByStudentAndDate = new Map<string, Map<string, any>>()
@@ -104,6 +151,8 @@ export default async function AttendancePage() {
   // Group attendance by class and date
   const attendanceByClass = attendanceRecords.reduce((acc, record) => {
     if (record.Student.isArchived) return acc
+    // Skip archived classes
+    if (record.Class?.isArchived) return acc
     
     const classId = record.classId || 'no-class'
     const dateKey = record.date.toISOString().split('T')[0]
@@ -220,11 +269,23 @@ export default async function AttendancePage() {
   // No need to limit to 10 most recent since we have filtering
   const attendanceData = allAttendanceData
 
+  // Debug: Log how many entries we're sending
+  console.log(`[Server] Sending ${attendanceData.length} attendance entries to client`)
+  const boysEntries = attendanceData.filter((item: any) => item.name?.includes('Boys'))
+  console.log(`[Server] Boys class entries: ${boysEntries.length}`)
+  if (boysEntries.length > 0) {
+    const dates = boysEntries.map((item: any) => item.date).sort()
+    console.log(`[Server] Boys class date range: ${dates[0]?.toISOString()} to ${dates[dates.length - 1]?.toISOString()}`)
+  }
+
   // Serialize dates for client component
   const serializedData = attendanceData.map(item => ({
     ...item,
     date: item.date.toISOString()
   }))
 
-  return <AttendancePageClient attendanceData={serializedData || []} />
+  // Pass all active classes to client so they can be displayed even without attendance
+  const allActiveClassesData = Array.from(classDetailsMap.values())
+
+  return <AttendancePageClient attendanceData={serializedData || []} allActiveClasses={allActiveClassesData} />
 }

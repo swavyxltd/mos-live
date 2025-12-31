@@ -50,16 +50,18 @@ export function AttendanceWeekFilter({
   const getWeekStart = (date: Date) => {
     const start = new Date(date)
     const day = start.getDay()
-    const diff = start.getDate() - day + (day === 0 ? -6 : 1)
+    const diff = start.getDate() - day + (day === 0 ? -6 : 1) // Monday
     start.setDate(diff)
+    start.setHours(0, 0, 0, 0)
     return start
   }
 
   const getWeekEnd = (date: Date) => {
-    const end = new Date(date)
-    const day = end.getDay()
-    const diff = end.getDate() - day + (day === 0 ? 0 : 7) - (day === 0 ? 6 : 1)
-    end.setDate(diff)
+    // For attendance, week is Monday-Friday, so end is Friday
+    const weekStart = getWeekStart(date)
+    const end = new Date(weekStart)
+    end.setDate(weekStart.getDate() + 4) // Friday is 4 days after Monday
+    end.setHours(23, 59, 59, 999)
     return end
   }
 
@@ -246,7 +248,7 @@ export function AttendanceWeekFilter({
                 variant={filterType === type ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => handleFilterTypeChange(type)}
-                className="capitalize min-w-[70px]"
+                className="capitalize min-w-[80px] sm:min-w-[70px] text-sm sm:text-sm h-9 sm:h-9 px-3 sm:px-3"
               >
                 {type}
               </Button>
@@ -254,17 +256,18 @@ export function AttendanceWeekFilter({
           </div>
 
           {/* Navigation */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 sm:gap-2 w-full sm:w-auto">
             <Button
               variant="outline"
               size="sm"
               onClick={handlePrevious}
+              className="h-10 w-10 sm:h-9 sm:w-auto sm:px-3 flex-shrink-0"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-4 w-4 sm:h-4 sm:w-4" />
             </Button>
             
-            <div className="px-3 py-1.5 bg-[var(--muted)] rounded-lg text-center min-w-[140px]">
-              <div className="text-sm font-semibold text-[var(--foreground)]">
+            <div className="px-3 sm:px-3 py-2 sm:py-1.5 bg-[var(--muted)] rounded-lg text-center flex-1 sm:min-w-[140px]">
+              <div className="text-sm sm:text-sm font-semibold text-[var(--foreground)]">
                 {formatDateRange(currentWeek)}
               </div>
             </div>
@@ -274,14 +277,16 @@ export function AttendanceWeekFilter({
               size="sm"
               onClick={handleNext}
               disabled={!canNavigateNext()}
+              className="h-10 w-10 sm:h-9 sm:w-auto sm:px-3 flex-shrink-0"
             >
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4 sm:h-4 sm:w-4" />
             </Button>
             
             <Button
               variant="outline"
               size="sm"
               onClick={handleCurrent}
+              className="h-10 flex-1 sm:flex-none sm:h-9 sm:px-3 text-sm sm:text-sm"
             >
               Current
             </Button>
@@ -290,8 +295,9 @@ export function AttendanceWeekFilter({
               variant="outline"
               size="sm"
               onClick={() => setShowDateRange(!showDateRange)}
+              className="h-10 w-10 sm:h-9 sm:w-auto sm:px-3 flex-shrink-0"
             >
-              <Filter className="h-4 w-4" />
+              <Filter className="h-4 w-4 sm:h-4 sm:w-4" />
             </Button>
           </div>
         </div>
