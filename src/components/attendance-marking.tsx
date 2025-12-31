@@ -309,13 +309,12 @@ export function AttendanceMarking({ initialOpen = false, onClose }: AttendanceMa
       
       // Trigger page refresh to update attendance page and dashboard
       if (typeof window !== 'undefined') {
+        // Dispatch events for all components listening
         window.dispatchEvent(new CustomEvent('attendance-saved'))
         // Trigger dashboard refresh to update to-do list
         window.dispatchEvent(new CustomEvent('refresh-dashboard'))
-        // Also refresh the page if we're on the attendance page
-        if (window.location.pathname.includes('/attendance')) {
-          window.location.reload()
-        }
+        // Note: Individual components will handle their own refresh using router.refresh()
+        // This provides smoother UX without full page reloads
       }
       
       // Close modal after refresh completes

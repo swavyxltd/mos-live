@@ -97,12 +97,19 @@ export function ParentChildrenPageClient({ students: initialStudents }: ParentCh
       }
     }
 
+    const handleAttendanceSaved = () => {
+      // Refresh page to update attendance stats
+      window.location.reload()
+    }
+
     window.addEventListener('refresh-student-list', handleRefresh)
     window.addEventListener('refresh-student-data', handleStudentDataRefresh as EventListener)
+    window.addEventListener('attendance-saved', handleAttendanceSaved)
 
     return () => {
       window.removeEventListener('refresh-student-list', handleRefresh)
       window.removeEventListener('refresh-student-data', handleStudentDataRefresh as EventListener)
+      window.removeEventListener('attendance-saved', handleAttendanceSaved)
     }
   }, [selectedStudent])
 

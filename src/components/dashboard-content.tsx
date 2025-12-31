@@ -146,7 +146,13 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
       fetchTodaysTasks()
     }
     
+    const handleAttendanceSaved = () => {
+      // Refresh dashboard when attendance is saved
+      handleRefresh()
+    }
+    
     window.addEventListener('refresh-dashboard', handleRefresh)
+    window.addEventListener('attendance-saved', handleAttendanceSaved)
     
     // Auto-refresh tasks every 30 seconds to catch completed tasks
     const tasksInterval = setInterval(() => {
@@ -170,6 +176,7 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
     
     return () => {
       window.removeEventListener('refresh-dashboard', handleRefresh)
+      window.removeEventListener('attendance-saved', handleAttendanceSaved)
       clearInterval(tasksInterval)
       clearInterval(activityInterval)
       document.removeEventListener('visibilitychange', handleVisibilityChange)

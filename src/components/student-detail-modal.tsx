@@ -239,6 +239,23 @@ export function StudentDetailModal({
     }
   }, [isOpen, studentId, legacyStudent?.id])
 
+  // Listen for attendance saved event to refresh student data
+  useEffect(() => {
+    const handleAttendanceSaved = () => {
+      const idToFetch = studentId || legacyStudent?.id
+      if (isOpen && idToFetch) {
+        // Refresh student data to get updated attendance
+        fetchStudentDetails(idToFetch)
+      }
+    }
+    
+    window.addEventListener('attendance-saved', handleAttendanceSaved)
+    
+    return () => {
+      window.removeEventListener('attendance-saved', handleAttendanceSaved)
+    }
+  }, [isOpen, studentId, legacyStudent?.id])
+
   const fetchStudentDetails = async (id: string) => {
     if (!id) {
       setLoading(false)
@@ -921,41 +938,69 @@ export function StudentDetailModal({
                         
                         <div className="border border-[var(--border)] rounded-lg p-4 sm:p-5 lg:p-5">
                           {/* Summary Cards */}
-                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
-                          <div className="p-3 sm:p-4 !pt-3 sm:!pt-4 bg-[var(--muted)]/50 rounded-lg">
-                            <div className="text-xs text-[var(--muted-foreground)] mb-1">Present</div>
-                            <div className="text-xl sm:text-2xl font-bold text-green-600">
-                              {studentData.attendance.stats.present}
-                            </div>
-                            {studentData.attendance.stats.total > 0 && (
-                              <div className="text-xs text-[var(--muted-foreground)] mt-1">
-                                {Math.round((studentData.attendance.stats.present / studentData.attendance.stats.total) * 100)}% of records
+                          {(() => {
+                            // Calculate stats from filtered records
+                            const allAttendanceRecords = studentData.attendance.allRecords || studentData.attendance.recent || []
+                            
+                            // Filter records based on date range if available
+                            let filteredRecords = allAttendanceRecords
+                            if (attendanceDateRange && allAttendanceRecords.length > 0) {
+                              const start = attendanceDateRange.start instanceof Date ? attendanceDateRange.start : new Date(attendanceDateRange.start)
+                              const end = attendanceDateRange.end instanceof Date ? attendanceDateRange.end : new Date(attendanceDateRange.end)
+                              start.setHours(0, 0, 0, 0)
+                              end.setHours(23, 59, 59, 999)
+                              
+                              filteredRecords = allAttendanceRecords.filter(record => {
+                                const recordDate = new Date(record.date)
+                                recordDate.setHours(0, 0, 0, 0)
+                                return recordDate >= start && recordDate <= end
+                              })
+                            }
+                            
+                            // Calculate stats from filtered records
+                            const presentCount = filteredRecords.filter(r => r.status === 'PRESENT').length
+                            const absentCount = filteredRecords.filter(r => r.status === 'ABSENT').length
+                            const lateCount = filteredRecords.filter(r => r.status === 'LATE').length
+                            const totalCount = filteredRecords.length
+                            
+                            return (
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                                <div className="p-3 sm:p-4 !pt-3 sm:!pt-4 bg-[var(--muted)]/50 rounded-lg">
+                                  <div className="text-xs text-[var(--muted-foreground)] mb-1">Present</div>
+                                  <div className="text-xl sm:text-2xl font-bold text-green-600">
+                                    {presentCount}
+                                  </div>
+                                  {totalCount > 0 && (
+                                    <div className="text-xs text-[var(--muted-foreground)] mt-1">
+                                      {Math.round((presentCount / totalCount) * 100)}% of records
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="p-3 sm:p-4 !pt-3 sm:!pt-4 bg-[var(--muted)]/50 rounded-lg">
+                                  <div className="text-xs text-[var(--muted-foreground)] mb-1">Absent</div>
+                                  <div className="text-xl sm:text-2xl font-bold text-red-600">
+                                    {absentCount}
+                                  </div>
+                                  {totalCount > 0 && (
+                                    <div className="text-xs text-[var(--muted-foreground)] mt-1">
+                                      {Math.round((absentCount / totalCount) * 100)}% of records
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="p-3 sm:p-4 !pt-3 sm:!pt-4 bg-[var(--muted)]/50 rounded-lg col-span-2 sm:col-span-1">
+                                  <div className="text-xs text-[var(--muted-foreground)] mb-1">Late</div>
+                                  <div className="text-xl sm:text-2xl font-bold text-yellow-600">
+                                    {lateCount}
+                                  </div>
+                                  {totalCount > 0 && (
+                                    <div className="text-xs text-[var(--muted-foreground)] mt-1">
+                                      {Math.round((lateCount / totalCount) * 100)}% of records
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                            )}
-                          </div>
-                          <div className="p-3 sm:p-4 !pt-3 sm:!pt-4 bg-[var(--muted)]/50 rounded-lg">
-                            <div className="text-xs text-[var(--muted-foreground)] mb-1">Absent</div>
-                            <div className="text-xl sm:text-2xl font-bold text-red-600">
-                              {studentData.attendance.stats.absent}
-                            </div>
-                            {studentData.attendance.stats.total > 0 && (
-                              <div className="text-xs text-[var(--muted-foreground)] mt-1">
-                                {Math.round((studentData.attendance.stats.absent / studentData.attendance.stats.total) * 100)}% of records
-                              </div>
-                            )}
-                          </div>
-                          <div className="p-3 sm:p-4 !pt-3 sm:!pt-4 bg-[var(--muted)]/50 rounded-lg col-span-2 sm:col-span-1">
-                            <div className="text-xs text-[var(--muted-foreground)] mb-1">Late</div>
-                            <div className="text-xl sm:text-2xl font-bold text-yellow-600">
-                              {studentData.attendance.stats.late}
-                            </div>
-                            {studentData.attendance.stats.total > 0 && (
-                              <div className="text-xs text-[var(--muted-foreground)] mt-1">
-                                {Math.round((studentData.attendance.stats.late / studentData.attendance.stats.total) * 100)}% of records
-                              </div>
-                            )}
-                          </div>
-                        </div>
+                            )
+                          })()}
 
                         {/* Attendance Table */}
                         {(() => {

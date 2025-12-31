@@ -39,11 +39,10 @@ export default async function ParentAttendancePage() {
       }
     })
 
-    // Get all attendance records for these students (last 90 days for year view)
+    // Get all attendance records for these students for the current year
     // Only include dates up to today (exclude future dates)
-    const ninetyDaysAgo = new Date()
-    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
-    ninetyDaysAgo.setHours(0, 0, 0, 0)
+    const currentYear = new Date().getFullYear()
+    const yearStart = new Date(currentYear, 0, 1, 0, 0, 0, 0)
     
     const todayEnd = new Date()
     todayEnd.setHours(23, 59, 59, 999)
@@ -56,7 +55,7 @@ export default async function ParentAttendancePage() {
           isArchived: false
         },
         date: {
-          gte: ninetyDaysAgo,
+          gte: yearStart,
           lte: todayEnd
         }
       },

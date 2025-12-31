@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useCallback, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { AttendanceMarking } from '@/components/attendance-marking'
 import { ClassAttendanceOverview } from '@/components/class-attendance-overview'
 import { DetailedClassAttendance } from '@/components/detailed-class-attendance'
@@ -48,6 +48,7 @@ interface AttendancePageClientProps {
 
 export function AttendancePageClient({ attendanceData, allActiveClasses = [] }: AttendancePageClientProps) {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null)
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null)
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false)
@@ -58,7 +59,8 @@ export function AttendancePageClient({ attendanceData, allActiveClasses = [] }: 
   // Listen for attendance saved event to refresh page
   useEffect(() => {
     const handleAttendanceSaved = () => {
-      window.location.reload()
+      // Use router.refresh() for smoother UX without full page reload
+      router.refresh()
     }
     
     window.addEventListener('attendance-saved', handleAttendanceSaved)
@@ -66,7 +68,7 @@ export function AttendancePageClient({ attendanceData, allActiveClasses = [] }: 
     return () => {
       window.removeEventListener('attendance-saved', handleAttendanceSaved)
     }
-  }, [])
+  }, [router])
 
   // Handle student query parameter from URL
   useEffect(() => {

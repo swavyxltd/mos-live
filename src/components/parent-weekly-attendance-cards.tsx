@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -29,6 +30,7 @@ interface ParentWeeklyAttendanceCardsProps {
 }
 
 export function ParentWeeklyAttendanceCards({ attendanceData }: ParentWeeklyAttendanceCardsProps) {
+  const router = useRouter()
   const [mounted, setMounted] = useState(false)
   const [currentDate, setCurrentDate] = useState<Date | null>(null)
 
@@ -36,6 +38,22 @@ export function ParentWeeklyAttendanceCards({ attendanceData }: ParentWeeklyAtte
     setMounted(true)
     setCurrentDate(new Date())
   }, [])
+
+  // Listen for attendance saved event to trigger refresh
+  useEffect(() => {
+    const handleAttendanceSaved = () => {
+      // Use router.refresh() for smoother UX without full page reload
+      if (typeof window !== 'undefined' && window.location.pathname.includes('/parent/dashboard')) {
+        router.refresh()
+      }
+    }
+    
+    window.addEventListener('attendance-saved', handleAttendanceSaved)
+    
+    return () => {
+      window.removeEventListener('attendance-saved', handleAttendanceSaved)
+    }
+  }, [router])
 
   const getStatusDot = (status: string, day: string, time?: string) => {
     const baseClasses = "w-5 h-5 rounded-full transition-all duration-200 hover:scale-110 cursor-pointer shadow-sm"
