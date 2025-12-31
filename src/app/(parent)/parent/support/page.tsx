@@ -282,94 +282,26 @@ export default function ParentSupportPage() {
         <Card className="p-6">
           <h3 className="text-lg font-semibold text-[var(--foreground)] mb-4">Technical Support</h3>
           <div className="space-y-3">
-                <div className="flex items-start space-x-3">
-                  <AlertCircle className="h-5 w-5 text-[var(--muted-foreground)] flex-shrink-0 mt-1" />
-                  <div>
-                    <p className="font-medium text-[var(--foreground)]">App Issues</p>
-                    <p className="text-sm text-[var(--muted-foreground)]">
-                      For technical problems with the Madrasah OS app, please create a support ticket below or contact:
-                    </p>
-                    <a 
-                      href="mailto:support@madrasah.io?subject=Madrasah OS App Support Request"
-                      className="text-sm font-medium text-[var(--primary)] mt-1 hover:underline"
-                    >
-                      support@madrasah.io
-                    </a>
-                  </div>
-                </div>
+            <div className="flex items-start space-x-3">
+              <AlertCircle className="h-5 w-5 text-[var(--muted-foreground)] flex-shrink-0 mt-1" />
+              <div className="flex-1">
+                <p className="font-medium text-[var(--foreground)] mb-1">App Issues</p>
+                <p className="text-sm text-[var(--muted-foreground)] mb-3">
+                  For technical problems with the Madrasah OS app, please create a support ticket. Our team will respond as soon as possible.
+                </p>
+                <Button 
+                  onClick={() => setShowCreateTicket(true)}
+                  size="sm"
+                  variant="outline"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Support Ticket
+                </Button>
+              </div>
+            </div>
           </div>
         </Card>
 
-        {/* Contact Madrasah Section */}
-        <Card className="p-6">
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-[var(--foreground)] mb-2">Get in Touch</h3>
-            <p className="text-sm text-[var(--muted-foreground)]">Need help? Contact the madrasah directly through the app</p>
-          </div>
-          
-          <div className="space-y-4">
-            <div className="p-4 bg-[var(--accent)]/30 rounded-lg border border-[var(--border)]">
-              <div className="flex items-start gap-3">
-                <MessageSquare className="h-5 w-5 text-[var(--foreground)] flex-shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <h4 className="font-medium text-[var(--foreground)] mb-1">Send a Message</h4>
-                  <p className="text-sm text-[var(--muted-foreground)] mb-3">
-                    Send a message directly to the madrasah admin. They'll receive your message and respond as soon as possible.
-                  </p>
-                  <Button 
-                    onClick={() => {
-                      // Navigate to messages page or open message modal
-                      window.location.href = '/parent/dashboard'
-                    }}
-                    size="sm"
-                    variant="outline"
-                  >
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    Send Message
-                  </Button>
-                </div>
-              </div>
-            </div>
-            
-            {contactInfo && (
-              <>
-                {contactInfo.phone && (
-                  <div className="p-4 bg-[var(--accent)]/30 rounded-lg border border-[var(--border)]">
-                    <div className="flex items-start gap-3">
-                      <Phone className="h-5 w-5 text-[var(--foreground)] flex-shrink-0 mt-0.5" />
-                      <div className="flex-1">
-                        <h4 className="font-medium text-[var(--foreground)] mb-1">Call Us</h4>
-                        <p className="text-sm text-[var(--muted-foreground)] mb-2">{contactInfo.phone}</p>
-                        {contactInfo.officeHours && (
-                          <p className="text-xs text-[var(--muted-foreground)]">Office Hours: {contactInfo.officeHours}</p>
-                        )}
-                        <PhoneLink phone={contactInfo.phone} className="mt-2" />
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                {contactInfo.email && (
-                  <div className="p-4 bg-[var(--accent)]/30 rounded-lg border border-[var(--border)]">
-                    <div className="flex items-start gap-3">
-                      <Mail className="h-5 w-5 text-[var(--foreground)] flex-shrink-0 mt-0.5" />
-                      <div className="flex-1">
-                        <h4 className="font-medium text-[var(--foreground)] mb-1">Email Us</h4>
-                        <p className="text-sm text-[var(--muted-foreground)] mb-2">{contactInfo.email}</p>
-                        <a 
-                          href={`mailto:${contactInfo.email}`}
-                          className="text-sm text-[var(--primary)] hover:underline"
-                        >
-                          Send Email →
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </Card>
 
         {/* Support Tickets Section - Hidden but keeping code for potential future use */}
         {false && (

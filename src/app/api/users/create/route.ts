@@ -28,30 +28,35 @@ async function handlePOST(request: NextRequest) {
     const body = await request.json()
     const { email, name, password, phone, isSuperAdmin, orgId, role, sendInvitation, staffSubrole, permissionKeys } = body
 
-    // Verify user has permission (super admin or org admin)
+    // For non-super-admin, get their active org and verify they have ADMIN role
+    let targetOrgId = orgId // For super admin, use orgId from body
     if (!session.user.isSuperAdmin) {
-      // For non-super-admin, verify they have ADMIN role in the org they're creating user for
-      if (orgId) {
-        const membership = await prisma.userOrgMembership.findUnique({
-          where: {
-            userId_orgId: {
-              userId: session.user.id,
-              orgId
-            }
-          }
-        })
-        
-        if (!membership || membership.role !== 'ADMIN') {
-          return NextResponse.json(
-            { error: 'Unauthorized - Admin role required' },
-            { status: 403 }
-          )
-        }
+      const { getActiveOrg, getUserRoleInOrg } = await import('@/lib/org')
+      const org = await getActiveOrg(session.user.id)
+      
+      if (!org) {
+        return NextResponse.json(
+          { error: 'No organisation found' },
+          { status: 404 }
+        )
+      }
+
+      // Always use the active org's ID for non-super-admin users (ignore orgId from body for security)
+      targetOrgId = org.id
+      
+      // Verify they have ADMIN role in their active org
+      const userRole = await getUserRoleInOrg(session.user.id, targetOrgId)
+      if (userRole !== 'ADMIN') {
+        return NextResponse.json(
+          { error: 'Unauthorized - Admin role required' },
+          { status: 403 }
+        )
       }
     }
 
     // Only check payment for non-owner accounts (staff/teachers)
-    if (!isSuperAdmin && (role === 'STAFF' || role === 'ADMIN')) {
+    // Skip payment check in development mode
+    if (!isSuperAdmin && (role === 'STAFF' || role === 'ADMIN') && process.env.NODE_ENV !== 'development') {
       const hasPaymentMethod = await checkPaymentMethod()
       if (!hasPaymentMethod) {
         return NextResponse.json(
@@ -105,7 +110,7 @@ async function handlePOST(request: NextRequest) {
     }
 
     // If not super admin, orgId and role are required
-    if (!isSuperAdmin && (!orgId || !role)) {
+    if (!isSuperAdmin && (!targetOrgId || !role)) {
       return NextResponse.json(
         { error: 'Organisation and role are required for non-owner accounts' },
         { status: 400 }
@@ -198,11 +203,11 @@ async function handlePOST(request: NextRequest) {
     }
 
     // If orgId and role provided, create membership
-    if (orgId && role && !isSuperAdmin) {
+    if (targetOrgId && role && !isSuperAdmin) {
       // Determine if this is the initial admin (first ADMIN in the org)
       const existingAdmins = await prisma.userOrgMembership.findMany({
         where: {
-          orgId,
+          orgId: targetOrgId,
           role: 'ADMIN',
         },
       })
@@ -212,7 +217,7 @@ async function handlePOST(request: NextRequest) {
         where: {
           userId_orgId: {
             userId: user.id,
-            orgId
+            orgId: targetOrgId
           }
         },
         update: {
@@ -223,7 +228,7 @@ async function handlePOST(request: NextRequest) {
         create: {
           id: crypto.randomUUID(),
           userId: user.id,
-          orgId,
+          orgId: targetOrgId,
           role,
           staffSubrole: staffSubrole || null,
           isInitialAdmin,
@@ -261,7 +266,7 @@ async function handlePOST(request: NextRequest) {
       if (shouldSendInvitation) {
         try {
           const org = await prisma.org.findUnique({
-            where: { id: orgId },
+            where: { id: targetOrgId || orgId },
             select: { name: true }
           })
 
@@ -275,7 +280,7 @@ async function handlePOST(request: NextRequest) {
             await prisma.invitation.create({
               data: {
                 id: crypto.randomUUID(),
-                orgId,
+                orgId: targetOrgId || orgId,
                 email: sanitizedEmail,
                 role,
                 token,
@@ -328,7 +333,12 @@ async function handlePOST(request: NextRequest) {
     return NextResponse.json(
       { 
         error: 'Failed to create user',
-        ...(isDevelopment && { details: error?.message })
+        ...(isDevelopment && { 
+          details: error?.message,
+          stack: error?.stack,
+          code: error?.code,
+          name: error?.name
+        })
       },
       { status: 500 }
     )
