@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
+import { cancelStripeSubscription, stripe } from '@/lib/stripe'
 
 async function handleDELETE(
   request: NextRequest,
@@ -37,7 +38,8 @@ async function handleDELETE(
       select: {
         id: true,
         name: true,
-        slug: true
+        slug: true,
+        stripeConnectAccountId: true
       }
     })
 
@@ -71,18 +73,141 @@ async function handleDELETE(
 
     logger.info(`Deleting organisation with related data: ${students} students, ${classes} classes, ${invoices} invoices, ${memberships} memberships, ${applications} applications, ${invitations} invitations, ${leads} leads`)
 
-    // Delete leads that reference this org (if any)
-    if (leads > 0) {
-      await prisma.leadActivity.deleteMany({
-        where: {
-          lead: {
-            convertedOrgId: orgId
-          }
+    // Cancel platform Stripe subscription if it exists (before deletion)
+    try {
+      const platformBilling = await prisma.platformOrgBilling.findUnique({
+        where: { orgId },
+        select: { stripeSubscriptionId: true }
+      })
+
+      if (platformBilling?.stripeSubscriptionId) {
+        try {
+          await cancelStripeSubscription(platformBilling.stripeSubscriptionId)
+          logger.info(`Canceled platform Stripe subscription for organisation: ${org.name}`)
+        } catch (stripeError: any) {
+          logger.error('Error canceling platform Stripe subscription before deletion', {
+            error: stripeError?.message,
+            subscriptionId: platformBilling.stripeSubscriptionId
+          })
+          // Continue with deletion even if subscription cancellation fails
+        }
+      }
+    } catch (billingError: any) {
+      logger.error('Error fetching platform billing before deletion', billingError)
+      // Continue with deletion even if billing fetch fails
+    }
+
+    // Cancel all parent billing and detach payment methods
+    try {
+      const parentBillingProfiles = await prisma.parentBillingProfile.findMany({
+        where: { orgId },
+        select: {
+          id: true,
+          parentUserId: true,
+          stripeCustomerId: true,
+          defaultPaymentMethodId: true,
+          autoPayEnabled: true
         }
       })
-      await prisma.lead.deleteMany({
-        where: { convertedOrgId: orgId }
+
+      if (parentBillingProfiles.length > 0) {
+        logger.info(`Canceling ${parentBillingProfiles.length} parent billing profile(s) for organisation: ${org.name}`)
+        
+        // First, disable auto-pay for all parents to prevent future charges
+        const autoPayCount = parentBillingProfiles.filter(p => p.autoPayEnabled).length
+        if (autoPayCount > 0) {
+          await prisma.parentBillingProfile.updateMany({
+            where: { 
+              orgId,
+              autoPayEnabled: true
+            },
+            data: {
+              autoPayEnabled: false,
+              defaultPaymentMethodId: null
+            }
+          })
+          logger.info(`Disabled auto-pay for ${autoPayCount} parent(s)`)
+        }
+        
+        // Then detach payment methods from Stripe
+        for (const profile of parentBillingProfiles) {
+          try {
+            // Detach payment method if it exists
+            if (profile.defaultPaymentMethodId && org.stripeConnectAccountId) {
+              try {
+                await stripe.paymentMethods.detach(profile.defaultPaymentMethodId, {
+                  stripeAccount: org.stripeConnectAccountId
+                })
+                logger.info(`Detached payment method for parent: ${profile.parentUserId}`)
+              } catch (pmError: any) {
+                logger.error('Error detaching parent payment method', {
+                  error: pmError?.message,
+                  paymentMethodId: profile.defaultPaymentMethodId,
+                  parentUserId: profile.parentUserId
+                })
+                // Continue even if payment method detachment fails
+              }
+            }
+          } catch (profileError: any) {
+            logger.error('Error processing parent billing profile', {
+              error: profileError?.message,
+              profileId: profile.id,
+              parentUserId: profile.parentUserId
+            })
+            // Continue with other profiles
+          }
+        }
+        
+        logger.info(`Processed ${parentBillingProfiles.length} parent billing profile(s) - auto-pay disabled and payment methods detached`)
+      }
+    } catch (parentBillingError: any) {
+      logger.error('Error processing parent billing profiles before deletion', {
+        error: parentBillingError?.message,
+        orgId
       })
+      // Continue with deletion even if parent billing cleanup fails
+    }
+
+    // Delete leads that reference this org (if any)
+    // Note: Lead.convertedOrgId doesn't have cascade delete, so we need to handle manually
+    if (leads > 0) {
+      try {
+        // First get all lead IDs
+        const leadsToDelete = await prisma.lead.findMany({
+          where: { convertedOrgId: orgId },
+          select: { id: true }
+        })
+        
+        const leadIds = leadsToDelete.map(lead => lead.id)
+        
+        if (leadIds.length > 0) {
+          // Delete lead activities first
+          await prisma.leadActivity.deleteMany({
+            where: { leadId: { in: leadIds } }
+          })
+          // Then delete the leads
+          await prisma.lead.deleteMany({
+            where: { id: { in: leadIds } }
+          })
+          logger.info(`Deleted ${leadIds.length} lead(s) associated with organisation`)
+        }
+      } catch (leadError: any) {
+        logger.error('Error deleting leads before organisation deletion', {
+          error: leadError?.message,
+          code: leadError?.code
+        })
+        // If deletion fails, try to unlink leads instead
+        try {
+          await prisma.lead.updateMany({
+            where: { convertedOrgId: orgId },
+            data: { convertedOrgId: null }
+          })
+          logger.info('Unlinked leads from organisation instead of deleting')
+        } catch (unlinkError: any) {
+          logger.error('Error unlinking leads from organisation', unlinkError)
+          // Continue with deletion attempt
+        }
+      }
     }
 
     // Delete the organisation
@@ -99,13 +224,32 @@ async function handleDELETE(
     })
 
   } catch (error: any) {
-    logger.error('Error deleting organisation', error)
+    // Always log full error details to server logs
+    logger.error('Error deleting organisation', {
+      message: error?.message,
+      code: error?.code,
+      name: error?.name,
+      stack: error?.stack,
+      meta: error?.meta,
+      orgId
+    })
     
     // Handle foreign key constraint errors
     if (error.code === 'P2003') {
       return NextResponse.json(
-        { error: 'Cannot delete organisation due to existing relationships' },
+        { 
+          error: 'Cannot delete organisation due to existing relationships',
+          details: error?.meta?.field_name ? `Foreign key constraint on: ${error.meta.field_name}` : undefined
+        },
         { status: 400 }
+      )
+    }
+
+    // Handle record not found
+    if (error.code === 'P2025') {
+      return NextResponse.json(
+        { error: 'Organisation not found or already deleted' },
+        { status: 404 }
       )
     }
 
@@ -113,7 +257,11 @@ async function handleDELETE(
     return NextResponse.json(
       { 
         error: 'Failed to delete organisation',
-        ...(isDevelopment && { details: error?.message })
+        ...(isDevelopment && { 
+          details: error?.message,
+          code: error?.code,
+          name: error?.name
+        })
       },
       { status: 500 }
     )
