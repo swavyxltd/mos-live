@@ -4,7 +4,9 @@ import { useState } from 'react'
 import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { 
   Users, 
   Heart, 
@@ -39,6 +41,23 @@ export function AddStudentModal({ isOpen, onClose, onSave, classes }: AddStudent
     startMonth: new Date().toISOString().slice(0, 7), // YYYY-MM format
     status: 'ACTIVE'
   })
+
+  // Generate next 12 months
+  const getNext12Months = () => {
+    const months = []
+    const today = new Date()
+    for (let i = 0; i < 12; i++) {
+      const date = new Date(today.getFullYear(), today.getMonth() + i, 1)
+      const year = date.getFullYear()
+      const month = date.getMonth()
+      const monthValue = `${year}-${String(month + 1).padStart(2, '0')}` // YYYY-MM format
+      const monthName = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+      months.push({ value: monthValue, label: monthName })
+    }
+    return months
+  }
+
+  const availableMonths = getNext12Months()
 
   const handleInputChange = (field: string, value: string) => {
     // Auto-capitalize first letter for name fields
@@ -153,8 +172,9 @@ export function AddStudentModal({ isOpen, onClose, onSave, classes }: AddStudent
         <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-900">First Name *</label>
+                <Label htmlFor="firstName">First Name *</Label>
                 <Input
+                  id="firstName"
                   value={formData.firstName}
                   onChange={(e) => handleInputChange('firstName', e.target.value)}
                   className="w-full"
@@ -163,8 +183,9 @@ export function AddStudentModal({ isOpen, onClose, onSave, classes }: AddStudent
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-900">Last Name *</label>
+                <Label htmlFor="lastName">Last Name *</Label>
                 <Input
+                  id="lastName"
                   value={formData.lastName}
                   onChange={(e) => handleInputChange('lastName', e.target.value)}
                   className="w-full"
@@ -174,8 +195,9 @@ export function AddStudentModal({ isOpen, onClose, onSave, classes }: AddStudent
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-900">Date of Birth *</label>
+              <Label htmlFor="dateOfBirth">Date of Birth *</Label>
               <Input
+                id="dateOfBirth"
                 type="date"
                 value={formData.dateOfBirth}
                 onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
@@ -188,8 +210,9 @@ export function AddStudentModal({ isOpen, onClose, onSave, classes }: AddStudent
         {/* Parent Information */}
         <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-900">Parent Email</label>
+              <Label htmlFor="parentEmail">Parent Email</Label>
               <Input
+                id="parentEmail"
                 type="email"
                 value={formData.parentEmail}
                 onChange={(e) => handleInputChange('parentEmail', e.target.value)}
@@ -203,30 +226,42 @@ export function AddStudentModal({ isOpen, onClose, onSave, classes }: AddStudent
         {/* Class & Enrollment */}
         <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-900">Class *</label>
-              <select
+              <Label htmlFor="class">Class *</Label>
+              <Select
                 value={formData.classId}
-                onChange={(e) => handleInputChange('classId', e.target.value)}
-                className="w-full px-4 py-2 rounded-lg border border-gray-200 bg-white text-gray-900 focus:outline-none focus:border-gray-400"
+                onValueChange={(value) => handleInputChange('classId', value)}
                 required
               >
-                <option value="">Select a class</option>
-                {classes.map((cls) => (
-                  <option key={cls.id} value={cls.id}>
-                    {cls.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="class">
+                  <SelectValue placeholder="Select a class" />
+                </SelectTrigger>
+                <SelectContent>
+                  {classes.map((cls) => (
+                    <SelectItem key={cls.id} value={cls.id}>
+                      {cls.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-900">Start Month *</label>
-              <Input
-                type="month"
+              <Label htmlFor="startMonth">Start Month *</Label>
+              <Select
                 value={formData.startMonth}
-                onChange={(e) => handleInputChange('startMonth', e.target.value)}
-                className="w-full"
+                onValueChange={(value) => handleInputChange('startMonth', value)}
                 required
-              />
+              >
+                <SelectTrigger id="startMonth">
+                  <SelectValue placeholder="Select start month" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableMonths.map((month) => (
+                    <SelectItem key={month.value} value={month.value}>
+                      {month.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <p className="text-sm text-gray-500">The first payment record will be created for this month.</p>
             </div>
         </div>
