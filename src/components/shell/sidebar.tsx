@@ -141,44 +141,59 @@ export function Sidebar({ user: initialUser, org, userRole, staffSubrole, permis
   } else if (isParent) {
     currentNavigation = parentNavigation
   } else {
-    // For staff users, filter navigation based on permissions from database
-    if (userRole === 'STAFF' || userRole === 'ADMIN') {
-      // Use permissions from database if available
-      if (permissions && permissions.length > 0) {
-        currentNavigation = staffNavigation.filter(item => {
-          return permissions.includes(item.permissionKey)
-        })
+      // For staff users, filter navigation based on permissions from database
+      if (userRole === 'STAFF' || userRole === 'ADMIN') {
+        // For teachers, show only teaching-relevant items
+        if (staffSubrole === 'TEACHER') {
+          currentNavigation = staffNavigation.filter(item => {
+            // Teachers should only see: Dashboard, Classes, Students, Attendance, Calendar, Support, Settings
+            const teacherAllowedItems = [
+              'access_dashboard',
+              'access_classes',
+              'access_students',
+              'access_attendance',
+              'access_calendar',
+              'access_support',
+              'access_settings'
+            ]
+            return teacherAllowedItems.includes(item.permissionKey)
+          })
+        } else if (permissions && permissions.length > 0) {
+          // Use permissions from database if available
+          currentNavigation = staffNavigation.filter(item => {
+            return permissions.includes(item.permissionKey)
+          })
+        } else {
+          // Fallback to subrole-based permissions
+          const permissionsHook = useStaffPermissions({
+            id: user.id,
+            email: user.email || '',
+            name: user.name || '',
+            isSuperAdmin: user.isSuperAdmin
+          }, (staffSubrole || 'TEACHER') as StaffSubrole)
+          
+          currentNavigation = staffNavigation.filter(item => {
+            // Map permission key to legacy permission for backward compatibility
+            const legacyPermissionMap: Record<string, string> = {
+              'access_dashboard': 'view_all_data',
+              'access_classes': 'view_all_classes',
+              'access_students': 'view_all_data',
+              'access_applications': 'view_applications',
+              'access_staff': 'manage_staff',
+              'access_attendance': 'mark_attendance',
+              'access_finances': 'view_invoices',
+              'access_fees': 'manage_invoices',
+              'access_payments': 'view_invoices',
+              'access_messages': 'send_messages',
+              'access_calendar': 'view_calendar',
+              'access_support': 'view_all_data',
+              'access_settings': 'access_settings',
+            }
+            const legacyPermission = legacyPermissionMap[item.permissionKey] || 'view_all_data'
+            return permissionsHook.hasPermission(legacyPermission)
+          })
+        }
       } else {
-        // Fallback to subrole-based permissions
-        const permissionsHook = useStaffPermissions({
-          id: user.id,
-          email: user.email || '',
-          name: user.name || '',
-          isSuperAdmin: user.isSuperAdmin
-        }, (staffSubrole || 'TEACHER') as StaffSubrole)
-        
-        currentNavigation = staffNavigation.filter(item => {
-          // Map permission key to legacy permission for backward compatibility
-          const legacyPermissionMap: Record<string, string> = {
-            'access_dashboard': 'view_all_data',
-            'access_classes': 'view_all_classes',
-            'access_students': 'view_all_data',
-            'access_applications': 'view_applications',
-            'access_staff': 'manage_staff',
-            'access_attendance': 'mark_attendance',
-            'access_finances': 'view_invoices',
-            'access_fees': 'manage_invoices',
-            'access_payments': 'view_invoices',
-            'access_messages': 'send_messages',
-            'access_calendar': 'view_calendar',
-            'access_support': 'view_all_data',
-            'access_settings': 'access_settings',
-          }
-          const legacyPermission = legacyPermissionMap[item.permissionKey] || 'view_all_data'
-          return permissionsHook.hasPermission(legacyPermission)
-        })
-      }
-    } else {
       currentNavigation = staffNavigation
     }
   }

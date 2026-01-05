@@ -47,17 +47,23 @@ async function getUserRoleHints(userId: string) {
         if (!orgStaffOf.includes(membership.orgId)) {
           orgStaffOf.push(membership.orgId)
         }
-        // Store staffSubrole from first admin/staff membership
-        if (!staffSubrole && membership.staffSubrole) {
-          staffSubrole = membership.staffSubrole
+        // Store staffSubrole from admin/staff membership (prioritize FINANCE_OFFICER if found)
+        if (membership.staffSubrole) {
+          // Prioritize FINANCE_OFFICER subrole if found, otherwise use first non-null subrole
+          if (membership.staffSubrole === 'FINANCE_OFFICER' || !staffSubrole) {
+            staffSubrole = membership.staffSubrole
+          }
         }
       } else if (membership.role === 'STAFF') {
         if (!orgStaffOf.includes(membership.orgId)) {
           orgStaffOf.push(membership.orgId)
         }
-        // Store staffSubrole from first staff membership
-        if (!staffSubrole && membership.staffSubrole) {
-          staffSubrole = membership.staffSubrole
+        // Store staffSubrole from staff membership (prioritize FINANCE_OFFICER if found)
+        if (membership.staffSubrole) {
+          // Prioritize FINANCE_OFFICER subrole if found, otherwise use first non-null subrole
+          if (membership.staffSubrole === 'FINANCE_OFFICER' || !staffSubrole) {
+            staffSubrole = membership.staffSubrole
+          }
         }
       } else if (membership.role === 'PARENT') {
         isParent = true
@@ -502,17 +508,19 @@ export function getPostLoginRedirect(roleHints: {
     return '/owner/overview'
   }
   
-  // 3) Admin (org admin) → /dashboard
+  // 3) Check staffSubrole first (before admin check) to prioritize role-specific redirects
+  // Finance Officers should go to finances page regardless of admin status
+  if (roleHints.staffSubrole === 'FINANCE_OFFICER') {
+    return '/finances'
+  }
+  
+  // 4) Admin (org admin) → /dashboard
   if (roleHints.orgAdminOf.length > 0) {
     return '/dashboard'
   }
   
-  // 4) Staff (any staff role) → check subrole
+  // 5) Staff (any staff role) → dashboard
   if (roleHints.orgStaffOf.length > 0) {
-    // Finance Officers should go to finances page
-    if (roleHints.staffSubrole === 'FINANCE_OFFICER') {
-      return '/finances'
-    }
     // Teachers and other staff go to dashboard (teachers see filtered stats)
     return '/dashboard'
   }

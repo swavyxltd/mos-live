@@ -104,6 +104,15 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
   const [todaysTasks, setTodaysTasks] = useState<any[]>([])
   const [loadingTasks, setLoadingTasks] = useState(true)
   const [loading, setLoading] = useState(!initialStats) // Only loading if no initial stats
+  const [todaysClasses, setTodaysClasses] = useState<Array<{
+    id: string
+    name: string
+    studentCount: number
+    attendanceStatus: 'MARKED' | 'NOT_MARKED' | 'PARTIAL' | 'NO_STUDENTS'
+    markedCount?: number
+    totalCount?: number
+  }>>([])
+  const [loadingTodaysClasses, setLoadingTodaysClasses] = useState(true)
   const [stats, setStats] = useState<DashboardStats>(
     initialStats || {
       totalStudents: 0,
@@ -131,19 +140,25 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
     fetchClasses()
     
     // Fetch dynamic dashboard sections
-    fetchRecentActivity()
+    if (!isTeacher) {
+      fetchRecentActivity()
+      fetchTopPerformingClasses()
+      fetchTodaysTasks()
+    }
+    fetchTodaysClasses()
     fetchUpcomingEvents()
-    fetchTopPerformingClasses()
-    fetchTodaysTasks()
     
     // Listen for refresh events
     const handleRefresh = () => {
       fetchDashboardStats()
       fetchClasses()
-      fetchRecentActivity()
+      if (!isTeacher) {
+        fetchRecentActivity()
+        fetchTopPerformingClasses()
+        fetchTodaysTasks()
+      }
+      fetchTodaysClasses()
       fetchUpcomingEvents()
-      fetchTopPerformingClasses()
-      fetchTodaysTasks()
     }
     
     const handleAttendanceSaved = () => {
@@ -154,21 +169,29 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
     window.addEventListener('refresh-dashboard', handleRefresh)
     window.addEventListener('attendance-saved', handleAttendanceSaved)
     
-    // Auto-refresh tasks every 30 seconds to catch completed tasks
-    const tasksInterval = setInterval(() => {
+    // Auto-refresh tasks every 30 seconds to catch completed tasks (admin only)
+    const tasksInterval = !isTeacher ? setInterval(() => {
       fetchTodaysTasks()
-    }, 30000) // 30 seconds
+    }, 30000) : null // 30 seconds
     
-    // Auto-refresh activity every 60 seconds to catch new activity
-    const activityInterval = setInterval(() => {
+    // Auto-refresh activity every 60 seconds to catch new activity (admin only)
+    const activityInterval = !isTeacher ? setInterval(() => {
       fetchRecentActivity()
-    }, 60000) // 60 seconds
+    }, 60000) : null // 60 seconds
+    
+    // Auto-refresh today's classes every 60 seconds for teachers
+    const classesInterval = isTeacher ? setInterval(() => {
+      fetchTodaysClasses()
+    }, 60000) : null
     
     // Also listen for page visibility changes to refresh when user returns
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        fetchTodaysTasks()
-        fetchRecentActivity()
+        if (!isTeacher) {
+          fetchTodaysTasks()
+          fetchRecentActivity()
+        }
+        fetchTodaysClasses()
       }
     }
     
@@ -177,11 +200,12 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
     return () => {
       window.removeEventListener('refresh-dashboard', handleRefresh)
       window.removeEventListener('attendance-saved', handleAttendanceSaved)
-      clearInterval(tasksInterval)
-      clearInterval(activityInterval)
+      if (tasksInterval) clearInterval(tasksInterval)
+      if (activityInterval) clearInterval(activityInterval)
+      if (classesInterval) clearInterval(classesInterval)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [initialStats])
+  }, [initialStats, isTeacher])
 
   const fetchClasses = async () => {
     try {
@@ -239,6 +263,26 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
     }
   }
 
+  const fetchTodaysClasses = async () => {
+    if (!isTeacher) return
+    
+    try {
+      setLoadingTodaysClasses(true)
+      const response = await fetch('/api/classes/today')
+      if (response.ok) {
+        const data = await response.json()
+        setTodaysClasses(data)
+      } else {
+        setTodaysClasses([])
+      }
+    } catch (error) {
+      console.error('Error fetching today classes:', error)
+      setTodaysClasses([])
+    } finally {
+      setLoadingTodaysClasses(false)
+    }
+  }
+
   const fetchUpcomingEvents = async () => {
     try {
       const now = new Date()
@@ -247,11 +291,31 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
       const response = await fetch(`/api/events?startDate=${now.toISOString()}&endDate=${next30Days.toISOString()}`)
       if (response.ok) {
         const events = await response.json()
-        const upcoming = events
+        let filteredEvents = events
           .filter((event: any) => {
             const eventDate = new Date(event.date)
             return eventDate >= now && eventDate <= next30Days
           })
+        
+        // For teachers, filter to only show events relevant to their classes
+        if (isTeacher) {
+          // Get teacher's class IDs
+          const teacherClassesResponse = await fetch('/api/classes')
+          if (teacherClassesResponse.ok) {
+            const classesData = await teacherClassesResponse.json()
+            const teacherClassIds = Array.isArray(classesData) 
+              ? classesData.map((c: any) => c.id)
+              : classesData.classes?.map((c: any) => c.id) || []
+            
+            // Filter events to only those related to teacher's classes or general events
+            filteredEvents = filteredEvents.filter((event: any) => {
+              // Show general events (no class association) or events for teacher's classes
+              return !event.Class || teacherClassIds.includes(event.Class.id)
+            })
+          }
+        }
+        
+        const upcoming = filteredEvents
           .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
           .slice(0, 5)
           .map((event: any) => ({
@@ -555,15 +619,24 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-                {isTeacher ? 'My Classes Overview' : 'Madrasah Overview'}
+                {isTeacher ? 'My Classes' : 'Madrasah Overview'}
               </h1>
               <p className="text-sm sm:text-base text-muted-foreground">
                 {isTeacher 
-                  ? 'Insights and statistics for your assigned classes'
+                  ? 'Manage your classes and mark attendance'
                   : 'Comprehensive insights into your Islamic education center'}
               </p>
             </div>
-            {!isTeacher && (
+            {isTeacher ? (
+              <Button 
+                size="lg"
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+                onClick={() => setIsAttendanceModalOpen(true)}
+              >
+                <UserCheck className="h-5 w-5 mr-2" />
+                Mark Today's Attendance
+              </Button>
+            ) : (
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                 <QuickAddMenu 
                   onAddStudent={() => setIsAddStudentModalOpen(true)}
@@ -585,8 +658,127 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
             )}
       </div>
 
-      {/* All Metrics in Uniform Grid */}
-      <div className={`grid gap-3 sm:gap-4 lg:gap-6 grid-cols-2 ${isTeacher ? 'lg:grid-cols-3' : 'lg:grid-cols-4'} auto-rows-fr`}>
+      {/* Teacher Dashboard: Today's Classes */}
+      {isTeacher ? (
+        <div className="space-y-6">
+          {/* Today's Classes Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Today's Classes
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Classes scheduled for today - mark attendance for each class
+              </p>
+            </CardHeader>
+            <CardContent>
+              {loadingTodaysClasses ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p className="text-sm">Loading today's classes...</p>
+                </div>
+              ) : todaysClasses.length === 0 ? (
+                <div className="text-center py-12">
+                  <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                  <p className="text-sm font-medium text-foreground mb-1">No classes scheduled for today</p>
+                  <p className="text-sm text-muted-foreground">Check back tomorrow or view all your classes</p>
+                  <Link href="/classes">
+                    <Button variant="outline" className="mt-4">
+                      View All Classes
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {todaysClasses.map((cls) => (
+                    <Card key={cls.id} className="hover:shadow-md transition-shadow">
+                      <CardContent className="pt-6">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-foreground mb-1">{cls.name}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {cls.studentCount} {cls.studentCount === 1 ? 'student' : 'students'}
+                            </p>
+                          </div>
+                          <Badge 
+                            variant={
+                              cls.attendanceStatus === 'MARKED' ? 'default' :
+                              cls.attendanceStatus === 'PARTIAL' ? 'secondary' :
+                              cls.attendanceStatus === 'NOT_MARKED' ? 'destructive' :
+                              'outline'
+                            }
+                            className="ml-2"
+                          >
+                            {cls.attendanceStatus === 'MARKED' ? 'Marked' :
+                             cls.attendanceStatus === 'PARTIAL' ? 'Partial' :
+                             cls.attendanceStatus === 'NOT_MARKED' ? 'Not Marked' :
+                             'No Students'}
+                          </Badge>
+                        </div>
+                        {cls.attendanceStatus === 'PARTIAL' && (
+                          <p className="text-xs text-muted-foreground mb-3">
+                            {cls.markedCount} of {cls.totalCount} marked
+                          </p>
+                        )}
+                        <Button
+                          variant={cls.attendanceStatus === 'MARKED' ? 'outline' : 'default'}
+                          className="w-full"
+                          onClick={() => {
+                            setIsAttendanceModalOpen(true)
+                            // Trigger attendance saved event after a short delay to refresh today's classes
+                            setTimeout(() => {
+                              const event = new CustomEvent('attendance-saved')
+                              window.dispatchEvent(event)
+                            }, 1000)
+                          }}
+                        >
+                          {cls.attendanceStatus === 'MARKED' ? 'Update Attendance' : 'Mark Attendance'}
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* My Classes - Simple List */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <BookOpen className="h-5 w-5" />
+                  My Classes
+                </CardTitle>
+                <Link href="/classes">
+                  <Button variant="ghost" size="sm">
+                    View All
+                    <ArrowRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </Link>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {activeClasses > 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    You are teaching <span className="font-medium text-foreground">{activeClasses}</span> {activeClasses === 1 ? 'class' : 'classes'}
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No classes assigned yet</p>
+                )}
+                <Link href="/classes">
+                  <Button variant="outline" className="w-full mt-4">
+                    Manage Classes
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        /* Admin Dashboard: All Metrics in Uniform Grid */
+        <div className={`grid gap-3 sm:gap-4 lg:gap-6 grid-cols-2 lg:grid-cols-4 auto-rows-fr`}>
         <Link href="/students" className="block">
           <StatCard
             title="Total Students"
@@ -663,7 +855,8 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
             />
           </Link>
         )}
-      </div>
+        </div>
+      )}
 
       {/* Today's Tasks Section - Only show for admins */}
       {isAdmin && (
@@ -782,71 +975,72 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
         </Card>
       )}
 
-          {/* Bottom Row */}
-          <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-3">
-        {/* Recent Activity */}
-        <div className="lg:col-span-2 flex">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer flex flex-col w-full" onClick={() => setIsActivityModalOpen(true)}>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="h-5 w-5" />
-                  Recent Activity
-                </CardTitle>
-                <Button variant="ghost" size="sm" className="text-sm">
-                  View All
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="flex-1 flex flex-col">
-              {recentActivity.length > 0 ? (
-                <div>
-                  {recentActivity.map((activity, index) => (
-                    <div key={activity.id}>
-                      <div className="flex items-start gap-3 p-2 hover:bg-[var(--muted)]/50 transition-colors">
-                      <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${
-                        activity.type === 'enrollment' ? 'bg-green-100 text-green-700' :
-                        activity.type === 'payment' ? 'bg-gray-100 text-gray-700' :
-                        activity.type === 'attendance' ? 'bg-purple-100 text-purple-700' :
-                        activity.type === 'message' ? 'bg-orange-100 text-orange-700' :
-                        'bg-gray-100 text-gray-700'
-                      }`}>
-                        {activity.type === 'enrollment' ? <Users className="h-4 w-4" /> :
-                         activity.type === 'payment' ? <DollarSign className="h-4 w-4" /> :
-                         activity.type === 'attendance' ? <UserCheck className="h-4 w-4" /> :
-                         activity.type === 'message' ? <MessageSquare className="h-4 w-4" /> :
-                         <Activity className="h-4 w-4" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-[var(--foreground)]">
-                          {activity.user}
-                        </p>
-                        <p className="text-sm text-[var(--foreground)] mt-0.5">
-                          {activity.action}
-                        </p>
-                        <p className="text-sm text-[var(--muted-foreground)] mt-1">
-                          {activity.timestamp}
-                        </p>
-                      </div>
-                      </div>
-                      {index < recentActivity.length - 1 && (
-                        <div className="border-b border-[var(--border)]" />
-                      )}
+          {/* Bottom Row - Admin Only */}
+          {!isTeacher && (
+            <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-3">
+              {/* Recent Activity */}
+              <div className="lg:col-span-2 flex">
+                <Card className="hover:shadow-md transition-shadow cursor-pointer flex flex-col w-full" onClick={() => setIsActivityModalOpen(true)}>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2">
+                        <Activity className="h-5 w-5" />
+                        Recent Activity
+                      </CardTitle>
+                      <Button variant="ghost" size="sm" className="text-sm">
+                        View All
+                      </Button>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-[var(--muted-foreground)]">
-                  <Activity className="h-12 w-12 mx-auto mb-4 text-[var(--muted-foreground)] opacity-50" />
-                  <p className="text-sm">No recent activity</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                  </CardHeader>
+                  <CardContent className="flex-1 flex flex-col">
+                    {recentActivity.length > 0 ? (
+                      <div>
+                        {recentActivity.map((activity, index) => (
+                          <div key={activity.id}>
+                            <div className="flex items-start gap-3 p-2 hover:bg-[var(--muted)]/50 transition-colors">
+                            <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${
+                              activity.type === 'enrollment' ? 'bg-green-100 text-green-700' :
+                              activity.type === 'payment' ? 'bg-gray-100 text-gray-700' :
+                              activity.type === 'attendance' ? 'bg-purple-100 text-purple-700' :
+                              activity.type === 'message' ? 'bg-orange-100 text-orange-700' :
+                              'bg-gray-100 text-gray-700'
+                            }`}>
+                              {activity.type === 'enrollment' ? <Users className="h-4 w-4" /> :
+                               activity.type === 'payment' ? <DollarSign className="h-4 w-4" /> :
+                               activity.type === 'attendance' ? <UserCheck className="h-4 w-4" /> :
+                               activity.type === 'message' ? <MessageSquare className="h-4 w-4" /> :
+                               <Activity className="h-4 w-4" />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-[var(--foreground)]">
+                                {activity.user}
+                              </p>
+                              <p className="text-sm text-[var(--foreground)] mt-0.5">
+                                {activity.action}
+                              </p>
+                              <p className="text-sm text-[var(--muted-foreground)] mt-1">
+                                {activity.timestamp}
+                              </p>
+                            </div>
+                            </div>
+                            {index < recentActivity.length - 1 && (
+                              <div className="border-b border-[var(--border)]" />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-[var(--muted-foreground)]">
+                        <Activity className="h-12 w-12 mx-auto mb-4 text-[var(--muted-foreground)] opacity-50" />
+                        <p className="text-sm">No recent activity</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
 
-        {/* Upcoming Events */}
-        <Link href="/calendar" className="block flex">
+              {/* Upcoming Events */}
+              <Link href="/calendar" className="block flex">
           <Card className="hover:shadow-md transition-shadow cursor-pointer flex flex-col w-full">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -949,7 +1143,8 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
             </CardContent>
           </Card>
         </Link>
-      </div>
+            </div>
+          )}
 
       {/* Top Performing Classes */}
       <Link href="/classes" className="block">
@@ -1082,7 +1277,15 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
       {/* Attendance Modal */}
       <AttendanceMarking
         initialOpen={isAttendanceModalOpen}
-        onClose={() => setIsAttendanceModalOpen(false)}
+        onClose={() => {
+          setIsAttendanceModalOpen(false)
+          // Refresh today's classes when modal closes (in case attendance was marked)
+          if (isTeacher) {
+            setTimeout(() => {
+              fetchTodaysClasses()
+            }, 500)
+          }
+        }}
       />
 
       {/* Payments Modal */}
