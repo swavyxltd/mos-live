@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Modal } from '@/components/ui/modal'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { CheckCircle, XCircle, Clock, User, Calendar, Download, Loader2, ArrowLeft, Users as UsersIcon, Info } from 'lucide-react'
+import { CheckCircle, XCircle, Clock, User, Loader2, ArrowLeft, Users as UsersIcon, Info } from 'lucide-react'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { formatDate } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -328,25 +328,6 @@ export function AttendanceMarking({ initialOpen = false, onClose }: AttendanceMa
     }
   }
 
-  const handleExportCSV = () => {
-    // Generate CSV content
-    const csvContent = classes.map(cls => {
-      const header = `Class: ${cls.name}, Teacher: ${cls.teacher}, Date: ${currentDate}\n`
-      const studentRows = cls.students.map(student => 
-        `${student.name},${student.status},${student.time || '-'}`
-      ).join('\n')
-      return header + 'Student,Status,Time\n' + studentRows
-    }).join('\n\n')
-
-    // Download CSV
-    const blob = new Blob([csvContent], { type: 'text/csv' })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `attendance-${currentDate.replace(/\//g, '-')}.csv`
-    a.click()
-    window.URL.revokeObjectURL(url)
-  }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -376,17 +357,6 @@ export function AttendanceMarking({ initialOpen = false, onClose }: AttendanceMa
 
   return (
     <>
-      <div className="flex space-x-3">
-        <Button onClick={handleMarkAttendance} className="flex items-center gap-2">
-          <Calendar className="h-4 w-4" />
-          Mark Attendance
-        </Button>
-        <Button onClick={handleExportCSV} variant="outline" className="flex items-center gap-2">
-          <Download className="h-4 w-4" />
-          Export CSV
-        </Button>
-      </div>
-
       {/* Attendance Marking Modal */}
       <Modal
         isOpen={isOpen}
