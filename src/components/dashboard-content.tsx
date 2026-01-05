@@ -130,6 +130,10 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
     }
   )
 
+  // Dashboard type is determined by subrole template, not individual permissions
+  const isTeacher = staffSubrole === 'TEACHER'
+  const isAdmin = userRole === 'ADMIN' || staffSubrole === 'ADMIN'
+
   useEffect(() => {
     // Only fetch if we don't have initial stats
     if (!initialStats) {
@@ -556,10 +560,6 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
       throw new Error(safeErrorMessage)
     }
   }
-
-  // Dashboard type is determined by subrole template, not individual permissions
-  const isTeacher = staffSubrole === 'TEACHER'
-  const isAdmin = userRole === 'ADMIN' || staffSubrole === 'ADMIN'
 
   // Quick action handlers - open modals instead of navigating
   const handleQuickAction = async (taskId: string, action: string) => {
