@@ -2,7 +2,8 @@ export const runtime = 'nodejs'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireRole, requireOrg } from '@/lib/roles'
 import { prisma } from '@/lib/prisma'
-import { sendParentOnboardingEmail } from '@/lib/mail'
+import { sendParentOnboardingEmail, sendEmail } from '@/lib/mail'
+import { generateEmailTemplate } from '@/lib/email-template'
 import { checkPaymentMethod, checkBillingDay } from '@/lib/payment-check'
 import { logger } from '@/lib/logger'
 import { sanitizeText, isValidEmail, isValidEmailStrict, isValidName, isValidDateOfBirth, MAX_STRING_LENGTHS } from '@/lib/input-validation'
@@ -127,10 +128,51 @@ async function handlePOST(request: NextRequest) {
       )
     }
 
+    // Check if parent account already exists (before transaction)
+    let existingParent = null
+    if (sanitizedParentEmail) {
+      existingParent = await prisma.user.findUnique({
+        where: { email: sanitizedParentEmail },
+        include: {
+          UserOrgMembership: {
+            where: { orgId }
+          }
+        }
+      })
+    }
+
     // Use transaction to ensure data consistency
     const result = await prisma.$transaction(async (tx) => {
       // Generate student ID
       const studentId = crypto.randomUUID()
+
+      let parentUserId: string | null = null
+      let isExistingParent = false
+
+      // If parent account exists, link student immediately
+      if (existingParent) {
+        parentUserId = existingParent.id
+        isExistingParent = true
+
+        // Ensure parent has membership in this org
+        await tx.userOrgMembership.upsert({
+          where: {
+            userId_orgId: {
+              userId: parentUserId,
+              orgId
+            }
+          },
+          create: {
+            id: crypto.randomUUID(),
+            userId: parentUserId,
+            orgId,
+            role: 'PARENT'
+          },
+          update: {
+            role: 'PARENT'
+          }
+        })
+      }
 
       // Create student
       const student = await tx.student.create({
@@ -141,10 +183,36 @@ async function handlePOST(request: NextRequest) {
           lastName: sanitizedLastName,
           dob: new Date(dateOfBirth),
           isArchived: status === 'ARCHIVED',
-          claimStatus: 'NOT_CLAIMED',
+          claimStatus: isExistingParent ? 'CLAIMED' : 'NOT_CLAIMED',
+          primaryParentId: parentUserId,
+          claimedByParentId: parentUserId,
           updatedAt: new Date()
         }
       })
+
+      // If parent exists, create ParentStudentLink immediately
+      if (isExistingParent && parentUserId) {
+        await tx.parentStudentLink.upsert({
+          where: {
+            parentId_studentId: {
+              parentId: parentUserId,
+              studentId: student.id
+            }
+          },
+          create: {
+            id: crypto.randomUUID(),
+            orgId,
+            parentId: parentUserId,
+            studentId: student.id,
+            claimedAt: new Date(),
+            createdAt: new Date(),
+            updatedAt: new Date()
+          },
+          update: {
+            updatedAt: new Date()
+          }
+        })
+      }
 
       // Enroll student in class
       await tx.studentClass.create({
@@ -156,34 +224,34 @@ async function handlePOST(request: NextRequest) {
         }
       })
 
-      // Create parent invitation only if email is provided
+      // Create parent invitation only if email is provided AND parent doesn't exist
       let invitation = null
       let token: string | null = null
-      if (sanitizedParentEmail) {
+      if (sanitizedParentEmail && !isExistingParent) {
         token = crypto.randomBytes(32).toString('hex')
-      const expiresAt = new Date()
-      expiresAt.setDate(expiresAt.getDate() + 7) // 7 days expiry
+        const expiresAt = new Date()
+        expiresAt.setDate(expiresAt.getDate() + 7) // 7 days expiry
 
         invitation = await tx.parentInvitation.create({
-        data: {
-          id: crypto.randomUUID(),
-          orgId,
-          studentId: student.id,
-          parentEmail: sanitizedParentEmail,
-          token,
-          expiresAt
-        }
-      })
+          data: {
+            id: crypto.randomUUID(),
+            orgId,
+            studentId: student.id,
+            parentEmail: sanitizedParentEmail,
+            token,
+            expiresAt
+          }
+        })
       }
 
       // Get parent's preferred payment method if parent exists
       let preferredMethod: string | null = null
-      if (student.primaryParentId) {
+      if (parentUserId) {
         const billingProfile = await tx.parentBillingProfile.findUnique({
           where: {
             orgId_parentUserId: {
               orgId,
-              parentUserId: student.primaryParentId
+              parentUserId: parentUserId
             }
           },
           select: { preferredPaymentMethod: true }
@@ -206,24 +274,49 @@ async function handlePOST(request: NextRequest) {
         }
       })
 
-      return { student, invitation, token: token || null }
+      return { student, invitation, token: token || null, isExistingParent, parentUserId }
     })
 
-    // Send onboarding email only if email is provided
-    if (sanitizedParentEmail && result.token) {
-    const baseUrl = process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'https://app.madrasah.io'
-    const setupUrl = `${baseUrl.replace(/\/$/, '')}/auth/parent-setup?token=${result.token}`
+    // Send appropriate email based on whether parent exists
+    if (sanitizedParentEmail) {
+      const baseUrl = process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'https://app.madrasah.io'
+      const cleanBaseUrl = baseUrl.trim().replace(/\/+$/, '')
 
-    try {
-      await sendParentOnboardingEmail({
-        to: sanitizedParentEmail,
-        orgName: org.name,
-        studentName: `${sanitizedFirstName} ${sanitizedLastName}`,
-        setupUrl
-      })
-    } catch (emailError) {
-      logger.error('Failed to send parent onboarding email', emailError)
-      // Don't fail the request if email fails, but log it
+      try {
+        if (result.isExistingParent) {
+          // Parent already exists - send notification email
+          const dashboardUrl = `${cleanBaseUrl}/parent/dashboard`
+          const html = await generateEmailTemplate({
+            title: 'New Student Added',
+            description: `Assalamu'alaikum!<br><br>A new student has been added to your account at ${org.name}.`,
+            details: [
+              `<strong>Student Name:</strong> ${sanitizedFirstName} ${sanitizedLastName}`,
+              `<strong>Class:</strong> ${classRecord.name}`
+            ],
+            buttonText: 'View Dashboard',
+            buttonUrl: dashboardUrl,
+            footerText: `You can now view and manage ${sanitizedFirstName}'s information, attendance, and payments from your parent dashboard.`
+          })
+
+          await sendEmail({
+            to: sanitizedParentEmail,
+            subject: `New Student Added - ${org.name}`,
+            html,
+            text: `A new student (${sanitizedFirstName} ${sanitizedLastName}) has been added to your account at ${org.name}. Visit ${dashboardUrl} to view your dashboard.`
+          })
+        } else if (result.token) {
+          // New parent - send onboarding email
+          const setupUrl = `${cleanBaseUrl}/auth/parent-setup?token=${result.token}`
+          await sendParentOnboardingEmail({
+            to: sanitizedParentEmail,
+            orgName: org.name,
+            studentName: `${sanitizedFirstName} ${sanitizedLastName}`,
+            setupUrl
+          })
+        }
+      } catch (emailError) {
+        logger.error('Failed to send parent email', emailError)
+        // Don't fail the request if email fails, but log it
       }
     }
 
@@ -234,7 +327,8 @@ async function handlePOST(request: NextRequest) {
         firstName: result.student.firstName,
         lastName: result.student.lastName
       },
-      invitationSent: !!sanitizedParentEmail
+      invitationSent: !!sanitizedParentEmail && !result.isExistingParent,
+      linkedToExistingParent: result.isExistingParent || false
     }, { status: 201 })
   } catch (error: any) {
     logger.error('Error creating student with invite', error)
