@@ -1374,7 +1374,7 @@ function SettingsPageContent() {
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-[var(--muted-foreground)]">Amount</span>
-                      <span className="text-sm font-medium text-[var(--foreground)]">£{loadingBilling ? '...' : studentCount.toFixed(2)}</span>
+                      <span className="text-sm font-medium text-[var(--foreground)]">£{loadingBilling ? '...' : (studentCount * 2).toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
