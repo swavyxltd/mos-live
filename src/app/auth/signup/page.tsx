@@ -75,6 +75,32 @@ function SignUpForm() {
           setOrgName(data.orgName || '')
           // Check if this is a new org setup (ADMIN role invitation)
           setIsNewOrgSetup(data.role === 'ADMIN' && !data.acceptedAt)
+          
+          // Auto-populate email and name from invitation
+          if (data.email) {
+            setFormData(prev => ({
+              ...prev,
+              email: data.email
+            }))
+          }
+          
+          // If invitation has a name, split it into first and last name
+          if (data.name) {
+            const nameParts = data.name.trim().split(/\s+/)
+            if (nameParts.length >= 2) {
+              setFormData(prev => ({
+                ...prev,
+                firstName: nameParts[0],
+                lastName: nameParts.slice(1).join(' ')
+              }))
+            } else if (nameParts.length === 1) {
+              setFormData(prev => ({
+                ...prev,
+                firstName: nameParts[0],
+                lastName: ''
+              }))
+            }
+          }
         } else {
           setError('Invalid response from server')
         }

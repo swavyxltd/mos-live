@@ -111,20 +111,33 @@ async function handlePOST(request: NextRequest) {
       )
     }
 
-    // Check if user already exists - block ALL existing emails
+    // Check if user already exists
     const existingUser = await prisma.user.findUnique({
       where: { email: sanitizedEmail },
       select: {
         id: true,
-        isSuperAdmin: true
+        isSuperAdmin: true,
+        password: true
       }
     })
 
+    // If user exists, check if they were created via invitation (for this specific invitation)
+    // Allow them to complete signup by updating their password
+    let user: any
+    let isCompletingSignup = false
+    
     if (existingUser) {
-      return NextResponse.json(
-        { error: 'This email address is already associated with an account. Please sign in with your existing account or use a different email address.' },
-        { status: 400 }
-      )
+      // Check if this invitation is for this user (email matches)
+      if (invitation.email && invitation.email.toLowerCase() === sanitizedEmail) {
+        // User was created via invitation - allow them to complete signup
+        isCompletingSignup = true
+      } else {
+        // User exists but doesn't match this invitation - block them
+        return NextResponse.json(
+          { error: 'This email address is already associated with an account. Please sign in with your existing account or use a different email address.' },
+          { status: 400 }
+        )
+      }
     }
 
     // Hash password
@@ -132,18 +145,31 @@ async function handlePOST(request: NextRequest) {
 
     // Start transaction
     const result = await prisma.$transaction(async (tx) => {
-      // Create user (email already validated as unique above)
-      const user = await tx.user.create({
-        data: {
-          id: crypto.randomUUID(),
-          email: sanitizedEmail,
-          name: sanitizedName,
-          password: hashedPassword,
-          phone: sanitizedPhone,
-          isSuperAdmin: false,
-          updatedAt: new Date()
-        }
-      })
+      if (isCompletingSignup && existingUser) {
+        // Update existing user (created via invitation) with password and details
+        user = await tx.user.update({
+          where: { id: existingUser.id },
+          data: {
+            name: sanitizedName,
+            password: hashedPassword,
+            phone: sanitizedPhone || undefined,
+            updatedAt: new Date()
+          }
+        })
+      } else {
+        // Create new user (email already validated as unique above)
+        user = await tx.user.create({
+          data: {
+            id: crypto.randomUUID(),
+            email: sanitizedEmail,
+            name: sanitizedName,
+            password: hashedPassword,
+            phone: sanitizedPhone,
+            isSuperAdmin: false,
+            updatedAt: new Date()
+          }
+        })
+      }
 
       // Check if this is a new org setup (role might be 'ADMIN' for new org)
       const isNewOrgSetup = invitation.role === 'ADMIN' && !invitation.acceptedAt

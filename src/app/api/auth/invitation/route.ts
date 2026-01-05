@@ -78,12 +78,26 @@ async function handleGET(request: NextRequest) {
       )
     }
 
+    // Check if user was already created for this invitation (via /api/users/create)
+    // If so, get their name to pre-populate the form
+    let userName: string | null = null
+    if (invitation.email) {
+      const existingUser = await prisma.user.findUnique({
+        where: { email: invitation.email },
+        select: { name: true }
+      })
+      if (existingUser?.name) {
+        userName = existingUser.name
+      }
+    }
+
     return NextResponse.json({
       invitationId: invitation.id,
       orgId: invitation.orgId,
       orgName: invitation.Org.name,
       orgSlug: invitation.Org.slug,
       email: invitation.email,
+      name: userName,
       role: invitation.role,
       acceptedAt: invitation.acceptedAt
     })
