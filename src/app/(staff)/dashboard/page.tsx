@@ -41,23 +41,19 @@ export default async function DashboardPage() {
 
   const staffSubrole = membership?.staffSubrole || (userRole === 'ADMIN' ? 'ADMIN' : 'TEACHER')
 
-  // Block teachers and finance officers from accessing main dashboard
+  // Block finance officers from accessing main dashboard
   // Finance Officers should be redirected to finance dashboard
   if (staffSubrole === 'FINANCE_OFFICER') {
     redirect('/finances')
   }
 
-  // Teachers should be redirected to classes page (their main page)
-  if (staffSubrole === 'TEACHER') {
-    redirect('/classes')
-  }
-
-  // Only ADMIN subrole can access the main dashboard
   // Dashboard type is determined by the template/subrole:
-  // - ADMIN: Full dashboard
-  const teacherId = undefined // Only admins see full dashboard
+  // - ADMIN: Full dashboard (all org stats)
+  // - TEACHER: Teacher dashboard (stats for their classes only)
+  const teacherId = staffSubrole === 'TEACHER' ? session.user.id : undefined
 
   // Fetch stats on the server for better performance
+  // If teacherId is provided, stats will be filtered to only their classes
   const initialStats = await getDashboardStats(teacherId)
   
   return <DashboardContent initialStats={initialStats} userRole={userRole} staffSubrole={staffSubrole} orgCreatedAt={org.createdAt} />

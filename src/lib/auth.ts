@@ -32,6 +32,7 @@ async function getUserRoleHints(userId: string) {
     const orgAdminOf: string[] = []
     const orgStaffOf: string[] = []
     let isParent = false
+    let staffSubrole: string | null = null // Track staffSubrole from first active org
     
     // Include organisations in role hints
     for (const membership of memberships) {
@@ -46,9 +47,17 @@ async function getUserRoleHints(userId: string) {
         if (!orgStaffOf.includes(membership.orgId)) {
           orgStaffOf.push(membership.orgId)
         }
+        // Store staffSubrole from first admin/staff membership
+        if (!staffSubrole && membership.staffSubrole) {
+          staffSubrole = membership.staffSubrole
+        }
       } else if (membership.role === 'STAFF') {
         if (!orgStaffOf.includes(membership.orgId)) {
           orgStaffOf.push(membership.orgId)
+        }
+        // Store staffSubrole from first staff membership
+        if (!staffSubrole && membership.staffSubrole) {
+          staffSubrole = membership.staffSubrole
         }
       } else if (membership.role === 'PARENT') {
         isParent = true
@@ -59,7 +68,8 @@ async function getUserRoleHints(userId: string) {
       isOwner,
       orgAdminOf,
       orgStaffOf,
-      isParent
+      isParent,
+      staffSubrole
     }
   } catch (error: any) {
     // Log error server-side only (not to console in production)
@@ -72,7 +82,8 @@ async function getUserRoleHints(userId: string) {
       isOwner: false,
       orgAdminOf: [],
       orgStaffOf: [],
-      isParent: false
+      isParent: false,
+      staffSubrole: null
     }
   }
 }
@@ -387,6 +398,12 @@ export const authOptions: NextAuthOptions = {
           const freshRoleHints = await getUserRoleHints(userId)
           token.roleHints = freshRoleHints
           
+          // Also update token.staffSubrole from roleHints for backward compatibility
+          // staffSubrole is org-specific, so we use the first one found
+          if (freshRoleHints.staffSubrole) {
+            token.staffSubrole = freshRoleHints.staffSubrole
+          }
+          
           // Debug logging in development
           if (process.env.NODE_ENV === 'development') {
             console.log('[Auth] Fresh roleHints fetched:', {
@@ -405,7 +422,8 @@ export const authOptions: NextAuthOptions = {
             isOwner: false,
             orgAdminOf: [],
             orgStaffOf: [],
-            isParent: false
+            isParent: false,
+            staffSubrole: null
           }
         }
       }
@@ -434,11 +452,13 @@ export const authOptions: NextAuthOptions = {
           orgAdminOf: string[]
           orgStaffOf: string[]
           isParent: boolean
+          staffSubrole?: string | null
         }) || {
           isOwner: false,
           orgAdminOf: [],
           orgStaffOf: [],
-          isParent: false
+          isParent: false,
+          staffSubrole: null
         }
       }
       return session
@@ -466,6 +486,7 @@ export function getPostLoginRedirect(roleHints: {
   orgAdminOf: string[]
   orgStaffOf: string[]
   isParent: boolean
+  staffSubrole?: string | null
 }): string {
   // Priority order: Parent → Owner → Admin → Staff → Fallback
   // Note: Parent is checked FIRST to ensure parents always go to parent portal,
@@ -486,8 +507,13 @@ export function getPostLoginRedirect(roleHints: {
     return '/dashboard'
   }
   
-  // 4) Staff (any staff role) → /dashboard
+  // 4) Staff (any staff role) → check subrole
   if (roleHints.orgStaffOf.length > 0) {
+    // Finance Officers should go to finances page
+    if (roleHints.staffSubrole === 'FINANCE_OFFICER') {
+      return '/finances'
+    }
+    // Teachers and other staff go to dashboard (teachers see filtered stats)
     return '/dashboard'
   }
   

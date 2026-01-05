@@ -19,6 +19,7 @@ declare module 'next-auth' {
         orgAdminOf: string[]
         orgStaffOf: string[]
         isParent: boolean
+        staffSubrole?: string | null
       }
     }
   }
@@ -54,6 +55,7 @@ declare module 'next-auth/jwt' {
       orgAdminOf: string[]
       orgStaffOf: string[]
       isParent: boolean
+      staffSubrole?: string | null
     }
   }
 }

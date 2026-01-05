@@ -25,6 +25,58 @@ async function handleGET(request: NextRequest) {
       )
     }
 
+    // Check if user is a teacher - if so, filter stats by their classes only
+    const { getUserRoleInOrg } = await import('@/lib/org')
+    const userRole = await getUserRoleInOrg(session.user.id, org.id)
+    const membership = await prisma.userOrgMembership.findUnique({
+      where: {
+        userId_orgId: {
+          userId: session.user.id,
+          orgId: org.id
+        }
+      },
+      select: {
+        staffSubrole: true
+      }
+    })
+
+    const isTeacher = membership?.staffSubrole === 'TEACHER'
+    
+    // Get teacher's class IDs if they are a teacher
+    let teacherClassIds: string[] | undefined = undefined
+    if (isTeacher) {
+      const teacherClasses = await prisma.class.findMany({
+        where: {
+          orgId: org.id,
+          teacherId: session.user.id,
+          isArchived: false
+        },
+        select: { id: true }
+      })
+      teacherClassIds = teacherClasses.map(c => c.id)
+      
+      // If teacher has no classes, return empty stats
+      if (teacherClassIds.length === 0) {
+        return NextResponse.json({
+          totalStudents: 0,
+          newStudentsThisMonth: 0,
+          studentGrowth: 0,
+          activeClasses: 0,
+          staffMembers: 0,
+          attendanceRate: 0,
+          attendanceGrowth: 0,
+          monthlyRevenue: 0,
+          revenueGrowth: 0,
+          pendingPayments: 0,
+          overduePayments: 0,
+          pendingApplications: 0,
+          attendanceTrend: [],
+          paidThisMonth: 0,
+          averagePaymentTime: 0
+        })
+      }
+    }
+
     const now = new Date()
     const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1)
     const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
@@ -32,6 +84,7 @@ async function handleGET(request: NextRequest) {
     const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0)
 
     // Run parallel queries for better performance
+    // Filter by teacher classes if user is a teacher
     const [
       totalStudents,
       newStudentsThisMonth,
@@ -42,14 +95,28 @@ async function handleGET(request: NextRequest) {
       prisma.student.count({
         where: {
           orgId: org.id,
-          isArchived: false
+          isArchived: false,
+          ...(teacherClassIds && {
+            StudentClass: {
+              some: {
+                classId: { in: teacherClassIds }
+              }
+            }
+          })
         }
       }),
       prisma.student.count({
         where: {
           orgId: org.id,
           isArchived: false,
-          createdAt: { gte: thisMonth }
+          createdAt: { gte: thisMonth },
+          ...(teacherClassIds && {
+            StudentClass: {
+              some: {
+                classId: { in: teacherClassIds }
+              }
+            }
+          })
         }
       }),
       prisma.student.count({
@@ -59,16 +126,25 @@ async function handleGET(request: NextRequest) {
           createdAt: {
             gte: lastMonthStart,
             lte: lastMonthEnd
-          }
+          },
+          ...(teacherClassIds && {
+            StudentClass: {
+              some: {
+                classId: { in: teacherClassIds }
+              }
+            }
+          })
         }
       }),
       prisma.class.count({
         where: {
           orgId: org.id,
-          isArchived: false
+          isArchived: false,
+          ...(isTeacher && { teacherId: session.user.id })
         }
       }),
-      prisma.userOrgMembership.count({
+      // Staff members count only shown to admins
+      isTeacher ? Promise.resolve(0) : prisma.userOrgMembership.count({
         where: {
           orgId: org.id,
           role: { in: ['ADMIN', 'STAFF'] }
@@ -100,14 +176,32 @@ async function handleGET(request: NextRequest) {
       prisma.attendance.findMany({
         where: {
           orgId: org.id,
-          date: { gte: weekStart }
+          date: { gte: weekStart },
+          ...(teacherClassIds && {
+            Student: {
+              StudentClass: {
+                some: {
+                  classId: { in: teacherClassIds }
+                }
+              }
+            }
+          })
         },
         select: { status: true }
       }),
       prisma.attendance.findMany({
         where: {
           orgId: org.id,
-          date: { gte: lastWeekStart, lte: lastWeekEnd }
+          date: { gte: lastWeekStart, lte: lastWeekEnd },
+          ...(teacherClassIds && {
+            Student: {
+              StudentClass: {
+                some: {
+                  classId: { in: teacherClassIds }
+                }
+              }
+            }
+          })
         },
         select: { status: true }
       }),
@@ -115,7 +209,16 @@ async function handleGET(request: NextRequest) {
       prisma.attendance.findMany({
         where: {
           orgId: org.id,
-          date: { gte: last7Days }
+          date: { gte: last7Days },
+          ...(teacherClassIds && {
+            Student: {
+              StudentClass: {
+                some: {
+                  classId: { in: teacherClassIds }
+                }
+              }
+            }
+          })
         },
         select: { status: true }
       })
@@ -143,10 +246,12 @@ async function handleGET(request: NextRequest) {
 
     // Calculate monthly revenue based on students × class fees
     // Get all classes with their fees and student counts
+    // Filter by teacher classes if user is a teacher
     const classes = await prisma.class.findMany({
       where: {
         orgId: org.id,
-        isArchived: false
+        isArchived: false,
+        ...(isTeacher && { teacherId: session.user.id })
       },
       include: {
         _count: {
@@ -176,17 +281,28 @@ async function handleGET(request: NextRequest) {
         where: {
           orgId: org.id,
           status: 'PENDING',
-          month: currentMonthStr
+          month: currentMonthStr,
+          ...(teacherClassIds && {
+            Class: {
+              id: { in: teacherClassIds }
+            }
+          })
         }
       }),
       prisma.monthlyPaymentRecord.count({
         where: {
           orgId: org.id,
           status: { in: ['OVERDUE', 'LATE'] },
-          month: currentMonthStr
+          month: currentMonthStr,
+          ...(teacherClassIds && {
+            Class: {
+              id: { in: teacherClassIds }
+            }
+          })
         }
       }),
-      prisma.application.count({
+      // Applications only shown to admins
+      isTeacher ? Promise.resolve(0) : prisma.application.count({
         where: {
           orgId: org.id,
           status: { in: ['NEW', 'PENDING', 'REVIEWED'] }
@@ -196,14 +312,21 @@ async function handleGET(request: NextRequest) {
 
     // Calculate last month revenue based on students enrolled by end of last month
     // Reuse lastMonthEnd defined earlier
+    // Filter by teacher classes if user is a teacher
     const lastMonthClasses = await prisma.class.findMany({
       where: {
         orgId: org.id,
         isArchived: false,
-        createdAt: { lte: lastMonthEnd }
+        createdAt: { lte: lastMonthEnd },
+        ...(isTeacher && { teacherId: session.user.id })
       },
       include: {
         StudentClass: {
+          ...(teacherClassIds && {
+            where: {
+              classId: { in: teacherClassIds }
+            }
+          }),
           include: {
             Student: {
               select: {
@@ -227,21 +350,33 @@ async function handleGET(request: NextRequest) {
       : monthlyRevenue > 0 ? 100 : 0
 
     // Calculate paid this month count from payment records
+    // Filter by teacher classes if user is a teacher
     const paidThisMonth = await prisma.monthlyPaymentRecord.count({
       where: {
         orgId: org.id,
         status: 'PAID',
         month: currentMonthStr,
-        paidAt: { not: null }
+        paidAt: { not: null },
+        ...(teacherClassIds && {
+          Class: {
+            id: { in: teacherClassIds }
+          }
+        })
       }
     })
 
     // Calculate average payment time (from payment record creation to payment)
+    // Filter by teacher classes if user is a teacher
     const paidPaymentsWithDates = await prisma.monthlyPaymentRecord.findMany({
       where: {
         orgId: org.id,
         status: 'PAID',
-        paidAt: { not: null }
+        paidAt: { not: null },
+        ...(teacherClassIds && {
+          Class: {
+            id: { in: teacherClassIds }
+          }
+        })
       },
       select: {
         createdAt: true,
@@ -273,7 +408,16 @@ async function handleGET(request: NextRequest) {
     const allAttendance = await prisma.attendance.findMany({
       where: {
         orgId: org.id,
-        date: { gte: trendStartDate }
+        date: { gte: trendStartDate },
+        ...(teacherClassIds && {
+          Student: {
+            StudentClass: {
+              some: {
+                classId: { in: teacherClassIds }
+              }
+            }
+          }
+        })
       },
       select: { 
         date: true,

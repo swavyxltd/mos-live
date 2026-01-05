@@ -208,17 +208,27 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
         const logs = data.logs || []
         
         // Format for display - only show latest 3
-        const activities = logs.slice(0, 3).map((log: any) => ({
-          id: log.id,
-          type: log.action.toLowerCase().includes('payment') ? 'payment' :
-                log.action.toLowerCase().includes('student') ? 'enrollment' :
-                log.action.toLowerCase().includes('message') ? 'message' :
-                log.action.toLowerCase().includes('attendance') ? 'attendance' : 'activity',
-          action: log.actionText,
-          user: log.user?.name || log.user?.email || 'System',
-          timestamp: log.timestamp,
-          time: log.createdAt
-        }))
+        // Filter out payment activities for teachers
+        const activities = logs
+          .filter((log: any) => {
+            // Hide payment-related activities for teachers
+            if (isTeacher && log.action.toLowerCase().includes('payment')) {
+              return false
+            }
+            return true
+          })
+          .slice(0, 3)
+          .map((log: any) => ({
+            id: log.id,
+            type: log.action.toLowerCase().includes('payment') ? 'payment' :
+                  log.action.toLowerCase().includes('student') ? 'enrollment' :
+                  log.action.toLowerCase().includes('message') ? 'message' :
+                  log.action.toLowerCase().includes('attendance') ? 'attendance' : 'activity',
+            action: log.actionText,
+            user: log.user?.name || log.user?.email || 'System',
+            timestamp: log.timestamp,
+            time: log.createdAt
+          }))
         
         setRecentActivity(activities)
       } else {
@@ -553,28 +563,30 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
                   : 'Comprehensive insights into your Islamic education center'}
               </p>
             </div>
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-          <QuickAddMenu 
-            onAddStudent={() => setIsAddStudentModalOpen(true)}
-            onAddTeacher={() => setIsAddTeacherModalOpen(true)}
-            onAddClass={() => setIsAddClassModalOpen(true)}
-          />
-          <RestrictedAction action="reports">
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="px-3 sm:px-4 py-2 text-sm hover:bg-gray-50"
-              onClick={() => setIsReportModalOpen(true)}
-            >
-              <FileText className="h-4 w-4 mr-2" />
-              Generate Report
-            </Button>
-          </RestrictedAction>
-        </div>
+            {!isTeacher && (
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                <QuickAddMenu 
+                  onAddStudent={() => setIsAddStudentModalOpen(true)}
+                  onAddTeacher={() => setIsAddTeacherModalOpen(true)}
+                  onAddClass={() => setIsAddClassModalOpen(true)}
+                />
+                <RestrictedAction action="reports">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="px-3 sm:px-4 py-2 text-sm hover:bg-gray-50"
+                    onClick={() => setIsReportModalOpen(true)}
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Generate Report
+                  </Button>
+                </RestrictedAction>
+              </div>
+            )}
       </div>
 
       {/* All Metrics in Uniform Grid */}
-      <div className="grid gap-3 sm:gap-4 lg:gap-6 grid-cols-2 lg:grid-cols-4 auto-rows-fr">
+      <div className={`grid gap-3 sm:gap-4 lg:gap-6 grid-cols-2 ${isTeacher ? 'lg:grid-cols-3' : 'lg:grid-cols-4'} auto-rows-fr`}>
         <Link href="/students" className="block">
           <StatCard
             title="Total Students"
@@ -584,15 +596,17 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
             icon={<Users className="h-4 w-4" />}
           />
         </Link>
-        <Link href="/finances" className="block">
-          <StatCard
-            title="Monthly Revenue"
-            value={`£${monthlyRevenue.toLocaleString()}`}
-            change={revenueGrowth > 0 ? { value: `+${revenueGrowth.toFixed(1)}%`, type: "positive" } : revenueGrowth < 0 ? { value: `${revenueGrowth.toFixed(1)}%`, type: "negative" } : undefined}
-            description="Recurring revenue"
-            icon={<DollarSign className="h-4 w-4" />}
-          />
-        </Link>
+        {!isTeacher && (
+          <Link href="/finances" className="block">
+            <StatCard
+              title="Monthly Revenue"
+              value={`£${monthlyRevenue.toLocaleString()}`}
+              change={revenueGrowth > 0 ? { value: `+${revenueGrowth.toFixed(1)}%`, type: "positive" } : revenueGrowth < 0 ? { value: `${revenueGrowth.toFixed(1)}%`, type: "negative" } : undefined}
+              description="Recurring revenue"
+              icon={<DollarSign className="h-4 w-4" />}
+            />
+          </Link>
+        )}
         <Link href="/attendance" className="block">
           <StatCard
             title="This Week's Attendance"
@@ -610,22 +624,26 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
             icon={<BookOpen className="h-4 w-4" />}
           />
         </Link>
-        <Link href="/applications" className="block">
-          <StatCard
-            title="Pending Applications"
-            value={pendingApplications}
-            description="New student applications"
-            icon={<FileText className="h-4 w-4" />}
-          />
-        </Link>
-        <Link href="/payments?status=overdue" className="block">
-          <StatCard
-            title="Overdue Payments"
-            value={overduePayments}
-            description="Past due amounts"
-            icon={<Clock className="h-4 w-4" />}
-          />
-        </Link>
+        {!isTeacher && (
+          <Link href="/applications" className="block">
+            <StatCard
+              title="Pending Applications"
+              value={pendingApplications}
+              description="New student applications"
+              icon={<FileText className="h-4 w-4" />}
+            />
+          </Link>
+        )}
+        {!isTeacher && (
+          <Link href="/payments?status=overdue" className="block">
+            <StatCard
+              title="Overdue Payments"
+              value={overduePayments}
+              description="Past due amounts"
+              icon={<Clock className="h-4 w-4" />}
+            />
+          </Link>
+        )}
         <Link href="/students" className="block">
           <StatCard
             title="New Enrollments"
@@ -635,14 +653,16 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
             icon={<TrendingUp className="h-4 w-4" />}
           />
         </Link>
-        <Link href="/staff" className="block">
-          <StatCard
-            title="Staff Members"
-            value={staffMembers}
-            description="Team size"
-            icon={<UserCheck className="h-4 w-4" />}
-          />
-        </Link>
+        {!isTeacher && (
+          <Link href="/staff" className="block">
+            <StatCard
+              title="Staff Members"
+              value={staffMembers}
+              description="Team size"
+              icon={<UserCheck className="h-4 w-4" />}
+            />
+          </Link>
+        )}
       </div>
 
       {/* Today's Tasks Section - Only show for admins */}

@@ -16,6 +16,7 @@ export default async function Home() {
     orgAdminOf?: string[]
     orgStaffOf?: string[]
     isParent?: boolean
+    staffSubrole?: string | null
   } | undefined
   
   // Use getPostLoginRedirect to ensure parents always go to /parent/dashboard
@@ -24,7 +25,8 @@ export default async function Home() {
       isOwner: roleHints.isOwner || false,
       orgAdminOf: roleHints.orgAdminOf || [],
       orgStaffOf: roleHints.orgStaffOf || [],
-      isParent: roleHints.isParent || false
+      isParent: roleHints.isParent || false,
+      staffSubrole: roleHints.staffSubrole || null
     })
     redirect(redirectUrl)
   }

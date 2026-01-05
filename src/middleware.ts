@@ -33,6 +33,7 @@ export async function middleware(request: NextRequest) {
     orgAdminOf: string[]
     orgStaffOf: string[]
     isParent: boolean
+    staffSubrole?: string | null
   } | undefined
   
   // If roleHints are missing or stale, try to reconstruct from token fields
@@ -45,7 +46,8 @@ export async function middleware(request: NextRequest) {
       isOwner: token.isSuperAdmin || false,
       orgAdminOf: roleHints?.orgAdminOf || [],
       orgStaffOf: roleHints?.orgStaffOf || [],
-      isParent: roleHints?.isParent || false
+      isParent: roleHints?.isParent || false,
+      staffSubrole: token.staffSubrole || roleHints?.staffSubrole || null
     }
   }
   
@@ -161,16 +163,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/parent/dashboard', request.url))
   }
 
-  // Redirect Finance Officers and Teachers from regular dashboard
+  // Redirect Finance Officers from regular dashboard (teachers can access dashboard with filtered stats)
   if (pathname === '/dashboard' && roleHints?.orgStaffOf && roleHints.orgStaffOf.length > 0 && !roleHints?.isParent) {
-    // Check if user is a Finance Officer or Teacher (we'll need to get this from the token)
+    // Check if user is a Finance Officer (we'll need to get this from the token)
     const token = await getToken({ req: request })
     if (token?.staffSubrole === 'FINANCE_OFFICER') {
       return NextResponse.redirect(new URL('/finances', request.url))
     }
-    if (token?.staffSubrole === 'TEACHER') {
-      return NextResponse.redirect(new URL('/classes', request.url))
-    }
+    // Teachers can access dashboard - it will show filtered stats
   }
   
   // STRICT: Only allow super admins to access /owner routes

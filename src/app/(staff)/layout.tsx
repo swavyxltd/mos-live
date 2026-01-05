@@ -226,14 +226,12 @@ export default async function StaffLayout({
         // Get the required permission for this route
         const requiredPermission = SIDEBAR_PAGE_PERMISSIONS[normalizedPath]
         
-        // Block teachers and finance officers from accessing main dashboard
+        // Block finance officers from accessing main dashboard (teachers can access with filtered stats)
         if (normalizedPath === '/dashboard') {
-          if (staffSubrole === 'TEACHER') {
-            redirect('/classes')
-          }
           if (staffSubrole === 'FINANCE_OFFICER') {
             redirect('/finances')
           }
+          // Teachers can access dashboard - it will show filtered stats for their classes
         }
         
         // Only check if this route requires a specific permission
