@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useSession } from 'next-auth/react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -15,8 +16,12 @@ interface DocumentationModalProps {
 }
 
 export function DocumentationModal({ isOpen, onClose }: DocumentationModalProps) {
+  const { data: session } = useSession()
   const [selectedArticle, setSelectedArticle] = useState<any>(null)
   const [searchTerm, setSearchTerm] = useState('')
+  
+  // Check if user is a teacher
+  const isTeacher = session?.user?.staffSubrole === 'TEACHER'
 
   const documentationSections = [
     {
@@ -1144,7 +1149,16 @@ Configure your madrasah's profile, contact information, and operational settings
     }
   ]
 
-  const filteredSections = documentationSections.map(section => ({
+  // Filter sections based on user role - teachers only see relevant sections
+  // Teachers can: mark attendance, view calendar, send messages
+  // They cannot: create classes, manage students, manage payments, access settings
+  const allowedSectionsForTeachers = ['attendance', 'communication', 'calendar']
+  
+  const sectionsToShow = isTeacher 
+    ? documentationSections.filter(section => allowedSectionsForTeachers.includes(section.id))
+    : documentationSections
+
+  const filteredSections = sectionsToShow.map(section => ({
     ...section,
     articles: section.articles.filter(article => 
       article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||

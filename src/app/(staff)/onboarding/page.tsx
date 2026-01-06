@@ -13,18 +13,72 @@ export default async function OnboardingPage() {
     redirect('/auth/signin')
   }
 
-  // Check role - only ADMIN and OWNER can access
+  // Check role - ADMIN, OWNER, and STAFF (including teachers) can access
   const userRole = await getUserRoleInOrg(session.user.id, org.id)
+  const membership = await prisma.userOrgMembership.findUnique({
+    where: {
+      userId_orgId: {
+        userId: session.user.id,
+        orgId: org.id
+      }
+    },
+    select: {
+      staffSubrole: true
+    }
+  })
+
+  const isTeacher = membership?.staffSubrole === 'TEACHER' || (userRole === 'STAFF' && !membership?.staffSubrole)
   
-  if (userRole !== 'ADMIN' && userRole !== 'OWNER') {
+  // Only block if user is not staff/admin/owner
+  if (userRole !== 'ADMIN' && userRole !== 'OWNER' && userRole !== 'STAFF') {
     redirect('/dashboard')
   }
 
-  // Fetch all students with their parent links
+  // Get teacher's class IDs if user is a teacher
+  let teacherClassIds: string[] = []
+  if (isTeacher) {
+    const teacherClasses = await prisma.class.findMany({
+      where: {
+        orgId: org.id,
+        isArchived: false,
+        teacherId: session.user.id
+      },
+      select: {
+        id: true
+      }
+    })
+    teacherClassIds = teacherClasses.map(c => c.id)
+    
+    // If teacher has no classes, return empty students list
+    if (teacherClassIds.length === 0) {
+      return (
+        <OnboardingPageWrapper 
+          initialStudents={[]}
+          classes={[]}
+          stats={{
+            total: 0,
+            notSignedUp: 0,
+            signedUpNotVerified: 0,
+            signedUpVerified: 0
+          }}
+          orgSlug={org.slug}
+        />
+      )
+    }
+  }
+
+  // Fetch students - filter by teacher's classes if user is a teacher
   const students = await prisma.student.findMany({
     where: {
       orgId: org.id,
-      isArchived: false
+      isArchived: false,
+      ...(isTeacher && {
+        StudentClass: {
+          some: {
+            classId: { in: teacherClassIds }
+          }
+        }
+      })
     },
     include: {
       StudentClass: {
@@ -78,11 +132,12 @@ export default async function OnboardingPage() {
     }
   })
 
-  // Fetch classes for filter
+  // Fetch classes for filter - filter by teacher if user is a teacher
   const classes = await prisma.class.findMany({
     where: {
       orgId: org.id,
-      isArchived: false
+      isArchived: false,
+      ...(isTeacher && { teacherId: session.user.id })
     },
     orderBy: {
       name: 'asc'
@@ -133,15 +188,22 @@ export default async function OnboardingPage() {
       }
     }
 
+    // Deduplicate classes by class ID
+    const uniqueClasses = Array.from(
+      new Map(
+        student.StudentClass.map(sc => [sc.Class.id, {
+          id: sc.Class.id,
+          name: sc.Class.name
+        }])
+      ).values()
+    )
+
     return {
       id: student.id,
       firstName: student.firstName,
       lastName: student.lastName,
       dob: student.dob,
-      classes: student.StudentClass.map(sc => ({
-        id: sc.Class.id,
-        name: sc.Class.name
-      })),
+      classes: uniqueClasses,
       signupStatus,
       parentInfo,
       claimStatus: student.claimStatus,

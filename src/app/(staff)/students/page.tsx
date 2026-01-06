@@ -1,6 +1,6 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { getActiveOrg } from '@/lib/org'
+import { getActiveOrg, getUserRoleInOrg } from '@/lib/org'
 import { StudentsPageWrapper } from '@/components/students-page-wrapper'
 
 export default async function StudentsPage() {
@@ -14,11 +14,60 @@ export default async function StudentsPage() {
   // Always use real database data
   const { prisma } = await import('@/lib/prisma')
   
-  // Get students and classes from database (excluding archived)
+  // Check if user is a teacher - if so, only show students in their classes
+  const userRole = await getUserRoleInOrg(session.user.id, org.id)
+  const membership = await prisma.userOrgMembership.findUnique({
+    where: {
+      userId_orgId: {
+        userId: session.user.id,
+        orgId: org.id
+      }
+    },
+    select: {
+      staffSubrole: true
+    }
+  })
+
+  const isTeacher = membership?.staffSubrole === 'TEACHER' || (userRole === 'STAFF' && !membership?.staffSubrole)
+
+  // Get teacher's class IDs if user is a teacher
+  let teacherClassIds: string[] = []
+  if (isTeacher) {
+    const teacherClasses = await prisma.class.findMany({
+      where: {
+        orgId: org.id,
+        isArchived: false,
+        teacherId: session.user.id
+      },
+      select: {
+        id: true
+      }
+    })
+    teacherClassIds = teacherClasses.map(c => c.id)
+    
+    // If teacher has no classes, return empty students list
+    if (teacherClassIds.length === 0) {
+      return (
+        <StudentsPageWrapper 
+          initialStudents={[]} 
+          classes={[]} 
+        />
+      )
+    }
+  }
+  
+  // Get students - filter by teacher's classes if user is a teacher
   const students = await prisma.student.findMany({
     where: {
       orgId: org.id,
-      isArchived: false
+      isArchived: false,
+      ...(isTeacher && {
+        StudentClass: {
+          some: {
+            classId: { in: teacherClassIds }
+          }
+        }
+      })
     },
     include: {
       User: true,
@@ -30,10 +79,12 @@ export default async function StudentsPage() {
     }
   })
   
+  // Get classes - filter by teacher if user is a teacher
   const classes = await prisma.class.findMany({
     where: {
       orgId: org.id,
-      isArchived: false
+      isArchived: false,
+      ...(isTeacher && { teacherId: session.user.id })
     }
   })
 
@@ -51,6 +102,9 @@ export default async function StudentsPage() {
     where: {
       studentId: { in: studentIds },
       orgId: org.id,
+      ...(isTeacher && teacherClassIds.length > 0 && {
+        classId: { in: teacherClassIds }
+      }),
       date: {
         gte: yearStart, // Only records from current year (YTD)
         lte: today // Exclude future dates

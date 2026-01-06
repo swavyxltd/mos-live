@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Modal } from '@/components/ui/modal'
-import { Plus, Search, BookOpen, Video, HelpCircle, MessageSquare, Mail, Filter, MoreHorizontal } from 'lucide-react'
+import { Plus, Search, BookOpen, HelpCircle, MessageSquare, Mail, Filter, MoreHorizontal } from 'lucide-react'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { PageSkeleton } from '@/components/loading/skeleton'
@@ -92,7 +92,14 @@ export default function SupportPage() {
           },
           responses: ticket.SupportTicketResponse || ticket.responses || []
         }))
-        setTickets(transformed)
+        
+        // Additional client-side filter for teachers (backup to API filtering)
+        const isTeacher = session?.user?.staffSubrole === 'TEACHER'
+        const filtered = isTeacher 
+          ? transformed.filter(ticket => ticket.createdBy?.id === session?.user?.id)
+          : transformed
+        
+        setTickets(filtered)
       } else {
         setTickets([])
       }
@@ -174,7 +181,7 @@ export default function SupportPage() {
       </div>
 
       {/* Quick Actions Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className={`grid grid-cols-1 ${session?.user?.staffSubrole === 'TEACHER' ? 'md:grid-cols-1' : 'md:grid-cols-2 lg:grid-cols-3'} gap-6`}>
         <Card 
           className="p-6 hover:shadow-lg transition-all duration-200 cursor-pointer group h-full"
           onClick={() => setShowDocsModal(true)}
@@ -190,32 +197,22 @@ export default function SupportPage() {
           </div>
         </Card>
 
-        <Card 
-          className="p-6 hover:shadow-lg transition-all duration-200 cursor-pointer group h-full"
-          onClick={() => setShowFAQModal(true)}
-        >
-          <div className="flex items-center space-x-4 h-full">
-            <div className="p-3 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors flex-shrink-0">
-              <HelpCircle className="h-6 w-6 text-green-600" />
+        {session?.user?.staffSubrole !== 'TEACHER' && (
+          <Card 
+            className="p-6 hover:shadow-lg transition-all duration-200 cursor-pointer group h-full"
+            onClick={() => setShowFAQModal(true)}
+          >
+            <div className="flex items-center space-x-4 h-full">
+              <div className="p-3 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors flex-shrink-0">
+                <HelpCircle className="h-6 w-6 text-green-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-[var(--foreground)]">FAQ</h3>
+                <p className="text-sm text-[var(--muted-foreground)]">Common questions</p>
+              </div>
             </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-[var(--foreground)]">FAQ</h3>
-              <p className="text-sm text-[var(--muted-foreground)]">Common questions</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-6 hover:shadow-lg transition-all duration-200 cursor-pointer group h-full">
-          <div className="flex items-center space-x-4 h-full">
-            <div className="p-3 bg-purple-100 rounded-lg group-hover:bg-purple-200 transition-colors flex-shrink-0">
-              <Video className="h-6 w-6 text-purple-600" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-[var(--foreground)]">Video Tutorials</h3>
-              <p className="text-sm text-[var(--muted-foreground)]">Step-by-step guides</p>
-            </div>
-          </div>
-        </Card>
+          </Card>
+        )}
 
       </div>
 

@@ -102,6 +102,7 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
   const [recentActivity, setRecentActivity] = useState<any[]>([])
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([])
   const [topPerformingClasses, setTopPerformingClasses] = useState<any[]>([])
+  const [topAttendingStudents, setTopAttendingStudents] = useState<any[]>([])
   const [todaysTasks, setTodaysTasks] = useState<any[]>([])
   const [loadingTasks, setLoadingTasks] = useState(true)
   const [loading, setLoading] = useState(!initialStats) // Only loading if no initial stats
@@ -149,6 +150,8 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
     fetchRecentActivity()
     fetchTopPerformingClasses()
     fetchTodaysTasks()
+    } else {
+    fetchTopAttendingStudents()
     }
     fetchTodaysClasses()
     fetchUpcomingEvents()
@@ -158,9 +161,11 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
       fetchDashboardStats()
       fetchClasses()
       if (!isTeacher) {
-      fetchRecentActivity()
-      fetchTopPerformingClasses()
-      fetchTodaysTasks()
+        fetchRecentActivity()
+        fetchTopPerformingClasses()
+        fetchTodaysTasks()
+      } else {
+        fetchTopAttendingStudents()
       }
       fetchTodaysClasses()
       fetchUpcomingEvents()
@@ -387,6 +392,36 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
       }
     } catch (error) {
       setTopPerformingClasses([])
+    }
+  }
+
+  const fetchTopAttendingStudents = async () => {
+    try {
+      console.log('[Dashboard] Fetching top attending students...')
+      const response = await fetch('/api/dashboard/top-attending-students', {
+        cache: 'no-store'
+      })
+      
+      console.log('[Dashboard] Response status:', response.status)
+      
+      if (response.ok) {
+        const data = await response.json()
+        console.log('[Dashboard] Received data:', data)
+        if (data.students && Array.isArray(data.students)) {
+          console.log('[Dashboard] Setting students:', data.students.length)
+          setTopAttendingStudents(data.students)
+        } else {
+          console.warn('[Dashboard] Unexpected response format:', data)
+          setTopAttendingStudents([])
+        }
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        console.error('[Dashboard] API error:', response.status, errorData)
+        setTopAttendingStudents([])
+      }
+    } catch (error) {
+      console.error('[Dashboard] Error fetching top attending students:', error)
+      setTopAttendingStudents([])
     }
   }
 
@@ -617,29 +652,7 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
       <SetupGuide />
 
       {/* Header with Quick Actions */}
-      {isTeacher ? (
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-background border border-primary/20 p-6 sm:p-8 mb-6">
-          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="space-y-1">
-              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">
-                Assalamu'alaikum
-              </h1>
-              <p className="text-base sm:text-lg text-muted-foreground">
-                Ready to mark today's attendance?
-              </p>
-            </div>
-            <Button 
-              size="lg"
-              className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all duration-200 text-base px-6 py-6 h-auto"
-              onClick={() => setIsAttendanceModalOpen(true)}
-            >
-              <UserCheck className="h-5 w-5 mr-2" />
-              Mark Today's Attendance
-            </Button>
-          </div>
-          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        </div>
-      ) : (
+      {!isTeacher && (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
@@ -667,6 +680,47 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
             </Button>
           </RestrictedAction>
           </div>
+        </div>
+      )}
+
+      {/* Teacher Dashboard: Stats Cards */}
+      {isTeacher && (
+        <div className="grid gap-3 sm:gap-4 lg:gap-6 grid-cols-2 lg:grid-cols-4 auto-rows-fr mb-6">
+          <Link href="/students" className="block">
+            <StatCard
+              title="My Students"
+              value={totalStudents}
+              change={studentGrowth > 0 ? { value: `+${studentGrowth.toFixed(1)}%`, type: "positive" } : studentGrowth < 0 ? { value: `${studentGrowth.toFixed(1)}%`, type: "negative" } : undefined}
+              description="In my classes"
+              icon={<Users className="h-4 w-4" />}
+            />
+          </Link>
+          <Link href="/attendance" className="block">
+            <StatCard
+              title="This Week's Attendance"
+              value={`${attendanceRate}%`}
+              change={attendanceGrowth > 0 ? { value: `+${attendanceGrowth}%`, type: "positive" } : attendanceGrowth < 0 ? { value: `${attendanceGrowth}%`, type: "negative" } : undefined}
+              description="Average attendance"
+              icon={<UserCheck className="h-4 w-4" />}
+            />
+          </Link>
+          <Link href="/classes" className="block">
+            <StatCard
+              title="My Classes"
+              value={activeClasses}
+              description="Active classes"
+              icon={<BookOpen className="h-4 w-4" />}
+            />
+          </Link>
+          <Link href="/students" className="block">
+            <StatCard
+              title="New Students"
+              value={newStudentsThisMonth}
+              change={studentGrowth > 0 ? { value: "This month", type: "positive" } : undefined}
+              description="Recent additions"
+              icon={<TrendingUp className="h-4 w-4" />}
+            />
+          </Link>
         </div>
       )}
 
@@ -701,16 +755,17 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
                   </Link>
                 </div>
               ) : (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
                   {todaysClasses.map((cls) => (
-                    <Card key={cls.id} className="hover:shadow-md transition-shadow">
-                      <CardContent className="pt-6">
+                    <Card key={cls.id} className="hover:shadow-lg transition-all duration-200 border-2 hover:border-primary/20">
+                      <CardContent className="!px-6 !pt-6 !pb-6">
                         <div className="flex items-start justify-between mb-4">
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-foreground mb-1">{cls.name}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              {cls.studentCount} {cls.studentCount === 1 ? 'student' : 'students'}
-                            </p>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-lg font-semibold text-[var(--foreground)] mb-2 truncate">{cls.name}</h3>
+                            <div className="flex items-center gap-2 text-sm text-[var(--muted-foreground)]">
+                              <Users className="h-4 w-4 flex-shrink-0" />
+                              <span>{cls.studentCount} {cls.studentCount === 1 ? 'student' : 'students'}</span>
+                            </div>
                           </div>
                           <Badge 
                             variant={
@@ -719,7 +774,7 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
                               cls.attendanceStatus === 'NOT_MARKED' ? 'destructive' :
                               'outline'
                             }
-                            className="ml-2"
+                            className="ml-3 flex-shrink-0"
                           >
                             {cls.attendanceStatus === 'MARKED' ? 'Marked' :
                              cls.attendanceStatus === 'PARTIAL' ? 'Partial' :
@@ -728,23 +783,12 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
                           </Badge>
                         </div>
                         {cls.attendanceStatus === 'PARTIAL' && (
-                          <p className="text-xs text-muted-foreground mb-3">
-                            {cls.markedCount} of {cls.totalCount} marked
-                          </p>
+                          <div className="mb-4 p-3 bg-[var(--muted)]/50 rounded-lg">
+                            <p className="text-sm text-[var(--muted-foreground)]">
+                              <span className="font-medium">{cls.markedCount}</span> of <span className="font-medium">{cls.totalCount}</span> marked
+                            </p>
+                          </div>
                         )}
-                        <Button
-                          variant={cls.attendanceStatus === 'MARKED' ? 'outline' : 'default'}
-                          className="w-full"
-                          onClick={() => {
-                            setIsAttendanceModalOpen(true)
-                            setTimeout(() => {
-                              const event = new CustomEvent('attendance-saved')
-                              window.dispatchEvent(event)
-                            }, 1000)
-                          }}
-                        >
-                          {cls.attendanceStatus === 'MARKED' ? 'Update Attendance' : 'Mark Attendance'}
-                        </Button>
                       </CardContent>
                     </Card>
                   ))}
@@ -753,81 +797,6 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
             </CardContent>
           </Card>
 
-          {/* My Classes Overview */}
-          <div className="grid gap-6 md:grid-cols-2">
-            <Card className="border-2">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <BookOpen className="h-5 w-5 text-primary" />
-                    </div>
-                    My Classes
-                  </CardTitle>
-                  <Link href="/classes">
-                    <Button variant="ghost" size="sm" className="gap-1">
-                      View All
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </Link>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-bold text-foreground">{activeClasses}</span>
-                    <span className="text-sm text-muted-foreground">
-                      {activeClasses === 1 ? 'class' : 'classes'} assigned
-                    </span>
-                  </div>
-                  <Link href="/classes">
-                    <Button variant="outline" className="w-full gap-2">
-                      <BookOpen className="h-4 w-4" />
-                      Manage Classes
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-2">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <div className="p-2 rounded-lg bg-primary/10">
-                    <UserCheck className="h-5 w-5 text-primary" />
-                  </div>
-                  Quick Actions
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start gap-2 h-auto py-3"
-                    onClick={() => setIsAttendanceModalOpen(true)}
-                  >
-                    <UserCheck className="h-4 w-4" />
-                    <div className="text-left">
-                      <div className="font-medium">Mark Attendance</div>
-                      <div className="text-xs text-muted-foreground">For all classes</div>
-                    </div>
-                  </Button>
-                  <Link href="/attendance" className="block">
-                    <Button
-                      variant="outline"
-                      className="w-full justify-start gap-2 h-auto py-3"
-                    >
-                      <ClipboardList className="h-4 w-4" />
-                      <div className="text-left">
-                        <div className="font-medium">View Attendance</div>
-                        <div className="text-xs text-muted-foreground">History & reports</div>
-                      </div>
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
         </div>
       ) : (
         /* Admin Dashboard: All Metrics in Uniform Grid */
@@ -1199,81 +1168,157 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
       </div>
           )}
 
-      {/* Top Performing Classes */}
-      <Link href="/classes" className="block">
-        <Card className="hover:shadow-md transition-shadow cursor-pointer">
-              <CardHeader>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                    <Target className="h-4 w-4 sm:h-5 sm:w-5" />
-                    Top Performing Classes
-                  </CardTitle>
-                  <Button variant="outline" size="sm" className="px-2 sm:px-3 py-1 text-sm hover:bg-gray-50">
-                    <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                    View All
-                  </Button>
+      {/* Top Attending Students - Teacher Only */}
+      {isTeacher ? (
+        <Link href="/students" className="block">
+          <Card className="hover:shadow-md transition-shadow cursor-pointer">
+            <CardHeader>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                  <UserCheck className="h-4 w-4 sm:h-5 sm:w-5" />
+                  Top Attending Students
+                </CardTitle>
+                <Button variant="outline" size="sm" className="px-2 sm:px-3 py-1 text-sm hover:bg-gray-50">
+                  <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  View All
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {topAttendingStudents.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Student</TableHead>
+                        <TableHead className="hidden sm:table-cell">Class</TableHead>
+                        <TableHead>Attendance</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {topAttendingStudents.map((student, index) => {
+                        const attendanceRating = getAttendanceRating(student.attendanceRate)
+                        const statusColors = getAttendanceStatusColor(student.attendanceRate)
+                        const RatingIcon = attendanceRating.icon as React.ComponentType<{ className?: string }>
+                        
+                        return (
+                          <TableRow key={student.id || index}>
+                            <TableCell className="font-medium">{student.name}</TableCell>
+                            <TableCell className="hidden sm:table-cell">{student.className}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <div className="w-16 bg-gray-200 rounded-full h-2">
+                                  <div 
+                                    className={`h-2 rounded-full ${
+                                      student.attendanceRate >= 95 ? 'bg-green-500' :
+                                      student.attendanceRate >= 90 ? 'bg-yellow-500' :
+                                      student.attendanceRate >= 85 ? 'bg-orange-500' :
+                                      'bg-red-500'
+                                    }`}
+                                    style={{ width: `${student.attendanceRate}%` }}
+                                  />
+                                </div>
+                                <span className="text-sm font-medium">{student.attendanceRate}%</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="secondary" className={`${statusColors.bg} ${statusColors.text} ${statusColors.border}`}>
+                                <RatingIcon className="h-3 w-3 mr-1" />
+                                {attendanceRating.text}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })}
+                    </TableBody>
+                  </Table>
                 </div>
-              </CardHeader>
-          <CardContent>
-            {topPerformingClasses.length > 0 ? (
-              <div className="overflow-x-auto">
-                <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Class</TableHead>
-                    <TableHead className="hidden sm:table-cell">Teacher</TableHead>
-                    <TableHead className="hidden sm:table-cell">Students</TableHead>
-                    <TableHead>Attendance</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {topPerformingClasses.map((classItem, index) => {
-                    const attendanceRating = getAttendanceRating(classItem.attendance)
-                    const statusColors = getAttendanceStatusColor(classItem.attendance)
-                    const RatingIcon = attendanceRating.icon as React.ComponentType<{ className?: string }>
-                    
-                    return (
-                    <TableRow key={index}>
-                      <TableCell className="font-medium">{classItem.name}</TableCell>
-                        <TableCell className="hidden sm:table-cell">{classItem.teacher}</TableCell>
-                        <TableCell className="hidden sm:table-cell">{classItem.students}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div className="w-16 bg-gray-200 rounded-full h-2">
-                            <div 
-                                className={`h-2 rounded-full ${
-                                  classItem.attendance >= 95 ? 'bg-green-500' :
-                                  classItem.attendance >= 90 ? 'bg-yellow-500' :
-                                  classItem.attendance >= 85 ? 'bg-orange-500' :
-                                  'bg-red-500'
-                                }`}
-                              style={{ width: `${classItem.attendance}%` }}
-                            />
-                          </div>
-                          <span className="text-sm font-medium">{classItem.attendance}%</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                          <Badge variant="secondary" className={`${statusColors.bg} ${statusColors.text} ${statusColors.border}`}>
-                            <RatingIcon className="h-3 w-3 mr-1" />
-                            {attendanceRating.text}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                    )
-                  })}
-                  </TableBody>
-                </Table>
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <p className="text-sm">No classes available</p>
-              </div>
-            )}
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p className="text-sm">No students available</p>
+                </div>
+              )}
             </CardContent>
-        </Card>
-      </Link>
+          </Card>
+        </Link>
+      ) : (
+        /* Top Performing Classes - Admin Only */
+        <Link href="/classes" className="block">
+          <Card className="hover:shadow-md transition-shadow cursor-pointer">
+            <CardHeader>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                  <Target className="h-4 w-4 sm:h-5 sm:w-5" />
+                  Top Performing Classes
+                </CardTitle>
+                <Button variant="outline" size="sm" className="px-2 sm:px-3 py-1 text-sm hover:bg-gray-50">
+                  <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  View All
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {topPerformingClasses.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Class</TableHead>
+                        <TableHead className="hidden sm:table-cell">Teacher</TableHead>
+                        <TableHead className="hidden sm:table-cell">Students</TableHead>
+                        <TableHead>Attendance</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {topPerformingClasses.map((classItem, index) => {
+                        const attendanceRating = getAttendanceRating(classItem.attendance)
+                        const statusColors = getAttendanceStatusColor(classItem.attendance)
+                        const RatingIcon = attendanceRating.icon as React.ComponentType<{ className?: string }>
+                        
+                        return (
+                          <TableRow key={index}>
+                            <TableCell className="font-medium">{classItem.name}</TableCell>
+                            <TableCell className="hidden sm:table-cell">{classItem.teacher}</TableCell>
+                            <TableCell className="hidden sm:table-cell">{classItem.students}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <div className="w-16 bg-gray-200 rounded-full h-2">
+                                  <div 
+                                    className={`h-2 rounded-full ${
+                                      classItem.attendance >= 95 ? 'bg-green-500' :
+                                      classItem.attendance >= 90 ? 'bg-yellow-500' :
+                                      classItem.attendance >= 85 ? 'bg-orange-500' :
+                                      'bg-red-500'
+                                    }`}
+                                    style={{ width: `${classItem.attendance}%` }}
+                                  />
+                                </div>
+                                <span className="text-sm font-medium">{classItem.attendance}%</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="secondary" className={`${statusColors.bg} ${statusColors.text} ${statusColors.border}`}>
+                                <RatingIcon className="h-3 w-3 mr-1" />
+                                {attendanceRating.text}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p className="text-sm">No classes available</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </Link>
+      )}
 
       {/* Generate Report Modal */}
       <GenerateReportModal

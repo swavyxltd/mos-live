@@ -156,21 +156,35 @@ function SettingsPageContent() {
 
   const [billingRecords, setBillingRecords] = useState<BillingRecord[]>([])
   const [loadingBillingRecords, setLoadingBillingRecords] = useState(true)
-  // Initialize activeTab from URL parameter, default to 'organisation'
+  // Initialize activeTab from URL parameter, default to 'profile' for teachers, 'organisation' for others
   const [activeTab, setActiveTab] = useState(() => {
     const tabParam = searchParams.get('tab')
-    return tabParam && ['organisation', 'profile', 'payment-methods', 'subscription'].includes(tabParam)
-      ? tabParam
-      : 'organisation'
+    if (tabParam && ['organisation', 'profile', 'payment-methods', 'subscription'].includes(tabParam)) {
+      // For teachers, only allow 'profile' tab
+      if (session?.user?.staffSubrole === 'TEACHER' && tabParam !== 'profile') {
+        return 'profile'
+      }
+      return tabParam
+    }
+    // Default to 'profile' for teachers, 'organisation' for others
+    return session?.user?.staffSubrole === 'TEACHER' ? 'profile' : 'organisation'
   })
 
   // Update activeTab when URL parameter changes
   useEffect(() => {
     const tabParam = searchParams.get('tab')
     if (tabParam && ['organisation', 'profile', 'payment-methods', 'subscription'].includes(tabParam)) {
-      setActiveTab(tabParam)
+      // For teachers, only allow 'profile' tab
+      if (session?.user?.staffSubrole === 'TEACHER' && tabParam !== 'profile') {
+        setActiveTab('profile')
+      } else {
+        setActiveTab(tabParam)
+      }
+    } else if (session?.user?.staffSubrole === 'TEACHER') {
+      // Ensure teachers default to profile tab
+      setActiveTab('profile')
     }
-  }, [searchParams])
+  }, [searchParams, session])
 
   useEffect(() => {
     fetchUserSettings()
@@ -760,6 +774,8 @@ function SettingsPageContent() {
 
   // Check if user is a Finance Officer
   const isFinanceOfficer = session.user.staffSubrole === 'FINANCE_OFFICER'
+  // Check if user is a Teacher
+  const isTeacher = session.user.staffSubrole === 'TEACHER'
 
   return (
     <div className="space-y-6">
@@ -789,63 +805,68 @@ function SettingsPageContent() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         {/* Mobile: Dropdown Select */}
-        <div className="md:hidden">
-          <Select value={activeTab} onValueChange={setActiveTab}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select a tab" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="organisation">
-                <div className="flex items-center gap-2">
-                  <Globe className="h-4 w-4" />
-                  <span>Organisation</span>
-                </div>
-              </SelectItem>
-              <SelectItem value="profile">
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  <span>Profile</span>
-                </div>
-              </SelectItem>
-              <SelectItem value="payment-methods">
-                <div className="flex items-center gap-2">
-                  <Settings className="h-4 w-4" />
-                  <span>Payment Methods</span>
-                </div>
-              </SelectItem>
-              <SelectItem value="subscription">
-                <div className="flex items-center gap-2">
-                  <Banknote className="h-4 w-4" />
-                  <span>Your Subscription</span>
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        {!isTeacher && (
+          <div className="md:hidden">
+            <Select value={activeTab} onValueChange={setActiveTab}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a tab" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="organisation">
+                  <div className="flex items-center gap-2">
+                    <Globe className="h-4 w-4" />
+                    <span>Organisation</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="profile">
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    <span>Profile</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="payment-methods">
+                  <div className="flex items-center gap-2">
+                    <Settings className="h-4 w-4" />
+                    <span>Payment Methods</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="subscription">
+                  <div className="flex items-center gap-2">
+                    <Banknote className="h-4 w-4" />
+                    <span>Your Subscription</span>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         {/* Desktop: Tabs */}
-        <TabsList className="hidden md:grid w-full grid-cols-4">
-          <TabsTrigger value="organisation" className="flex items-center gap-2">
-            <Globe className="h-4 w-4" />
-            Organisation
-          </TabsTrigger>
-          <TabsTrigger value="profile" className="flex items-center gap-2">
-            <User className="h-4 w-4" />
-            Profile
-          </TabsTrigger>
-          <TabsTrigger value="payment-methods" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Payment Methods
-          </TabsTrigger>
-          <TabsTrigger value="subscription" className="flex items-center gap-2">
-            <Banknote className="h-4 w-4" />
-            Your Subscription
-          </TabsTrigger>
-        </TabsList>
+        {!isTeacher && (
+          <TabsList className="hidden md:grid w-full grid-cols-4">
+            <TabsTrigger value="organisation" className="flex items-center gap-2">
+              <Globe className="h-4 w-4" />
+              Organisation
+            </TabsTrigger>
+            <TabsTrigger value="profile" className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              Profile
+            </TabsTrigger>
+            <TabsTrigger value="payment-methods" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Payment Methods
+            </TabsTrigger>
+            <TabsTrigger value="subscription" className="flex items-center gap-2">
+              <Banknote className="h-4 w-4" />
+              Your Subscription
+            </TabsTrigger>
+          </TabsList>
+        )}
 
-        <TabsContent value="organisation" className="space-y-6">
-          {/* Organisation Settings */}
-        <Card className={isFinanceOfficer ? "opacity-50 pointer-events-none" : ""}>
+        {!isTeacher && (
+          <TabsContent value="organisation" className="space-y-6">
+            {/* Organisation Settings */}
+          <Card className={isFinanceOfficer ? "opacity-50 pointer-events-none" : ""}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Globe className="h-5 w-5" />
@@ -1121,7 +1142,8 @@ function SettingsPageContent() {
             </div>
           </CardContent>
         </Card>
-        </TabsContent>
+          </TabsContent>
+        )}
 
         <TabsContent value="profile" className="space-y-6">
           {/* User Profile Settings */}
@@ -1270,11 +1292,13 @@ function SettingsPageContent() {
         </Card>
         </TabsContent>
 
-        <TabsContent value="payment-methods" className="space-y-6">
-          <PaymentMethodsTab />
-        </TabsContent>
+        {!isTeacher && (
+          <>
+            <TabsContent value="payment-methods" className="space-y-6">
+              <PaymentMethodsTab />
+            </TabsContent>
 
-        <TabsContent value="subscription" className="space-y-6">
+            <TabsContent value="subscription" className="space-y-6">
           {/* Payment Method Status */}
           <Card>
             <CardHeader>
@@ -1456,7 +1480,9 @@ function SettingsPageContent() {
             </div>
           </CardContent>
         </Card>
-        </TabsContent>
+            </TabsContent>
+          </>
+        )}
       </Tabs>
 
       {showPaymentModal && (

@@ -32,11 +32,33 @@ async function handleGET(request: NextRequest) {
       return NextResponse.json({ error: 'No organisation found' }, { status: 404 })
     }
 
+    // Check if user is a teacher - if so, only show their tickets
+    const { getUserRoleInOrg } = await import('@/lib/org')
+    const userRole = await getUserRoleInOrg(session.user.id, org.id)
+    const membership = await prisma.userOrgMembership.findUnique({
+      where: {
+        userId_orgId: {
+          userId: session.user.id,
+          orgId: org.id
+        }
+      },
+      select: {
+        staffSubrole: true
+      }
+    })
+
+    const isTeacher = membership?.staffSubrole === 'TEACHER' || (userRole === 'STAFF' && !membership?.staffSubrole)
+
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
     const role = searchParams.get('role')
 
     let whereClause: any = { orgId: org.id }
+
+    // If user is a teacher, only show tickets created by them
+    if (isTeacher) {
+      whereClause.userId = session.user.id
+    }
 
     // Filter by status if provided
     if (status) {

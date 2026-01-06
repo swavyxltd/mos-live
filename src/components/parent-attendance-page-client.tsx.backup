@@ -1,0 +1,789 @@
+'use client'
+
+import { useState } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { 
+  Users,
+  User,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  ChevronLeft,
+  ChevronRight,
+  Calendar
+} from 'lucide-react'
+import { getAttendanceRating } from '@/lib/attendance-ratings'
+
+interface AttendanceDay {
+  day: string
+  date: string
+  status: 'PRESENT' | 'ABSENT' | 'LATE'
+  time?: string
+}
+
+interface WeeklyAttendance {
+  week: string
+  present: number
+  absent: number
+  late: number
+}
+
+interface MonthlyAttendance {
+  month?: string
+  present?: number
+  absent?: number
+  late?: number
+  date?: string
+  status?: 'PRESENT' | 'ABSENT' | 'LATE'
+  time?: string
+  attendancePercentage?: number
+  totalSessions?: number
+  monthIndex?: number
+  year?: number
+}
+
+interface ChildAttendance {
+  id: string
+  name: string
+  class: string
+  teacher: string
+  overallAttendance: number
+  weeklyAttendance: AttendanceDay[]
+  allAttendanceRecords?: Array<{
+    date: string
+    status: string
+    time?: string
+  }>
+  monthlyAttendance: WeeklyAttendance[]
+  yearlyAttendance: MonthlyAttendance[]
+}
+
+interface ParentAttendancePageClientProps {
+  attendanceData: ChildAttendance[]
+}
+
+type ViewType = 'week' | 'month' | 'year' | 'overall'
+
+export function ParentAttendancePageClient({ attendanceData }: ParentAttendancePageClientProps) {
+  const [viewType, setViewType] = useState<ViewType>('week')
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date())
+
+  const getWeekStart = (date: Date) => {
+    const start = new Date(date)
+    const day = start.getDay()
+    const diff = start.getDate() - day + (day === 0 ? -6 : 1)
+    start.setDate(diff)
+    return start
+  }
+
+  const getWeekEnd = (date: Date) => {
+    const end = new Date(date)
+    const day = end.getDay()
+    const diff = end.getDate() - day + (day === 0 ? 0 : 7) - (day === 0 ? 6 : 1)
+    end.setDate(diff)
+    return end
+  }
+
+  const isCurrentWeek = (date: Date) => {
+    const today = new Date()
+    const currentWeekStart = getWeekStart(today)
+    const selectedWeekStart = getWeekStart(date)
+    return currentWeekStart.getTime() === selectedWeekStart.getTime()
+  }
+
+  // Get week start (Monday) for a given date
+  const getWeekStart = (date: Date) => {
+    const d = new Date(date)
+    const day = d.getDay()
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1)
+    const monday = new Date(d)
+    monday.setDate(diff)
+    monday.setHours(0, 0, 0, 0)
+    return monday
+  }
+
+  // Get month start for a given date
+  const getMonthStart = (date: Date) => {
+    const monthStart = new Date(date.getFullYear(), date.getMonth(), 1)
+    monthStart.setHours(0, 0, 0, 0)
+    return monthStart
+  }
+
+  // Get year start for a given date
+  const getYearStart = (date: Date) => {
+    const yearStart = new Date(date.getFullYear(), 0, 1)
+    yearStart.setHours(0, 0, 0, 0)
+    return yearStart
+  }
+
+  // Get week end (Friday) for a given date
+  const getWeekEnd = (date: Date) => {
+    const weekStart = getWeekStart(date)
+    const friday = new Date(weekStart)
+    friday.setDate(weekStart.getDate() + 4) // Friday is 4 days after Monday
+    friday.setHours(23, 59, 59, 999)
+    return friday
+  }
+
+  // Get month end for a given date
+  const getMonthEnd = (date: Date) => {
+    const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0)
+    monthEnd.setHours(23, 59, 59, 999)
+    return monthEnd
+  }
+
+  // Get year end for a given date
+  const getYearEnd = (date: Date) => {
+    const yearEnd = new Date(date.getFullYear(), 11, 31)
+    yearEnd.setHours(23, 59, 59, 999)
+    return yearEnd
+  }
+
+  // Check if can navigate to next period
+  const canNavigateNext = () => {
+    const today = new Date()
+    today.setHours(23, 59, 59, 999)
+    
+    switch (viewType) {
+      case 'week':
+        const nextWeek = new Date(selectedDate)
+        nextWeek.setDate(nextWeek.getDate() + 7)
+        return nextWeek <= today
+      case 'month':
+        const nextMonth = new Date(selectedDate)
+        nextMonth.setMonth(nextMonth.getMonth() + 1)
+        return nextMonth <= today
+      case 'year':
+        const nextYear = new Date(selectedDate)
+        nextYear.setFullYear(nextYear.getFullYear() + 1)
+        return nextYear <= today
+      default:
+        return false
+    }
+  }
+
+  const handlePrevious = () => {
+    const newDate = new Date(selectedDate)
+    switch (viewType) {
+      case 'week':
+        newDate.setDate(newDate.getDate() - 7)
+        break
+      case 'month':
+        newDate.setMonth(newDate.getMonth() - 1)
+        break
+      case 'year':
+        newDate.setFullYear(newDate.getFullYear() - 1)
+        break
+    }
+    setSelectedDate(newDate)
+  }
+
+  const handleNext = () => {
+    if (canNavigateNext()) {
+      const newDate = new Date(selectedDate)
+      switch (viewType) {
+        case 'week':
+          newDate.setDate(newDate.getDate() + 7)
+          break
+        case 'month':
+          newDate.setMonth(newDate.getMonth() + 1)
+          break
+        case 'year':
+          newDate.setFullYear(newDate.getFullYear() + 1)
+          break
+      }
+      setSelectedDate(newDate)
+    }
+  }
+
+  const handleToday = () => {
+    setSelectedDate(new Date())
+  }
+
+  const formatDateRange = () => {
+    switch (viewType) {
+      case 'week':
+        const weekStart = getWeekStart(selectedDate)
+        const weekEnd = getWeekEnd(selectedDate)
+        const today = new Date()
+        const currentWeekStart = getWeekStart(today)
+        if (weekStart.getTime() === currentWeekStart.getTime()) {
+          return 'This Week'
+        }
+        return `${weekStart.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} - ${weekEnd.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}`
+      case 'month':
+        const isCurrentMonth = selectedDate.getMonth() === new Date().getMonth() && 
+                              selectedDate.getFullYear() === new Date().getFullYear()
+        if (isCurrentMonth) {
+          return 'This Month'
+        }
+        return selectedDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+      case 'year':
+        const isCurrentYear = selectedDate.getFullYear() === new Date().getFullYear()
+        if (isCurrentYear) {
+          return 'This Year'
+        }
+        return selectedDate.getFullYear().toString()
+      default:
+        return 'Overall'
+    }
+  }
+
+  // Get week's attendance for selected week (only sessions that occurred)
+  const getWeekAttendance = (child: ChildAttendance, weekDate: Date) => {
+    if (!child.allAttendanceRecords) {
+      return []
+    }
+
+    const weekStart = getWeekStart(weekDate)
+    const weekEnd = getWeekEnd(weekDate)
+    const today = new Date()
+    today.setHours(23, 59, 59, 999)
+    
+    // Filter to only sessions in the selected week that have occurred
+    return child.allAttendanceRecords
+      .filter(record => {
+        const recordDate = new Date(record.date)
+        const endDate = recordDate <= today ? recordDate : today
+        return recordDate >= weekStart && endDate <= weekEnd
+      })
+      .map(record => {
+        const recordDate = new Date(record.date)
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+        return {
+          day: dayNames[recordDate.getDay()],
+          date: record.date,
+          status: record.status as 'PRESENT' | 'ABSENT' | 'LATE',
+          time: record.time
+        }
+      })
+      .sort((a, b) => a.date.localeCompare(b.date))
+  }
+
+  const calculatePeriodAttendance = (child: ChildAttendance, view: ViewType) => {
+    switch (view) {
+      case 'week':
+        // Selected week: (PRESENT + LATE) / total sessions in week
+        const weekSessions = getWeekAttendance(child, selectedDate)
+        if (weekSessions.length === 0) return 0
+        const weekAttended = weekSessions.filter(s => 
+          s.status === 'PRESENT' || s.status === 'LATE'
+        ).length
+        return Math.round((weekAttended / weekSessions.length) * 100)
+
+      case 'month':
+        // Selected month: (PRESENT + LATE) / total sessions in month
+        const monthStart = getMonthStart(selectedDate)
+        const monthEnd = getMonthEnd(selectedDate)
+        const today = new Date()
+        today.setHours(23, 59, 59, 999)
+        const endDate = monthEnd <= today ? monthEnd : today
+        const monthSessions = child.monthlyAttendance.filter(day => {
+          if (!day.date) return false
+          const dayDate = new Date(day.date)
+          return dayDate >= monthStart && dayDate <= endDate
+        })
+        if (monthSessions.length === 0) return 0
+        const monthAttended = monthSessions.filter(day => 
+          day.status === 'PRESENT' || day.status === 'LATE'
+        ).length
+        return Math.round((monthAttended / monthSessions.length) * 100)
+
+      case 'year':
+        // Selected year: (PRESENT + LATE) / total sessions in year
+        const yearStart = getYearStart(selectedDate)
+        const yearEnd = getYearEnd(selectedDate)
+        const todayYear = new Date()
+        todayYear.setHours(23, 59, 59, 999)
+        const yearEndDate = yearEnd <= todayYear ? yearEnd : todayYear
+        const yearSessions = child.monthlyAttendance.filter(day => {
+          if (!day.date) return false
+          const dayDate = new Date(day.date)
+          return dayDate >= yearStart && dayDate <= yearEndDate
+        })
+        if (yearSessions.length === 0) return 0
+        const yearAttended = yearSessions.filter(day => 
+          day.status === 'PRESENT' || day.status === 'LATE'
+        ).length
+        return Math.round((yearAttended / yearSessions.length) * 100)
+
+      case 'overall':
+        // Overall: use the pre-calculated overall attendance
+        return child.overallAttendance
+
+      default:
+        return child.overallAttendance
+    }
+  }
+
+  const renderWeekView = (child: ChildAttendance) => {
+    // Get selected week's attendance (only sessions that occurred)
+    const weeklyData = getWeekAttendance(child, selectedDate)
+    
+    const presentDays = weeklyData.filter(d => d.status === 'PRESENT').length
+    const absentDays = weeklyData.filter(d => d.status === 'ABSENT').length
+    const lateDays = weeklyData.filter(d => d.status === 'LATE').length
+    const totalDays = weeklyData.length
+
+    return (
+      <div className="space-y-4">
+        {/* Quick Stats */}
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          <div className="border border-[var(--border)] rounded-lg p-2 sm:p-4 bg-[var(--card)]">
+            <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-[var(--muted)] rounded-lg flex items-center justify-center flex-shrink-0">
+                <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 text-[var(--foreground)]" />
+              </div>
+              <span className="text-xs sm:text-sm font-medium text-[var(--muted-foreground)]">Present</span>
+            </div>
+            <div className="text-xl sm:text-2xl font-bold text-[var(--foreground)]">{presentDays}</div>
+            <div className="text-[10px] sm:text-xs text-[var(--muted-foreground)] mt-0.5 sm:mt-1">of {totalDays} days</div>
+          </div>
+          
+          <div className="border border-[var(--border)] rounded-lg p-2 sm:p-4 bg-[var(--card)]">
+            <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-[var(--muted)] rounded-lg flex items-center justify-center flex-shrink-0">
+                <XCircle className="h-3 w-3 sm:h-4 sm:w-4 text-[var(--foreground)]" />
+              </div>
+              <span className="text-xs sm:text-sm font-medium text-[var(--muted-foreground)]">Absent</span>
+            </div>
+            <div className="text-xl sm:text-2xl font-bold text-[var(--foreground)]">{absentDays}</div>
+            <div className="text-[10px] sm:text-xs text-[var(--muted-foreground)] mt-0.5 sm:mt-1">missed days</div>
+          </div>
+          
+          <div className="border border-[var(--border)] rounded-lg p-2 sm:p-4 bg-[var(--card)]">
+            <div className="flex items-center gap-1 sm:gap-2 mb-1 sm:mb-2">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-[var(--muted)] rounded-lg flex items-center justify-center flex-shrink-0">
+                <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-[var(--foreground)]" />
+              </div>
+              <span className="text-xs sm:text-sm font-medium text-[var(--muted-foreground)]">Late</span>
+            </div>
+            <div className="text-xl sm:text-2xl font-bold text-[var(--foreground)]">{lateDays}</div>
+            <div className="text-[10px] sm:text-xs text-[var(--muted-foreground)] mt-0.5 sm:mt-1">arrivals</div>
+          </div>
+        </div>
+
+        {/* Week Sessions */}
+        {weeklyData.length > 0 ? (
+          <div className="border border-[var(--border)] rounded-lg p-3 sm:p-4 bg-[var(--card)]">
+            <h3 className="text-xs sm:text-sm font-semibold text-[var(--foreground)] mb-3 sm:mb-4">This Week's Sessions</h3>
+            <div className="space-y-2">
+              {weeklyData.map((session, index) => {
+                const sessionDate = new Date(session.date)
+                const isToday = sessionDate.toISOString().split('T')[0] === new Date().toISOString().split('T')[0]
+                
+                return (
+                  <div 
+                    key={index} 
+                    className={`
+                      flex items-center justify-between gap-3 p-2 sm:p-3 rounded-lg border transition-all
+                      ${isToday ? 'border-[var(--primary)] bg-[var(--primary)]/5' : 'border-[var(--border)] bg-[var(--card)]'}
+                      hover:bg-[var(--accent)]
+                    `}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`
+                        w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border-2
+                        ${session.status === 'PRESENT'
+                          ? 'bg-green-500 border-green-600'
+                          : session.status === 'ABSENT'
+                          ? 'bg-red-500 border-red-600'
+                          : 'bg-yellow-500 border-yellow-600'
+                        }
+                      `}>
+                        {session.status === 'PRESENT' ? <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-white" /> :
+                         session.status === 'ABSENT' ? <XCircle className="h-4 w-4 sm:h-5 sm:w-5 text-white" /> :
+                         <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-white" />}
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-[var(--foreground)]">
+                          {sessionDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}
+                        </div>
+                        {session.time && (
+                          <div className="text-xs text-[var(--muted-foreground)]">{session.time}</div>
+                        )}
+                      </div>
+                    </div>
+                    <Badge 
+                      className={
+                        session.status === 'PRESENT' ? 'bg-green-50 text-green-700 border-green-200' :
+                        session.status === 'ABSENT' ? 'bg-red-50 text-red-700 border-red-200' :
+                        'bg-yellow-50 text-yellow-700 border-yellow-200'
+                      }
+                    >
+                      {session.status}
+                    </Badge>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        ) : (
+          <div className="border border-[var(--border)] rounded-lg p-6 sm:p-8 bg-[var(--card)] text-center">
+            <p className="text-sm text-[var(--muted-foreground)]">No sessions this week yet</p>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  const renderMonthView = (child: ChildAttendance) => {
+    // Selected month's sessions
+    const monthStart = getMonthStart(selectedDate)
+    const monthEnd = getMonthEnd(selectedDate)
+    const today = new Date()
+    today.setHours(23, 59, 59, 999)
+    const endDate = monthEnd <= today ? monthEnd : today
+    const monthSessions = child.monthlyAttendance.filter(day => {
+      if (!day.date) return false
+      const dayDate = new Date(day.date)
+      return dayDate >= monthStart && dayDate <= endDate
+    })
+    
+    const presentCount = monthSessions.filter(d => d.status === 'PRESENT').length
+    const lateCount = monthSessions.filter(d => d.status === 'LATE').length
+    const absentCount = monthSessions.filter(d => d.status === 'ABSENT').length
+    const totalSessions = monthSessions.length
+    const attendanceRate = totalSessions > 0 ? Math.round(((presentCount + lateCount) / totalSessions) * 100) : 0
+    
+    return (
+      <div className="space-y-4">
+        {/* Month Summary */}
+        <div className="border border-[var(--border)] rounded-lg p-4 bg-[var(--muted)]">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-sm font-semibold text-[var(--foreground)] mb-1">Monthly Overview</h3>
+              <div className="text-2xl font-bold text-[var(--foreground)]">{attendanceRate}%</div>
+            </div>
+            <div className="text-right">
+              <div className="text-xl font-bold text-[var(--foreground)]">{totalSessions}</div>
+              <div className="text-xs text-[var(--muted-foreground)]">sessions</div>
+            </div>
+          </div>
+          
+          <div className="w-full bg-[var(--card)] rounded-full h-2 mb-4">
+            <div 
+              className="h-full bg-green-500 rounded-full transition-all duration-500"
+              style={{ width: `${attendanceRate}%` }}
+            />
+          </div>
+          
+          <div className="grid grid-cols-3 gap-3">
+            <div className="text-center p-3 bg-[var(--card)] rounded-lg border border-[var(--border)]">
+              <div className="text-lg font-bold text-[var(--foreground)]">{presentCount}</div>
+              <div className="text-xs text-[var(--muted-foreground)] font-medium">Present</div>
+            </div>
+            <div className="text-center p-3 bg-[var(--card)] rounded-lg border border-[var(--border)]">
+              <div className="text-lg font-bold text-[var(--foreground)]">{lateCount}</div>
+              <div className="text-xs text-[var(--muted-foreground)] font-medium">Late</div>
+            </div>
+            <div className="text-center p-3 bg-[var(--card)] rounded-lg border border-[var(--border)]">
+              <div className="text-lg font-bold text-[var(--foreground)]">{absentCount}</div>
+              <div className="text-xs text-[var(--muted-foreground)] font-medium">Absent</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const renderYearView = (child: ChildAttendance) => {
+    // Selected year's sessions
+    const yearStart = getYearStart(selectedDate)
+    const yearEnd = getYearEnd(selectedDate)
+    const today = new Date()
+    today.setHours(23, 59, 59, 999)
+    const endDate = yearEnd <= today ? yearEnd : today
+    const yearSessions = child.monthlyAttendance.filter(day => {
+      if (!day.date) return false
+      const dayDate = new Date(day.date)
+      return dayDate >= yearStart && dayDate <= endDate
+    })
+    
+    const totalSessions = yearSessions.length
+    const totalPresent = yearSessions.filter(s => s.status === 'PRESENT').length
+    const totalLate = yearSessions.filter(s => s.status === 'LATE').length
+    const totalAbsent = yearSessions.filter(s => s.status === 'ABSENT').length
+    const yearRate = totalSessions > 0 
+      ? Math.round(((totalPresent + totalLate) / totalSessions) * 100)
+      : 0
+    
+    return (
+      <div className="space-y-4">
+        {/* Year Summary */}
+        <div className="border border-[var(--border)] rounded-lg p-4 bg-[var(--muted)]">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-sm font-semibold text-[var(--foreground)] mb-1">Year Overview</h3>
+              <div className="text-2xl font-bold text-[var(--foreground)]">{yearRate}%</div>
+              <div className="text-xs text-[var(--muted-foreground)] mt-1">Attendance rate</div>
+            </div>
+            <div className="text-right">
+              <div className="text-xl font-bold text-[var(--foreground)]">{totalSessions}</div>
+              <div className="text-xs text-[var(--muted-foreground)]">total sessions</div>
+            </div>
+          </div>
+          
+          <div className="w-full bg-[var(--card)] rounded-full h-2 mb-4">
+            <div 
+              className="h-full bg-green-500 rounded-full transition-all duration-500"
+              style={{ width: `${yearRate}%` }}
+            />
+          </div>
+          
+          <div className="grid grid-cols-3 gap-3">
+            <div className="text-center p-3 bg-[var(--card)] rounded-lg border border-[var(--border)]">
+              <div className="text-lg font-bold text-[var(--foreground)]">{totalPresent}</div>
+              <div className="text-xs text-[var(--muted-foreground)] font-medium">Present</div>
+            </div>
+            <div className="text-center p-3 bg-[var(--card)] rounded-lg border border-[var(--border)]">
+              <div className="text-lg font-bold text-[var(--foreground)]">{totalLate}</div>
+              <div className="text-xs text-[var(--muted-foreground)] font-medium">Late</div>
+            </div>
+            <div className="text-center p-3 bg-[var(--card)] rounded-lg border border-[var(--border)]">
+              <div className="text-lg font-bold text-[var(--foreground)]">{totalAbsent}</div>
+              <div className="text-xs text-[var(--muted-foreground)] font-medium">Absent</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const overallStats = attendanceData.reduce((acc, child) => {
+    const periodAttendance = calculatePeriodAttendance(child, viewType)
+    acc.total += periodAttendance
+    acc.count += 1
+    return acc
+  }, { total: 0, count: 0 })
+  
+  const averageAttendance = overallStats.count > 0 
+    ? Math.round(overallStats.total / overallStats.count) 
+    : 0
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-[var(--muted)] rounded-lg flex items-center justify-center flex-shrink-0">
+              <Calendar className="h-5 w-5 text-[var(--foreground)]" />
+            </div>
+            <h1 className="text-2xl font-semibold text-[var(--foreground)]">Attendance</h1>
+          </div>
+          <p className="text-sm text-[var(--muted-foreground)] ml-13">
+            Track your children's attendance history and progress
+          </p>
+        </div>
+        {attendanceData.length > 0 && (
+          <div className="border border-[var(--border)] rounded-lg p-4 bg-[var(--card)]">
+            <div className="text-right">
+              <div className="text-3xl font-bold text-[var(--foreground)] mb-1">
+                {averageAttendance}%
+              </div>
+              <div className="text-xs text-[var(--muted-foreground)]">Average Attendance</div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* View Controls */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            {/* View Type Toggle */}
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-[var(--foreground)]">View:</span>
+              <div className="flex bg-[var(--muted)] rounded-lg p-1 gap-1">
+                {(['week', 'month', 'year', 'overall'] as ViewType[]).map((view) => (
+                  <Button
+                    key={view}
+                    variant={viewType === view ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => {
+                      setViewType(view)
+                      if (view !== 'overall') {
+                        setSelectedDate(new Date())
+                      }
+                    }}
+                    className="capitalize min-w-[80px]"
+                  >
+                    {view === 'overall' ? 'Overall' : view === 'week' ? 'Week' : view === 'month' ? 'Month' : 'Year'}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Navigation - only show for week/month/year views */}
+            {viewType !== 'overall' && (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handlePrevious}
+                  className="flex items-center gap-1"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  <span className="hidden sm:inline">Previous</span>
+                </Button>
+                
+                <div className="px-4 py-2 bg-[var(--muted)] rounded-lg min-w-[140px] text-center border border-[var(--border)]">
+                  <div className="text-sm font-semibold text-[var(--foreground)]">
+                    {formatDateRange()}
+                  </div>
+                  <div className="text-xs text-[var(--muted-foreground)] capitalize">{viewType} view</div>
+                </div>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleNext}
+                  disabled={!canNavigateNext()}
+                  className="flex items-center gap-1"
+                >
+                  <span className="hidden sm:inline">Next</span>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleToday}
+                  className="flex items-center gap-1"
+                >
+                  <Calendar className="h-4 w-4" />
+                  <span className="hidden sm:inline">Today</span>
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Children Cards */}
+      <div className="space-y-6">
+        {attendanceData.map((child) => {
+          const periodAttendance = calculatePeriodAttendance(child, viewType)
+          const rating = getAttendanceRating(periodAttendance)
+          const TrendIcon = rating.icon
+          
+          return (
+            <Card key={child.id}>
+              <CardHeader>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 bg-[var(--muted)] rounded-lg flex items-center justify-center flex-shrink-0">
+                      <User className="h-5 w-5 text-[var(--foreground)]" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg font-semibold text-[var(--foreground)] mb-1">
+                        {child.name}
+                      </CardTitle>
+                      <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--muted-foreground)]">
+                        <span className="flex items-center gap-1">
+                          <Users className="h-3.5 w-3.5" />
+                          {child.class}
+                        </span>
+                        <span>•</span>
+                        <span>{child.teacher}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-4">
+                    <div className="text-right border border-[var(--border)] rounded-lg p-3 bg-[var(--card)]">
+                      <div className="text-3xl font-bold text-[var(--foreground)] mb-1">
+                        {periodAttendance}%
+                      </div>
+                      <div className="text-xs text-[var(--muted-foreground)] capitalize">{viewType} attendance</div>
+                    </div>
+                    
+                    <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border border-[var(--border)] ${
+                      rating.color.includes('green') ? 'bg-green-50' : 
+                      rating.color.includes('yellow') ? 'bg-yellow-50' : 
+                      'bg-red-50'
+                    }`}>
+                      <TrendIcon className={`h-4 w-4 ${rating.color}`} />
+                      <span className={`text-sm font-medium ${rating.color}`}>
+                        {rating.text}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </CardHeader>
+              
+              <CardContent>
+                {viewType === 'week' && renderWeekView(child)}
+                {viewType === 'month' && renderMonthView(child)}
+                {viewType === 'year' && renderYearView(child)}
+                {viewType === 'overall' && (
+                  <div className="space-y-4">
+                    <div className="border border-[var(--border)] rounded-lg p-4 bg-[var(--muted)]">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h3 className="text-sm font-semibold text-[var(--foreground)] mb-1">Overall Attendance</h3>
+                          <div className="text-2xl font-bold text-[var(--foreground)]">{child.overallAttendance}%</div>
+                          <div className="text-xs text-[var(--muted-foreground)] mt-1">All sessions</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xl font-bold text-[var(--foreground)]">{child.monthlyAttendance.length}</div>
+                          <div className="text-xs text-[var(--muted-foreground)]">total sessions</div>
+                        </div>
+                      </div>
+                      
+                      <div className="w-full bg-[var(--card)] rounded-full h-2 mb-4">
+                        <div 
+                          className="h-full bg-green-500 rounded-full transition-all duration-500"
+                          style={{ width: `${child.overallAttendance}%` }}
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="text-center p-3 bg-[var(--card)] rounded-lg border border-[var(--border)]">
+                          <div className="text-lg font-bold text-[var(--foreground)]">
+                            {child.monthlyAttendance.filter(s => s.status === 'PRESENT').length}
+                          </div>
+                          <div className="text-xs text-[var(--muted-foreground)] font-medium">Present</div>
+                        </div>
+                        <div className="text-center p-3 bg-[var(--card)] rounded-lg border border-[var(--border)]">
+                          <div className="text-lg font-bold text-[var(--foreground)]">
+                            {child.monthlyAttendance.filter(s => s.status === 'LATE').length}
+                          </div>
+                          <div className="text-xs text-[var(--muted-foreground)] font-medium">Late</div>
+                        </div>
+                        <div className="text-center p-3 bg-[var(--card)] rounded-lg border border-[var(--border)]">
+                          <div className="text-lg font-bold text-[var(--foreground)]">
+                            {child.monthlyAttendance.filter(s => s.status === 'ABSENT').length}
+                          </div>
+                          <div className="text-xs text-[var(--muted-foreground)] font-medium">Absent</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )
+        })}
+      </div>
+
+      {attendanceData.length === 0 && (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <Users className="h-16 w-16 text-[var(--muted-foreground)] mx-auto mb-4 opacity-50" />
+            <h3 className="text-lg font-semibold text-[var(--foreground)] mb-2">No Children Found</h3>
+            <p className="text-[var(--muted-foreground)] mb-2">
+              No children are registered under your account yet.
+            </p>
+            <p className="text-sm text-[var(--muted-foreground)]">
+              If you've just signed up, your child's information may still be being linked. Please contact the madrasah if you need assistance.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  )
+}

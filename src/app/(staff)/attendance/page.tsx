@@ -14,21 +14,21 @@ export default async function AttendancePage() {
   // Always use real database data
   const { prisma } = await import('@/lib/prisma')
   
-  // Get attendance records from database - include current year to support yearly view
+  // Get attendance records from database - include current year and previous year to support yearly view
   // Always exclude future dates
   const now = new Date()
   const today = new Date(now)
   today.setHours(23, 59, 59, 999)
   
-  // Fetch all records from the start of current year to support yearly view
+  // Fetch all records from the start of previous year to support viewing historical data
+  // This allows users to view data from the previous year (e.g., 2025 data in 2026)
   const currentYear = now.getFullYear()
-  const yearStart = new Date(currentYear, 0, 1) // January 1 of current year
+  const previousYear = currentYear - 1
+  const yearStart = new Date(previousYear, 0, 1) // January 1 of previous year
   yearStart.setHours(0, 0, 0, 0)
   
-  // Use the earlier of today or end of current year
-  const endDate = today < new Date(currentYear, 11, 31, 23, 59, 59, 999) 
-    ? today 
-    : new Date(currentYear, 11, 31, 23, 59, 59, 999)
+  // Use today as end date (exclude future dates)
+  const endDate = today
   
   // Get all active classes with their details
   const allActiveClasses = await prisma.class.findMany({
