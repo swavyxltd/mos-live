@@ -16,6 +16,7 @@ export const metadata: Metadata = {
   title: "Madrasah OS",
   description: "Complete management system for Islamic schools and madrasahs",
   metadataBase: new URL(process.env.NEXTAUTH_URL || process.env.APP_BASE_URL || 'https://app.madrasah.io'),
+  // Icons are automatically handled by Next.js from icon.png and apple-icon.png in app directory
   openGraph: {
     title: "Madrasah OS",
     description: "Complete management system for Islamic schools and madrasahs",

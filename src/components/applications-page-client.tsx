@@ -216,7 +216,6 @@ export function ApplicationsPageClient({ orgSlug }: ApplicationsPageClientProps)
             <span className="hidden sm:inline">Copy Application Link</span>
           </Button>
           <Button
-            variant="outline"
             onClick={() => window.open(`/apply/${orgSlug}`, '_blank')}
             className="w-full sm:w-auto"
             size="sm"

@@ -84,7 +84,6 @@ export function OnboardingPageWrapper({ initialStudents, classes, stats, orgSlug
             <span className="hidden sm:inline">Copy Signup Link</span>
           </Button>
           <Button
-            variant="outline"
             onClick={() => window.open(`/parent/signup?org=${orgSlug}`, '_blank')}
             className="w-full sm:w-auto"
             size="sm"

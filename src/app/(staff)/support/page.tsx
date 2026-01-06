@@ -155,7 +155,7 @@ export default function SupportPage() {
   return (
     <div className="space-y-8">
       {/* Header Section */}
-      <div className="bg-black rounded-lg p-8 text-white">
+      <div className="bg-primary rounded-lg p-8 text-primary-foreground">
         <div className="flex justify-between items-start">
           <div>
             <h1 className="text-3xl font-bold mb-2">Support Center</h1>
