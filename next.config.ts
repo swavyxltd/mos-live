@@ -27,6 +27,14 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select'],
   },
+  // Suppress Turbopack middleware deprecation warning
+  // middleware.ts is still the standard way in Next.js 16
+  // The "proxy" feature is experimental and not yet ready for production use
+  logging: {
+    fetches: {
+      fullUrl: false,
+    },
+  },
   async headers() {
     return [
       {
