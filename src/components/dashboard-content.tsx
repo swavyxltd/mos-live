@@ -672,140 +672,69 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
 
       {/* Teacher Dashboard: Today's Classes */}
       {isTeacher ? (
-        <div className="space-y-8">
+        <div className="space-y-6">
           {/* Today's Classes Section */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
-                  <div className="w-1 h-6 bg-primary rounded-full" />
-                  Today's Classes
-                </h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {todaysClasses.length === 0 
-                    ? 'No classes scheduled for today'
-                    : `${todaysClasses.length} ${todaysClasses.length === 1 ? 'class' : 'classes'} scheduled`
-                  }
-                </p>
-              </div>
-            </div>
-            
-            {loadingTodaysClasses ? (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {[1, 2, 3].map((i) => (
-                  <Card key={i} className="animate-pulse">
-                    <CardContent className="pt-6">
-                      <div className="h-6 bg-muted rounded w-3/4 mb-3" />
-                      <div className="h-4 bg-muted rounded w-1/2 mb-4" />
-                      <div className="h-10 bg-muted rounded" />
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : todaysClasses.length === 0 ? (
-              <Card className="border-dashed">
-                <CardContent className="pt-12 pb-12">
-                  <div className="text-center">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
-                      <Calendar className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-foreground mb-2">No classes today</h3>
-                    <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">
-                      You don't have any classes scheduled for today. Check back tomorrow or view all your classes.
-                    </p>
-                    <Link href="/classes">
-                      <Button variant="outline" className="gap-2">
-                        <BookOpen className="h-4 w-4" />
-                        View All Classes
-                      </Button>
-                    </Link>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {todaysClasses.map((cls) => {
-                  const statusConfig = {
-                    MARKED: {
-                      bg: 'bg-green-50 dark:bg-green-950/20',
-                      border: 'border-green-200 dark:border-green-900/50',
-                      icon: CheckCircle,
-                      iconColor: 'text-green-600 dark:text-green-400',
-                      badge: 'default',
-                      badgeText: 'Marked'
-                    },
-                    PARTIAL: {
-                      bg: 'bg-amber-50 dark:bg-amber-950/20',
-                      border: 'border-amber-200 dark:border-amber-900/50',
-                      icon: Clock,
-                      iconColor: 'text-amber-600 dark:text-amber-400',
-                      badge: 'secondary',
-                      badgeText: 'Partial'
-                    },
-                    NOT_MARKED: {
-                      bg: 'bg-red-50 dark:bg-red-950/20',
-                      border: 'border-red-200 dark:border-red-900/50',
-                      icon: AlertCircle,
-                      iconColor: 'text-red-600 dark:text-red-400',
-                      badge: 'destructive',
-                      badgeText: 'Not Marked'
-                    },
-                    NO_STUDENTS: {
-                      bg: 'bg-muted',
-                      border: 'border-border',
-                      icon: Users,
-                      iconColor: 'text-muted-foreground',
-                      badge: 'outline',
-                      badgeText: 'No Students'
-                    }
-                  }
-                  
-                  const config = statusConfig[cls.attendanceStatus] || statusConfig.NO_STUDENTS
-                  const StatusIcon = config.icon
-                  
-                  return (
-                    <Card 
-                      key={cls.id} 
-                      className={`group hover:shadow-lg transition-all duration-200 border-2 ${config.border} ${config.bg} overflow-hidden relative`}
-                    >
-                      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/5 to-transparent rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      <CardContent className="pt-6 relative z-10">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Today's Classes
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Classes scheduled for today - mark attendance for each class
+              </p>
+            </CardHeader>
+            <CardContent>
+              {loadingTodaysClasses ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p className="text-sm">Loading today's classes...</p>
+                </div>
+              ) : todaysClasses.length === 0 ? (
+                <div className="text-center py-12">
+                  <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                  <p className="text-sm font-medium text-foreground mb-1">No classes scheduled for today</p>
+                  <p className="text-sm text-muted-foreground">Check back tomorrow or view all your classes</p>
+                  <Link href="/classes">
+                    <Button variant="outline" className="mt-4">
+                      View All Classes
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {todaysClasses.map((cls) => (
+                    <Card key={cls.id} className="hover:shadow-md transition-shadow">
+                      <CardContent className="pt-6">
                         <div className="flex items-start justify-between mb-4">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-2">
-                              <div className={`p-2 rounded-lg ${config.bg} ${config.border} border`}>
-                                <StatusIcon className={`h-4 w-4 ${config.iconColor}`} />
-                              </div>
-                              <h3 className="font-semibold text-lg text-foreground truncate">{cls.name}</h3>
-                            </div>
-                            <div className="flex items-center gap-4 text-sm">
-                              <div className="flex items-center gap-1.5 text-muted-foreground">
-                                <Users className="h-4 w-4" />
-                                <span className="font-medium text-foreground">{cls.studentCount}</span>
-                                <span>{cls.studentCount === 1 ? 'student' : 'students'}</span>
-                              </div>
-                            </div>
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-foreground mb-1">{cls.name}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {cls.studentCount} {cls.studentCount === 1 ? 'student' : 'students'}
+                            </p>
                           </div>
+                          <Badge 
+                            variant={
+                              cls.attendanceStatus === 'MARKED' ? 'default' :
+                              cls.attendanceStatus === 'PARTIAL' ? 'secondary' :
+                              cls.attendanceStatus === 'NOT_MARKED' ? 'destructive' :
+                              'outline'
+                            }
+                            className="ml-2"
+                          >
+                            {cls.attendanceStatus === 'MARKED' ? 'Marked' :
+                             cls.attendanceStatus === 'PARTIAL' ? 'Partial' :
+                             cls.attendanceStatus === 'NOT_MARKED' ? 'Not Marked' :
+                             'No Students'}
+                          </Badge>
                         </div>
-                        
                         {cls.attendanceStatus === 'PARTIAL' && (
-                          <div className="mb-4 p-3 rounded-lg bg-background/50 border border-border">
-                            <div className="flex items-center justify-between text-xs mb-2">
-                              <span className="text-muted-foreground">Progress</span>
-                              <span className="font-medium text-foreground">{cls.markedCount} / {cls.totalCount}</span>
-                            </div>
-                            <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-                              <div 
-                                className="h-full bg-primary transition-all duration-300 rounded-full"
-                                style={{ width: `${(cls.markedCount! / cls.totalCount!) * 100}%` }}
-                              />
-                            </div>
-                          </div>
+                          <p className="text-xs text-muted-foreground mb-3">
+                            {cls.markedCount} of {cls.totalCount} marked
+                          </p>
                         )}
-                        
                         <Button
                           variant={cls.attendanceStatus === 'MARKED' ? 'outline' : 'default'}
-                          className="w-full font-medium shadow-sm hover:shadow-md transition-all"
+                          className="w-full"
                           onClick={() => {
                             setIsAttendanceModalOpen(true)
                             setTimeout(() => {
@@ -814,25 +743,15 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
                             }, 1000)
                           }}
                         >
-                          {cls.attendanceStatus === 'MARKED' ? (
-                            <>
-                              <CheckCircle className="h-4 w-4 mr-2" />
-                              Update Attendance
-                            </>
-                          ) : (
-                            <>
-                              <UserCheck className="h-4 w-4 mr-2" />
-                              Mark Attendance
-                            </>
-                          )}
+                          {cls.attendanceStatus === 'MARKED' ? 'Update Attendance' : 'Mark Attendance'}
                         </Button>
                       </CardContent>
                     </Card>
-                  )
-                })}
-              </div>
-            )}
-          </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* My Classes Overview */}
           <div className="grid gap-6 md:grid-cols-2">
