@@ -154,8 +154,7 @@ export const STAFF_ROLE_PERMISSIONS: Record<StaffSubrole, StaffPermissionKey[]> 
     'access_support',
   ],
   FINANCE_OFFICER: [
-    // Financial data focused
-    'access_dashboard',
+    // Financial data focused (no dashboard access)
     'access_finances',
     'access_fees',
     'access_payments',

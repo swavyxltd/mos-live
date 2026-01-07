@@ -11,13 +11,11 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Modal } from '@/components/ui/modal'
-import { Plus, Search, BookOpen, HelpCircle, MessageSquare, Mail, Filter, MoreHorizontal } from 'lucide-react'
+import { Plus, Search, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { PageSkeleton } from '@/components/loading/skeleton'
 import { UserSupportTicketDetailModal } from '@/components/user-support-ticket-detail-modal'
-import { DocumentationModal } from '@/components/support-documentation-modal'
-import { FAQModal } from '@/components/support-faq-modal'
 
 interface SupportTicket {
   id: string
@@ -57,8 +55,6 @@ export default function SupportPage() {
   const [showCreateTicket, setShowCreateTicket] = useState(false)
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null)
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
-  const [showDocsModal, setShowDocsModal] = useState(false)
-  const [showFAQModal, setShowFAQModal] = useState(false)
   const [newTicket, setNewTicket] = useState({
     subject: '',
     body: '',
@@ -93,11 +89,8 @@ export default function SupportPage() {
           responses: ticket.SupportTicketResponse || ticket.responses || []
         }))
         
-        // Additional client-side filter for teachers (backup to API filtering)
-        const isTeacher = session?.user?.staffSubrole === 'TEACHER'
-        const filtered = isTeacher 
-          ? transformed.filter(ticket => ticket.createdBy?.id === session?.user?.id)
-          : transformed
+        // Filter to only show tickets created by the current user
+        const filtered = transformed.filter(ticket => ticket.createdBy?.id === session?.user?.id)
         
         setTickets(filtered)
       } else {
@@ -180,41 +173,6 @@ export default function SupportPage() {
         </div>
       </div>
 
-      {/* Quick Actions Grid */}
-      <div className={`grid grid-cols-1 ${session?.user?.staffSubrole === 'TEACHER' ? 'md:grid-cols-1' : 'md:grid-cols-2 lg:grid-cols-3'} gap-6`}>
-        <Card 
-          className="p-6 hover:shadow-lg transition-all duration-200 cursor-pointer group h-full"
-          onClick={() => setShowDocsModal(true)}
-        >
-          <div className="flex items-center space-x-4 h-full">
-            <div className="p-3 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors flex-shrink-0">
-              <BookOpen className="h-6 w-6 text-blue-600" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-[var(--foreground)]">Documentation</h3>
-              <p className="text-sm text-[var(--muted-foreground)]">Guides & tutorials</p>
-            </div>
-          </div>
-        </Card>
-
-        {session?.user?.staffSubrole !== 'TEACHER' && (
-          <Card 
-            className="p-6 hover:shadow-lg transition-all duration-200 cursor-pointer group h-full"
-            onClick={() => setShowFAQModal(true)}
-          >
-            <div className="flex items-center space-x-4 h-full">
-              <div className="p-3 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors flex-shrink-0">
-                <HelpCircle className="h-6 w-6 text-green-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-[var(--foreground)]">FAQ</h3>
-                <p className="text-sm text-[var(--muted-foreground)]">Common questions</p>
-              </div>
-            </div>
-          </Card>
-        )}
-
-      </div>
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -334,35 +292,8 @@ export default function SupportPage() {
           onUpdate={fetchTickets}
         />
 
-        {/* Documentation Modal */}
-        <DocumentationModal
-          isOpen={showDocsModal}
-          onClose={() => setShowDocsModal(false)}
-        />
-
-        {/* FAQ Modal */}
-        <FAQModal
-          isOpen={showFAQModal}
-          onClose={() => setShowFAQModal(false)}
-        />
-
         {/* Contact & Help Section */}
         <div className="space-y-6">
-          {/* Contact Support */}
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold text-[var(--foreground)] mb-4">Contact Support</h3>
-            <div className="space-y-4">
-              <div className="flex items-start space-x-3 p-3 bg-[var(--muted)] rounded-lg">
-                <Mail className="h-5 w-5 text-blue-600 mt-1" />
-                <div>
-                  <h4 className="font-medium text-[var(--foreground)]">Email Support</h4>
-                  <p className="text-sm text-[var(--muted-foreground)]">support@madrasah.io</p>
-                  <p className="text-sm text-[var(--muted-foreground)] mt-1">Response time: 24 hours</p>
-                </div>
-              </div>
-            </div>
-          </Card>
-
           {/* Quick Stats */}
           <Card className="p-6">
             <h3 className="text-lg font-semibold text-[var(--foreground)] mb-4">Support Stats</h3>

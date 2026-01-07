@@ -4,6 +4,8 @@ import { getActiveOrg, getUserRoleInOrg } from '@/lib/org'
 import { redirect } from 'next/navigation'
 import { GiftAidPageClient } from '@/components/gift-aid-page-client'
 import { logger } from '@/lib/logger'
+import { prisma } from '@/lib/prisma'
+import { getStaffPermissionsFromDb } from '@/lib/staff-permissions-db'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,9 +24,34 @@ export default async function GiftAidPage() {
 
     const userRole = await getUserRoleInOrg(session.user.id, org.id)
     
-    // Only allow ADMIN and OWNER
-    if (userRole !== 'ADMIN' && userRole !== 'OWNER') {
-      redirect('/dashboard')
+    // Get staff subrole and permissions
+    const membership = await prisma.userOrgMembership.findUnique({
+      where: {
+        userId_orgId: {
+          userId: session.user.id,
+          orgId: org.id
+        }
+      }
+    })
+    
+    const staffSubrole = membership?.staffSubrole
+    const permissions = await getStaffPermissionsFromDb(session.user.id, org.id)
+    
+    // Allow ADMIN, OWNER, or STAFF with access_payments permission (finance officers)
+    const hasAccess = 
+      userRole === 'ADMIN' || 
+      userRole === 'OWNER' || 
+      (userRole === 'STAFF' && permissions.includes('access_payments'))
+    
+    if (!hasAccess) {
+      // Redirect based on user role/subrole
+      if (staffSubrole === 'FINANCE_OFFICER') {
+        redirect('/finances')
+      } else if (staffSubrole === 'TEACHER') {
+        redirect('/classes')
+      } else {
+        redirect('/dashboard')
+      }
     }
 
     return <GiftAidPageClient />

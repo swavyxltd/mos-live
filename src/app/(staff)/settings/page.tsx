@@ -156,32 +156,40 @@ function SettingsPageContent() {
 
   const [billingRecords, setBillingRecords] = useState<BillingRecord[]>([])
   const [loadingBillingRecords, setLoadingBillingRecords] = useState(true)
-  // Initialize activeTab from URL parameter, default to 'profile' for teachers, 'organisation' for others
+  // Initialize activeTab from URL parameter, default to 'profile' for teachers/finance officers, 'organisation' for others
   const [activeTab, setActiveTab] = useState(() => {
     const tabParam = searchParams.get('tab')
-    if (tabParam && ['organisation', 'profile', 'payment-methods', 'subscription'].includes(tabParam)) {
-      // For teachers, only allow 'profile' tab
-      if (session?.user?.staffSubrole === 'TEACHER' && tabParam !== 'profile') {
-        return 'profile'
-      }
+    const staffSubrole = session?.user?.staffSubrole
+    const allowedTabs = staffSubrole === 'TEACHER' 
+      ? ['profile']
+      : staffSubrole === 'FINANCE_OFFICER'
+      ? ['profile', 'payment-methods', 'subscription']
+      : ['organisation', 'profile', 'payment-methods', 'subscription']
+    
+    if (tabParam && allowedTabs.includes(tabParam)) {
       return tabParam
     }
-    // Default to 'profile' for teachers, 'organisation' for others
-    return session?.user?.staffSubrole === 'TEACHER' ? 'profile' : 'organisation'
+    // Default to 'profile' for teachers/finance officers, 'organisation' for others
+    if (staffSubrole === 'TEACHER' || staffSubrole === 'FINANCE_OFFICER') {
+      return 'profile'
+    }
+    return 'organisation'
   })
 
   // Update activeTab when URL parameter changes
   useEffect(() => {
     const tabParam = searchParams.get('tab')
-    if (tabParam && ['organisation', 'profile', 'payment-methods', 'subscription'].includes(tabParam)) {
-      // For teachers, only allow 'profile' tab
-      if (session?.user?.staffSubrole === 'TEACHER' && tabParam !== 'profile') {
-        setActiveTab('profile')
-      } else {
-        setActiveTab(tabParam)
-      }
-    } else if (session?.user?.staffSubrole === 'TEACHER') {
-      // Ensure teachers default to profile tab
+    const staffSubrole = session?.user?.staffSubrole
+    const allowedTabs = staffSubrole === 'TEACHER' 
+      ? ['profile']
+      : staffSubrole === 'FINANCE_OFFICER'
+      ? ['profile', 'payment-methods', 'subscription']
+      : ['organisation', 'profile', 'payment-methods', 'subscription']
+    
+    if (tabParam && allowedTabs.includes(tabParam)) {
+      setActiveTab(tabParam)
+    } else if (staffSubrole === 'TEACHER' || staffSubrole === 'FINANCE_OFFICER') {
+      // Ensure teachers/finance officers default to profile tab
       setActiveTab('profile')
     }
   }, [searchParams, session])
@@ -789,8 +797,8 @@ function SettingsPageContent() {
             }
           </p>
         </div>
-        {activeTab === 'organisation' && (
-          <Button onClick={handleSaveOrgSettings} disabled={loading || isFinanceOfficer}>
+        {activeTab === 'organisation' && !isFinanceOfficer && (
+          <Button onClick={handleSaveOrgSettings} disabled={loading}>
             {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
             Save Changes
           </Button>
@@ -812,12 +820,14 @@ function SettingsPageContent() {
                 <SelectValue placeholder="Select a tab" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="organisation">
-                  <div className="flex items-center gap-2">
-                    <Globe className="h-4 w-4" />
-                    <span>Organisation</span>
-                  </div>
-                </SelectItem>
+                {!isFinanceOfficer && (
+                  <SelectItem value="organisation">
+                    <div className="flex items-center gap-2">
+                      <Globe className="h-4 w-4" />
+                      <span>Organisation</span>
+                    </div>
+                  </SelectItem>
+                )}
                 <SelectItem value="profile">
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4" />
@@ -843,11 +853,13 @@ function SettingsPageContent() {
 
         {/* Desktop: Tabs */}
         {!isTeacher && (
-          <TabsList className="hidden md:grid w-full grid-cols-4">
-            <TabsTrigger value="organisation" className="flex items-center gap-2">
-              <Globe className="h-4 w-4" />
-              Organisation
-            </TabsTrigger>
+          <TabsList className={`hidden md:grid w-full ${isFinanceOfficer ? 'grid-cols-3' : 'grid-cols-4'}`}>
+            {!isFinanceOfficer && (
+              <TabsTrigger value="organisation" className="flex items-center gap-2">
+                <Globe className="h-4 w-4" />
+                Organisation
+              </TabsTrigger>
+            )}
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Profile
@@ -863,7 +875,7 @@ function SettingsPageContent() {
           </TabsList>
         )}
 
-        {!isTeacher && (
+        {!isTeacher && !isFinanceOfficer && (
           <TabsContent value="organisation" className="space-y-6">
             {/* Organisation Settings */}
           <Card className={isFinanceOfficer ? "opacity-50 pointer-events-none" : ""}>

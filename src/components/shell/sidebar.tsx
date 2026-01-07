@@ -158,6 +158,13 @@ export function Sidebar({ user: initialUser, org, userRole, staffSubrole, permis
             ]
             return teacherAllowedItems.includes(item.permissionKey)
           })
+        } else if (staffSubrole === 'FINANCE_OFFICER') {
+          // Finance officers should not see Dashboard - they go directly to Finances
+          currentNavigation = staffNavigation.filter(item => {
+            // Exclude Dashboard for finance officers
+            return item.permissionKey !== 'access_dashboard' && 
+                   (permissions?.includes(item.permissionKey) ?? false)
+          })
         } else if (permissions && permissions.length > 0) {
           // Use permissions from database if available
           currentNavigation = staffNavigation.filter(item => {
