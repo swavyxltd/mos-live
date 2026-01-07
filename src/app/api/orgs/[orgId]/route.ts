@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
-import { cancelStripeSubscription, stripe } from '@/lib/stripe'
+import { deleteStripeSubscription, stripe } from '@/lib/stripe'
 
 async function handleDELETE(
   request: NextRequest,
@@ -77,18 +77,48 @@ async function handleDELETE(
     try {
       const platformBilling = await prisma.platformOrgBilling.findUnique({
         where: { orgId },
-        select: { stripeSubscriptionId: true }
+        select: { 
+          stripeSubscriptionId: true,
+          stripeSubscriptionItemId: true
+        }
       })
 
       if (platformBilling?.stripeSubscriptionId) {
         try {
-          await cancelStripeSubscription(platformBilling.stripeSubscriptionId)
-          logger.info(`Canceled platform Stripe subscription for organisation: ${org.name}`)
+          // Delete the subscription in Stripe immediately (cancels and removes it)
+          await deleteStripeSubscription(platformBilling.stripeSubscriptionId)
+          logger.info(`Deleted platform Stripe subscription for organisation: ${org.name}`)
+          
+          // Clear subscription fields in database after successful cancellation
+          await prisma.platformOrgBilling.update({
+            where: { orgId },
+            data: {
+              stripeSubscriptionId: null,
+              stripeSubscriptionItemId: null
+            }
+          })
+          logger.info(`Cleared subscription fields in database for organisation: ${org.name}`)
         } catch (stripeError: any) {
           logger.error('Error canceling platform Stripe subscription before deletion', {
             error: stripeError?.message,
             subscriptionId: platformBilling.stripeSubscriptionId
           })
+          // Try to clear database fields even if Stripe cancellation fails
+          // (subscription might already be canceled or deleted in Stripe)
+          try {
+            await prisma.platformOrgBilling.update({
+              where: { orgId },
+              data: {
+                stripeSubscriptionId: null,
+                stripeSubscriptionItemId: null
+              }
+            })
+            logger.info(`Cleared subscription fields in database despite Stripe error`)
+          } catch (dbError: any) {
+            logger.error('Error clearing subscription fields in database', {
+              error: dbError?.message
+            })
+          }
           // Continue with deletion even if subscription cancellation fails
         }
       }

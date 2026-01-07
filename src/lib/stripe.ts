@@ -317,6 +317,31 @@ export async function cancelStripeSubscription(subscriptionId: string) {
   }
 }
 
+export async function deleteStripeSubscription(subscriptionId: string) {
+  if (!stripe) {
+    throw new Error('Stripe is not initialized')
+  }
+
+  try {
+    // Use del() to immediately cancel and delete the subscription
+    // This is preferred for organization deletion as it completely removes the subscription
+    await stripe.subscriptions.del(subscriptionId)
+    return true
+  } catch (error: any) {
+    // If del() fails, try cancel() as fallback
+    if (error.code === 'resource_missing' || error.statusCode === 404) {
+      // Subscription might already be deleted, which is fine
+      return true
+    }
+    try {
+      await stripe.subscriptions.cancel(subscriptionId)
+      return true
+    } catch (cancelError: any) {
+      throw new Error(`Failed to delete subscription: ${error.message}`)
+    }
+  }
+}
+
 export async function getActiveStudentCount(orgId: string): Promise<number> {
   return prisma.student.count({
     where: {
