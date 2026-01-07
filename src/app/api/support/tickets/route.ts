@@ -179,22 +179,54 @@ async function handlePOST(request: NextRequest) {
     // Send email notification to support@madrasah.io
     try {
       const roleDisplay = role === 'ADMIN' ? 'Admin' : role === 'STAFF' ? 'Staff' : role === 'PARENT' ? 'Parent' : 'User'
+      
+      // Escape HTML to prevent XSS
+      const escapeHtml = (text: string) => {
+        const map: Record<string, string> = {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#039;'
+        }
+        return text.replace(/[&<>"']/g, (m) => map[m])
+      }
+      
+      const escapedSubject = escapeHtml(ticket.subject)
+      const escapedBody = escapeHtml(ticket.body)
+      const escapedUserName = escapeHtml(user?.name || 'Unknown')
+      const escapedUserEmail = escapeHtml(user?.email || 'No email')
+      const escapedOrgName = escapeHtml(org.name)
+      
       const content = `
         <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-top: 16px;">
           <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280; font-weight: 500;">Ticket Number:</p>
           <p style="margin: 0 0 12px 0; font-size: 18px; color: #111827; font-weight: 700;">${ticket.ticketNumber}</p>
           <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280; font-weight: 500;">Subject:</p>
-          <p style="margin: 0 0 12px 0; font-size: 16px; color: #111827; font-weight: 600;">${ticket.subject}</p>
+          <p style="margin: 0 0 12px 0; font-size: 16px; color: #111827; font-weight: 600;">${escapedSubject}</p>
           <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280; font-weight: 500;">From:</p>
-          <p style="margin: 0 0 12px 0; font-size: 16px; color: #111827; font-weight: 600;">${user?.name || 'Unknown'} (${user?.email || 'No email'}) - ${roleDisplay}</p>
+          <p style="margin: 0 0 12px 0; font-size: 16px; color: #111827; font-weight: 600;">${escapedUserName} (${escapedUserEmail}) - ${roleDisplay}</p>
           <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280; font-weight: 500;">Organisation:</p>
-          <p style="margin: 0 0 12px 0; font-size: 16px; color: #111827; font-weight: 600;">${org.name}</p>
+          <p style="margin: 0 0 12px 0; font-size: 16px; color: #111827; font-weight: 600;">${escapedOrgName}</p>
           <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280; font-weight: 500;">Message:</p>
           <div style="background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 4px; padding: 12px; margin-top: 8px;">
-            <p style="margin: 0; font-size: 15px; color: #374151; line-height: 1.6; white-space: pre-wrap;">${ticket.body}</p>
+            <p style="margin: 0; font-size: 15px; color: #374151; line-height: 1.6; white-space: pre-wrap;">${escapedBody}</p>
           </div>
         </div>
       `
+      
+      // Plain text version for email clients that don't support HTML
+      const text = `New Support Ticket Created
+
+Ticket Number: ${ticket.ticketNumber}
+Subject: ${ticket.subject}
+From: ${user?.name || 'Unknown'} (${user?.email || 'No email'}) - ${roleDisplay}
+Organisation: ${org.name}
+
+Message:
+${ticket.body}
+
+You can view and respond to this ticket in the owner portal.`
       
       const html = await generateEmailTemplate({
         title: 'New Support Ticket Created',
@@ -206,7 +238,13 @@ async function handlePOST(request: NextRequest) {
       await sendEmail({
         to: 'support@madrasah.io',
         subject: `[${ticket.ticketNumber}] New Support Ticket: ${ticket.subject}`,
-        html
+        html,
+        text
+      })
+      
+      logger.info('Support ticket notification email sent', {
+        ticketNumber: ticket.ticketNumber,
+        to: 'support@madrasah.io'
       })
     } catch (emailError: any) {
       logger.error('Error sending support ticket notification email', emailError)
