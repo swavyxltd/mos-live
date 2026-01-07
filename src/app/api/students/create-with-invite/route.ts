@@ -332,8 +332,12 @@ async function handlePOST(request: NextRequest) {
     }, { status: 201 })
   } catch (error: any) {
     logger.error('Error creating student with invite', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: error.message || 'Failed to create student and send invitation' },
+      { 
+        error: 'Failed to create student and send invitation',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }

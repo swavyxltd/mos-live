@@ -418,9 +418,12 @@ async function handlePOST(request: NextRequest) {
           results.invitationsSent++
         }
       } catch (error: any) {
+        logger.error('Error creating student in bulk upload', error, {
+          rowNumber: studentData.rowNumber
+        })
         results.errors.push({
           rowNumber: studentData.rowNumber,
-          error: error.message || 'Failed to create student'
+          error: 'Failed to create student'
         })
       }
     }

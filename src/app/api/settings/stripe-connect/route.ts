@@ -62,8 +62,12 @@ async function handlePOST(request: NextRequest) {
         })
       } catch (error: any) {
         logger.error('Error linking existing Stripe account', error)
+        const isDevelopment = process.env.NODE_ENV === 'development'
         return NextResponse.json(
-          { error: `Failed to link account: ${error.message}` },
+          { 
+            error: 'Failed to link account',
+            ...(isDevelopment && { details: error?.message })
+          },
           { status: 400 }
         )
       }
@@ -104,21 +108,16 @@ async function handlePOST(request: NextRequest) {
       onboardingUrl: accountLink.url
     })
   } catch (error: any) {
-    logger.error('Error creating Stripe Connect account', { 
-      error: error.message, 
-      stack: error.stack,
+    logger.error('Error creating Stripe Connect account', error, {
       type: error?.type,
       code: error?.code,
       statusCode: error?.statusCode
     })
     const isDevelopment = process.env.NODE_ENV === 'development'
     
-    // Return more specific error message
-    const errorMessage = error?.message || 'Failed to create Stripe Connect account'
-    
-    // Include full error details in development
+    // Include full error details in development only
     const errorDetails: any = {
-      error: errorMessage
+      error: 'Failed to create Stripe Connect account'
     }
     
     if (isDevelopment) {
@@ -128,11 +127,11 @@ async function handlePOST(request: NextRequest) {
       errorDetails.statusCode = error?.statusCode
       errorDetails.rawError = error?.raw?.message || error?.raw
       errorDetails.apiKeyPrefix = process.env.STRIPE_SECRET_KEY?.substring(0, 7) // Show sk_live or sk_test
-    }
-    
-    // If it's a Connect error, provide specific guidance
-    if (error?.message?.includes('Connect') || error?.code === 'account_invalid') {
-      errorDetails.suggestion = 'Since you can create accounts manually in Stripe Dashboard, Connect is enabled. The API error suggests your platform account may have restrictions. Contact Stripe Support for assistance.'
+      
+      // If it's a Connect error, provide specific guidance
+      if (error?.message?.includes('Connect') || error?.code === 'account_invalid') {
+        errorDetails.suggestion = 'Since you can create accounts manually in Stripe Dashboard, Connect is enabled. The API error suggests your platform account may have restrictions. Contact Stripe Support for assistance.'
+      }
     }
     
     return NextResponse.json(errorDetails, { status: 500 })

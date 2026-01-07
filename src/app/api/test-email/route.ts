@@ -47,25 +47,19 @@ export async function POST(request: NextRequest) {
       }
     })
   } catch (error: any) {
-    console.error('Test email error:', error)
-    console.error('Error details:', {
-      message: error?.message,
-      name: error?.name,
-      stack: error?.stack,
-      cause: error?.cause
-    })
+    const { logger } = await import('@/lib/logger')
+    logger.error('Test email error', error)
     
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
       {
         error: 'Failed to send test email',
-        message: error?.message || 'Unknown error occurred',
-        details: {
+        ...(isDevelopment && {
+          details: error?.message,
           name: error?.name,
-          ...(process.env.NODE_ENV === 'development' && {
-            stack: error?.stack,
-            cause: error?.cause
-          })
-        }
+          stack: error?.stack,
+          cause: error?.cause
+        })
       },
       { status: 500 }
     )

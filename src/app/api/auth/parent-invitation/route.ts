@@ -137,7 +137,6 @@ async function handleGET(request: NextRequest) {
     })
   } catch (error: any) {
     logger.error('Error fetching parent invitation', error)
-    console.error('Parent invitation API error:', error)
     return NextResponse.json(
       { 
         error: 'Failed to fetch invitation details',

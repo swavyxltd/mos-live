@@ -155,9 +155,9 @@ function SignInPageContent() {
             <Image 
               src="/logo.png" 
               alt="Madrasah OS" 
-              width={128}
-              height={32}
-              className="h-8 w-auto"
+              width={166}
+              height={42}
+              className="h-[42px] w-auto"
               priority
               fetchPriority="high"
             />
@@ -184,9 +184,9 @@ export default function SignInPage() {
             <Image 
               src="/logo.png" 
               alt="Madrasah OS" 
-              width={128}
-              height={32}
-              className="h-8 w-auto"
+              width={166}
+              height={42}
+              className="h-[42px] w-auto"
               priority
             />
           </div>

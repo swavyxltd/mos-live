@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
 import { randomUUID } from 'crypto'
 
@@ -22,15 +23,12 @@ async function handleGET(
     const resolvedParams = params instanceof Promise ? await params : params
     const { id } = resolvedParams
     
-    console.log('[LEAD API] Fetching lead:', { 
-      id, 
-      paramsType: typeof params, 
-      isPromise: params instanceof Promise,
-      resolvedParams 
-    })
+    if (process.env.NODE_ENV === 'development') {
+      logger.debug('Fetching lead', { id, paramsType: typeof params, isPromise: params instanceof Promise })
+    }
     
     if (!id) {
-      console.error('[LEAD API] No ID provided:', { params, resolvedParams })
+      logger.error('No ID provided in lead fetch', { params, resolvedParams })
       return NextResponse.json({ error: 'Lead ID is required' }, { status: 400 })
     }
     
@@ -94,11 +92,13 @@ async function handleGET(
     })
 
     if (!lead) {
-      console.error('[LEAD API] Lead not found in database:', { id })
+      logger.warn('Lead not found in database', { id })
       return NextResponse.json({ error: 'Lead not found' }, { status: 404 })
     }
 
-    console.log('[LEAD API] Lead found:', { id, orgName: lead.orgName })
+    if (process.env.NODE_ENV === 'development') {
+      logger.debug('Lead found', { id, orgName: lead.orgName })
+    }
 
     // Map relations to expected frontend format
     const mappedLead = {
@@ -111,19 +111,15 @@ async function handleGET(
       })),
     }
 
-    console.log('[LEAD API] Returning lead data')
+    // Lead data returned
     return NextResponse.json({ lead: mappedLead })
   } catch (error: any) {
-    console.error('Error fetching lead:', error)
-    console.error('Error details:', {
-      message: error.message,
-      name: error.name,
-      stack: error.stack,
-    })
+    logger.error('Error fetching lead', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
       { 
         error: 'Failed to fetch lead',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        ...(isDevelopment && { details: error?.message })
       },
       { status: 500 }
     )
@@ -276,9 +272,13 @@ async function handlePUT(
 
     return NextResponse.json({ lead: mappedLead })
   } catch (error: any) {
-    console.error('Error updating lead:', error)
+    logger.error('Error updating lead', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to update lead' },
+      { 
+        error: 'Failed to update lead',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
@@ -340,11 +340,12 @@ async function handleDELETE(
       message: `Lead "${lead.orgName}" deleted successfully` 
     })
   } catch (error: any) {
-    console.error('Error deleting lead:', error)
+    logger.error('Error deleting lead', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
       { 
         error: 'Failed to delete lead',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        ...(isDevelopment && { details: error?.message })
       },
       { status: 500 }
     )

@@ -60,8 +60,8 @@ export async function middleware(request: NextRequest) {
     }
   }
   
-  // Debug logging for production issues
-  if (process.env.NODE_ENV === 'development' || pathname.startsWith('/staff') || pathname.startsWith('/owner')) {
+  // Debug logging only in development
+  if (process.env.NODE_ENV === 'development') {
     console.log('[Middleware] Token roleHints:', {
       email: token.email,
       isSuperAdmin: token.isSuperAdmin,

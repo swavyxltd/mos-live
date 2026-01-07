@@ -161,17 +161,13 @@ async function handleGET(request: NextRequest) {
   } catch (error: any) {
     logger.error('Get payments error', error)
     const isDevelopment = process.env.NODE_ENV === 'development'
-    console.error('Payments API error:', error)
-    console.error('Error stack:', error?.stack)
-    console.error('Error message:', error?.message)
     return NextResponse.json(
       { 
         error: 'Failed to fetch payments',
         ...(isDevelopment && { 
           details: error?.message, 
           stack: error?.stack,
-          name: error?.name,
-          cause: error?.cause
+          name: error?.name
         })
       },
       { status: 500 }

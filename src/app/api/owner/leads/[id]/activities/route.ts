@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
 import { randomUUID } from 'crypto'
 
@@ -86,7 +87,7 @@ async function handlePOST(
 
     return NextResponse.json({ activity: mappedActivity }, { status: 201 })
   } catch (error: any) {
-    console.error('Error creating activity:', error)
+    logger.error('Error creating activity', error)
     const errorMessage = error?.message || 'Failed to create activity'
     const isDevelopment = process.env.NODE_ENV === 'development'
     

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateEmailTemplate } from '@/lib/email-template'
+import { logger } from '@/lib/logger'
 
 // Demo data for email previews
 const demoData = {
@@ -619,7 +620,14 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error: any) {
-    console.error('Error generating email preview:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    logger.error('Error generating email preview', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
+    return NextResponse.json(
+      { 
+        error: 'Failed to generate email preview',
+        ...(isDevelopment && { details: error?.message })
+      },
+      { status: 500 }
+    )
   }
 }

@@ -13,8 +13,16 @@ export default function GlobalError({
   reset: () => void
 }) {
   useEffect(() => {
-    // Log error to error reporting service
-    console.error('Global application error:', error)
+    // Log error to error reporting service (server-side only, no sensitive data)
+    if (typeof window !== 'undefined') {
+      // Client-side: use logger if available, otherwise minimal logging
+      const errorInfo = {
+        message: error.message,
+        digest: error.digest,
+        name: error.name
+      }
+      console.error('Global application error:', errorInfo)
+    }
   }, [error])
 
   return (

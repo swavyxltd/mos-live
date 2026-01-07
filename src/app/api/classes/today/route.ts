@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { getActiveOrg, getUserRoleInOrg } from '@/lib/org'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
 
 async function handleGET(request: NextRequest) {
@@ -156,7 +157,7 @@ async function handleGET(request: NextRequest) {
 
     return NextResponse.json(classesWithAttendance)
   } catch (error: any) {
-    console.error('Error fetching today classes:', error)
+    logger.error('Error fetching today classes', error)
     return NextResponse.json(
       { error: 'Failed to fetch today classes' },
       { status: 500 }

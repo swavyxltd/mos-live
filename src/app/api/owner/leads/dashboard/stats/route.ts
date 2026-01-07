@@ -239,29 +239,18 @@ async function handleGET(request: NextRequest) {
       })),
     })
   } catch (error: any) {
-    console.error('Error fetching lead stats:', error)
-    console.error('Error stack:', error.stack)
-    console.error('Error name:', error.name)
-    
-    // Check for Prisma-specific errors
-    if (error.code) {
-      console.error('Prisma error code:', error.code)
-    }
-    if (error.meta) {
-      console.error('Prisma error meta:', error.meta)
-    }
-    
+    logger.error('Error fetching lead stats', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
       { 
         error: 'Failed to fetch lead stats',
-        message: error.message || 'An unknown error occurred',
-        details: process.env.NODE_ENV === 'development' ? {
-          message: error.message,
-          name: error.name,
-          code: error.code,
-          meta: error.meta,
-          stack: error.stack,
-        } : undefined
+        ...(isDevelopment && {
+          details: error?.message,
+          name: error?.name,
+          code: error?.code,
+          meta: error?.meta,
+          stack: error?.stack
+        })
       },
       { status: 500 }
     )

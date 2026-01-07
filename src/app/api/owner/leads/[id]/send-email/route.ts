@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 import { sendEmail } from '@/lib/mail'
 import { generateEmailTemplate } from '@/lib/email-template'
 import { withRateLimit } from '@/lib/api-middleware'
@@ -196,9 +197,13 @@ async function handlePOST(
       lead: updatedLead
     })
   } catch (error: any) {
-    console.error('Error sending email:', error)
+    logger.error('Error sending email', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: error.message || 'Failed to send email' },
+      { 
+        error: 'Failed to send email',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }

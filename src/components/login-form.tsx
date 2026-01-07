@@ -120,7 +120,7 @@ export function LoginForm({
         </CardContent>
       </Card>
 
-      <p className="px-6 text-center text-sm text-gray-600">
+      <p className="px-6 text-center text-sm text-white">
         By clicking continue, you agree to our{" "}
         <Link href="/terms" className="underline-offset-4 hover:underline">Terms of Service</Link>{" "}
         and <Link href="/privacy" className="underline-offset-4 hover:underline">Privacy Policy</Link>.

@@ -254,20 +254,16 @@ async function handlePATCH(
 
     return NextResponse.json(updatedClass)
   } catch (error: any) {
-    logger.error('Update class error', { 
-      error: error?.message, 
-      stack: error?.stack, 
-      body,
-      code: error?.code,
-      meta: error?.meta
-    })
-    // Always return error details to help debug
+    logger.error('Update class error', error, { body })
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
       { 
         error: 'Failed to update class',
-        details: error?.message || 'Unknown error',
-        ...(error?.code && { code: error?.code }),
-        ...(error?.meta && { meta: error?.meta })
+        ...(isDevelopment && {
+          details: error?.message,
+          code: error?.code,
+          meta: error?.meta
+        })
       },
       { status: 500 }
     )

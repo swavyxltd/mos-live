@@ -117,8 +117,12 @@ async function handlePOST(request: NextRequest) {
     }
   } catch (error: any) {
     logger.error('Error resending verification email', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: error.message || 'Failed to resend verification email' },
+      { 
+        error: 'Failed to resend verification email',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }

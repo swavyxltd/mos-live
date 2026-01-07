@@ -220,8 +220,12 @@ export async function GET(request: NextRequest) {
     })
   } catch (error: any) {
     logger.error('Error in bill-parents cron', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: 'Failed to process billing', details: error.message },
+      { 
+        error: 'Failed to process billing',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }

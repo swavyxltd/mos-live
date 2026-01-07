@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
 import { randomUUID } from 'crypto'
 
@@ -111,22 +112,18 @@ async function handleGET(request: NextRequest) {
 
     return NextResponse.json({ leads: mappedLeads })
   } catch (error: any) {
-    console.error('Error fetching leads:', error)
-    console.error('Error stack:', error.stack)
-    console.error('Error name:', error.name)
-    console.error('Error code:', error.code)
-    console.error('Error meta:', error.meta)
+    logger.error('Error fetching leads', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
       { 
         error: 'Failed to fetch leads',
-        message: error.message,
-        details: process.env.NODE_ENV === 'development' ? {
-          message: error.message,
-          name: error.name,
-          code: error.code,
-          meta: error.meta,
-          stack: error.stack,
-        } : undefined
+        ...(isDevelopment && {
+          details: error?.message,
+          name: error?.name,
+          code: error?.code,
+          meta: error?.meta,
+          stack: error?.stack
+        })
       },
       { status: 500 }
     )
@@ -240,13 +237,7 @@ async function handlePOST(request: NextRequest) {
 
     return NextResponse.json({ lead: mappedLead }, { status: 201 })
   } catch (error: any) {
-    console.error('Error creating lead:', error)
-    console.error('Error details:', {
-      message: error.message,
-      code: error.code,
-      meta: error.meta,
-      stack: error.stack,
-    })
+    logger.error('Error creating lead', error)
     
     // Return more specific error messages
     let errorMessage = 'Failed to create lead'
@@ -260,18 +251,18 @@ async function handlePOST(request: NextRequest) {
       // Foreign key constraint violation
       errorMessage = 'Invalid reference data provided'
       statusCode = 400
-    } else if (error.message) {
-      errorMessage = error.message
     }
     
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
       { 
         error: errorMessage,
-        details: process.env.NODE_ENV === 'development' ? {
-          message: error.message,
-          code: error.code,
-          meta: error.meta,
-        } : undefined
+        ...(isDevelopment && {
+          details: error?.message,
+          code: error?.code,
+          meta: error?.meta,
+          stack: error?.stack
+        })
       },
       { status: statusCode }
     )

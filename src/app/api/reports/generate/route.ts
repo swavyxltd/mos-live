@@ -1789,13 +1789,14 @@ async function handlePOST(request: NextRequest) {
         stack: pdfError?.stack
       })
 
-      const errorMessage = pdfError?.message ? String(pdfError.message) : 'Unknown PDF generation error'
       const isDevelopment = process.env.NODE_ENV === 'development'
 
       return NextResponse.json({
         error: 'Failed to generate PDF report',
-        details: errorMessage,
-        ...(isDevelopment && pdfError?.stack && { stack: String(pdfError.stack) })
+        ...(isDevelopment && {
+          details: pdfError?.message,
+          stack: pdfError?.stack
+        })
       }, { status: 500 })
     }
   } catch (error: any) {
@@ -1806,24 +1807,15 @@ async function handlePOST(request: NextRequest) {
     })
 
     const isDevelopment = process.env.NODE_ENV === 'development'
-    let errorMessage = 'Unknown error occurred'
-    
-    try {
-      if (error?.message) {
-        errorMessage = String(error.message)
-      } else if (typeof error === 'string') {
-        errorMessage = error
-      } else if (error && typeof error === 'object' && 'message' in error) {
-        errorMessage = String(error.message)
-      }
-    } catch {
-      errorMessage = 'Error occurred while extracting error message'
-    }
 
     return NextResponse.json({ 
       error: 'Failed to generate report',
-      details: isDevelopment ? errorMessage : 'An error occurred while generating the report. Please try again later.',
-      ...(isDevelopment && error?.stack && { stack: String(error.stack) })
+      ...(isDevelopment ? {
+        details: error?.message || 'Unknown error occurred',
+        stack: error?.stack
+      } : {
+        message: 'An error occurred while generating the report. Please try again later.'
+      })
     }, { status: 500 })
   }
 }

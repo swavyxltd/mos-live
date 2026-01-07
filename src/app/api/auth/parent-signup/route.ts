@@ -463,8 +463,12 @@ async function handlePOST(request: NextRequest) {
     }, { status: 201 })
   } catch (error: any) {
     logger.error('Error in parent signup', error)
+    const isDevelopment = process.env.NODE_ENV === 'development'
     return NextResponse.json(
-      { error: error.message || 'Failed to create account' },
+      { 
+        error: 'Failed to create account',
+        ...(isDevelopment && { details: error?.message })
+      },
       { status: 500 }
     )
   }
