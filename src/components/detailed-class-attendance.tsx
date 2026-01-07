@@ -579,6 +579,7 @@ export function DetailedClassAttendance({
                       }
                       
                       // Calculate average attendance for the period
+                      // Only count days where attendance was actually marked (not scheduled days)
                       const calculateAverageAttendance = () => {
                         if (!dateRange) return 0
                         
@@ -587,23 +588,25 @@ export function DetailedClassAttendance({
                         const today = new Date()
                         today.setHours(0, 0, 0, 0)
                         
-                        let totalScheduled = 0
+                        // Only count days where attendance was actually marked
+                        let totalMarked = 0
                         let presentOrLate = 0
                         
+                        // Iterate through all dates in the range and check if attendance exists
                         const current = new Date(start)
                         while (current <= end) {
-                          const dayOfWeek = current.getDay()
-                          // Only count weekdays (Monday-Friday)
-                          if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-                            const currentDate = new Date(current)
-                            currentDate.setHours(0, 0, 0, 0)
+                          const currentDate = new Date(current)
+                          currentDate.setHours(0, 0, 0, 0)
+                          
+                          // Only count days up to today (don't count future dates)
+                          if (currentDate <= today) {
+                            const dateKey = currentDate.toISOString().split('T')[0]
+                            const attendance = attendanceMap.get(dateKey)
                             
-                            // Only count days up to today (don't count future dates)
-                            if (currentDate <= today) {
-                              totalScheduled++
-                              const dateKey = currentDate.toISOString().split('T')[0]
-                              const attendance = attendanceMap.get(dateKey)
-                              if (attendance && (attendance.status === 'PRESENT' || attendance.status === 'LATE')) {
+                            // Only count days where attendance was actually marked
+                            if (attendance) {
+                              totalMarked++
+                              if (attendance.status === 'PRESENT' || attendance.status === 'LATE') {
                                 presentOrLate++
                               }
                             }
@@ -611,7 +614,7 @@ export function DetailedClassAttendance({
                           current.setDate(current.getDate() + 1)
                         }
                         
-                        return totalScheduled > 0 ? Math.round((presentOrLate / totalScheduled) * 100) : 0
+                        return totalMarked > 0 ? Math.round((presentOrLate / totalMarked) * 100) : 0
                       }
                       
                       const averageAttendance = calculateAverageAttendance()

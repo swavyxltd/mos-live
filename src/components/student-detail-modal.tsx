@@ -1213,6 +1213,7 @@ export function StudentDetailModal({
                                     }
 
                                     // Calculate average attendance for the period
+                                    // Calculate average attendance - only count days where attendance was actually marked
                                     const calculateAverageAttendance = () => {
                                       if (!attendanceDateRange) {
                                         // Fallback to year if no date range
@@ -1221,28 +1222,30 @@ export function StudentDetailModal({
                                         const today = new Date()
                                         today.setHours(0, 0, 0, 0)
                                         
-                                        let totalScheduled = 0
+                                        // Only count days where attendance was actually marked
+                                        let totalMarked = 0
                                         let presentOrLate = 0
                                         
                                         const current = new Date(yearStart)
                                         while (current <= today && current.getFullYear() === currentYear) {
-                                          const dayOfWeek = current.getDay()
-                                          if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-                                            const currentDate = new Date(current)
-                                            currentDate.setHours(0, 0, 0, 0)
+                                          const currentDate = new Date(current)
+                                          currentDate.setHours(0, 0, 0, 0)
+                                          
+                                          if (currentDate <= today) {
+                                            const dateKey = currentDate.toISOString().split('T')[0]
+                                            const attendance = attendanceMap.get(dateKey)
                                             
-                                            if (currentDate <= today) {
-                                              totalScheduled++
-                                              const dateKey = currentDate.toISOString().split('T')[0]
-                                              const attendance = attendanceMap.get(dateKey)
-                                              if (attendance && (attendance.status === 'PRESENT' || attendance.status === 'LATE')) {
+                                            // Only count days where attendance was actually marked
+                                            if (attendance) {
+                                              totalMarked++
+                                              if (attendance.status === 'PRESENT' || attendance.status === 'LATE') {
                                                 presentOrLate++
                                               }
                                             }
                                           }
                                           current.setDate(current.getDate() + 1)
                                         }
-                                        return totalScheduled > 0 ? Math.round((presentOrLate / totalScheduled) * 100) : 0
+                                        return totalMarked > 0 ? Math.round((presentOrLate / totalMarked) * 100) : 0
                                       }
                                       
                                       const start = attendanceDateRange.start instanceof Date ? attendanceDateRange.start : new Date(attendanceDateRange.start)
@@ -1250,21 +1253,24 @@ export function StudentDetailModal({
                                       const today = new Date()
                                       today.setHours(0, 0, 0, 0)
                                       
-                                      let totalScheduled = 0
+                                      // Only count days where attendance was actually marked
+                                      let totalMarked = 0
                                       let presentOrLate = 0
                                       
                                       const current = new Date(start)
                                       while (current <= end) {
-                                        const dayOfWeek = current.getDay()
-                                        if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-                                          const currentDate = new Date(current)
-                                          currentDate.setHours(0, 0, 0, 0)
+                                        const currentDate = new Date(current)
+                                        currentDate.setHours(0, 0, 0, 0)
+                                        
+                                        // Only count days up to today (don't count future dates)
+                                        if (currentDate <= today) {
+                                          const dateKey = currentDate.toISOString().split('T')[0]
+                                          const attendance = attendanceMap.get(dateKey)
                                           
-                                          if (currentDate <= today) {
-                                            totalScheduled++
-                                            const dateKey = currentDate.toISOString().split('T')[0]
-                                            const attendance = attendanceMap.get(dateKey)
-                                            if (attendance && (attendance.status === 'PRESENT' || attendance.status === 'LATE')) {
+                                          // Only count days where attendance was actually marked
+                                          if (attendance) {
+                                            totalMarked++
+                                            if (attendance.status === 'PRESENT' || attendance.status === 'LATE') {
                                               presentOrLate++
                                             }
                                           }
@@ -1272,7 +1278,7 @@ export function StudentDetailModal({
                                         current.setDate(current.getDate() + 1)
                                       }
                                       
-                                      return totalScheduled > 0 ? Math.round((presentOrLate / totalScheduled) * 100) : 0
+                                      return totalMarked > 0 ? Math.round((presentOrLate / totalMarked) * 100) : 0
                                     }
                                     
                                     const averageAttendance = calculateAverageAttendance()

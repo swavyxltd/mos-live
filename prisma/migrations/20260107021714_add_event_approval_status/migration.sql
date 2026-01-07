@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE "Event" ADD COLUMN "status" TEXT NOT NULL DEFAULT 'APPROVED',
+ADD COLUMN "createdBy" TEXT,
+ADD COLUMN "reviewedBy" TEXT,
+ADD COLUMN "reviewedAt" TIMESTAMP(3);
+

@@ -129,6 +129,10 @@ model Event {
   createdAt   DateTime @default(now())
   updatedAt   DateTime
   studentId   String?
+  status      String   @default("APPROVED") // PENDING, APPROVED, DECLINED
+  createdBy   String?  // User ID who created the event
+  reviewedBy  String?  // User ID who approved/declined
+  reviewedAt  DateTime?
   Class       Class?   @relation(fields: [classId], references: [id], onDelete: Cascade)
   Org         Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
   Student     Student? @relation(fields: [studentId], references: [id], onDelete: Cascade)

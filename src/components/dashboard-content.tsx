@@ -96,6 +96,7 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false)
   const [isApplicationsModalOpen, setIsApplicationsModalOpen] = useState(false)
   const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false)
+  const [selectedClassIdForAttendance, setSelectedClassIdForAttendance] = useState<string | null>(null)
   const [isPaymentsModalOpen, setIsPaymentsModalOpen] = useState(false)
   const [quickActionLoading, setQuickActionLoading] = useState<string | null>(null)
   const [classes, setClasses] = useState<Array<{ id: string; name: string }>>([])
@@ -757,7 +758,14 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
               ) : (
                 <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
                   {todaysClasses.map((cls) => (
-                    <Card key={cls.id} className="hover:shadow-lg transition-all duration-200 border-2 hover:border-primary/20">
+                    <Card 
+                      key={cls.id} 
+                      className="hover:shadow-lg transition-all duration-200 border-2 hover:border-primary/20 cursor-pointer"
+                      onClick={() => {
+                        setSelectedClassIdForAttendance(cls.id)
+                        setIsAttendanceModalOpen(true)
+                      }}
+                    >
                       <CardContent className="!px-6 !pt-6 !pb-6">
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex-1 min-w-0">
@@ -1375,8 +1383,10 @@ export function DashboardContent({ initialStats, userRole, staffSubrole, orgCrea
       {/* Attendance Modal */}
       <AttendanceMarking
         initialOpen={isAttendanceModalOpen}
+        initialClassId={selectedClassIdForAttendance}
         onClose={() => {
           setIsAttendanceModalOpen(false)
+          setSelectedClassIdForAttendance(null)
           // Refresh today's classes when modal closes (in case attendance was marked)
           if (isTeacher) {
             setTimeout(() => {

@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { AddEventModal } from '@/components/add-event-modal'
 import { EventDetailModal } from '@/components/event-detail-modal'
-import { Calendar, Clock, MapPin } from 'lucide-react'
+import { Calendar, Clock, MapPin, AlertCircle, CheckCircle2, XCircle } from 'lucide-react'
 import { RestrictedAction } from '@/components/restricted-action'
 import { PageSkeleton } from '@/components/loading/skeleton'
 
@@ -17,6 +17,8 @@ export default function CalendarPage() {
   const [loading, setLoading] = useState(true)
   const [selectedEvent, setSelectedEvent] = useState<any>(null)
   const [eventDetailOpen, setEventDetailOpen] = useState(false)
+  const [pendingRequests, setPendingRequests] = useState<any[]>([])
+  const [pendingLoading, setPendingLoading] = useState(false)
 
   // Fetch events, holidays, and exams
   useEffect(() => {
@@ -46,7 +48,8 @@ export default function CalendarPage() {
             teacher: event.teacher || '',
             description: event.description || '',
             class: event.class,
-            isHoliday: event.isHoliday || event.type === 'HOLIDAY'
+            isHoliday: event.isHoliday || event.type === 'HOLIDAY',
+            status: event.status || 'APPROVED' // Include status for pending badge
           }))
           
           setEvents(allEvents)
@@ -63,6 +66,36 @@ export default function CalendarPage() {
 
     fetchCalendarData()
   }, [status])
+
+  // Fetch pending event requests (admin only)
+  useEffect(() => {
+    if (status === 'loading') return
+
+    const fetchPendingRequests = async () => {
+      try {
+        setPendingLoading(true)
+        const response = await fetch('/api/events/pending')
+        if (response.ok) {
+          const data = await response.json()
+          setPendingRequests(data)
+        } else {
+          setPendingRequests([])
+        }
+      } catch (error) {
+        console.error('Error fetching pending requests:', error)
+        setPendingRequests([])
+      } finally {
+        setPendingLoading(false)
+      }
+    }
+
+    // Only fetch if user is admin (check via session roleHints)
+    const isAdmin = session?.user?.roleHints?.orgAdminOf?.length > 0 || 
+                   session?.user?.isSuperAdmin
+    if (isAdmin) {
+      fetchPendingRequests()
+    }
+  }, [status, session])
 
   if (loading) {
     return <PageSkeleton />
@@ -142,6 +175,34 @@ export default function CalendarPage() {
     setSelectedEvent(null)
   }
 
+  const isAdmin = session?.user?.roleHints?.orgAdminOf?.length > 0 || session?.user?.isSuperAdmin
+
+  const handleReviewEvent = async (eventId: string, action: 'approve' | 'decline') => {
+    try {
+      const response = await fetch(`/api/events/${eventId}/review`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action })
+      })
+
+      if (response.ok) {
+        // Refresh pending requests
+        const pendingResponse = await fetch('/api/events/pending')
+        if (pendingResponse.ok) {
+          const data = await pendingResponse.json()
+          setPendingRequests(data)
+        }
+        // Refresh calendar data
+        handleEventAdded()
+      } else {
+        const error = await response.json()
+        console.error('Error reviewing event:', error)
+      }
+    } catch (error) {
+      console.error('Error reviewing event:', error)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -157,6 +218,86 @@ export default function CalendarPage() {
           </RestrictedAction>
         </div>
       </div>
+
+      {/* Pending Event Requests Notification (Admin Only) */}
+      {isAdmin && pendingRequests.length > 0 && (
+        <Card className="border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-500" />
+              <CardTitle className="text-lg font-semibold text-yellow-900 dark:text-yellow-100">
+                Pending Event Requests ({pendingRequests.length})
+              </CardTitle>
+            </div>
+            <p className="text-sm text-yellow-800 dark:text-yellow-200 mt-1">
+              Review and approve or decline event requests from teachers
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {pendingRequests.map((request) => (
+                <div
+                  key={request.id}
+                  className="flex items-start justify-between p-3 bg-white dark:bg-[var(--background)] rounded-lg border border-yellow-200 dark:border-yellow-800"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="font-semibold text-[var(--foreground)]">{request.title}</h4>
+                      <Badge variant="outline" className="text-xs">
+                        {request.type}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-[var(--muted-foreground)] mb-1">
+                      {new Date(request.date).toLocaleDateString('en-GB', {
+                        weekday: 'long',
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                      })}
+                      {request.startTime && ` • ${request.startTime}${request.endTime ? ` - ${request.endTime}` : ''}`}
+                    </p>
+                    {request.Class && (
+                      <p className="text-sm text-[var(--muted-foreground)] mb-1">
+                        Class: {request.Class.name}
+                      </p>
+                    )}
+                    {request.creator && (
+                      <p className="text-xs text-[var(--muted-foreground)]">
+                        Requested by: {request.creator.name || request.creator.email}
+                      </p>
+                    )}
+                    {request.description && (
+                      <p className="text-sm text-[var(--muted-foreground)] mt-2">
+                        {request.description}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 ml-4 flex-shrink-0">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-green-600 border-green-600 hover:bg-green-50 dark:hover:bg-green-950/20"
+                      onClick={() => handleReviewEvent(request.id, 'approve')}
+                    >
+                      <CheckCircle2 className="h-4 w-4 mr-1" />
+                      Approve
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-red-600 border-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
+                      onClick={() => handleReviewEvent(request.id, 'decline')}
+                    >
+                      <XCircle className="h-4 w-4 mr-1" />
+                      Decline
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Upcoming Events List */}
       <Card>
@@ -201,6 +342,11 @@ export default function CalendarPage() {
                           <div className="flex items-center gap-2 flex-wrap">
                             {isToday && (
                               <Badge variant="outline" className="text-xs">Today</Badge>
+                            )}
+                            {event.status === 'PENDING' && (
+                              <Badge variant="outline" className="text-xs border-orange-500 text-orange-700 bg-orange-50 dark:bg-orange-950/20 dark:text-orange-400 dark:border-orange-400">
+                                Pending Approval
+                              </Badge>
                             )}
                             <Badge 
                               variant="outline"
@@ -286,20 +432,27 @@ export default function CalendarPage() {
                         )}
                       </div>
                     </div>
-                    <Badge 
-                      variant="outline"
-                      className={`hidden sm:flex ml-3 flex-shrink-0 ${
-                        event.isHoliday || event.type === 'HOLIDAY' ? 'border-green-500 text-green-700 bg-green-50' : 
-                        event.type === 'EXAM' ? 'border-yellow-500 text-yellow-700 bg-yellow-50' : 
-                        event.type === 'MEETING' ? 'border-blue-500 text-blue-700 bg-blue-50' : 
-                        'border-purple-500 text-purple-700 bg-purple-50'
-                      }`}
-                    >
-                      {event.isHoliday || event.type === 'HOLIDAY' ? 'Holiday' : 
-                       event.type === 'EXAM' ? 'Exam' :
-                       event.type === 'MEETING' ? 'Meeting' :
-                       'Event'}
-                    </Badge>
+                    <div className="hidden sm:flex items-center gap-2 ml-3 flex-shrink-0">
+                      {event.status === 'PENDING' && (
+                        <Badge variant="outline" className="text-xs border-orange-500 text-orange-700 bg-orange-50 dark:bg-orange-950/20 dark:text-orange-400 dark:border-orange-400">
+                          Pending Approval
+                        </Badge>
+                      )}
+                      <Badge 
+                        variant="outline"
+                        className={`${
+                          event.isHoliday || event.type === 'HOLIDAY' ? 'border-green-500 text-green-700 bg-green-50' : 
+                          event.type === 'EXAM' ? 'border-yellow-500 text-yellow-700 bg-yellow-50' : 
+                          event.type === 'MEETING' ? 'border-blue-500 text-blue-700 bg-blue-50' : 
+                          'border-purple-500 text-purple-700 bg-purple-50'
+                        }`}
+                      >
+                        {event.isHoliday || event.type === 'HOLIDAY' ? 'Holiday' : 
+                         event.type === 'EXAM' ? 'Exam' :
+                         event.type === 'MEETING' ? 'Meeting' :
+                         'Event'}
+                      </Badge>
+                    </div>
                     </div>
                     {index < upcomingEvents.length - 1 && (
                       <div className="border-b border-[var(--border)]" />

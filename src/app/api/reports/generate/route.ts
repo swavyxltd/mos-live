@@ -267,7 +267,8 @@ async function fetchCurrentMonthData(orgId: string, monthStart: Date, monthEnd: 
           date: { gte: monthStart, lte: monthEnd }
         }
       })
-      const present = records.filter(r => r.status === 'PRESENT').length
+      // Count PRESENT and LATE as attended (both count towards attendance percentage)
+      const present = records.filter(r => r.status === 'PRESENT' || r.status === 'LATE').length
       attendanceData.set(cls.id, { present, total: records.length })
     })
   )
@@ -391,7 +392,8 @@ async function fetchPreviousMonthData(orgId: string, prevMonthStart: Date, prevM
 
   const allPrevRecords = prevAttendanceRecords.flat()
   const prevTotalRecords = allPrevRecords.length
-  const prevPresentCount = allPrevRecords.filter(a => a.status === 'PRESENT').length
+  // Count PRESENT and LATE as attended (both count towards attendance percentage)
+  const prevPresentCount = allPrevRecords.filter(a => a.status === 'PRESENT' || a.status === 'LATE').length
   const prevAttendance = prevTotalRecords > 0
     ? Math.round((prevPresentCount / prevTotalRecords) * 100)
     : 0

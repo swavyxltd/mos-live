@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import { useSession } from 'next-auth/react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -29,6 +30,7 @@ interface Student {
 }
 
 export function AddEventModal({ onEventAdded, trigger }: AddEventModalProps) {
+  const { data: session } = useSession()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [classes, setClasses] = useState<Class[]>([])
@@ -48,6 +50,10 @@ export function AddEventModal({ onEventAdded, trigger }: AddEventModalProps) {
     studentId: '', // For meeting events
     allDay: false
   })
+
+  // Check if user is a teacher
+  const isTeacher = session?.user?.roleHints?.staffSubrole === 'TEACHER' || 
+                    (session?.user?.staffSubrole === 'TEACHER')
 
   const eventTypes = [
     { value: 'EXAM', label: 'Exam' },
@@ -94,6 +100,13 @@ export function AddEventModal({ onEventAdded, trigger }: AddEventModalProps) {
       }
     }
   }, [studentSearch, isMeeting, formData.studentId, filteredStudents])
+
+  // Reset classId to first class if teacher and "all" is selected
+  useEffect(() => {
+    if (isTeacher && formData.classId === 'all' && classes.length > 0) {
+      setFormData(prev => ({ ...prev, classId: classes[0].id }))
+    }
+  }, [isTeacher, classes, formData.classId])
 
   const fetchClasses = async () => {
     setLoadingClasses(true)
@@ -196,6 +209,20 @@ export function AddEventModal({ onEventAdded, trigger }: AddEventModalProps) {
             return
           }
 
+          // For non-holiday, non-meeting events, validate class is selected if classes are available
+          // Note: The API will enforce that teachers can only select their assigned classes
+          if (!isHoliday && !isMeeting && classes.length > 0) {
+            if (!formData.classId || formData.classId === 'all') {
+              if (isTeacher) {
+                toast.error('Please select a class for this event')
+              } else {
+                toast.error('Please select a class or "All Classes" for this event')
+              }
+              setLoading(false)
+              return
+            }
+          }
+
           const requestBody = {
             title: formData.title,
             description: formData.description,
@@ -255,6 +282,12 @@ export function AddEventModal({ onEventAdded, trigger }: AddEventModalProps) {
           onEventAdded?.(newEvent)
           setOpen(false)
           resetForm()
+          // Show success message - different for teachers (pending) vs admins (approved)
+          if (isTeacher) {
+            toast.success('Event request submitted. Waiting for admin approval.')
+          } else {
+            toast.success('Event created successfully')
+          }
           } catch (e) {
             console.error('Error parsing success response:', e)
             toast.error('Event created but failed to parse response')
@@ -268,6 +301,9 @@ export function AddEventModal({ onEventAdded, trigger }: AddEventModalProps) {
   }
 
   const resetForm = () => {
+    // For teachers, default to first class if available, otherwise 'all'
+    const defaultClassId = isTeacher && classes.length > 0 ? classes[0].id : 'all'
+    
     setFormData({
       title: '',
       description: '',
@@ -276,7 +312,7 @@ export function AddEventModal({ onEventAdded, trigger }: AddEventModalProps) {
       endDate: '',
       startTime: '',
       endTime: '',
-      classId: 'all',
+      classId: defaultClassId,
       studentId: '',
       allDay: false
     })
@@ -520,7 +556,7 @@ export function AddEventModal({ onEventAdded, trigger }: AddEventModalProps) {
           {!isHoliday && !isMeeting && (
             <div className="space-y-2">
               <Label htmlFor="classId" className="text-sm font-medium">
-                Class
+                Class <span className="text-red-500">*</span>
               </Label>
               <div className="relative">
                 <GraduationCap className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[var(--muted-foreground)] z-10" />
@@ -528,12 +564,15 @@ export function AddEventModal({ onEventAdded, trigger }: AddEventModalProps) {
                   value={formData.classId} 
                   onValueChange={(value) => handleInputChange('classId', value)}
                   disabled={loadingClasses}
+                  required
                 >
                   <SelectTrigger className="pl-10">
-                    <SelectValue placeholder={loadingClasses ? "Loading classes..." : "Select class (optional)"} />
+                    <SelectValue placeholder={loadingClasses ? "Loading classes..." : "Select class"} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Classes</SelectItem>
+                    {classes.length > 0 && !isTeacher && (
+                      <SelectItem value="all">All Classes</SelectItem>
+                    )}
                     {classes.map((cls) => (
                       <SelectItem key={cls.id} value={cls.id}>
                         {cls.name}
@@ -543,7 +582,11 @@ export function AddEventModal({ onEventAdded, trigger }: AddEventModalProps) {
                 </Select>
               </div>
               <p className="text-xs text-[var(--muted-foreground)]">
-                Leave as "All Classes" to make event visible to everyone
+                {isTeacher 
+                  ? 'Select a class for this event'
+                  : classes.length > 0 
+                    ? 'Select "All Classes" to make event visible to everyone, or choose a specific class'
+                    : 'No classes available. Please contact an administrator.'}
               </p>
             </div>
           )}

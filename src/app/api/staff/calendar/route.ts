@@ -30,14 +30,30 @@ async function handleGET(request: NextRequest) {
     const start = startDate ? new Date(startDate) : new Date(now.getFullYear(), now.getMonth() - 1, 1)
     const end = endDate ? new Date(endDate) : new Date(now.getFullYear(), now.getMonth() + 3, 0)
 
-    // Fetch events (all events for the org)
+    // Check if user is admin/owner
+    const { getUserRoleInOrg } = await import('@/lib/org')
+    const userRole = await getUserRoleInOrg(session.user.id, org.id)
+    const isAdmin = userRole === 'ADMIN' || userRole === 'OWNER'
+
+    // Fetch events (all events for the org, but filter by status for non-admins)
+    // Non-admins see APPROVED events + their own PENDING events
     const events = await prisma.event.findMany({
       where: {
         orgId: org.id,
         date: {
           gte: start,
           lte: end
-        }
+        },
+        // Admins see all events, non-admins see APPROVED + their own PENDING
+        ...(isAdmin 
+          ? {} 
+          : {
+              OR: [
+                { status: 'APPROVED' },
+                { status: 'PENDING', createdBy: session.user.id }
+              ]
+            }
+        )
       },
       include: {
         Class: {
@@ -95,7 +111,8 @@ async function handleGET(request: NextRequest) {
       location: event.location,
       teacher: event.teacher,
       description: event.description,
-      class: event.Class
+      class: event.Class,
+      status: event.status || 'APPROVED' // Include status for frontend
     }))
 
     const transformedExams = exams.map(exam => ({

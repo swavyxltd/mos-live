@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { getActiveOrg } from '@/lib/org'
+import { getActiveOrg, getUserRoleInOrg } from '@/lib/org'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 import { withRateLimit } from '@/lib/api-middleware'
@@ -100,7 +100,8 @@ async function handleGET(request: NextRequest) {
         date: {
           gte: today,
           lt: tomorrow
-        }
+        },
+        status: 'APPROVED' // Only show approved events
       },
       select: {
         id: true,
@@ -109,6 +110,20 @@ async function handleGET(request: NextRequest) {
         type: true
       }
     })
+
+    // Get pending event requests (admin only)
+    const userRole = await getUserRoleInOrg(session.user.id, org.id)
+    const isAdmin = userRole === 'ADMIN' || userRole === 'OWNER'
+    let pendingEventRequests = 0
+    
+    if (isAdmin) {
+      pendingEventRequests = await prisma.event.count({
+        where: {
+          orgId: org.id,
+          status: 'PENDING'
+        }
+      })
+    }
 
     const tasks = []
 
@@ -158,6 +173,18 @@ async function handleGET(request: NextRequest) {
         priority: 'low',
         link: '/calendar?date=today',
         icon: 'Calendar'
+      })
+    }
+
+    if (pendingEventRequests > 0) {
+      tasks.push({
+        id: 'pending-events',
+        title: 'Review Event Requests',
+        description: `${pendingEventRequests} event request${pendingEventRequests !== 1 ? 's' : ''} pending approval`,
+        count: pendingEventRequests,
+        priority: 'high',
+        link: '/calendar',
+        icon: 'AlertCircle'
       })
     }
 
