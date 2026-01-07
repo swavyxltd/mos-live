@@ -13,6 +13,23 @@ export default async function AttendancePage() {
 
   // Always use real database data
   const { prisma } = await import('@/lib/prisma')
+  const { getUserRoleInOrg } = await import('@/lib/org')
+  
+  // Check if user is a teacher - if so, only show their assigned classes
+  const userRole = await getUserRoleInOrg(session.user.id, org.id)
+  const membership = await prisma.userOrgMembership.findUnique({
+    where: {
+      userId_orgId: {
+        userId: session.user.id,
+        orgId: org.id
+      }
+    },
+    select: {
+      staffSubrole: true
+    }
+  })
+
+  const isTeacher = membership?.staffSubrole === 'TEACHER' || (userRole === 'STAFF' && !membership?.staffSubrole)
   
   // Get attendance records from database - include current year and previous year to support yearly view
   // Always exclude future dates
@@ -31,10 +48,13 @@ export default async function AttendancePage() {
   const endDate = today
   
   // Get all active classes with their details
+  // If user is a teacher, only show classes assigned to them
   const allActiveClasses = await prisma.class.findMany({
     where: {
       orgId: org.id,
-      isArchived: false
+      isArchived: false,
+      // If user is a teacher, only show classes assigned to them
+      ...(isTeacher && { teacherId: session.user.id })
     },
     include: {
       User: {
@@ -86,13 +106,34 @@ export default async function AttendancePage() {
   })
   console.log(`[Server] Total attendance records for org ${org.id}: ${totalCount}`)
 
+  // If user is a teacher, get their assigned class IDs to filter attendance
+  const teacherClassIds = isTeacher 
+    ? (await prisma.class.findMany({
+        where: {
+          orgId: org.id,
+          teacherId: session.user.id,
+          isArchived: false
+        },
+        select: { id: true }
+      })).map(c => c.id)
+    : undefined
+
+  // If teacher has no assigned classes, return empty data
+  if (isTeacher && (!teacherClassIds || teacherClassIds.length === 0)) {
+    return <AttendancePageClient attendanceData={[]} allActiveClasses={[]} />
+  }
+
   const attendanceRecords = await prisma.attendance.findMany({
     where: {
       orgId: org.id,
       date: {
         gte: yearStart,
         lte: endDate // Exclude future dates
-      }
+      },
+      // If user is a teacher, only show attendance for their assigned classes
+      ...(isTeacher && teacherClassIds && teacherClassIds.length > 0 && {
+        classId: { in: teacherClassIds }
+      })
     },
     include: {
       Student: {
@@ -123,15 +164,6 @@ export default async function AttendancePage() {
 
   // Debug: Log how many records were fetched
   console.log(`[Server] Fetched ${attendanceRecords.length} attendance records from database`)
-  const boysTestClassId = '6f8a777a-d6da-457e-924a-75510db99c17'
-  const boysTestClassRecords = attendanceRecords.filter(r => r.classId === boysTestClassId)
-  console.log(`[Server] Boys Test Class (${boysTestClassId}) records: ${boysTestClassRecords.length}`)
-  if (boysTestClassRecords.length > 0) {
-    const boysDates = [...new Set(boysTestClassRecords.map(r => r.date.toISOString().split('T')[0]))].sort()
-    console.log(`[Server] Boys Test Class unique dates: ${boysDates.length}, First: ${boysDates[0]}, Last: ${boysDates[boysDates.length - 1]}`)
-  }
-  const boysRecords = attendanceRecords.filter(r => r.Class?.name?.includes('Boys'))
-  console.log(`[Server] All Boys class records (by name): ${boysRecords.length}`)
 
   // Build attendance map by student and date for weekly breakdown
   const attendanceByStudentAndDate = new Map<string, Map<string, any>>()
@@ -272,12 +304,6 @@ export default async function AttendancePage() {
 
   // Debug: Log how many entries we're sending
   console.log(`[Server] Sending ${attendanceData.length} attendance entries to client`)
-  const boysEntries = attendanceData.filter((item: any) => item.name?.includes('Boys'))
-  console.log(`[Server] Boys class entries: ${boysEntries.length}`)
-  if (boysEntries.length > 0) {
-    const dates = boysEntries.map((item: any) => item.date).sort()
-    console.log(`[Server] Boys class date range: ${dates[0]?.toISOString()} to ${dates[dates.length - 1]?.toISOString()}`)
-  }
 
   // Serialize dates for client component
   const serializedData = attendanceData.map(item => ({
