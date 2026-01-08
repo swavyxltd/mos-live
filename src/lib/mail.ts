@@ -22,15 +22,18 @@ export async function sendEmail({
   to,
   subject,
   html,
-  text
+  text,
+  forceSend = false
 }: {
   to: string | string[]
   subject: string
   html?: string
   text?: string
+  forceSend?: boolean
 }) {
   // In demo mode, just log the email instead of sending
-  if (isDemoMode()) {
+  // Unless forceSend is true (for critical emails like support tickets)
+  if (isDemoMode() && !forceSend) {
     const apiKey = process.env.RESEND_API_KEY
     const demoModeReason = {
       noApiKey: !apiKey,

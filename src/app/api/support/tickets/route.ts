@@ -239,7 +239,8 @@ You can view and respond to this ticket in the owner portal.`
         to: 'support@madrasah.io',
         subject: `[${ticket.ticketNumber}] New Support Ticket: ${ticket.subject}`,
         html,
-        text
+        text,
+        forceSend: true // Always send support ticket emails, even in demo mode
       })
       
       logger.info('Support ticket notification email sent', {

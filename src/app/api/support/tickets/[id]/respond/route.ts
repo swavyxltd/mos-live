@@ -129,7 +129,8 @@ async function handlePOST(
       await sendEmail({
         to: 'support@madrasah.io',
         subject: `[${ticket.ticketNumber}] New response on support ticket: ${ticket.subject}`,
-        html
+        html,
+        forceSend: true // Always send support ticket emails, even in demo mode
       })
     } catch (emailError: any) {
       logger.error('Error sending email notification', emailError)
