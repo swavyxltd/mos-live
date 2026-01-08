@@ -17,17 +17,17 @@ export async function sendTwoFactorCode(email: string, code: string, userName?: 
   const { generateEmailTemplate } = await import('@/lib/email-template')
   
   const content = `
-    <div style="background: #f9fafb; border: 2px dashed #d1d5db; border-radius: 12px; padding: 32px 24px; text-align: center; margin: 24px 0;">
-      <div style="font-size: 42px; font-weight: 700; letter-spacing: 12px; color: #111827; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.2;">
+    <div style="background: #f9fafb !important; border: 2px dashed #d1d5db; border-radius: 12px; padding: 32px 24px; text-align: center; margin: 24px 0;">
+      <div style="font-size: 42px; font-weight: 700; letter-spacing: 12px; color: #111827 !important; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.2;">
         ${code}
       </div>
     </div>
-    <p style="margin: 0 0 24px 0; font-size: 14px; color: #6b7280; line-height: 1.6; text-align: center;">
-      This code will expire in <strong>10 minutes</strong>.
+    <p style="margin: 0 0 24px 0; font-size: 14px; color: #6b7280 !important; line-height: 1.6; text-align: center;">
+      This code will expire in <strong style="color: #111827 !important;">10 minutes</strong>.
     </p>
-    <div style="background: #fef3c7; border: 1px solid #fde68a; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 8px; margin-top: 24px;">
-      <p style="margin: 0; font-size: 13px; color: #92400e; line-height: 1.5;">
-        <strong>Security Notice:</strong> If you didn't request this code, please ignore this email or contact support if you have concerns.
+    <div style="background: #fef3c7 !important; border: 1px solid #fde68a; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 8px; margin-top: 24px;">
+      <p style="margin: 0; font-size: 13px; color: #92400e !important; line-height: 1.5;">
+        <strong style="color: #92400e !important;">Security Notice:</strong> If you didn't request this code, please ignore this email or contact support if you have concerns.
       </p>
     </div>
   `

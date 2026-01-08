@@ -130,6 +130,24 @@ input, textarea, select {
   box-sizing: border-box;
 }
 
+/* Prevent zoom on input focus on mobile - iOS Safari requires 16px minimum */
+@media screen and (max-width: 768px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="tel"],
+  input[type="number"],
+  input[type="search"],
+  input[type="url"],
+  input[type="date"],
+  input[type="time"],
+  input[type="datetime-local"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
 /* Prevent table overflow */
 table {
   width: 100%;
