@@ -285,6 +285,11 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async jwt({ token, user, trigger }) {
+      // Set token expiration to 30 days (matching session maxAge)
+      // This ensures the JWT token itself doesn't expire before the cookie
+      const thirtyDaysInSeconds = 30 * 24 * 60 * 60
+      const now = Math.floor(Date.now() / 1000)
+      
       if (user) {
         token.isSuperAdmin = user.isSuperAdmin
         token.staffSubrole = user.staffSubrole
@@ -292,6 +297,17 @@ export const authOptions: NextAuthOptions = {
         token.name = user.name
         token.email = user.email
         token.image = user.image
+        // Set expiration when user first signs in
+        token.exp = now + thirtyDaysInSeconds
+      } else if (token.exp) {
+        // If token is about to expire (within 1 day), extend it
+        const oneDayInSeconds = 24 * 60 * 60
+        if (token.exp - now < oneDayInSeconds) {
+          token.exp = now + thirtyDaysInSeconds
+        }
+      } else {
+        // If token doesn't have exp, set it (shouldn't happen, but safety check)
+        token.exp = now + thirtyDaysInSeconds
       }
 
       const userId = user?.id ?? token.sub
