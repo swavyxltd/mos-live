@@ -204,6 +204,35 @@ function Verify2FAContent() {
         // Get session and redirect
         try {
           const session = await getSession()
+          
+          // Extend session cookie to 30 days
+          if (session?.user?.id) {
+            try {
+              const isPWA = window.matchMedia('(display-mode: standalone)').matches ||
+                           (window.navigator as any).standalone === true ||
+                           document.referrer.includes('android-app://')
+              
+              if (isPWA) {
+                await fetch('/api/auth/extend-pwa-session', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'x-pwa-mode': 'true',
+                  },
+                })
+              } else {
+                await fetch('/api/auth/extend-session', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                })
+              }
+            } catch (error) {
+              console.error('Failed to extend session:', error)
+            }
+          }
+          
           if ((session?.user as any)?.roleHints) {
             const redirectUrl = getPostLoginRedirect((session.user as any).roleHints)
             window.location.href = redirectUrl || callbackUrl

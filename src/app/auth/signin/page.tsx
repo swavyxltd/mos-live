@@ -97,29 +97,41 @@ function SignInPageContent() {
           // Get session to check user role and redirect appropriately
           const session = await getSession()
           
-          // If in PWA mode, extend session to 30 days
-          const isPWA = window.matchMedia('(display-mode: standalone)').matches ||
-                       (window.navigator as any).standalone === true ||
-                       document.referrer.includes('android-app://')
-          
-          if (isPWA && session?.user?.id) {
+          // Always extend session cookie to 30 days for both browser and PWA
+          // This ensures the cookie persists across browser sessions
+          if (session?.user?.id) {
             try {
-              // Store PWA login preference
-              if (typeof window !== 'undefined') {
-                const { setPWALoginPreference } = await import('@/lib/pwa-auth')
-                setPWALoginPreference(session.user.id)
-              }
+              // Check if PWA mode
+              const isPWA = window.matchMedia('(display-mode: standalone)').matches ||
+                           (window.navigator as any).standalone === true ||
+                           document.referrer.includes('android-app://')
               
-              // Extend session cookie to 30 days
-              await fetch('/api/auth/extend-pwa-session', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'x-pwa-mode': 'true',
-                },
-              })
+              if (isPWA) {
+                // Store PWA login preference
+                if (typeof window !== 'undefined') {
+                  const { setPWALoginPreference } = await import('@/lib/pwa-auth')
+                  setPWALoginPreference(session.user.id)
+                }
+                
+                // Extend session cookie to 30 days (PWA)
+                await fetch('/api/auth/extend-pwa-session', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'x-pwa-mode': 'true',
+                  },
+                })
+              } else {
+                // Extend session cookie to 30 days (regular browser)
+                await fetch('/api/auth/extend-session', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                })
+              }
             } catch (error) {
-              console.error('Failed to extend PWA session:', error)
+              console.error('Failed to extend session:', error)
               // Continue with normal redirect even if extension fails
             }
           }
