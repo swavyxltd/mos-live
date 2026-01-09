@@ -97,7 +97,7 @@ function SignInPageContent() {
           // Get session to check user role and redirect appropriately
           const session = await getSession()
           
-          // If in PWA mode, extend session to 90 days
+          // If in PWA mode, extend session to 30 days
           const isPWA = window.matchMedia('(display-mode: standalone)').matches ||
                        (window.navigator as any).standalone === true ||
                        document.referrer.includes('android-app://')
@@ -110,7 +110,7 @@ function SignInPageContent() {
                 setPWALoginPreference(session.user.id)
               }
               
-              // Extend session cookie to 90 days
+              // Extend session cookie to 30 days
               await fetch('/api/auth/extend-pwa-session', {
                 method: 'POST',
                 headers: {

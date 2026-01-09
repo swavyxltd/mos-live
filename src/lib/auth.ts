@@ -245,7 +245,7 @@ export const authOptions: NextAuthOptions = {
   ],
   session: {
     strategy: 'jwt',
-    // 30 days for browser sessions, 90 days for PWA (handled in JWT callback)
+    // 30 days for both browser sessions and PWA
     maxAge: 30 * 24 * 60 * 60, // 30 days in seconds
     updateAge: 24 * 60 * 60, // Update session once per day to keep it fresh
   },
@@ -259,7 +259,7 @@ export const authOptions: NextAuthOptions = {
         secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
         domain: process.env.NODE_ENV === 'production' ? '.madrasah.io' : undefined, // Allow cookies on all subdomains
         maxAge: 30 * 24 * 60 * 60, // 30 days in seconds - cookie persists across browser sessions
-        // Note: maxAge for PWA (90 days) is handled via API endpoint that extends the cookie
+        // Note: PWA sessions also use 30 days (same as regular browser sessions)
       },
     },
     callbackUrl: {

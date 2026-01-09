@@ -46,7 +46,7 @@ export function PWASessionManager() {
             // Store PWA login preference
             setPWALoginPreference(session.user.id)
             
-            // Extend the session cookie to 90 days
+            // Extend the session cookie to 30 days
             await fetch('/api/auth/extend-pwa-session', {
               method: 'POST',
               headers: {

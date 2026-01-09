@@ -40,11 +40,11 @@ async function handlePOST(request: NextRequest) {
       )
     }
 
-    // Set a new session cookie with 90-day expiry
+    // Set a new session cookie with 30-day expiry (matching regular browser sessions)
     // Note: We're extending the existing token, not creating a new one
     const response = NextResponse.json({ 
       success: true,
-      message: 'Session extended for PWA (90 days)'
+      message: 'Session extended for PWA (30 days)'
     })
 
     // Set the session token cookie with extended maxAge
@@ -58,7 +58,7 @@ async function handlePOST(request: NextRequest) {
       path: '/',
       secure: process.env.NODE_ENV === 'production',
       domain: process.env.NODE_ENV === 'production' ? '.madrasah.io' : undefined,
-      maxAge: 90 * 24 * 60 * 60, // 90 days in seconds
+      maxAge: 30 * 24 * 60 * 60, // 30 days in seconds
     })
 
     // Also set a flag cookie to indicate PWA mode
@@ -68,7 +68,7 @@ async function handlePOST(request: NextRequest) {
       path: '/',
       secure: process.env.NODE_ENV === 'production',
       domain: process.env.NODE_ENV === 'production' ? '.madrasah.io' : undefined,
-      maxAge: 90 * 24 * 60 * 60, // 90 days
+      maxAge: 30 * 24 * 60 * 60, // 30 days
     })
 
     return response
