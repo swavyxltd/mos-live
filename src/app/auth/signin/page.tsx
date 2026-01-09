@@ -1,6 +1,6 @@
 'use client'
 
-import { signIn, getSession, useSession } from 'next-auth/react'
+import { signIn, getSession } from 'next-auth/react'
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useState, useRef, Suspense } from 'react'
 import Image from 'next/image'
@@ -10,52 +10,16 @@ import { LoginForm } from '@/components/login-form'
 
 function SignInPageContent() {
   const searchParams = useSearchParams()
-  const { data: session, status } = useSession()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
   const sessionCheckedRef = useRef(false)
   const hasInitializedRef = useRef(false)
-  const redirectCheckedRef = useRef(false)
   
   // Get URL params once and memoize
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
   const resetSuccess = searchParams.get('reset') === 'success'
   const signupSuccess = searchParams.get('signup') === 'success'
-
-  // Check if user is already signed in and redirect them
-  useEffect(() => {
-    if (redirectCheckedRef.current) return
-    if (status === 'loading') return // Wait for session to load
-    
-    if (status === 'authenticated' && session?.user?.id) {
-      redirectCheckedRef.current = true
-      
-      // Get role hints to determine correct dashboard
-      const roleHints = (session.user as any)?.roleHints as {
-        isOwner?: boolean
-        orgAdminOf?: string[]
-        orgStaffOf?: string[]
-        isParent?: boolean
-        staffSubrole?: string | null
-      } | undefined
-      
-      if (roleHints) {
-        const redirectUrl = getPostLoginRedirect({
-          isOwner: roleHints.isOwner || false,
-          orgAdminOf: roleHints.orgAdminOf || [],
-          orgStaffOf: roleHints.orgStaffOf || [],
-          isParent: roleHints.isParent || false,
-          staffSubrole: roleHints.staffSubrole || null
-        })
-        // Use window.location.href for immediate redirect
-        window.location.href = redirectUrl
-      } else {
-        // Fallback to dashboard if roleHints are missing
-        window.location.href = '/dashboard'
-      }
-    }
-  }, [status, session])
 
   // Initialize success messages only once
   useEffect(() => {
@@ -70,6 +34,11 @@ function SignInPageContent() {
       setSuccessMessage('Account created successfully! Please sign in to continue.')
     }
   }, []) // Empty deps - only run once on mount
+
+  // Note: We don't check session here because:
+  // 1. Middleware will handle redirecting authenticated users
+  // 2. Checking session on client-side can cause race conditions in production
+  // 3. If user is already logged in, middleware will redirect them before this page loads
 
   const handleCredentialsSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -188,32 +157,6 @@ function SignInPageContent() {
     } finally {
       setIsLoading(false)
     }
-  }
-
-  // Show loading state while checking session
-  if (status === 'loading' || (status === 'authenticated' && !redirectCheckedRef.current)) {
-    return (
-      <div className="flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
-        <div className="flex w-full max-w-sm flex-col gap-6">
-          <div className="flex items-center gap-2 self-center">
-            <Image 
-              src="/logo.png" 
-              alt="Madrasah OS" 
-              width={166}
-              height={42}
-              className="h-[42px] w-auto"
-              priority
-            />
-          </div>
-          <div className="text-center text-gray-600">Loading...</div>
-        </div>
-      </div>
-    )
-  }
-
-  // Don't render sign-in form if user is authenticated (redirect is in progress)
-  if (status === 'authenticated' && redirectCheckedRef.current) {
-    return null
   }
 
   return (
